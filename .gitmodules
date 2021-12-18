@@ -1,0 +1,3 @@
+[submodule "dependencies/submodules/delta-studio"]
+	path = dependencies/submodules/delta-studio
+	url = https://github.com/ange-yaghi/delta-studio
