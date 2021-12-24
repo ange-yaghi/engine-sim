@@ -1,28 +1,44 @@
-#include "../include/template_application.h"
+#include "../include/engine_sim_application.h"
 
-TemplateApplication::TemplateApplication() {
-    m_demoTexture = nullptr;
-    m_currentRotation = 0.0f;
-    m_temperature = 0.0f;
+#include "../include/simple_pendulum_application.h"
+
+EngineSimApplication::EngineSimApplication() {
+    m_cameraTarget = ysMath::Constants::Zero;
+    m_cameraPosition = ysMath::LoadVector(0.0f, 0.0f, 5.0f);
+    m_cameraUp = ysMath::Constants::YAxis;
+
+    m_assetPath = "";
+
+    m_geometryVertexBuffer = nullptr;
+    m_geometryIndexBuffer = nullptr;
 }
 
-TemplateApplication::~TemplateApplication() {
+EngineSimApplication::~EngineSimApplication() {
     /* void */
 }
 
-void TemplateApplication::Initialize(void *instance, ysContextObject::DeviceAPI api) {
+EngineSimApplication *EngineSimApplication::createApplication(Application application) {
+    switch (application) {
+    case Application::SimplePendulum:
+        return new SimplePendulumApplication;
+    default:
+        return nullptr;
+    }
+}
+
+void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI api) {
     dbasic::Path modulePath = dbasic::GetModulePath();
     dbasic::Path confPath = modulePath.Append("delta.conf");
 
     std::string enginePath = "../dependencies/submodules/delta-studio/engines/basic";
-    std::string assetPath = "../assets";
+    m_assetPath = "../assets";
     if (confPath.Exists()) {
         std::fstream confFile(confPath.ToString(), std::ios::in);
         
         std::getline(confFile, enginePath);
-        std::getline(confFile, assetPath);
+        std::getline(confFile, m_assetPath);
         enginePath = modulePath.Append(enginePath).ToString();
-        assetPath = modulePath.Append(assetPath).ToString();
+        m_assetPath = modulePath.Append(m_assetPath).ToString();
 
         confFile.close();
     }
@@ -33,7 +49,7 @@ void TemplateApplication::Initialize(void *instance, ysContextObject::DeviceAPI 
 
     dbasic::DeltaEngine::GameEngineSettings settings;
     settings.API = api;
-    settings.DepthBuffer = true;
+    settings.DepthBuffer = false;
     settings.Instance = instance;
     settings.ShaderDirectory = shaderPath.c_str();
     settings.WindowTitle = "Delta Template Application";
@@ -48,45 +64,31 @@ void TemplateApplication::Initialize(void *instance, ysContextObject::DeviceAPI 
     m_engine.InitializeConsoleShaders(&m_shaderSet);
     m_engine.SetShaderSet(&m_shaderSet);
 
-    m_shaders.SetClearColor(ysColor::srgbiToLinear(0x34, 0x98, 0xdb));
-
     m_assetManager.SetEngine(&m_engine);
 
-    m_assetManager.LoadTexture((assetPath + "/chicken.png").c_str(), "Chicken");
-    m_demoTexture = m_assetManager.GetTexture("Chicken")->GetTexture();
-
-    m_assetManager.CompileInterchangeFile((assetPath + "/icosphere").c_str(), 1.0f, true);
-    m_assetManager.LoadSceneFile((assetPath + "/icosphere").c_str(), true);
-
     m_shaders.SetCameraMode(dbasic::DefaultShaders::CameraMode::Target);
+
+    m_engine.GetDevice()->CreateIndexBuffer(
+        &m_geometryIndexBuffer, sizeof(unsigned short) * 100000, nullptr);
+    m_engine.GetDevice()->CreateVertexBuffer(
+        &m_geometryVertexBuffer, sizeof(dbasic::Vertex) * 50000, nullptr);
+
+    m_geometryGenerator.initialize(50000, 100000);
+
+    initialize();
 }
 
-void TemplateApplication::Process() {
-    if (m_engine.IsKeyDown(ysKey::Code::Space)) {
-        m_currentRotation += m_engine.GetFrameLength();
-    }
-
-    if (m_engine.IsKeyDown(ysKey::Code::Up)) {
-        m_temperature += m_engine.GetFrameLength() * 0.5f;
-    }
-    else if (m_engine.IsKeyDown(ysKey::Code::Down)) {
-        m_temperature -= m_engine.GetFrameLength() * 0.5f;
-    }
-
-    if (m_temperature < 0.0f) m_temperature = 0.0f;
-    if (m_temperature > 1.0f) m_temperature = 1.0f;
+void EngineSimApplication::initialize() {
+    m_shaders.SetClearColor(ysColor::srgbiToLinear(0x34, 0x98, 0xdb));
+    m_assetManager.CompileInterchangeFile((m_assetPath + "/icosphere").c_str(), 1.0f, true);
+    m_assetManager.LoadSceneFile((m_assetPath + "/icosphere").c_str(), true);
 }
 
-void TemplateApplication::Render() {
-    const int screenWidth = m_engine.GetGameWindow()->GetGameWidth();
-    const int screenHeight = m_engine.GetGameWindow()->GetGameHeight();
+void EngineSimApplication::process(float dt) {
+    /* void */
+}
 
-    m_shaders.SetScreenDimensions((float)screenWidth, (float)screenHeight);
-    m_shaders.CalculateCamera();
-
-    m_shaders.SetCameraPosition(ysMath::LoadVector(4.0f, 4.0f, 2.0f));
-    m_shaders.SetCameraUp(ysMath::Constants::ZAxis);
-
+void EngineSimApplication::render() {
     m_shaders.ResetLights();
     m_shaders.SetAmbientLight(ysMath::GetVector4(ysColor::srgbiToLinear(0x34, 0x98, 0xdb)));
 
@@ -114,13 +116,13 @@ void TemplateApplication::Render() {
     glow.Active = 1;
     glow.Attenuation0 = 0.0f;
     glow.Attenuation1 = 0.0f;
-    glow.Color = ysVector4(5.0f * m_temperature, 0.0f, 0.0f, 1.0f);
+    glow.Color = ysVector4(5.0f * 0.0f, 0.0f, 0.0f, 1.0f);
     glow.Direction = ysVector4(0.0f, 0.0f, 0.0f, 0.0f);
     glow.FalloffEnabled = 1;
     glow.Position = ysVector4(0.0f, 0.0f, 0.0f);
     m_shaders.AddLight(glow);
 
-    const ysMatrix rotationTurntable = ysMath::RotationTransform(ysMath::Constants::ZAxis, m_currentRotation); 
+    const ysMatrix rotationTurntable = ysMath::RotationTransform(ysMath::Constants::ZAxis, 0); 
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetMetallic(0.8f);
@@ -128,7 +130,7 @@ void TemplateApplication::Render() {
     m_shaders.SetSpecularRoughness(0.7f);
     m_shaders.SetSpecularMix(1.0f);
     m_shaders.SetDiffuseMix(1.0f);
-    m_shaders.SetEmission(ysMath::Mul(ysColor::srgbiToLinear(0xff, 0x0, 0x0), ysMath::LoadScalar(m_temperature)));
+    m_shaders.SetEmission(ysMath::Mul(ysColor::srgbiToLinear(0xff, 0x0, 0x0), ysMath::LoadScalar(0)));
     m_shaders.SetBaseColor(ysColor::srgbiToLinear(0x34, 0x49, 0x5e));
     m_shaders.SetColorReplace(true);
     m_shaders.SetObjectTransform(ysMath::MatMult(ysMath::TranslationTransform(ysMath::LoadVector(0.0f, 0.0f, 0.0f)), rotationTurntable));
@@ -147,20 +149,61 @@ void TemplateApplication::Render() {
     m_engine.DrawModel(m_shaders.GetRegularFlags(), m_assetManager.GetModelAsset("Floor"));
 }
 
-void TemplateApplication::Run() {
+void EngineSimApplication::run() {
     while (m_engine.IsOpen()) {
         m_engine.StartFrame();
 
-        Process();
-        Render();
+        process(m_engine.GetFrameLength());
+        renderScene();
 
         m_engine.EndFrame();
     }
 }
 
-void TemplateApplication::Destroy() {
+void EngineSimApplication::destroy() {
     m_shaderSet.Destroy();
 
     m_assetManager.Destroy();
     m_engine.Destroy();
+}
+
+void EngineSimApplication::drawGenerated(const GeometryGenerator::GeometryIndices &indices) {
+    if (indices.Failed) return;
+
+    m_engine.DrawGeneric(
+        m_shaders.GetRegularFlags(),
+        m_geometryIndexBuffer,
+        m_geometryVertexBuffer,
+        sizeof(dbasic::Vertex),
+        indices.BaseIndex,
+        indices.BaseVertex,
+        indices.FaceCount);
+}
+
+void EngineSimApplication::renderScene() {
+    const int screenWidth = m_engine.GetGameWindow()->GetGameWidth();
+    const int screenHeight = m_engine.GetGameWindow()->GetGameHeight();
+
+    m_shaders.SetScreenDimensions((float)screenWidth, (float)screenHeight);
+
+    m_shaders.SetCameraPosition(m_cameraPosition);
+    m_shaders.SetCameraTarget(m_cameraTarget);
+    m_shaders.SetCameraUp(m_cameraUp);
+    m_shaders.CalculateCamera();
+
+    m_geometryGenerator.reset();
+
+    render();
+
+    m_engine.GetDevice()->EditBufferDataRange(
+        m_geometryVertexBuffer,
+        (char *)m_geometryGenerator.getVertexData(),
+        sizeof(dbasic::Vertex) * m_geometryGenerator.getCurrentVertexCount(),
+        0);
+
+    m_engine.GetDevice()->EditBufferDataRange(
+        m_geometryIndexBuffer,
+        (char *)m_geometryGenerator.getIndexData(),
+        sizeof(unsigned short) * m_geometryGenerator.getCurrentIndexCount(),
+        0);
 }
