@@ -124,23 +124,17 @@ void GeometryGenerator::generateFilledFanPolygon(
 
 void GeometryGenerator::generateLineRing(
     GeometryIndices *indices,
-    const ysVector &normal,
-    const ysVector &center,
-    float radius,
-    float patternHeight,
-    float maxEdgeLength,
-    float startAngle,
-    float endAngle,
-    float taperTail) {
+    const LineRingParameters &params)
+{
     // edge_length = (sin(theta) * radius) * 2
     // theta = arcsin(edge_length / (2 * radius))
 
-    const float actualStartAngle = startAngle - taperTail;
-    const float actualEndAngle = endAngle + taperTail;
+    const float actualStartAngle = params.startAngle - params.taperTail;
+    const float actualEndAngle = params.endAngle + params.taperTail;
 
-    const float maxOuterRadius = radius + (patternHeight / 2);
+    const float maxOuterRadius = params.radius + (params.patternHeight / 2);
 
-    const float angle = std::asinf(maxEdgeLength / (2 * maxOuterRadius));
+    const float angle = std::asinf(params.maxEdgeLength / (2 * maxOuterRadius));
     const float steps = (actualEndAngle - actualStartAngle) / angle;
 
     int segmentCount = (int)std::ceilf(steps);
@@ -152,7 +146,7 @@ void GeometryGenerator::generateLineRing(
     const int faceCount = segmentCount * 2;
     const int indexCount = faceCount * 3;
 
-    const ysVector up = findOrthogonal(normal);
+    const ysVector up = findOrthogonal(params.normal);
 
     if (vertexCount + m_vertexPointer > m_vertexBufferSize ||
         indexCount + m_indexPointer > m_indexBufferSize) {
@@ -169,12 +163,12 @@ void GeometryGenerator::generateLineRing(
     // Generate center vertex
     const float angleStep = (actualEndAngle - actualStartAngle) / segmentCount;
 
-    const ysVector right = ysMath::Cross(up, normal);
+    const ysVector right = ysMath::Cross(up, params.normal);
     ysMatrix T = ysMath::LoadMatrix(
         right,
         up,
-        normal,
-        ysMath::ExtendVector(center)
+        params.normal,
+        ysMath::ExtendVector(params.center)
     );
     T = ysMath::Transpose(T);
 
@@ -187,30 +181,34 @@ void GeometryGenerator::generateLineRing(
         else if (angle0 <= actualStartAngle) angle0 = actualStartAngle;
 
         float taper = 1.0f;
-        if (taperTail != 0) {
-            if (angle0 >= actualStartAngle && angle0 < startAngle) {
-                taper = (angle0 - actualStartAngle) / taperTail;
+        if (params.taperTail != 0) {
+            if (angle0 >= actualStartAngle && angle0 < params.startAngle) {
+                taper = (angle0 - actualStartAngle) / params.taperTail;
             }
-            else if (angle0 > endAngle && angle0 <= actualEndAngle) {
-                taper = 1.0f - (angle0 - endAngle) / taperTail;
+            else if (angle0 > params.endAngle && angle0 <= actualEndAngle) {
+                taper = 1.0f - (angle0 - params.endAngle) / params.taperTail;
             }
         }
 
-        const float innerRadius = radius - (patternHeight / 2) * taper;
-        const float outerRadius = radius + (patternHeight / 2) * taper;
+        const float innerRadius = params.radius - (params.patternHeight / 2) * taper;
+        const float outerRadius = params.radius + (params.patternHeight / 2) * taper;
 
         const ysVector outerPos = ysMath::LoadVector(x0 * outerRadius, y0 * outerRadius, 0.0f, 1.0f);
         const ysVector innerPos = ysMath::LoadVector(x0 * innerRadius, y0 * innerRadius, 0.0f, 1.0f);
 
+        const float s =
+            params.textureOffset +
+            angle0 * params.radius / (params.patternHeight * params.textureWidthHeightRatio);
+
         dbasic::Vertex *outerVertex = writeVertex();
-        outerVertex->Normal = normal;
+        outerVertex->Normal = params.normal;
         outerVertex->Pos = ysMath::MatMult(T, outerPos);
-        outerVertex->TexCoord = ysVector2(0.2f * angle0 * radius / patternHeight, 1.0f);
+        outerVertex->TexCoord = ysVector2(s, 1.0f);
 
         dbasic::Vertex *innerVertex = writeVertex();
-        innerVertex->Normal = normal;
+        innerVertex->Normal = params.normal;
         innerVertex->Pos = ysMath::MatMult(T, innerPos);
-        innerVertex->TexCoord = ysVector2(0.2f * angle0 * radius / patternHeight, 0.0f);
+        innerVertex->TexCoord = ysVector2(s, 0.0f);
     }
 
 #define OUTER(i) (((i)) * 2)
@@ -221,6 +219,118 @@ void GeometryGenerator::generateLineRing(
         writeFace(INNER(i), OUTER(i), OUTER(i + 1));
     }
 }
+
+void GeometryGenerator::generateLineRingBalanced(
+    GeometryIndices *indices,
+    const LineRingParameters &params)
+{
+    const float midpoint = (params.startAngle + params.endAngle) / 2.0f;
+    const float offset =
+        params.textureOffset -
+        (midpoint * params.radius) / (params.patternHeight * params.textureWidthHeightRatio);
+
+    LineRingParameters augmentedParams = params;
+    augmentedParams.textureOffset = offset;
+
+    generateLineRing(indices, augmentedParams);
+}
+
+void GeometryGenerator::generateLine(
+    GeometryIndices *indices,
+    const LineParameters &params)
+{
+    indices->BaseIndex = m_indexPointer;
+    indices->BaseVertex = m_vertexPointer;
+    indices->FaceCount = 2;
+    indices->VertexData = &m_vertexData[m_vertexPointer];
+    indices->Failed = false;
+
+    const ysVector tangent = ysMath::Normalize(ysMath::Sub(params.end, params.start));
+    const ysVector right = ysMath::Cross(params.normal, tangent);
+
+    const float length = ysMath::GetScalar(ysMath::Magnitude(ysMath::Sub(params.end, params.start)));
+
+    ysMatrix T0 = ysMath::LoadMatrix(
+        right,
+        tangent,
+        params.normal,
+        ysMath::ExtendVector(params.start)
+    );
+    T0 = ysMath::Transpose(T0);
+
+    ysMatrix T1 = ysMath::LoadMatrix(
+        right,
+        tangent,
+        params.normal,
+        ysMath::ExtendVector(params.end)
+    );
+    T1 = ysMath::Transpose(T1);
+
+    const ysVector v0 = { params.patternHeight / 2.0f, 0.0f, 0.0f, 1.0f };
+    const ysVector v1 = { -params.patternHeight / 2.0f, 0.0f, 0.0f, 1.0f };
+
+    const float ds = 1 / (params.patternHeight * params.textureWidthHeightRatio);
+
+    dbasic::Vertex *vertex = writeVertex();
+    vertex->Normal = params.normal;
+    vertex->Pos = ysMath::MatMult(T0, v0);
+    vertex->TexCoord = ysVector2(0.0f, 1.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = params.normal;
+    vertex->Pos = ysMath::MatMult(T0, v1);
+    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = params.normal;
+    vertex->Pos = ysMath::MatMult(T1, v0);
+    vertex->TexCoord = ysVector2(ds * length + params.textureOffset, 1.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = params.normal;
+    vertex->Pos = ysMath::MatMult(T1, v1);
+    vertex->TexCoord = ysVector2(ds * length + params.textureOffset, 0.0f);
+
+    writeFace(0, 1, 2);
+    writeFace(1, 3, 2);
+
+    if (params.taperTail > 0) {
+        const int steps = 10;
+        const float step = params.taperTail / steps;
+        for (int i = 0; i < steps; ++i) {
+            const float scale = (steps - i - 1) / (float)steps;
+
+            vertex = writeVertex();
+            vertex->Normal = params.normal;
+            vertex->Pos = ysMath::MatMult(T0, ysMath::LoadVector(scale * params.patternHeight / 2.0f, -step * (i + 1), 0.0f, 1.0f));
+            vertex->TexCoord = ysVector2(-ds * step * (i + 1) + params.textureOffset, 1.0f);
+
+            vertex = writeVertex();
+            vertex->Normal = params.normal;
+            vertex->Pos = ysMath::MatMult(T0, ysMath::LoadVector(-scale * params.patternHeight / 2.0f, -step * (i + 1), 0.0f, 1.0f));
+            vertex->TexCoord = ysVector2(-ds * step * (i + 1) + params.textureOffset, 0.0f);
+
+            vertex = writeVertex();
+            vertex->Normal = params.normal;
+            vertex->Pos = ysMath::MatMult(T1, ysMath::LoadVector(scale * params.patternHeight / 2.0f, step * (i + 1), 0.0f, 1.0f));
+            vertex->TexCoord = ysVector2(ds * (length + step * (i + 1)) + params.textureOffset, 1.0f);
+
+            vertex = writeVertex();
+            vertex->Normal = params.normal;
+            vertex->Pos = ysMath::MatMult(T1, ysMath::LoadVector(-scale * params.patternHeight / 2.0f, step * (i + 1), 0.0f, 1.0f));
+            vertex->TexCoord = ysVector2(ds * (length + step * (i + 1)) + params.textureOffset, 0.0f);
+
+            writeFace((i + 1) * 4, (i + 1) * 4 + 1, i * 4);
+            writeFace((i + 1) * 4 + 1, i * 4 + 1, i * 4);
+
+            writeFace(i * 4 + 2, i * 4 + 3, (i + 1) * 4 + 2);
+            writeFace(i * 4 + 3, (i + 1) * 4 + 3, (i + 1) * 4 + 2);
+
+            indices->FaceCount += 4;
+        }
+    }
+}
+
 
 dbasic::Vertex *GeometryGenerator::writeVertex() {
     return &m_vertexData[m_vertexPointer++];

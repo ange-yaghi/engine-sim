@@ -15,6 +15,29 @@ public:
         bool Failed;
     };
 
+    struct LineRingParameters {
+        ysVector normal;
+        ysVector center;
+        float radius;
+        float patternHeight;
+        float maxEdgeLength;
+        float startAngle = 0.0f;
+        float endAngle = ysMath::Constants::TWO_PI;
+        float taperTail = 0.0f;
+        float textureOffset = 0.0f;
+        float textureWidthHeightRatio = 1.0f;
+    };
+
+    struct LineParameters {
+        ysVector start;
+        ysVector end;
+        ysVector normal = ysMath::Constants::ZAxis;
+        float patternHeight;
+        float taperTail;
+        float textureOffset = 0.0f;
+        float textureWidthHeightRatio = 1.0f;
+    };
+
 public:
     GeometryGenerator();
     ~GeometryGenerator();
@@ -50,14 +73,17 @@ public:
 
     void generateLineRing(
         GeometryIndices *indices,
-        const ysVector &normal,
-        const ysVector &center,
-        float radius,
-        float patternHeight,
-        float maxEdgeLength,
-        float startAngle = 0.0f,
-        float endAngle = ysMath::Constants::TWO_PI,
-        float taperTail = 0.0f
+        const LineRingParameters &params
+    );
+
+    void generateLineRingBalanced(
+        GeometryIndices *indices,
+        const LineRingParameters &params
+    );
+
+    void generateLine(
+        GeometryIndices *indices,
+        const LineParameters &params
     );
 
 protected:

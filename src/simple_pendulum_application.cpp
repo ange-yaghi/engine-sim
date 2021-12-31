@@ -14,7 +14,7 @@ void SimplePendulumApplication::initialize() {
     m_assetManager.CompileInterchangeFile((m_assetPath + "/icosphere").c_str(), 1.0f, true);
     m_assetManager.LoadSceneFile((m_assetPath + "/icosphere").c_str(), true);
     m_assetManager.LoadTexture((m_assetPath + "/chicken.png").c_str(), "Chicken");
-    m_assetManager.LoadTexture((m_assetPath + "/dashed_line_pencil.png").c_str(), "Dashed Line");
+    m_assetManager.LoadTexture((m_assetPath + "/dashed_line_pencil_2.png").c_str(), "Dashed Line");
 
     setCameraPosition(ysMath::LoadVector(0.0f, 0.0f, 10.0f));
     setCameraTarget(ysMath::LoadVector(0.0f, 0.0f, 0.0f));
@@ -41,15 +41,33 @@ void SimplePendulumApplication::render() {
     //m_engine.DrawBox(m_shaders.GetRegularFlags());
 
     GeometryGenerator::GeometryIndices indices;
-    m_geometryGenerator.generateLineRing(
+
+    GeometryGenerator::LineRingParameters params{};
+    params.center = ysMath::LoadVector(0.0f, 0.0f, 0.0f);
+    params.normal = ysMath::Constants::ZAxis;
+    params.radius = (sin(m_t) + 1.0f) * 3.0f / 2.0f + 3.0f;
+    params.maxEdgeLength = 0.1f;
+    params.startAngle = 0.0f;
+    params.endAngle = ysMath::Constants::TWO_PI;
+    params.patternHeight = 1.0f;
+    params.textureWidthHeightRatio = 5.0;
+    params.taperTail = ysMath::Constants::TWO_PI * 0.1f;
+
+    m_geometryGenerator.generateLineRingBalanced(
         &indices,
-        ysMath::Constants::ZAxis,
-        ysMath::LoadVector(0.0f, 0.0f, 0.0f),
-        (sin(m_t) + 1.0f) * 3.0f / 2.0f + 3.0f,
-        1.0f,
-        0.1f,
-        0.0f,
-        ysMath::Constants::TWO_PI * 0.8f,
-        ysMath::Constants::TWO_PI * 0.25f);
+        params);
+    drawGenerated(indices);
+
+    GeometryGenerator::LineParameters lineParams{};
+    lineParams.start = ysMath::LoadVector(0.0f, 0.0f, 0.0f);
+    lineParams.end = ysMath::LoadVector(1.0f, 0.0f, 0.0f);
+    lineParams.patternHeight = 1.0f;
+    lineParams.textureOffset = 0.0f;
+    lineParams.textureWidthHeightRatio = 5.0f;
+    lineParams.taperTail = 0.0f;
+    
+    m_geometryGenerator.generateLine(
+        &indices,
+        lineParams);
     drawGenerated(indices);
 }

@@ -163,6 +163,9 @@ void EngineSimApplication::run() {
 void EngineSimApplication::destroy() {
     m_shaderSet.Destroy();
 
+    m_engine.GetDevice()->DestroyGPUBuffer(m_geometryVertexBuffer);
+    m_engine.GetDevice()->DestroyGPUBuffer(m_geometryIndexBuffer);
+
     m_assetManager.Destroy();
     m_engine.Destroy();
 }
