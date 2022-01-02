@@ -52,7 +52,7 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     settings.DepthBuffer = false;
     settings.Instance = instance;
     settings.ShaderDirectory = shaderPath.c_str();
-    settings.WindowTitle = "Delta Template Application";
+    settings.WindowTitle = "Engine Sim | AngeTheGreat";
     settings.WindowPositionX = 0;
     settings.WindowPositionY = 0;
     settings.WindowStyle = ysWindow::WindowStyle::Windowed;

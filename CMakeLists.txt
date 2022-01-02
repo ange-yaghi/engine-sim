@@ -14,12 +14,20 @@ add_executable(engine-sim WIN32
     src/engine_sim_application.cpp
     src/simple_pendulum_application.cpp
     src/geometry_generator.cpp
+    src/matrix.cpp
+    src/ode_solver.cpp
+    src/euler_solver.cpp
+    src/rk4_solver.cpp
 
     # Include files
     include/delta.h
     include/engine_sim_application.h
     include/simple_pendulum_application.h
     include/geometry_generator.h
+    include/matrix.h
+    include/ode_solver.h
+    include/euler_solver.h
+    include/rk4_solver.h
 )
 
 target_link_libraries(engine-sim

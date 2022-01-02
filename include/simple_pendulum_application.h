@@ -3,17 +3,11 @@
 
 #include "engine_sim_application.h"
 
+#include "ode_solver.h"
+
 class SimplePendulumApplication : public EngineSimApplication {
 public:
     struct PhysicsState {
-        double Angle;
-        double AngularVelocity;
-
-        double Position_X;
-        double Position_Y;
-        double Velocity_X;
-        double Velocity_Y;
-
         double Force_X;
         double Force_Y;
         double Torque;
@@ -33,14 +27,17 @@ protected:
     virtual void process(float dt);
     virtual void render();
 
-    void updatePhysics(double dt);
+    void updatePhysics(OdeSolver::System *in, OdeSolver::System *out, double dt);
 
     ysTexture *m_texture;
 
     float m_t;
 
     PhysicsState m_state;
+    OdeSolver::System m_system;
     dbasic::TextRenderer m_textRenderer;
+
+    OdeSolver *m_solver;
 };
 
 #endif /* ENGINE_SIM_SIMPLE_PENDULUM_APPLICATION_H */
