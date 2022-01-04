@@ -3,6 +3,7 @@
 #include "../include/matrix.h"
 #include "../include/euler_solver.h"
 #include "../include/rk4_solver.h"
+#include "../include/gauss_seidel_sle_solver.h"
 
 #include <sstream>
 
@@ -38,6 +39,7 @@ void SimplePendulumApplication::initialize() {
     m_textRenderer.SetFont(m_engine.GetConsole()->GetFont());
 
     m_solver = new Rk4Solver();
+    m_sleSolver = new GaussSeidelSleSolver();
 
     OdeSolver::initializeSystem(&m_system, 1, 0.0);
     m_system.Angles[0] = -(ysMath::Constants::PI / 2.0f) * 0.75f;
@@ -46,10 +48,12 @@ void SimplePendulumApplication::initialize() {
     m_system.Position_Y[0] = 0.0f;
     m_system.Velocity_X[0] = 0.0f;
     m_system.Velocity_Y[0] = 0.0f;
+
+    m_lambda.initialize(1, 2, 0.0);
 }
 
 void SimplePendulumApplication::process(float dt) {
-    const int steps = 10;
+    const int steps = 200;
 
     m_t += dt;
 
@@ -182,7 +186,7 @@ void SimplePendulumApplication::updatePhysics(OdeSolver::System *in, OdeSolver::
     m_state.Force_Y = -10.0f * m1;
 
     if (std::abs(in->AngularVelocity[0]) > 0.00001f) {
-        m_state.Torque = -(in->AngularVelocity[0] / std::abs(in->AngularVelocity[0])) * 0.5f;
+        m_state.Torque = -(in->AngularVelocity[0] / std::abs(in->AngularVelocity[0])) * 10.0f;
     }
     else {
         m_state.Torque = 0.0f;
@@ -319,8 +323,11 @@ void SimplePendulumApplication::updatePhysics(OdeSolver::System *in, OdeSolver::
     Matrix lambda(1, 2, 0.0);
     leftInv.multiply(right, &lambda);
 
+    Matrix lambdaSleSolver(1, 2, 0.0);
+    m_sleSolver->solve(&left, &right, &m_lambda, &m_lambda);
+
     Matrix F_C(1, 3, 0.0);
-    J_T.multiply(lambda, &F_C);
+    J_T.multiply(m_lambda, &F_C);
 
     Matrix F_C_T(3, 1, 0.0);
     F_C.transpose(&F_C_T);

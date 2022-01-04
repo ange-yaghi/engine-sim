@@ -4,6 +4,7 @@
 #include "engine_sim_application.h"
 
 #include "ode_solver.h"
+#include "sle_solver.h"
 
 class SimplePendulumApplication : public EngineSimApplication {
 public:
@@ -35,7 +36,10 @@ protected:
 
     PhysicsState m_state;
     OdeSolver::System m_system;
+    SleSolver *m_sleSolver;
     dbasic::TextRenderer m_textRenderer;
+
+    Matrix m_lambda;
 
     OdeSolver *m_solver;
 };

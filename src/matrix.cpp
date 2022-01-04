@@ -4,6 +4,7 @@
 
 Matrix::Matrix() {
     m_matrix = nullptr;
+    m_data = nullptr;
     m_width = 0;
     m_height = 0;
 }
@@ -24,9 +25,10 @@ void Matrix::initialize(int width, int height, double value) {
     m_height = height;
     m_width = width;
 
+    m_data = new double[(size_t)width * height];
     m_matrix = new double *[height];
     for (int i = 0; i < height; ++i) {
-        m_matrix[i] = new double[width];
+        m_matrix[i] = &m_data[i * width];
     }
 
     for (int i = 0; i < height; ++i) {
@@ -41,11 +43,8 @@ void Matrix::destroy() {
         return;
     }
 
-    for (int i = 0; i < m_height; ++i) {
-        delete[] m_matrix[i];
-    }
-
     delete[] m_matrix;
+    delete[] m_data;
 }
 
 void Matrix::set(int column, int row, double value) {
@@ -54,6 +53,17 @@ void Matrix::set(int column, int row, double value) {
 
 double Matrix::get(int column, int row) {
     return m_matrix[row][column];
+}
+
+void Matrix::set(Matrix *reference) {
+    assert(m_width == reference->m_width);
+    assert(m_height == reference->m_height);
+
+    for (int i = 0; i < reference->m_height; ++i) {
+        for (int j = 0; j < reference->m_width; ++j) {
+            m_matrix[i][j] = reference->m_matrix[i][j];
+        }
+    }
 }
 
 void Matrix::multiply(Matrix &b, Matrix *target) {

@@ -18,6 +18,8 @@ add_executable(engine-sim WIN32
     src/ode_solver.cpp
     src/euler_solver.cpp
     src/rk4_solver.cpp
+    src/sle_solver.cpp
+    src/gauss_seidel_sle_solver.cpp
 
     # Include files
     include/delta.h
@@ -28,6 +30,8 @@ add_executable(engine-sim WIN32
     include/ode_solver.h
     include/euler_solver.h
     include/rk4_solver.h
+    include/sle_solver.h
+    include/gauss_seidel_sle_solver.h
 )
 
 target_link_libraries(engine-sim
