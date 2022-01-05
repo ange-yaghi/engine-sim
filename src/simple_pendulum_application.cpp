@@ -53,17 +53,18 @@ void SimplePendulumApplication::initialize() {
 }
 
 void SimplePendulumApplication::process(float dt) {
-    const int steps = 200;
+    const int steps = 1000;
 
     m_t += dt;
 
+    double sim_dt = 1 / 60.0;
+    
     OdeSolver::System s0, s1;
-    OdeSolver::initializeSystem(&s0, 1, dt / steps);
-    OdeSolver::initializeSystem(&s1, 1, dt / steps);
+    OdeSolver::initializeSystem(&s0, 1, sim_dt / steps);
+    OdeSolver::initializeSystem(&s1, 1, sim_dt / steps);
 
-    dt = 1 / 60.0;
     for (int i = 0; i < steps; ++i) {
-        m_solver->start(&m_system, dt / steps);
+        m_solver->start(&m_system, sim_dt / steps);
 
         while (true) {
             const bool done = m_solver->step(&s0);
@@ -84,9 +85,16 @@ void SimplePendulumApplication::process(float dt) {
 }
 
 void SimplePendulumApplication::render() {
-    ysMatrix mat = ysMath::RotationTransform(ysMath::LoadVector(0.0f, 0.0f, 1.0f), m_system.Angles[0]);
+    ysMatrix mat = ysMath::RotationTransform(
+            ysMath::LoadVector(0.0f, 0.0f, 1.0f),
+            (float)m_system.Angles[0]);
     mat = ysMath::MatMult(
-        ysMath::TranslationTransform(ysMath::LoadVector(m_system.Position_X[0], m_system.Position_Y[0], 0.0f, 0.0f)),
+        ysMath::TranslationTransform(
+            ysMath::LoadVector(
+                (float)m_system.Position_X[0],
+                (float)m_system.Position_Y[0],
+                0.0f,
+                0.0f)),
         mat);
 
     m_shaders.ResetBrdfParameters();
@@ -95,7 +103,8 @@ void SimplePendulumApplication::render() {
     m_shaders.SetSpecularRoughness(0.7f);
     m_shaders.SetSpecularMix(1.0f);
     m_shaders.SetDiffuseMix(1.0f);
-    m_shaders.SetEmission(ysMath::Mul(ysColor::srgbiToLinear(0xff, 0x0, 0x0), ysMath::LoadScalar(0)));
+    m_shaders.SetEmission(
+            ysMath::Mul(ysColor::srgbiToLinear(0xff, 0x0, 0x0), ysMath::LoadScalar(0)));
     m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
     m_shaders.SetColorReplace(false);
     m_shaders.SetLit(false);
@@ -124,8 +133,8 @@ void SimplePendulumApplication::render() {
     m_shaders.SetObjectTransform(mat);
 
     GeometryGenerator::LineParameters lineParams{};
-    lineParams.start = ysMath::LoadVector(-m_state.Radius, 0.0f, 0.0f);
-    lineParams.end = ysMath::LoadVector(m_state.Radius, 0.0f, 0.0f);
+    lineParams.start = ysMath::LoadVector((float)-m_state.Radius, 0.0f, 0.0f);
+    lineParams.end = ysMath::LoadVector((float)m_state.Radius, 0.0f, 0.0f);
     lineParams.patternHeight = 1.0f;
     lineParams.textureOffset = 0.0f;
     lineParams.textureWidthHeightRatio = 5.0f;
@@ -170,8 +179,8 @@ void SimplePendulumApplication::render() {
     std::stringstream ss;
     ss << (m_system.AngularVelocity[0] / (ysMath::Constants::TWO_PI)) * 60 << " RPM";
 
-    const float screenWidth = m_engine.GetScreenWidth();
-    const float screenHeight = m_engine.GetScreenHeight();
+    const float screenWidth = (float)m_engine.GetScreenWidth();
+    const float screenHeight = (float)m_engine.GetScreenHeight();
     m_textRenderer.RenderText(ss.str(), -screenWidth / 2.0f, screenHeight / 2.0f - 32.0f, 32.0f);
 
     ss = std::stringstream();
@@ -179,7 +188,11 @@ void SimplePendulumApplication::render() {
     m_textRenderer.RenderText(ss.str(), -screenWidth / 2.0f, screenHeight / 2.0f - 64.0f, 32.0f);
 }
 
-void SimplePendulumApplication::updatePhysics(OdeSolver::System *in, OdeSolver::System *out, double dt) {
+void SimplePendulumApplication::updatePhysics(
+        OdeSolver::System *in,
+        OdeSolver::System *out,
+        double dt)
+{
     const double m1 = 1.0f;
     const double i1 = 2.0f;
 
@@ -217,11 +230,11 @@ void SimplePendulumApplication::updatePhysics(OdeSolver::System *in, OdeSolver::
 
     const double dpivotX_dq1_2 = 0.0;
     const double dpivotX_dq2_2 = 0.0;
-    const double dpivotX_dq3_2 = -cosf(q3) * m_state.Radius;
+    const double dpivotX_dq3_2 = -cos(q3) * m_state.Radius;
 
     const double dpivotY_dq1_2 = 0.0;
     const double dpivotY_dq2_2 = 0.0;
-    const double dpivotY_dq3_2 = -sinf(q3) * m_state.Radius;
+    const double dpivotY_dq3_2 = -sin(q3) * m_state.Radius;
 
     const double C1 = pivotX - m_state.ConstrainedPosition_X;
     const double C2 = pivotY - m_state.ConstrainedPosition_Y;
@@ -314,7 +327,8 @@ void SimplePendulumApplication::updatePhysics(OdeSolver::System *in, OdeSolver::
     temp1.subtract(C_kd, &right);
 
     Matrix leftInv(2, 2, 0.0);
-    const double invDet = 1 / (left.get(0, 0) * left.get(1, 1) - left.get(1, 0) * left.get(0, 1));
+    const double invDet =
+        1 / (left.get(0, 0) * left.get(1, 1) - left.get(1, 0) * left.get(0, 1));
     leftInv.set(0, 0, invDet * left.get(1, 1));
     leftInv.set(1, 0, invDet * -left.get(1, 0));
     leftInv.set(0, 1, invDet * -left.get(0, 1));
@@ -333,9 +347,9 @@ void SimplePendulumApplication::updatePhysics(OdeSolver::System *in, OdeSolver::
     F_C.transpose(&F_C_T);
 
     // Update system
-    const float F_C_x = F_C.get(0, 0);
-    const float F_C_y = F_C.get(0, 1);
-    const float F_C_t = F_C.get(0, 2);
+    const double F_C_x = F_C.get(0, 0);
+    const double F_C_y = F_C.get(0, 1);
+    const double F_C_t = F_C.get(0, 2);
 
     out->dt = dt;
     out->BodyCount = in->BodyCount;
