@@ -24,6 +24,10 @@ public:
         double *Position_X = nullptr;
         double *Position_Y = nullptr;
 
+        double *Force_X = nullptr;
+        double *Force_Y = nullptr;
+        double *Torque = nullptr;
+
         double dt = 0.0;
 
         int BodyCount = 0;

@@ -20,6 +20,10 @@ void OdeSolver::initializeSystem(System *target, int bodyCount, double dt) {
         target->Velocity_Y = new double[bodyCount];
         target->Position_X = new double[bodyCount];
         target->Position_Y = new double[bodyCount];
+
+        target->Force_X = new double[bodyCount];
+        target->Force_Y = new double[bodyCount];
+        target->Torque = new double[bodyCount];
     }
 
     target->BodyCount = bodyCount;
@@ -41,6 +45,10 @@ void OdeSolver::copySystem(System *source, System *target) {
         target->Velocity_Y[i] = source->Velocity_Y[i];
         target->Position_X[i] = source->Position_X[i];
         target->Position_Y[i] = source->Position_Y[i];
+
+        target->Force_X[i] = source->Force_X[i];
+        target->Force_Y[i] = source->Force_Y[i];
+        target->Torque[i] = source->Torque[i];
     }
 }
 

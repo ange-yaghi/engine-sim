@@ -24,6 +24,8 @@ add_executable(engine-sim WIN32
     src/fixed_position_constraint.cpp
     src/rigid_body.cpp
     src/rigid_body_system.cpp
+    src/force_generator.cpp
+    src/static_force_generator.cpp
 
     # Include files
     include/delta.h
@@ -40,6 +42,8 @@ add_executable(engine-sim WIN32
     include/fixed_position_constraint.h
     include/rigid_body.h
     include/rigid_body_system.h
+    include/force_generator.h
+    include/static_force_generator.h
 )
 
 target_link_libraries(engine-sim
