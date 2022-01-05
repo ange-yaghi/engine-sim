@@ -20,6 +20,10 @@ add_executable(engine-sim WIN32
     src/rk4_solver.cpp
     src/sle_solver.cpp
     src/gauss_seidel_sle_solver.cpp
+    src/constraint.cpp
+    src/fixed_position_constraint.cpp
+    src/rigid_body.cpp
+    src/rigid_body_system.cpp
 
     # Include files
     include/delta.h
@@ -32,6 +36,10 @@ add_executable(engine-sim WIN32
     include/rk4_solver.h
     include/sle_solver.h
     include/gauss_seidel_sle_solver.h
+    include/constraint.h
+    include/fixed_position_constraint.h
+    include/rigid_body.h
+    include/rigid_body_system.h
 )
 
 target_link_libraries(engine-sim
