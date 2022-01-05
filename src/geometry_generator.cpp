@@ -302,23 +302,49 @@ void GeometryGenerator::generateLine(
 
             vertex = writeVertex();
             vertex->Normal = params.normal;
-            vertex->Pos = ysMath::MatMult(T0, ysMath::LoadVector(scale * params.patternHeight / 2.0f, -step * (i + 1), 0.0f, 1.0f));
+            vertex->Pos = ysMath::MatMult(
+                    T0,
+                    ysMath::LoadVector(
+                        scale * params.patternHeight / 2.0f,
+                        -step * (i + 1),
+                        0.0f,
+                        1.0f));
             vertex->TexCoord = ysVector2(-ds * step * (i + 1) + params.textureOffset, 1.0f);
 
             vertex = writeVertex();
             vertex->Normal = params.normal;
-            vertex->Pos = ysMath::MatMult(T0, ysMath::LoadVector(-scale * params.patternHeight / 2.0f, -step * (i + 1), 0.0f, 1.0f));
+            vertex->Pos = ysMath::MatMult(
+                    T0,
+                    ysMath::LoadVector(
+                        -scale * params.patternHeight / 2.0f,
+                        -step * (i + 1),
+                        0.0f,
+                        1.0f));
             vertex->TexCoord = ysVector2(-ds * step * (i + 1) + params.textureOffset, 0.0f);
 
             vertex = writeVertex();
             vertex->Normal = params.normal;
-            vertex->Pos = ysMath::MatMult(T1, ysMath::LoadVector(scale * params.patternHeight / 2.0f, step * (i + 1), 0.0f, 1.0f));
-            vertex->TexCoord = ysVector2(ds * (length + step * (i + 1)) + params.textureOffset, 1.0f);
+            vertex->Pos = ysMath::MatMult(
+                    T1,
+                    ysMath::LoadVector(
+                        scale * params.patternHeight / 2.0f,
+                        step * (i + 1),
+                        0.0f,
+                        1.0f));
+            vertex->TexCoord = ysVector2(
+                    ds * (length + step * (i + 1)) + params.textureOffset,
+                    1.0f);
 
             vertex = writeVertex();
             vertex->Normal = params.normal;
-            vertex->Pos = ysMath::MatMult(T1, ysMath::LoadVector(-scale * params.patternHeight / 2.0f, step * (i + 1), 0.0f, 1.0f));
-            vertex->TexCoord = ysVector2(ds * (length + step * (i + 1)) + params.textureOffset, 0.0f);
+            vertex->Pos = ysMath::MatMult(
+                    T1, ysMath::LoadVector(
+                        -scale * params.patternHeight / 2.0f,
+                        step * (i + 1),
+                        0.0f,
+                        1.0f));
+            vertex->TexCoord = ysVector2(
+                    ds * (length + step * (i + 1)) + params.textureOffset, 0.0f);
 
             writeFace((i + 1) * 4, (i + 1) * 4 + 1, i * 4);
             writeFace((i + 1) * 4 + 1, i * 4 + 1, i * 4);
