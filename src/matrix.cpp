@@ -45,6 +45,9 @@ void Matrix::destroy() {
 
     delete[] m_matrix;
     delete[] m_data;
+
+    m_matrix = nullptr;
+    m_data = nullptr;
 }
 
 void Matrix::set(int column, int row, double value) {

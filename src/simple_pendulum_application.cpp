@@ -27,33 +27,33 @@ void SimplePendulumApplication::initialize() {
     setCameraTarget(ysMath::LoadVector(0.0f, 0.0f, 0.0f));
     setCameraUp(ysMath::Constants::YAxis);
 
-    m_state.Radius = 2.0f;
-    m_state.ConstrainedPosition_X = 0.0f;
-    m_state.ConstrainedPosition_Y = 0.0f;
-    m_state.Force_X = 0.0f;
-    m_state.Force_Y = 0.0f;
-    m_state.Torque = 0.0f;
+    m_state.Radius = 2.0;
+    m_state.ConstrainedPosition_X = 0.0;
+    m_state.ConstrainedPosition_Y = 0.0;
+    m_state.Force_X = 0.0;
+    m_state.Force_Y = 0.0;
+    m_state.Torque = 0.0;
 
     m_textRenderer.SetEngine(&m_engine);
     m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
     m_textRenderer.SetFont(m_engine.GetConsole()->GetFont());
 
-    m_solver = new Rk4Solver();
+    m_solver = new EulerSolver();
     m_sleSolver = new GaussSeidelSleSolver();
 
     OdeSolver::initializeSystem(&m_system, 1, 0.0);
-    m_system.Angles[0] = -(ysMath::Constants::PI / 2.0f) * 0.75f;
+    m_system.Angles[0] = 0.0;
     m_system.AngularVelocity[0] = 0.0;
-    m_system.Position_X[0] = 0.0f;
-    m_system.Position_Y[0] = 0.0f;
-    m_system.Velocity_X[0] = 0.0f;
-    m_system.Velocity_Y[0] = 0.0f;
+    m_system.Position_X[0] = 0.0;
+    m_system.Position_Y[0] = 0.0;
+    m_system.Velocity_X[0] = 0.0;
+    m_system.Velocity_Y[0] = 0.0;
 
     m_lambda.initialize(1, 2, 0.0);
 }
 
 void SimplePendulumApplication::process(float dt) {
-    const int steps = 1000;
+    const int steps = 100;
 
     m_t += dt;
 
@@ -194,12 +194,12 @@ void SimplePendulumApplication::updatePhysics(
         double dt)
 {
     const double m1 = 1.0f;
-    const double i1 = 2.0f;
+    const double i1 = m1 * m_state.Radius * m_state.Radius;
 
     m_state.Force_Y = -10.0f * m1;
 
     if (std::abs(in->AngularVelocity[0]) > 0.00001f) {
-        m_state.Torque = -(in->AngularVelocity[0] / std::abs(in->AngularVelocity[0])) * 10.0f;
+        m_state.Torque = -(in->AngularVelocity[0] / std::abs(in->AngularVelocity[0])) * 1.0f;
     }
     else {
         m_state.Torque = 0.0f;
@@ -292,8 +292,8 @@ void SimplePendulumApplication::updatePhysics(
     q_dot.set(0, 2, in->AngularVelocity[0]);
 
     Matrix C_ks(1, 2, 0.0);
-    C_ks.set(0, 0, C1 * 5000.0);
-    C_ks.set(0, 1, C2 * 5000.0);
+    C_ks.set(0, 0, C1 * 500.0);
+    C_ks.set(0, 1, C2 * 500.0);
 
     Matrix C_kd(1, 2, 0.0);
     J.multiply(q_dot, &C_kd);

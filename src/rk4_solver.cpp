@@ -63,9 +63,9 @@ bool Rk4Solver::step(System *system) {
             system->Velocity_X[i] += m_dt * m_k2.Acceleration_X[i] / 2.0f;
             system->Velocity_Y[i] += m_dt * m_k2.Acceleration_Y[i] / 2.0f;
 
-            system->Angles[0] += m_dt * m_k2.AngularVelocity[i] / 2.0f;
-            system->Position_X[0] += m_dt * m_k2.Velocity_X[i] / 2.0f;
-            system->Position_Y[0] += m_dt * m_k2.Velocity_Y[i] / 2.0f;
+            system->Angles[i] += m_dt * m_k2.AngularVelocity[i] / 2.0f;
+            system->Position_X[i] += m_dt * m_k2.Velocity_X[i] / 2.0f;
+            system->Position_Y[i] += m_dt * m_k2.Velocity_Y[i] / 2.0f;
         }
 
         system->dt = m_dt / 2;

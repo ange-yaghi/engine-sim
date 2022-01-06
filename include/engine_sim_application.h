@@ -8,7 +8,9 @@
 class EngineSimApplication {
 public:
     enum class Application {
-        SimplePendulum
+        SimplePendulum,
+        DoublePendulum,
+        ArticulatedPendulum
     };
 
 public:

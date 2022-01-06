@@ -26,6 +26,9 @@ add_executable(engine-sim WIN32
     src/rigid_body_system.cpp
     src/force_generator.cpp
     src/static_force_generator.cpp
+    src/double_pendulum_application.cpp
+    src/articulated_pendulum_application.cpp
+    src/link_constraint.cpp
 
     # Include files
     include/delta.h
@@ -44,6 +47,9 @@ add_executable(engine-sim WIN32
     include/rigid_body_system.h
     include/force_generator.h
     include/static_force_generator.h
+    include/double_pendulum_application.h
+    include/articulated_pendulum_application.h
+    include/link_constraint.h
 )
 
 target_link_libraries(engine-sim

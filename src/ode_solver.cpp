@@ -66,6 +66,10 @@ void OdeSolver::destroySystem(System *target) {
     delete[] target->Position_X;
     delete[] target->Position_Y;
 
+    delete[] target->Force_X;
+    delete[] target->Force_Y;
+    delete[] target->Torque;
+
     target->Acceleration_X = nullptr;
     target->Acceleration_Y = nullptr;
     target->AngularAcceleration = nullptr;
@@ -75,6 +79,10 @@ void OdeSolver::destroySystem(System *target) {
     target->Velocity_Y = nullptr;
     target->Position_X = nullptr;
     target->Position_Y = nullptr;
+
+    target->Force_X = nullptr;
+    target->Force_Y = nullptr;
+    target->Torque = nullptr;
 
     target->BodyCount = 0;
 }

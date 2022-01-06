@@ -3,9 +3,11 @@
 #include "../include/matrix.h"
 #include "../include/gauss_seidel_sle_solver.h"
 #include "../include/rk4_solver.h"
+#include "../include/euler_solver.h"
 
 RigidBodySystem::RigidBodySystem() {
     m_sleSolver = nullptr;
+    m_odeSolver = nullptr;
 }
 
 RigidBodySystem::~RigidBodySystem() {
@@ -74,15 +76,14 @@ void RigidBodySystem::process(double dt) {
         M.set(i * 3 + 1, i * 3 + 1, m_rigidBodies[i]->m_mass);
         M.set(i * 3 + 2, i * 3 + 2, m_rigidBodies[i]->m_inertiaTensor);
 
-        M.set(i * 3 + 0, i * 3 + 0, 1 / m_rigidBodies[i]->m_mass);
-        M.set(i * 3 + 1, i * 3 + 1, 1 / m_rigidBodies[i]->m_mass);
-        M.set(i * 3 + 2, i * 3 + 2, 1 / m_rigidBodies[i]->m_inertiaTensor);
+        M_inv.set(i * 3 + 0, i * 3 + 0, 1 / m_rigidBodies[i]->m_mass);
+        M_inv.set(i * 3 + 1, i * 3 + 1, 1 / m_rigidBodies[i]->m_mass);
+        M_inv.set(i * 3 + 2, i * 3 + 2, 1 / m_rigidBodies[i]->m_inertiaTensor);
     }
 
     Matrix lambda(1, m, 0.0);
 
-    const int steps = 100;
-    processForces(&system);
+    const int steps = 1;
     for (int i = 0; i < steps; ++i) {
         m_odeSolver->start(&system, dt / steps);
 
@@ -99,13 +100,31 @@ void RigidBodySystem::process(double dt) {
         m_odeSolver->end();
     }
 
+    for (int i = 0; i < n; ++i) {
+        m_rigidBodies[i]->m_velocityX = system.Velocity_X[i];
+        m_rigidBodies[i]->m_velocityY = system.Velocity_Y[i];
+        
+        m_rigidBodies[i]->m_positionX = system.Position_X[i];
+        m_rigidBodies[i]->m_positionY = system.Position_Y[i];
+
+        m_rigidBodies[i]->m_angularVelocity = system.AngularVelocity[i];
+        m_rigidBodies[i]->m_orientation = system.Angles[i];
+    }
+
     OdeSolver::destroySystem(&system);
 }
 
 void RigidBodySystem::processForces(OdeSolver::System *inOut) {
-    const int n = getForceGeneratorCount();
+    const int n_f = getForceGeneratorCount();
+    const int n = getRigidBodyCount();
 
     for (int i = 0; i < n; ++i) {
+        inOut->Force_X[i] = 0.0;
+        inOut->Force_Y[i] = 0.0;
+        inOut->Torque[i] = 0.0;
+    }
+
+    for (int i = 0; i < n_f; ++i) {
         m_forceGenerators[i]->apply(inOut);
     }
 }
@@ -133,30 +152,40 @@ void RigidBodySystem::processConstraints(
     Matrix C_ks(1, m_f, 0.0);
     Matrix C_kd(1, m_f, 0.0);
 
-    J.multiply(q_dot, &C_kd);
-
     Constraint::Output constraintOutput;
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0, c_i = 0; j < m; ++j) {
+    int c_i = 0;
+    for (int j = 0;  j < m; ++j) {
+        for (int i = 0; i < n; ++i) {
             m_constraints[j]->calculate(&constraintOutput, i, in);
             
-            for (int k = 0; k < constraintOutput.n; ++k, ++c_i) {
-                J.set(i * 3 + 0, c_i, constraintOutput.dC_dq[k][0]);
-                J.set(i * 3 + 1, c_i, constraintOutput.dC_dq[k][1]);
-                J.set(i * 3 + 2, c_i, constraintOutput.dC_dq[k][2]);
+            for (int k = 0; k < constraintOutput.n; ++k) {
+                J.set(i * 3 + 0, c_i + k, constraintOutput.dC_dq[k][0]);
+                J.set(i * 3 + 1, c_i + k, constraintOutput.dC_dq[k][1]);
+                J.set(i * 3 + 2, c_i + k, constraintOutput.dC_dq[k][2]);
 
-                J_dot.set(i * 3 + 0, c_i,
+                J_dot.set(i * 3 + 0, c_i + k,
                     constraintOutput.d2C_dq2[k][0] * in->Velocity_X[i]);
-                J_dot.set(i * 3 + 1, c_i,
+                J_dot.set(i * 3 + 1, c_i + k,
                     constraintOutput.d2C_dq2[k][1] * in->Velocity_Y[i]);
-                J_dot.set(i * 3 + 2, c_i,
+                J_dot.set(i * 3 + 2, c_i + k,
                     constraintOutput.d2C_dq2[k][2] * in->AngularVelocity[i]);
 
-                C_ks.set(0, c_i, constraintOutput.ks[k]);
-                
+                C_ks.set(0, c_i + k, constraintOutput.ks[k]);
+                C_kd.set(0, c_i + k, constraintOutput.kd[k]);
             }
         }
+
+        c_i += m_constraints[j]->m_constraintCount;
     }
+
+    Matrix temp0, temp1, temp2;
+
+    temp0.initialize(1, m_f, 0.0);
+    J.multiply(q_dot, &temp0);
+    for (int i = 0; i < m_f; ++i) {
+        C_kd.set(0, i, C_kd.get(0, i) * temp0.get(0, i));
+    }
+    temp0.destroy();
 
     Matrix J_T(m_f, 3 * n, 0.0);
     J.transpose(&J_T);
@@ -168,33 +197,33 @@ void RigidBodySystem::processConstraints(
         F_ext.set(0, i * 3 + 2, in->Torque[i]);
     }
 
-    Matrix temp0, temp1, temp2;
     Matrix right, left;
 
-    right.initialize(1, m, 0.0);
-    left.initialize(m, m, 0.0);
+    right.initialize(1, m_f, 0.0);
+    left.initialize(m_f, m_f, 0.0);
 
-    temp0.initialize(3 * n, m, 0.0);
+    temp0.initialize(3 * n, m_f, 0.0);
     J.multiply(*M_inv, &temp0);
     temp0.multiply(J_T, &left);
 
-    temp0.initialize(1, m, 0.0);
-    temp1.initialize(1, m, 0.0);
+    temp0.initialize(1, m_f, 0.0);
+    temp1.initialize(1, m_f, 0.0);
     J_dot.multiply(q_dot, &temp0);
     temp0.negate(&temp1);
 
-    temp0.initialize(1, m, 0.0);
-    temp2.initialize(3 * n, m, 0.0);
+    temp0.initialize(1, m_f, 0.0);
+    temp2.initialize(3 * n, m_f, 0.0);
     J.multiply(*M_inv, &temp2);
     temp2.multiply(F_ext, &temp0);
 
-    temp2.initialize(1, m, 0.0);
+    temp2.initialize(1, m_f, 0.0);
     temp1.subtract(temp0, &temp2);
     temp2.subtract(C_ks, &temp1);
     temp1.subtract(C_kd, &right);
     
-    Matrix lambda(1, m, 0.0);
-    m_sleSolver->solve(&left, &right, &lambda, lambdaPrev);
+    Matrix lambda(1, m_f, 0.0);
+    const bool solvable = m_sleSolver->solve(&left, &right, &lambda, lambdaPrev);
+    assert(solvable);
 
     Matrix F_C(1, n * 3, 0.0);
     J_T.multiply(lambda, &F_C);
@@ -209,6 +238,10 @@ void RigidBodySystem::processConstraints(
             invMass * (F_C.get(0, i * 3 + 1) + F_ext.get(0, i * 3 + 1)); 
         out->AngularAcceleration[i] =
             invInertia * (F_C.get(0, i * 3 + 2) + F_ext.get(0, i * 3 + 2));
+
+        if (std::abs(out->AngularAcceleration[i]) > 1E-6) {
+            int a = 0;
+        }
 
         out->Angles[i] = in->Angles[i];
         out->AngularVelocity[i] = in->AngularVelocity[i];

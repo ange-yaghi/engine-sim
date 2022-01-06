@@ -19,6 +19,8 @@ public:
 
     double m_mass;
     double m_inertiaTensor;
+
+    double energy() const;
 };
 
 #endif /* ENGINE_SIM_RIGID_BODY_H */

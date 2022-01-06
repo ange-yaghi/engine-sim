@@ -1,6 +1,8 @@
 #include "../include/engine_sim_application.h"
 
 #include "../include/simple_pendulum_application.h"
+#include "../include/double_pendulum_application.h"
+#include "../include/articulated_pendulum_application.h"
 
 EngineSimApplication::EngineSimApplication() {
     m_cameraTarget = ysMath::Constants::Zero;
@@ -21,6 +23,10 @@ EngineSimApplication *EngineSimApplication::createApplication(Application applic
     switch (application) {
     case Application::SimplePendulum:
         return new SimplePendulumApplication;
+    case Application::DoublePendulum:
+        return new DoublePendulumApplication;
+    case Application::ArticulatedPendulum:
+        return new ArticulatedPendulumApplication;
     default:
         return nullptr;
     }
