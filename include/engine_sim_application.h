@@ -10,7 +10,8 @@ public:
     enum class Application {
         SimplePendulum,
         DoublePendulum,
-        ArticulatedPendulum
+        ArticulatedPendulum,
+        LineConstraintPendulum
     };
 
 public:

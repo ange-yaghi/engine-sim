@@ -39,7 +39,7 @@ void DoublePendulumApplication::initialize() {
     m_pendulum0.m_inertiaTensor = m_pendulum0.m_mass * m_r0 * m_r0;
     m_pendulum0.m_positionX = -2.0 + m_r0;
 
-    m_pendulum1.m_mass = rodDensity * m_r0 * 2;
+    m_pendulum1.m_mass = rodDensity * m_r1 * 2;
     m_pendulum1.m_inertiaTensor = m_pendulum1.m_mass * m_r1 * m_r1;
     m_pendulum1.m_positionX = 2.0 + m_r1;
 
@@ -57,11 +57,16 @@ void DoublePendulumApplication::initialize() {
     m_fg1.m_body = &m_pendulum1;
     m_fg1.m_forceY = -10.0 * m_pendulum1.m_mass;
 
+    m_friction0.m_body0 = &m_pendulum0;
+    m_friction0.m_constraint = &m_c0;
+    m_friction0.m_frictionCoefficient = 0.025;
+
     m_rigidBodySystem.addConstraint(&m_c0);
     m_rigidBodySystem.addConstraint(&m_c1);
 
     m_rigidBodySystem.addForceGenerator(&m_fg0);
     m_rigidBodySystem.addForceGenerator(&m_fg1);
+    m_rigidBodySystem.addForceGenerator(&m_friction0);
 
     m_rigidBodySystem.addRigidBody(&m_pendulum0);
     m_rigidBodySystem.addRigidBody(&m_pendulum1);

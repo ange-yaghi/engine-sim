@@ -13,6 +13,7 @@ public:
     void setFixedPosition(double x, double y) { m_fixedPositionX = x; m_fixedPositionY = y; }
     void setBodyPosition(double x, double y) { m_bodyX = x; m_bodyY = y; }
 
+    virtual void updateBodies();
     virtual void calculate(Output *output, int body_i, OdeSolver::System *system);
 
     RigidBody *m_body;

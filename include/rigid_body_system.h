@@ -32,6 +32,7 @@ public:
             OdeSolver::System *in,
             OdeSolver::System *out,
             Matrix *lambda,
+            Matrix *R,
             Matrix *M,
             Matrix *M_inv);
 

@@ -3,6 +3,7 @@
 #include "../include/simple_pendulum_application.h"
 #include "../include/double_pendulum_application.h"
 #include "../include/articulated_pendulum_application.h"
+#include "../include/line_constraint_application.h"
 
 EngineSimApplication::EngineSimApplication() {
     m_cameraTarget = ysMath::Constants::Zero;
@@ -27,6 +28,8 @@ EngineSimApplication *EngineSimApplication::createApplication(Application applic
         return new DoublePendulumApplication;
     case Application::ArticulatedPendulum:
         return new ArticulatedPendulumApplication;
+    case Application::LineConstraintPendulum:
+        return new LineConstraintApplication;
     default:
         return nullptr;
     }

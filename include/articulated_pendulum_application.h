@@ -7,6 +7,7 @@
 #include "static_force_generator.h"
 #include "fixed_position_constraint.h"
 #include "link_constraint.h"
+#include "simple_rotational_friction_generator.h"
 
 class ArticulatedPendulumApplication : public EngineSimApplication {
 public:
@@ -35,11 +36,16 @@ protected:
     StaticForceGenerator m_fg0;
     StaticForceGenerator m_fg1;
 
+    SimpleRotationalFrictionGenerator m_friction0;
+    SimpleRotationalFrictionGenerator m_friction1;
+
     FixedPositionConstraint m_c0;
     LinkConstraint m_c1;
 
     double m_r0;
     double m_r1;
+
+    double m_g;
 };
 
 #endif /* ENGINE_SIM_ARTICULATED_PENDULUM_APPLICATION_H */

@@ -54,7 +54,8 @@ void RigidBodySystem::removeForceGenerator(ForceGenerator *forceGenerator) {
 
 void RigidBodySystem::process(double dt) {
     const int n = getRigidBodyCount();
-    const int m = getFullConstraintCount();
+    const int m_f = getFullConstraintCount();
+    const int m = getConstraintCount();
 
     OdeSolver::System system;
     OdeSolver::initializeSystem(&system, n, 0.0);
@@ -69,6 +70,10 @@ void RigidBodySystem::process(double dt) {
         system.Angles[i] = m_rigidBodies[i]->m_orientation;
     }
 
+    for (int i = 0; i < m; ++i) {
+        m_constraints[i]->updateBodies();
+    }
+
     Matrix M_inv(3 * n, 3 * n, 0.0);
     Matrix M(3 * n, 3 * n, 0.0);
     for (int i = 0; i < n; ++i) {
@@ -81,7 +86,8 @@ void RigidBodySystem::process(double dt) {
         M_inv.set(i * 3 + 2, i * 3 + 2, 1 / m_rigidBodies[i]->m_inertiaTensor);
     }
 
-    Matrix lambda(1, m, 0.0);
+    Matrix lambda(1, m_f, 0.0);
+    Matrix R(m_f, n * 3, 0.0);
 
     const int steps = 1;
     for (int i = 0; i < steps; ++i) {
@@ -90,7 +96,7 @@ void RigidBodySystem::process(double dt) {
         while (true) {
             const bool done = m_odeSolver->step(&system);
             processForces(&system);
-            processConstraints(&system, &system, &lambda, &M, &M_inv);
+            processConstraints(&system, &system, &lambda, &R, &M, &M_inv);
 
             m_odeSolver->solve(&system, &system);
 
@@ -109,6 +115,20 @@ void RigidBodySystem::process(double dt) {
 
         m_rigidBodies[i]->m_angularVelocity = system.AngularVelocity[i];
         m_rigidBodies[i]->m_orientation = system.Angles[i];
+    }
+
+    for (int i = 0, c_i = 0; i < m; ++i) {
+        const int n_sub = m_constraints[i]->m_constraintCount;
+        for (int j = 0; j < n_sub; ++j, ++c_i) {
+            for (int k = 0; k < m_constraints[i]->m_bodyCount; ++k) {
+                m_constraints[i]->m_forceX[k][j] =
+                    R.get(c_i, m_constraints[i]->m_bodies[k] * 3 + 0);
+                m_constraints[i]->m_forceY[k][j] =
+                    R.get(c_i, m_constraints[i]->m_bodies[k] * 3 + 1);
+                m_constraints[i]->m_torque[k][j] =
+                    R.get(c_i, m_constraints[i]->m_bodies[k] * 3 + 2);
+            }
+        }
     }
 
     OdeSolver::destroySystem(&system);
@@ -133,6 +153,7 @@ void RigidBodySystem::processConstraints(
         OdeSolver::System *in,
         OdeSolver::System *out,
         Matrix *lambdaPrev,
+        Matrix *R,
         Matrix *M,
         Matrix *M_inv)
 {
@@ -227,6 +248,13 @@ void RigidBodySystem::processConstraints(
 
     Matrix F_C(1, n * 3, 0.0);
     J_T.multiply(lambda, &F_C);
+
+    Matrix lambdaScale(m_f, m_f, 0.0);
+    for (int i = 0; i < m_f; ++i) {
+        lambdaScale.set(i, i, lambda.get(0, i));
+    }
+
+    J_T.multiply(lambdaScale, R);
 
     for (int i = 0; i < n; ++i) {
         const double invMass = M_inv->get(i * 3 + 0, i * 3 + 0);

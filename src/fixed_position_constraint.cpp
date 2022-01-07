@@ -17,6 +17,11 @@ FixedPositionConstraint::~FixedPositionConstraint() {
     /* void */
 }
 
+void FixedPositionConstraint::updateBodies() {
+    m_bodies[0] = m_body->m_index;
+    m_bodyCount = 1;
+}
+
 void FixedPositionConstraint::calculate(
         Output *output,
         int body_i,

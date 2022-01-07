@@ -1,17 +1,19 @@
-#ifndef ENGINE_SIM_DOUBLE_PENDULUM_APPLICATION_H
-#define ENGINE_SIM_DOUBLE_PENDULUM_APPLICATION_H
+#ifndef ENGINE_SIM_LINE_CONSTRAINT_APPLICATION_H 
+#define ENGINE_SIM_LINE_CONSTRAINT_APPLICATION_H
 
 #include "engine_sim_application.h"
 
 #include "rigid_body_system.h"
 #include "static_force_generator.h"
 #include "fixed_position_constraint.h"
+#include "link_constraint.h"
 #include "simple_rotational_friction_generator.h"
+#include "line_constraint.h"
 
-class DoublePendulumApplication : public EngineSimApplication {
+class LineConstraintApplication : public EngineSimApplication {
 public:
-    DoublePendulumApplication();
-    virtual ~DoublePendulumApplication();
+    LineConstraintApplication();
+    virtual ~LineConstraintApplication();
 
 protected:
     virtual void initialize();
@@ -34,13 +36,18 @@ protected:
 
     StaticForceGenerator m_fg0;
     StaticForceGenerator m_fg1;
+
     SimpleRotationalFrictionGenerator m_friction0;
+    SimpleRotationalFrictionGenerator m_friction1;
 
     FixedPositionConstraint m_c0;
-    FixedPositionConstraint m_c1;
+    LinkConstraint m_c1;
+    LineConstraint m_c2;
 
     double m_r0;
     double m_r1;
+
+    double m_g;
 };
 
-#endif /* ENGINE_SIM_DOUBLE_PENDULUM_APPLICATION_H */
+#endif /* ENGINE_SIM_ARTICULATED_PENDULUM_APPLICATION_H */

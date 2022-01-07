@@ -14,7 +14,7 @@ int WINAPI WinMain(
 
     EngineSimApplication *app =
         EngineSimApplication::createApplication(
-                EngineSimApplication::Application::ArticulatedPendulum); 
+                EngineSimApplication::Application::LineConstraintPendulum);
     app->initialize((void *)&hInstance, ysContextObject::DeviceAPI::DirectX11); 
     app->run();
     app->destroy();

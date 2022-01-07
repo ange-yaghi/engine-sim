@@ -16,6 +16,12 @@ LinkConstraint::~LinkConstraint() {
     /* void */
 }
 
+void LinkConstraint::updateBodies() {
+    m_bodies[0] = m_body1->m_index;
+    m_bodies[1] = m_body2->m_index;
+    m_bodyCount = 2;
+}
+
 void LinkConstraint::calculate(Output *output, int body_i, OdeSolver::System *system) {
     if (body_i != m_body1->m_index && body_i != m_body2->m_index) {
         output->n = 0;

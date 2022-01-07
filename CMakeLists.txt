@@ -29,6 +29,9 @@ add_executable(engine-sim WIN32
     src/double_pendulum_application.cpp
     src/articulated_pendulum_application.cpp
     src/link_constraint.cpp
+    src/simple_rotational_friction_generator.cpp
+    src/line_constraint.cpp
+    src/line_constraint_application.cpp
 
     # Include files
     include/delta.h
@@ -50,6 +53,9 @@ add_executable(engine-sim WIN32
     include/double_pendulum_application.h
     include/articulated_pendulum_application.h
     include/link_constraint.h
+    include/simple_rotational_friction_generator.h
+    include/line_constraint.h
+    include/line_constraint_application.h
 )
 
 target_link_libraries(engine-sim

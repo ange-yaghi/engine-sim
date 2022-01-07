@@ -8,7 +8,11 @@ OdeSolver::~OdeSolver() {
     /* void */
 }
 
-void OdeSolver::initializeSystem(System *target, int bodyCount, double dt) {
+void OdeSolver::initializeSystem(
+        System *target,
+        int bodyCount,
+        double dt)
+{
     if (target->BodyCount != bodyCount) {
         target->AngularAcceleration = new double[bodyCount];
         target->AngularVelocity = new double[bodyCount];
@@ -24,9 +28,10 @@ void OdeSolver::initializeSystem(System *target, int bodyCount, double dt) {
         target->Force_X = new double[bodyCount];
         target->Force_Y = new double[bodyCount];
         target->Torque = new double[bodyCount];
+
+        target->BodyCount = bodyCount;
     }
 
-    target->BodyCount = bodyCount;
     target->dt = dt;
 }
 

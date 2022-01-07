@@ -13,6 +13,7 @@ public:
     void setBody1Position(double x, double y) { m_body1PositionX = x; m_body1PositionY = y; }
     void setBody2Position(double x, double y) { m_body2PositionX = x; m_body2PositionY = y; }
 
+    virtual void updateBodies();
     virtual void calculate(Output *output, int body_i, OdeSolver::System *system);
 
     RigidBody *m_body1;
