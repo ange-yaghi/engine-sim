@@ -6,54 +6,44 @@
 #include "delta.h"
 
 class EngineSimApplication {
-public:
-    enum class Application {
-        SimplePendulum,
-        DoublePendulum,
-        ArticulatedPendulum,
-        LineConstraintPendulum
-    };
+    public:
+        EngineSimApplication();
+        virtual ~EngineSimApplication();
 
-public:
-    EngineSimApplication();
-    virtual ~EngineSimApplication();
+        void initialize(void *instance, ysContextObject::DeviceAPI api);
+        void run();
+        void destroy();
 
-    static EngineSimApplication *createApplication(Application application);
+        void setCameraPosition(const ysVector &position) { m_cameraPosition = position; }
+        void setCameraTarget(const ysVector &target) { m_cameraTarget = target; }
+        void setCameraUp(const ysVector &up) { m_cameraUp = up; }
 
-    void initialize(void *instance, ysContextObject::DeviceAPI api);
-    void run();
-    void destroy();
+        void drawGenerated(const GeometryGenerator::GeometryIndices &indices);
 
-    void setCameraPosition(const ysVector &position) { m_cameraPosition = position; }
-    void setCameraTarget(const ysVector &target) { m_cameraTarget = target; }
-    void setCameraUp(const ysVector &up) { m_cameraUp = up; }
+    protected:
+        void renderScene();
 
-    void drawGenerated(const GeometryGenerator::GeometryIndices &indices);
+    protected:
+        virtual void initialize();
+        virtual void process(float dt);
+        virtual void render();
 
-protected:
-    void renderScene();
+        dbasic::ShaderSet m_shaderSet;
+        dbasic::DefaultShaders m_shaders;
 
-protected:
-    virtual void initialize();
-    virtual void process(float dt);
-    virtual void render();
+        dbasic::DeltaEngine m_engine;
+        dbasic::AssetManager m_assetManager;
 
-    dbasic::ShaderSet m_shaderSet;
-    dbasic::DefaultShaders m_shaders;
+        ysVector m_cameraPosition;
+        ysVector m_cameraTarget;
+        ysVector m_cameraUp;
 
-    dbasic::DeltaEngine m_engine;
-    dbasic::AssetManager m_assetManager;
+        std::string m_assetPath;
 
-    ysVector m_cameraPosition;
-    ysVector m_cameraTarget;
-    ysVector m_cameraUp;
+        ysGPUBuffer *m_geometryVertexBuffer;
+        ysGPUBuffer *m_geometryIndexBuffer;
 
-    std::string m_assetPath;
-
-    ysGPUBuffer *m_geometryVertexBuffer;
-    ysGPUBuffer *m_geometryIndexBuffer;
-
-    GeometryGenerator m_geometryGenerator;
+        GeometryGenerator m_geometryGenerator;
 };
 
 #endif /* ENGINE_SIM_ENGINE_SIM_APPLICATION_H */

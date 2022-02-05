@@ -1,14 +1,9 @@
 #include "../include/engine_sim_application.h"
 
-#include "../include/simple_pendulum_application.h"
-#include "../include/double_pendulum_application.h"
-#include "../include/articulated_pendulum_application.h"
-#include "../include/line_constraint_application.h"
-
 EngineSimApplication::EngineSimApplication() {
     m_cameraTarget = ysMath::Constants::Zero;
-    m_cameraPosition = ysMath::LoadVector(0.0f, 0.0f, 5.0f);
-    m_cameraUp = ysMath::Constants::YAxis;
+    m_cameraPosition = ysMath::LoadVector(0.0f, 5.0f, 5.0f);
+    m_cameraUp = ysMath::Constants::ZAxis;
 
     m_assetPath = "";
 
@@ -20,21 +15,6 @@ EngineSimApplication::~EngineSimApplication() {
     /* void */
 }
 
-EngineSimApplication *EngineSimApplication::createApplication(Application application) {
-    switch (application) {
-    case Application::SimplePendulum:
-        return new SimplePendulumApplication;
-    case Application::DoublePendulum:
-        return new DoublePendulumApplication;
-    case Application::ArticulatedPendulum:
-        return new ArticulatedPendulumApplication;
-    case Application::LineConstraintPendulum:
-        return new LineConstraintApplication;
-    default:
-        return nullptr;
-    }
-}
-
 void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI api) {
     dbasic::Path modulePath = dbasic::GetModulePath();
     dbasic::Path confPath = modulePath.Append("delta.conf");
@@ -43,7 +23,7 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     m_assetPath = "../assets";
     if (confPath.Exists()) {
         std::fstream confFile(confPath.ToString(), std::ios::in);
-        
+
         std::getline(confFile, enginePath);
         std::getline(confFile, m_assetPath);
         enginePath = modulePath.Append(enginePath).ToString();
@@ -58,7 +38,7 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
 
     dbasic::DeltaEngine::GameEngineSettings settings;
     settings.API = api;
-    settings.DepthBuffer = false;
+    settings.DepthBuffer = true;
     settings.Instance = instance;
     settings.ShaderDirectory = shaderPath.c_str();
     settings.WindowTitle = "Engine Sim | AngeTheGreat";
@@ -72,6 +52,8 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     m_engine.InitializeDefaultShaders(&m_shaders, &m_shaderSet);
     m_engine.InitializeConsoleShaders(&m_shaderSet);
     m_engine.SetShaderSet(&m_shaderSet);
+
+    m_shaders.SetClearColor(ysColor::srgbiToLinear(0x34, 0x98, 0xdb));
 
     m_assetManager.SetEngine(&m_engine);
 
@@ -131,7 +113,7 @@ void EngineSimApplication::render() {
     glow.Position = ysVector4(0.0f, 0.0f, 0.0f);
     m_shaders.AddLight(glow);
 
-    const ysMatrix rotationTurntable = ysMath::RotationTransform(ysMath::Constants::ZAxis, 0); 
+    const ysMatrix rotationTurntable = ysMath::RotationTransform(ysMath::Constants::ZAxis, 0);
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetMetallic(0.8f);

@@ -1,3 +1,9 @@
 [submodule "dependencies/submodules/delta-studio"]
 	path = dependencies/submodules/delta-studio
 	url = https://github.com/ange-yaghi/delta-studio
+[submodule "dependencies/submodules/simple-2d-constraint-solver"]
+	path = dependencies/submodules/simple-2d-constraint-solver
+	url = https://github.com/ange-yaghi/simple-2d-constraint-solver
+[submodule "dependencies/submodules/direct-to-video"]
+	path = dependencies/submodules/direct-to-video
+	url = https://github.com/ange-yaghi/direct-to-video
