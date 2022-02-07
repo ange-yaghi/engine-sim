@@ -1,5 +1,5 @@
-#ifndef ENGINE_SIM_ENGINE_SIM_APPLICATION_H
-#define ENGINE_SIM_ENGINE_SIM_APPLICATION_H
+#ifndef ATG_ENGINE_SIM_ENGINE_SIM_APPLICATION_H
+#define ATG_ENGINE_SIM_ENGINE_SIM_APPLICATION_H
 
 #include "geometry_generator.h"
 
@@ -46,4 +46,4 @@ class EngineSimApplication {
         GeometryGenerator m_geometryGenerator;
 };
 
-#endif /* ENGINE_SIM_ENGINE_SIM_APPLICATION_H */
+#endif /* ATG_ENGINE_SIM_ENGINE_SIM_APPLICATION_H */
