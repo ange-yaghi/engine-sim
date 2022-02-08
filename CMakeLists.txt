@@ -19,12 +19,26 @@ add_executable(engine-sim WIN32
     src/main.cpp
     src/engine_sim_application.cpp
     src/geometry_generator.cpp
+    src/crankshaft.cpp
+    src/cylinder_bank.cpp
+    src/connecting_rod.cpp
+    src/piston.cpp
+    src/part.cpp
+    src/engine.cpp
+    src/engine_simulator.cpp
 
     # Include files
     include/delta.h
     include/dtv.h
     include/engine_sim_application.h
     include/geometry_generator.h
+    include/crankshaft.h
+    include/cylinder_bank.h
+    include/connecting_rod.h
+    include/piston.h
+    include/part.h
+    include/engine.h
+    include/engine_simulator.h
 )
 
 target_link_libraries(engine-sim
