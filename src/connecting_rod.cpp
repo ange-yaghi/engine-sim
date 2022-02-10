@@ -23,9 +23,9 @@ void ConnectingRod::initialize(const Parameters &params) {
 }
 
 double ConnectingRod::getBigEndLocal() const {
-    return (m_length / 2) - m_centerOfMass;
+    return -(m_length / 2) + m_centerOfMass;
 }
 
 double ConnectingRod::getLittleEndLocal() const {
-    return -(m_length / 2) + m_centerOfMass;
+    return (m_length / 2) - m_centerOfMass;
 }

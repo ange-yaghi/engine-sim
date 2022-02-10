@@ -2,8 +2,14 @@
 #define ATG_ENGINE_SIM_ENGINE_SIM_APPLICATION_H
 
 #include "geometry_generator.h"
+#include "engine_simulator.h"
+#include "engine.h"
+#include "simulation_object.h"
 
 #include "delta.h"
+#include "dtv.h"
+
+#include <vector>
 
 class EngineSimApplication {
     public:
@@ -19,6 +25,11 @@ class EngineSimApplication {
         void setCameraUp(const ysVector &up) { m_cameraUp = up; }
 
         void drawGenerated(const GeometryGenerator::GeometryIndices &indices);
+        GeometryGenerator *getGeometryGenerator() { return &m_geometryGenerator; }
+
+        dbasic::DefaultShaders *getShaders() { return &m_shaders; }
+
+        void createObjects(Engine *engine);
 
     protected:
         void renderScene();
@@ -44,6 +55,35 @@ class EngineSimApplication {
         ysGPUBuffer *m_geometryIndexBuffer;
 
         GeometryGenerator m_geometryGenerator;
+
+        std::vector<SimulationObject *> m_objects;
+        Engine m_iceEngine;
+        EngineSimulator m_simulator;
+
+        bool m_paused;
+
+    protected:
+        void startRecording();
+        void updateScreenSizeStability();
+        bool readyToRecord();
+        void stopRecording();
+        void recordFrame();
+        bool isRecording() const { return m_recording; }
+
+        static constexpr int ScreenResolutionHistoryLength = 5;
+        int m_screenResolution[ScreenResolutionHistoryLength][2];
+        int m_screenResolutionIndex;
+        bool m_recording;
+
+        ysVector m_background;
+        ysVector m_foreground;
+        ysVector m_shadow;
+        ysVector m_highlight1;
+        ysVector m_highlight2;
+
+#ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
+        atg_dtv::Encoder m_encoder;
+#endif /* ATG_ENGINE_SIM_VIDEO_CAPTURE */
 };
 
 #endif /* ATG_ENGINE_SIM_ENGINE_SIM_APPLICATION_H */

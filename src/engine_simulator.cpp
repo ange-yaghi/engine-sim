@@ -5,6 +5,11 @@
 
 EngineSimulator::EngineSimulator() {
     m_engine = nullptr;
+    m_steps = 1;
+
+    m_crankConstraints = nullptr;
+    m_cylinderWallConstraints = nullptr;
+    m_linkConstraints = nullptr;
 }
 
 EngineSimulator::~EngineSimulator() {
@@ -15,6 +20,10 @@ EngineSimulator::~EngineSimulator() {
 
 void EngineSimulator::synthesize(Engine *engine) {
     static constexpr double pi = 3.14159265359;
+
+    m_system.initialize(
+        new atg_scs::GaussianEliminationSleSolver,
+        new atg_scs::EulerOdeSolver);
 
     m_engine = engine;
 
@@ -32,6 +41,15 @@ void EngineSimulator::synthesize(Engine *engine) {
                 engine->getCrankshaft(i)->m_p_x,
                 engine->getCrankshaft(i)->m_p_y);
         m_crankConstraints[i].setLocalPosition(0.0, 0.0);
+
+        engine->getCrankshaft(i)->m_body.p_x = engine->getCrankshaft(i)->m_p_x;
+        engine->getCrankshaft(i)->m_body.p_y = engine->getCrankshaft(i)->m_p_y;
+        engine->getCrankshaft(i)->m_body.m =
+            engine->getCrankshaft(i)->m_m + engine->getCrankshaft(i)->m_flywheelMass;
+        engine->getCrankshaft(i)->m_body.I = engine->getCrankshaft(i)->m_I;
+
+        m_system.addRigidBody(&engine->getCrankshaft(i)->m_body);
+        m_system.addConstraint(&m_crankConstraints[i]);
     }
 
     for (int i = 0; i < cylinderCount; ++i) {
@@ -69,7 +87,23 @@ void EngineSimulator::synthesize(Engine *engine) {
             .setLocalPosition1(0.0, connectingRod->getBigEndLocal());
         m_linkConstraints[i * 2 + 1]
             .setLocalPosition2(journal_x, journal_y);
+
+        piston->m_body.m = piston->m_mass;
+        piston->m_body.I = 1.0;
+        
+        connectingRod->m_body.m = connectingRod->m_m;
+        connectingRod->m_body.I = connectingRod->m_I;
+
+        m_system.addRigidBody(&piston->m_body);
+        m_system.addRigidBody(&connectingRod->m_body);
+        m_system.addConstraint(&m_linkConstraints[i * 2 + 0]);
+        m_system.addConstraint(&m_linkConstraints[i * 2 + 1]);
+        m_system.addConstraint(&m_cylinderWallConstraints[i]);
     }
+}
+
+void EngineSimulator::update(float dt) {
+    m_system.process(dt, m_steps);
 }
 
 void EngineSimulator::destroy() {

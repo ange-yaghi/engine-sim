@@ -26,6 +26,9 @@ add_executable(engine-sim WIN32
     src/part.cpp
     src/engine.cpp
     src/engine_simulator.cpp
+    src/simulation_object.cpp
+    src/piston_object.cpp
+    src/connecting_rod_object.cpp
 
     # Include files
     include/delta.h
@@ -39,6 +42,9 @@ add_executable(engine-sim WIN32
     include/part.h
     include/engine.h
     include/engine_simulator.h
+    include/simulation_object.h
+    include/piston_object.h
+    include/connecting_rod_object.h
 )
 
 target_link_libraries(engine-sim

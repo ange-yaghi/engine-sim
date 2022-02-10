@@ -15,6 +15,7 @@ class Piston : public Part {
             double CompressionHeight;
             double WristPinPosition;
             double Displacement;
+            double Mass;
         };
 
     public:
@@ -30,6 +31,7 @@ class Piston : public Part {
         double m_compressionHeight;
         double m_displacement;
         double m_wristPinLocation;
+        double m_mass;
 };
 
 #endif /* ATG_ENGINE_SIM_PISTON_H */

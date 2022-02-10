@@ -1,14 +1,30 @@
 #include "../include/engine_sim_application.h"
 
+#include "../include/piston_object.h"
+#include "../include/connecting_rod_object.h"
+
 EngineSimApplication::EngineSimApplication() {
     m_cameraTarget = ysMath::Constants::Zero;
-    m_cameraPosition = ysMath::LoadVector(0.0f, 5.0f, 5.0f);
-    m_cameraUp = ysMath::Constants::ZAxis;
+    m_cameraPosition = ysMath::LoadVector(0.0f, 0.0f, 5.0f);
+    m_cameraUp = ysMath::Constants::YAxis;
 
     m_assetPath = "";
 
     m_geometryVertexBuffer = nullptr;
     m_geometryIndexBuffer = nullptr;
+
+    m_paused = false;
+    m_recording = false;
+    m_screenResolutionIndex = 0;
+    for (int i = 0; i < ScreenResolutionHistoryLength; ++i) {
+        m_screenResolution[i][0] = m_screenResolution[i][1] = 0;
+    }
+
+    m_background = ysColor::srgbiToLinear(0xFFFFFF);
+    m_foreground = ysColor::srgbiToLinear(0xFFFFFF);
+    m_shadow = ysColor::srgbiToLinear(0x0E1012);
+    m_highlight1 = ysColor::srgbiToLinear(0xEF4545);
+    m_highlight2 = ysColor::srgbiToLinear(0xFFFFFF);
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -38,7 +54,7 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
 
     dbasic::DeltaEngine::GameEngineSettings settings;
     settings.API = api;
-    settings.DepthBuffer = true;
+    settings.DepthBuffer = false;
     settings.Instance = instance;
     settings.ShaderDirectory = shaderPath.c_str();
     settings.WindowTitle = "Engine Sim | AngeTheGreat";
@@ -73,81 +89,115 @@ void EngineSimApplication::initialize() {
     m_shaders.SetClearColor(ysColor::srgbiToLinear(0x34, 0x98, 0xdb));
     m_assetManager.CompileInterchangeFile((m_assetPath + "/icosphere").c_str(), 1.0f, true);
     m_assetManager.LoadSceneFile((m_assetPath + "/icosphere").c_str(), true);
+
+    Engine::Parameters engineParams;
+    engineParams.CylinderBanks = 1;
+    engineParams.CylinderCount = 1;
+    engineParams.CrankshaftCount = 1;
+    m_iceEngine.initialize(engineParams);
+
+    Piston::Parameters pistonParams;
+    pistonParams.Bank = m_iceEngine.getCylinderBank(0);
+    pistonParams.CompressionHeight = 1.12;
+    pistonParams.CylinderIndex = 0;
+    pistonParams.Displacement = 0;
+    pistonParams.Rod = m_iceEngine.getConnectingRod(0);
+    pistonParams.WristPinPosition = 0;
+    pistonParams.Mass = 1.0;
+    m_iceEngine.getPiston(0)->initialize(pistonParams);
+
+    CylinderBank::Parameters cbParams;
+    cbParams.Angle = 0;
+    cbParams.Bore = 4.25;
+    cbParams.CylinderCount = 1;
+    cbParams.DeckHeight = 10;
+    m_iceEngine.getCylinderBank(0)->initialize(cbParams);
+
+    Crankshaft::Parameters crankshaftParams;
+    crankshaftParams.CrankThrow = 2.0;
+    crankshaftParams.FlywheelMass = 50;
+    crankshaftParams.Mass = 75;
+    crankshaftParams.MomentOfInertia = 10;
+    crankshaftParams.Pos_x = 0;
+    crankshaftParams.Pos_y = 0;
+    crankshaftParams.RodJournals = 1;
+    m_iceEngine.getCrankshaft(0)->initialize(crankshaftParams);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(0, 0.0);
+
+    ConnectingRod::Parameters crParams;
+    crParams.CenterOfMass = 0;
+    crParams.Crankshaft = m_iceEngine.getCrankshaft(0);
+    crParams.Journal = 0;
+    crParams.Length = 6.135;
+    crParams.Mass = 2.0;
+    crParams.MomentOfInertia = 2.0;
+    m_iceEngine.getConnectingRod(0)->initialize(crParams);
+
+    m_simulator.synthesize(&m_iceEngine);
+    createObjects(&m_iceEngine);
 }
 
 void EngineSimApplication::process(float dt) {
-    /* void */
+    m_simulator.m_steps = 100;
+    m_simulator.update(1 / 60.0);
 }
 
 void EngineSimApplication::render() {
-    m_shaders.ResetLights();
-    m_shaders.SetAmbientLight(ysMath::GetVector4(ysColor::srgbiToLinear(0x34, 0x98, 0xdb)));
-
-    dbasic::Light light;
-    light.Active = 1;
-    light.Attenuation0 = 0.0f;
-    light.Attenuation1 = 0.0f;
-    light.Color = ysVector4(0.85f, 0.85f, 0.8f, 1.0f);
-    light.Direction = ysVector4(0.0f, 0.0f, 0.0f, 0.0f);
-    light.FalloffEnabled = 0;
-    light.Position = ysVector4(10.0f, 10.0f, 10.0f);
-    m_shaders.AddLight(light);
-
-    dbasic::Light light2;
-    light2.Active = 1;
-    light2.Attenuation0 = -1.0f;
-    light2.Attenuation1 = -1.0f;
-    light2.Color = ysVector4(0.3f, 0.3f, 0.5f, 1.0f);
-    light2.Direction = ysVector4(0.0f, 0.0f, 0.0f, 0.0f);
-    light2.FalloffEnabled = 0;
-    light2.Position = ysVector4(-10.0f, 10.0f, 10.0f);
-    m_shaders.AddLight(light2);
-
-    dbasic::Light glow;
-    glow.Active = 1;
-    glow.Attenuation0 = 0.0f;
-    glow.Attenuation1 = 0.0f;
-    glow.Color = ysVector4(5.0f * 0.0f, 0.0f, 0.0f, 1.0f);
-    glow.Direction = ysVector4(0.0f, 0.0f, 0.0f, 0.0f);
-    glow.FalloffEnabled = 1;
-    glow.Position = ysVector4(0.0f, 0.0f, 0.0f);
-    m_shaders.AddLight(glow);
-
-    const ysMatrix rotationTurntable = ysMath::RotationTransform(ysMath::Constants::ZAxis, 0);
-
-    m_shaders.ResetBrdfParameters();
-    m_shaders.SetMetallic(0.8f);
-    m_shaders.SetIncidentSpecular(0.8f);
-    m_shaders.SetSpecularRoughness(0.7f);
-    m_shaders.SetSpecularMix(1.0f);
-    m_shaders.SetDiffuseMix(1.0f);
-    m_shaders.SetEmission(ysMath::Mul(ysColor::srgbiToLinear(0xff, 0x0, 0x0), ysMath::LoadScalar(0)));
-    m_shaders.SetBaseColor(ysColor::srgbiToLinear(0x34, 0x49, 0x5e));
-    m_shaders.SetColorReplace(true);
-    m_shaders.SetObjectTransform(ysMath::MatMult(ysMath::TranslationTransform(ysMath::LoadVector(0.0f, 0.0f, 0.0f)), rotationTurntable));
-    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_assetManager.GetModelAsset("Icosphere"));
-
-    m_shaders.ResetBrdfParameters();
-    m_shaders.SetMetallic(0.0f);
-    m_shaders.SetIncidentSpecular(0.0f);
-    m_shaders.SetSpecularRoughness(0.8f);
-    m_shaders.SetSpecularMix(0.1f);
-    m_shaders.SetDiffuseMix(1.0f);
-    m_shaders.SetColorReplace(true);
-    m_shaders.SetBaseColor(ysColor::srgbiToLinear(0xbd, 0xc3, 0xc7));
-    m_shaders.SetObjectTransform(ysMath::MatMult(ysMath::TranslationTransform(ysMath::LoadVector(0.0f, 0.0f, 0.0f)), rotationTurntable));
-    m_shaders.SetObjectTransform(ysMath::MatMult(ysMath::TranslationTransform(ysMath::LoadVector(0.0f, 0.0f, -1.0f)), rotationTurntable));
-    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_assetManager.GetModelAsset("Floor"));
+    for (SimulationObject *object : m_objects) {
+        object->generateGeometry();
+        object->render();
+    }
 }
 
 void EngineSimApplication::run() {
-    while (m_engine.IsOpen()) {
-        m_engine.StartFrame();
+    while (true) {
+        if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
+            break;
+        }
 
-        process(m_engine.GetFrameLength());
+        m_engine.StartFrame();
+        if (!m_engine.IsOpen()) break;
+
+        updateScreenSizeStability();
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::Space) &&
+            m_engine.GetGameWindow()->IsActive()) {
+            m_paused = !m_paused;
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::F)) {
+            m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::V) &&
+            m_engine.GetGameWindow()->IsActive()) {
+            if (!isRecording() && readyToRecord()) {
+                startRecording();
+            }
+            else if (isRecording()) {
+                stopRecording();
+            }
+        }
+
+        if (isRecording() && !readyToRecord()) {
+            stopRecording();
+        }
+
+        if (!m_paused || m_engine.ProcessKeyDown(ysKey::Code::Right)) {
+            process(1 / 60.0f);
+        }
+
         renderScene();
 
         m_engine.EndFrame();
+
+        if (isRecording()) {
+            recordFrame();
+        }
+    }
+
+    if (isRecording()) {
+        stopRecording();
     }
 }
 
@@ -162,8 +212,6 @@ void EngineSimApplication::destroy() {
 }
 
 void EngineSimApplication::drawGenerated(const GeometryGenerator::GeometryIndices &indices) {
-    if (indices.Failed) return;
-
     m_engine.DrawGeneric(
         m_shaders.GetRegularFlags(),
         m_geometryIndexBuffer,
@@ -174,7 +222,21 @@ void EngineSimApplication::drawGenerated(const GeometryGenerator::GeometryIndice
         indices.FaceCount);
 }
 
+void EngineSimApplication::createObjects(Engine *engine) {
+    PistonObject *pistonObject = new PistonObject;
+    pistonObject->initialize(this);
+    pistonObject->m_piston = engine->getPiston(0);
+    m_objects.push_back(pistonObject);
+
+    ConnectingRodObject *rodObject = new ConnectingRodObject;
+    rodObject->initialize(this);
+    rodObject->m_connectingRod = engine->getConnectingRod(0);
+    m_objects.push_back(rodObject);
+}
+
 void EngineSimApplication::renderScene() {
+    m_shaders.SetClearColor(ysColor::linearToSrgb(m_shadow));
+
     const int screenWidth = m_engine.GetGameWindow()->GetGameWidth();
     const int screenHeight = m_engine.GetGameWindow()->GetGameHeight();
 
@@ -183,7 +245,17 @@ void EngineSimApplication::renderScene() {
     m_shaders.SetCameraPosition(m_cameraPosition);
     m_shaders.SetCameraTarget(m_cameraTarget);
     m_shaders.SetCameraUp(m_cameraUp);
-    m_shaders.CalculateCamera();
+    m_shaders.CalculateUiCamera();
+
+    if (screenWidth > 0 && screenHeight > 0) {
+        const float aspectRatio = screenWidth / (float)screenHeight;
+        m_shaders.SetProjection(ysMath::Transpose(
+            ysMath::OrthographicProjection(
+                aspectRatio * 20.0,
+                20.0,
+                0.001f,
+                500.0f)));
+    }
 
     m_geometryGenerator.reset();
 
@@ -200,4 +272,69 @@ void EngineSimApplication::renderScene() {
         (char *)m_geometryGenerator.getIndexData(),
         sizeof(unsigned short) * m_geometryGenerator.getCurrentIndexCount(),
         0);
+}
+
+void EngineSimApplication::startRecording() {
+    m_recording = true;
+
+#ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
+    atg_dtv::Encoder::VideoSettings settings{};
+
+    // Output filename
+    settings.fname = "../workspace/video_capture/engine_sim_video_capture.mp4";
+    settings.inputWidth = m_engine.GetScreenWidth();
+    settings.inputHeight = m_engine.GetScreenHeight();
+    settings.width = settings.inputWidth;
+    settings.height = settings.inputHeight;
+    settings.hardwareEncoding = true;
+    settings.inputAlpha = true;
+    settings.bitRate = 40000000;
+
+    m_encoder.run(settings, 2);
+#endif /* ATG_ENGINE_SIM_VIDEO_CAPTURE */
+}
+
+void EngineSimApplication::updateScreenSizeStability() {
+    m_screenResolution[m_screenResolutionIndex][0] = m_engine.GetScreenWidth();
+    m_screenResolution[m_screenResolutionIndex][1] = m_engine.GetScreenHeight();
+
+    m_screenResolutionIndex = (m_screenResolutionIndex + 1) % ScreenResolutionHistoryLength;
+}
+
+bool EngineSimApplication::readyToRecord() {
+    const int w = m_screenResolution[0][0];
+    const int h = m_screenResolution[0][1];
+
+    if (w <= 0 && h <= 0) return false;
+    if ((w % 2) != 0 || (h % 2) != 0) return false;
+
+    for (int i = 1; i < ScreenResolutionHistoryLength; ++i) {
+        if (m_screenResolution[i][0] != w) return false;
+        if (m_screenResolution[i][1] != h) return false;
+    }
+
+    return true;
+}
+
+void EngineSimApplication::stopRecording() {
+    m_recording = false;
+
+#ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
+    m_encoder.commit();
+    m_encoder.stop();
+#endif /* ATG_ENGINE_SIM_VIDEO_CAPTURE */
+}
+
+void EngineSimApplication::recordFrame() {
+#ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
+    const int width = m_engine.GetScreenWidth();
+    const int height = m_engine.GetScreenHeight();
+
+    atg_dtv::Frame *frame = m_encoder.newFrame(true);
+    if (frame != nullptr && m_encoder.getError() == atg_dtv::Encoder::Error::None) {
+        m_engine.GetDevice()->ReadRenderTarget(m_engine.GetScreenRenderTarget(), frame->m_rgb);
+    }
+
+    m_encoder.submitFrame();
+#endif /* ATG_ENGINE_SIM_VIDEO_CAPTURE */
 }

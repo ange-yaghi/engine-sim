@@ -7,6 +7,7 @@ Piston::Piston() {
     m_compressionHeight = 0.0;
     m_displacement = 0.0;
     m_wristPinLocation = 0.0;
+    m_mass = 0.0;
 }
 
 Piston::~Piston() {
@@ -20,6 +21,7 @@ void Piston::initialize(const Parameters &params) {
     m_compressionHeight = params.CompressionHeight;
     m_displacement = params.Displacement;
     m_wristPinLocation = params.WristPinPosition;
+    m_mass = params.Mass;
 }
 
 void Piston::destroy() {

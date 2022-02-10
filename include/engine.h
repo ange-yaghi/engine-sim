@@ -30,7 +30,7 @@ class Engine : public Part {
         Crankshaft *getCrankshaft(int i) const { return &m_crankshafts[i]; }
         CylinderBank *getCylinderBank(int i) const { return &m_cylinderBanks[i]; }
         Piston *getPiston(int i) const { return &m_pistons[i]; }
-        ConnectingRod *getConnectingRods(int i) const { return &m_connectingRods[i]; }
+        ConnectingRod *getConnectingRod(int i) const { return &m_connectingRods[i]; }
 
     protected:
         Crankshaft *m_crankshafts;

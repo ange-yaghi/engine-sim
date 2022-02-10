@@ -11,7 +11,10 @@ class EngineSimulator {
         ~EngineSimulator();
 
         void synthesize(Engine *engine);
+        void update(float dt);
         void destroy();
+
+        int m_steps;
 
     protected:
         atg_scs::RigidBodySystem m_system;

@@ -42,7 +42,7 @@ void Crankshaft::getRodJournalPositionLocal(int i, double *x, double *y) {
 }
 
 void Crankshaft::setRodJournalAngle(int i, double angle) {
-    assert(i < m_rodJournalCount && i > 0);
+    assert(i < m_rodJournalCount && i >= 0);
 
     m_rodJournalAngles[i] = angle;
 }
