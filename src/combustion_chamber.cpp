@@ -19,6 +19,7 @@ CombustionChamber::~CombustionChamber() {
 
 void CombustionChamber::initialize(double p0, double t0) {
     m_pressure = m_crankcasePressure = p0;
+    m_pressure = m_crankcasePressure * 10;
     m_temperature = t0;
     m_volume = volume();
 }
@@ -33,7 +34,7 @@ double CombustionChamber::volume() {
     return volume;
 }
 
-void CombustionChamber::updatePv() {
+void CombustionChamber::adiabaticCompression() {
     const double gamma = 7 / 5.0;
     const double newVolume = volume();
 
@@ -54,7 +55,16 @@ void CombustionChamber::apply(atg_scs::SystemState *system) {
 
     const double v_s =
         m_piston->m_body.v_x * m_bank->m_dx + m_piston->m_body.v_y * m_bank->m_dy;
-    
-    system->applyForce(0.0, 0.0, -m_piston->m_body.v_x * 1.0, -m_piston->m_body.v_y * 1.0, m_piston->m_body.index);
-    system->applyForce(0.0, 0.0, F_x, F_y, m_piston->m_body.index);
+
+    const double F_fric = (v_s > 0)
+        ? -1000
+        : 1000;
+    const double F_damping = -v_s * 10.0;
+
+    system->applyForce(
+        0.0,
+        0.0,
+        F_x + (F_fric + F_damping) * m_bank->m_dx,
+        F_y + (F_fric + F_damping) * m_bank->m_dy,
+        m_piston->m_body.index);
 }

@@ -18,7 +18,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         CylinderBank *m_bank;
 
         double volume();
-        void updatePv();
+        void adiabaticCompression();
 
     protected:
         double m_pressure;

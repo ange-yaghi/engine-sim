@@ -2,6 +2,7 @@
 
 #include "../include/piston_object.h"
 #include "../include/connecting_rod_object.h"
+#include "../include/constants.h"
 
 EngineSimApplication::EngineSimApplication() {
     m_cameraTarget = ysMath::Constants::Zero;
@@ -13,7 +14,7 @@ EngineSimApplication::EngineSimApplication() {
     m_geometryVertexBuffer = nullptr;
     m_geometryIndexBuffer = nullptr;
 
-    m_paused = false;
+    m_paused = true;
     m_recording = false;
     m_screenResolutionIndex = 0;
     for (int i = 0; i < ScreenResolutionHistoryLength; ++i) {
@@ -91,8 +92,8 @@ void EngineSimApplication::initialize() {
     m_assetManager.LoadSceneFile((m_assetPath + "/icosphere").c_str(), true);
 
     Engine::Parameters engineParams;
-    engineParams.CylinderBanks = 1;
-    engineParams.CylinderCount = 1;
+    engineParams.CylinderBanks = 2;
+    engineParams.CylinderCount = 6;
     engineParams.CrankshaftCount = 1;
     m_iceEngine.initialize(engineParams);
 
@@ -106,12 +107,37 @@ void EngineSimApplication::initialize() {
     pistonParams.Mass = 1.0;
     m_iceEngine.getPiston(0)->initialize(pistonParams);
 
+    pistonParams.Bank = m_iceEngine.getCylinderBank(1);
+    pistonParams.Rod = m_iceEngine.getConnectingRod(1);
+    m_iceEngine.getPiston(1)->initialize(pistonParams);
+
+    pistonParams.CylinderIndex = 1;
+    pistonParams.Bank = m_iceEngine.getCylinderBank(0);
+    pistonParams.Rod = m_iceEngine.getConnectingRod(2);
+    m_iceEngine.getPiston(2)->initialize(pistonParams);
+
+    pistonParams.Bank = m_iceEngine.getCylinderBank(1);
+    pistonParams.Rod = m_iceEngine.getConnectingRod(3);
+    m_iceEngine.getPiston(3)->initialize(pistonParams);
+
+    pistonParams.CylinderIndex = 2;
+    pistonParams.Bank = m_iceEngine.getCylinderBank(0);
+    pistonParams.Rod = m_iceEngine.getConnectingRod(4);
+    m_iceEngine.getPiston(4)->initialize(pistonParams);
+
+    pistonParams.Bank = m_iceEngine.getCylinderBank(1);
+    pistonParams.Rod = m_iceEngine.getConnectingRod(5);
+    m_iceEngine.getPiston(5)->initialize(pistonParams);
+
     CylinderBank::Parameters cbParams;
-    cbParams.Angle = 0;
+    cbParams.Angle = Constants::pi / 4;
     cbParams.Bore = 4.25;
-    cbParams.CylinderCount = 1;
+    cbParams.CylinderCount = 2;
     cbParams.DeckHeight = 9.8;
     m_iceEngine.getCylinderBank(0)->initialize(cbParams);
+
+    cbParams.Angle = -Constants::pi / 4;
+    m_iceEngine.getCylinderBank(1)->initialize(cbParams);
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = 2.0;
@@ -120,9 +146,11 @@ void EngineSimApplication::initialize() {
     crankshaftParams.MomentOfInertia = 600;
     crankshaftParams.Pos_x = 0;
     crankshaftParams.Pos_y = 0;
-    crankshaftParams.RodJournals = 1;
+    crankshaftParams.RodJournals = 3;
     m_iceEngine.getCrankshaft(0)->initialize(crankshaftParams);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(0, 0.0);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(0, 0);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(1, Constants::pi / 2);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(2, Constants::pi);
 
     ConnectingRod::Parameters crParams;
     crParams.CenterOfMass = 0;
@@ -132,6 +160,15 @@ void EngineSimApplication::initialize() {
     crParams.Mass = 2.0;
     crParams.MomentOfInertia = 2.0;
     m_iceEngine.getConnectingRod(0)->initialize(crParams);
+    m_iceEngine.getConnectingRod(1)->initialize(crParams);
+
+    crParams.Journal = 1;
+    m_iceEngine.getConnectingRod(2)->initialize(crParams);
+    m_iceEngine.getConnectingRod(3)->initialize(crParams);
+
+    crParams.Journal = 2;
+    m_iceEngine.getConnectingRod(4)->initialize(crParams);
+    m_iceEngine.getConnectingRod(5)->initialize(crParams);
 
     m_simulator.synthesize(&m_iceEngine);
     createObjects(&m_iceEngine);
@@ -225,15 +262,17 @@ void EngineSimApplication::drawGenerated(const GeometryGenerator::GeometryIndice
 }
 
 void EngineSimApplication::createObjects(Engine *engine) {
-    PistonObject *pistonObject = new PistonObject;
-    pistonObject->initialize(this);
-    pistonObject->m_piston = engine->getPiston(0);
-    m_objects.push_back(pistonObject);
+    for (int i = 0; i < engine->getCylinderCount(); ++i) {
+        PistonObject *pistonObject = new PistonObject;
+        pistonObject->initialize(this);
+        pistonObject->m_piston = engine->getPiston(i);
+        m_objects.push_back(pistonObject);
 
-    ConnectingRodObject *rodObject = new ConnectingRodObject;
-    rodObject->initialize(this);
-    rodObject->m_connectingRod = engine->getConnectingRod(0);
-    m_objects.push_back(rodObject);
+        ConnectingRodObject *rodObject = new ConnectingRodObject;
+        rodObject->initialize(this);
+        rodObject->m_connectingRod = engine->getConnectingRod(i);
+        m_objects.push_back(rodObject);
+    }
 }
 
 void EngineSimApplication::renderScene() {

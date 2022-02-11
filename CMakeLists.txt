@@ -30,6 +30,7 @@ add_executable(engine-sim WIN32
     src/piston_object.cpp
     src/connecting_rod_object.cpp
     src/combustion_chamber.cpp
+    src/crankshaft_friction.cpp
 
     # Include files
     include/delta.h
@@ -47,6 +48,7 @@ add_executable(engine-sim WIN32
     include/piston_object.h
     include/connecting_rod_object.h
     include/combustion_chamber.h
+    include/crankshaft_friction.h
 )
 
 target_link_libraries(engine-sim

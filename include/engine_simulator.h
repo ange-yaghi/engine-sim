@@ -3,6 +3,7 @@
 
 #include "engine.h"
 #include "combustion_chamber.h"
+#include "crankshaft_friction.h"
 
 #include "scs.h"
 
@@ -26,6 +27,7 @@ class EngineSimulator {
         atg_scs::LinkConstraint *m_linkConstraints;
 
         CombustionChamber *m_combustionChambers;
+        CrankshaftFriction *m_crankshaftFrictionGenerators;
 
         Engine *m_engine;
 };
