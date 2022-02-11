@@ -110,14 +110,14 @@ void EngineSimApplication::initialize() {
     cbParams.Angle = 0;
     cbParams.Bore = 4.25;
     cbParams.CylinderCount = 1;
-    cbParams.DeckHeight = 10;
+    cbParams.DeckHeight = 9.8;
     m_iceEngine.getCylinderBank(0)->initialize(cbParams);
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = 2.0;
     crankshaftParams.FlywheelMass = 50;
     crankshaftParams.Mass = 75;
-    crankshaftParams.MomentOfInertia = 10;
+    crankshaftParams.MomentOfInertia = 600;
     crankshaftParams.Pos_x = 0;
     crankshaftParams.Pos_y = 0;
     crankshaftParams.RodJournals = 1;
@@ -135,6 +135,8 @@ void EngineSimApplication::initialize() {
 
     m_simulator.synthesize(&m_iceEngine);
     createObjects(&m_iceEngine);
+
+    m_simulator.placeAndInitialize();
 }
 
 void EngineSimApplication::process(float dt) {

@@ -2,6 +2,7 @@
 #define ATG_ENGINE_SIM_ENGINE_SIMULATOR_H
 
 #include "engine.h"
+#include "combustion_chamber.h"
 
 #include "scs.h"
 
@@ -11,6 +12,7 @@ class EngineSimulator {
         ~EngineSimulator();
 
         void synthesize(Engine *engine);
+        void placeAndInitialize();
         void update(float dt);
         void destroy();
 
@@ -22,6 +24,8 @@ class EngineSimulator {
         atg_scs::FixedPositionConstraint *m_crankConstraints;
         atg_scs::LineConstraint *m_cylinderWallConstraints;
         atg_scs::LinkConstraint *m_linkConstraints;
+
+        CombustionChamber *m_combustionChambers;
 
         Engine *m_engine;
 };

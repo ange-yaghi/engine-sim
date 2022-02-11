@@ -23,6 +23,9 @@ class CylinderBank {
         double m_bore;
         double m_deckHeight;
         int m_cylinderCount;
+
+        double m_dx;
+        double m_dy;
 };
 
 #endif /* ATG_ENGINE_SIM_CYLINDER_BANK_H */

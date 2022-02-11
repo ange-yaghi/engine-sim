@@ -1,5 +1,8 @@
 #include "../include/piston.h"
 
+#include "../include/connecting_rod.h"
+#include "../include/crankshaft.h"
+
 Piston::Piston() {
     m_rod = nullptr;
     m_bank = nullptr;
@@ -26,4 +29,12 @@ void Piston::initialize(const Parameters &params) {
 
 void Piston::destroy() {
     /* void */
+}
+
+double Piston::relativeX() const {
+    return m_body.p_x - m_rod->m_crankshaft->m_p_x;
+}
+
+double Piston::relativeY() const {
+    return m_body.p_y - m_rod->m_crankshaft->m_p_y;
 }

@@ -10,12 +10,14 @@ EngineSimulator::EngineSimulator() {
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
     m_linkConstraints = nullptr;
+    m_combustionChambers = nullptr;
 }
 
 EngineSimulator::~EngineSimulator() {
     assert(m_crankConstraints == nullptr);
     assert(m_cylinderWallConstraints == nullptr);
     assert(m_linkConstraints == nullptr);
+    assert(m_combustionChambers == nullptr);
 }
 
 void EngineSimulator::synthesize(Engine *engine) {
@@ -33,6 +35,7 @@ void EngineSimulator::synthesize(Engine *engine) {
 
     m_crankConstraints = new atg_scs::FixedPositionConstraint[crankCount];
     m_cylinderWallConstraints = new atg_scs::LineConstraint[cylinderCount];
+    m_combustionChambers = new CombustionChamber[cylinderCount];
     m_linkConstraints = new atg_scs::LinkConstraint[linkCount];
 
     for (int i = 0; i < crankCount; ++i) {
@@ -90,7 +93,7 @@ void EngineSimulator::synthesize(Engine *engine) {
 
         piston->m_body.m = piston->m_mass;
         piston->m_body.I = 1.0;
-        
+
         connectingRod->m_body.m = connectingRod->m_m;
         connectingRod->m_body.I = connectingRod->m_I;
 
@@ -99,21 +102,45 @@ void EngineSimulator::synthesize(Engine *engine) {
         m_system.addConstraint(&m_linkConstraints[i * 2 + 0]);
         m_system.addConstraint(&m_linkConstraints[i * 2 + 1]);
         m_system.addConstraint(&m_cylinderWallConstraints[i]);
+
+        CombustionChamber &chamber = m_combustionChambers[i];
+        chamber.m_bank = bank;
+        chamber.m_piston = piston;
+
+        m_system.addForceGenerator(&chamber);
     }
 }
 
+void EngineSimulator::placeAndInitialize() {
+    const int cylinderCount = m_engine->getCylinderCount();
+    for (int i = 0; i < cylinderCount; ++i) {
+        m_combustionChambers[i].initialize(100.0, 25.0);
+    }
+
+    m_engine->getCrankshaft(0)->m_body.v_theta = 5.0;
+}
+
 void EngineSimulator::update(float dt) {
-    m_system.process(dt, m_steps);
+    for (int i = 0; i < m_steps; ++i) {
+        m_system.process(dt / m_steps, 1);
+
+        const int cylinderCount = m_engine->getCylinderCount();
+        for (int i = 0; i < cylinderCount; ++i) {
+            m_combustionChambers[i].updatePv();
+        }
+    }
 }
 
 void EngineSimulator::destroy() {
     delete[] m_crankConstraints;
     delete[] m_cylinderWallConstraints;
     delete[] m_linkConstraints;
+    delete[] m_combustionChambers;
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
     m_linkConstraints = nullptr;
+    m_combustionChambers = nullptr;
 
     m_engine = nullptr;
 }

@@ -25,6 +25,9 @@ class Piston : public Part {
         void initialize(const Parameters &params);
         virtual void destroy();
 
+        double relativeX() const;
+        double relativeY() const;
+
         ConnectingRod *m_rod;
         CylinderBank *m_bank;
         int m_cylinderIndex;
