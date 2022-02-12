@@ -12,7 +12,7 @@ class ConnectingRodObject : public SimulationObject {
         virtual ~ConnectingRodObject();
 
         virtual void generateGeometry();
-        virtual void render();
+        virtual void render(const ViewParameters *view);
         virtual void process(float dt);
         virtual void destroy();
 

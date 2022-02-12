@@ -32,6 +32,8 @@ class Engine : public Part {
         Piston *getPiston(int i) const { return &m_pistons[i]; }
         ConnectingRod *getConnectingRod(int i) const { return &m_connectingRods[i]; }
 
+        double getRpm() const;
+
     protected:
         Crankshaft *m_crankshafts;
         int m_crankshaftCount;

@@ -18,7 +18,7 @@ void SimulationObject::generateGeometry() {
     /* void */
 }
 
-void SimulationObject::render() {
+void SimulationObject::render(const ViewParameters *settings) {
     /* void */
 }
 

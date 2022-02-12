@@ -25,12 +25,20 @@ void PistonObject::generateGeometry() {
     gen->endShape(&m_pistonBody);
 }
 
-void PistonObject::render() {
+void PistonObject::render(const ViewParameters *view) {
+    const int layer = m_piston->m_rod->m_journal;
+    if (layer > view->Layer1 || layer < view->Layer0) return;
+
+    ysVector col = ysMath::Constants::One;
+    for (int i = view->Layer0; i < layer; ++i) {
+        col = ysMath::Mul(col, ysMath::LoadVector(0.1f, 0.1f, 0.1f, 1.0f));
+    }
+
     resetShader();
     setTransform(&m_piston->m_body);
 
-    m_app->getShaders()->SetBaseColor(ysMath::Constants::One);
-    m_app->drawGenerated(m_pistonBody);
+    m_app->getShaders()->SetBaseColor(col);
+    m_app->drawGenerated(m_pistonBody, 0xFF - layer);
 }
 
 void PistonObject::process(float dt) {

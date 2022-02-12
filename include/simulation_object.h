@@ -6,12 +6,18 @@
 class EngineSimApplication;
 class SimulationObject {
     public:
+        struct ViewParameters {
+            int Layer0;
+            int Layer1;
+        };
+
+    public:
         SimulationObject();
         virtual ~SimulationObject();
 
         virtual void initialize(EngineSimApplication *app);
         virtual void generateGeometry();
-        virtual void render();
+        virtual void render(const ViewParameters *settings);
         virtual void process(float dt);
         virtual void destroy();
 

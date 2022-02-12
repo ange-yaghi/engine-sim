@@ -4,6 +4,8 @@
 #include "../include/connecting_rod_object.h"
 #include "../include/constants.h"
 
+#include <sstream>
+
 EngineSimApplication::EngineSimApplication() {
     m_cameraTarget = ysMath::Constants::Zero;
     m_cameraPosition = ysMath::LoadVector(0.0f, 0.0f, 5.0f);
@@ -26,6 +28,8 @@ EngineSimApplication::EngineSimApplication() {
     m_shadow = ysColor::srgbiToLinear(0x0E1012);
     m_highlight1 = ysColor::srgbiToLinear(0xEF4545);
     m_highlight2 = ysColor::srgbiToLinear(0xFFFFFF);
+
+    m_displayHeight = 20.0f;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -90,6 +94,10 @@ void EngineSimApplication::initialize() {
     m_shaders.SetClearColor(ysColor::srgbiToLinear(0x34, 0x98, 0xdb));
     m_assetManager.CompileInterchangeFile((m_assetPath + "/icosphere").c_str(), 1.0f, true);
     m_assetManager.LoadSceneFile((m_assetPath + "/icosphere").c_str(), true);
+
+    m_textRenderer.SetEngine(&m_engine);
+    m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
+    m_textRenderer.SetFont(m_engine.GetConsole()->GetFont());
 
     Engine::Parameters engineParams;
     engineParams.CylinderBanks = 2;
@@ -182,10 +190,34 @@ void EngineSimApplication::process(float dt) {
 }
 
 void EngineSimApplication::render() {
+    SimulationObject::ViewParameters view;
+    view.Layer0 = 0;
+    view.Layer1 = 2;
+
     for (SimulationObject *object : m_objects) {
         object->generateGeometry();
-        object->render();
+        object->render(&view);
     }
+
+    std::stringstream ss;
+    ss << std::lroundf(m_iceEngine.getRpm()) << " RPM     \n";
+    ss << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
+    m_textRenderer.RenderText(
+        ss.str(),
+        50 - m_engine.GetScreenWidth() / 2.0,
+        50 + 64 - m_engine.GetScreenHeight() / 2.0,
+        64
+    );
+}
+
+float EngineSimApplication::pixelsToUnits(float pixels) const {
+    const float f = m_displayHeight / m_engine.GetGameWindow()->GetGameHeight();
+    return pixels * f;
+}
+
+float EngineSimApplication::unitsToPixels(float units) const {
+    const float f = m_engine.GetGameWindow()->GetGameHeight() / m_displayHeight;
+    return units * f;
 }
 
 void EngineSimApplication::run() {
@@ -250,7 +282,7 @@ void EngineSimApplication::destroy() {
     m_engine.Destroy();
 }
 
-void EngineSimApplication::drawGenerated(const GeometryGenerator::GeometryIndices &indices) {
+void EngineSimApplication::drawGenerated(const GeometryGenerator::GeometryIndices &indices, int layer) {
     m_engine.DrawGeneric(
         m_shaders.GetRegularFlags(),
         m_geometryIndexBuffer,
@@ -258,20 +290,22 @@ void EngineSimApplication::drawGenerated(const GeometryGenerator::GeometryIndice
         sizeof(dbasic::Vertex),
         indices.BaseIndex,
         indices.BaseVertex,
-        indices.FaceCount);
+        indices.FaceCount,
+        false,
+        layer);
 }
 
 void EngineSimApplication::createObjects(Engine *engine) {
     for (int i = 0; i < engine->getCylinderCount(); ++i) {
-        PistonObject *pistonObject = new PistonObject;
-        pistonObject->initialize(this);
-        pistonObject->m_piston = engine->getPiston(i);
-        m_objects.push_back(pistonObject);
-
         ConnectingRodObject *rodObject = new ConnectingRodObject;
         rodObject->initialize(this);
         rodObject->m_connectingRod = engine->getConnectingRod(i);
         m_objects.push_back(rodObject);
+
+        PistonObject *pistonObject = new PistonObject;
+        pistonObject->initialize(this);
+        pistonObject->m_piston = engine->getPiston(i);
+        m_objects.push_back(pistonObject);
     }
 }
 
@@ -292,8 +326,8 @@ void EngineSimApplication::renderScene() {
         const float aspectRatio = screenWidth / (float)screenHeight;
         m_shaders.SetProjection(ysMath::Transpose(
             ysMath::OrthographicProjection(
-                aspectRatio * 20.0,
-                20.0,
+                aspectRatio * m_displayHeight,
+                m_displayHeight,
                 0.001f,
                 500.0f)));
     }

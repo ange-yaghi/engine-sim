@@ -24,7 +24,7 @@ class EngineSimApplication {
         void setCameraTarget(const ysVector &target) { m_cameraTarget = target; }
         void setCameraUp(const ysVector &up) { m_cameraUp = up; }
 
-        void drawGenerated(const GeometryGenerator::GeometryIndices &indices);
+        void drawGenerated(const GeometryGenerator::GeometryIndices &indices, int layer = 0);
         GeometryGenerator *getGeometryGenerator() { return &m_geometryGenerator; }
 
         dbasic::DefaultShaders *getShaders() { return &m_shaders; }
@@ -38,6 +38,11 @@ class EngineSimApplication {
         virtual void initialize();
         virtual void process(float dt);
         virtual void render();
+
+        float pixelsToUnits(float pixels) const;
+        float unitsToPixels(float units) const;
+
+        float m_displayHeight;
 
         dbasic::ShaderSet m_shaderSet;
         dbasic::DefaultShaders m_shaders;
@@ -55,6 +60,7 @@ class EngineSimApplication {
         ysGPUBuffer *m_geometryIndexBuffer;
 
         GeometryGenerator m_geometryGenerator;
+        dbasic::TextRenderer m_textRenderer;
 
         std::vector<SimulationObject *> m_objects;
         Engine m_iceEngine;

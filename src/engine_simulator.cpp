@@ -43,12 +43,17 @@ void EngineSimulator::synthesize(Engine *engine) {
     m_linkConstraints = new atg_scs::LinkConstraint[linkCount];
     m_crankshaftFrictionGenerators = new CrankshaftFriction[crankCount];
 
+    const double ks = 500;
+    const double kd = 10;
+
     for (int i = 0; i < crankCount; ++i) {
         m_crankConstraints[i].setBody(&engine->getCrankshaft(i)->m_body);
         m_crankConstraints[i].setWorldPosition(
                 engine->getCrankshaft(i)->m_p_x,
                 engine->getCrankshaft(i)->m_p_y);
         m_crankConstraints[i].setLocalPosition(0.0, 0.0);
+        m_crankConstraints[i].m_kd = kd;
+        m_crankConstraints[i].m_ks = ks;
 
         engine->getCrankshaft(i)->m_body.p_x = engine->getCrankshaft(i)->m_p_x;
         engine->getCrankshaft(i)->m_body.p_y = engine->getCrankshaft(i)->m_p_y;
@@ -82,12 +87,16 @@ void EngineSimulator::synthesize(Engine *engine) {
         m_cylinderWallConstraints[i].m_local_y = piston->m_wristPinLocation;
         m_cylinderWallConstraints[i].m_p0_x = crankshaft->m_p_x;
         m_cylinderWallConstraints[i].m_p0_y = crankshaft->m_p_y;
+        m_cylinderWallConstraints[i].m_ks = ks;
+        m_cylinderWallConstraints[i].m_kd = kd;
 
         m_linkConstraints[i * 2 + 0].setBody1(&connectingRod->m_body);
         m_linkConstraints[i * 2 + 0].setBody2(&piston->m_body);
         m_linkConstraints[i * 2 + 0]
             .setLocalPosition1(0.0, connectingRod->getLittleEndLocal());
         m_linkConstraints[i * 2 + 0].setLocalPosition2(0.0, piston->m_wristPinLocation);
+        m_linkConstraints[i * 2 + 0].m_ks = ks;
+        m_linkConstraints[i * 2 + 0].m_kd = kd;
 
         double journal_x = 0.0, journal_y = 0.0;
         crankshaft->getRodJournalPositionLocal(
@@ -101,6 +110,8 @@ void EngineSimulator::synthesize(Engine *engine) {
             .setLocalPosition1(0.0, connectingRod->getBigEndLocal());
         m_linkConstraints[i * 2 + 1]
             .setLocalPosition2(journal_x, journal_y);
+        m_linkConstraints[i * 2 + 1].m_ks = ks;
+        m_linkConstraints[i * 2 + 0].m_kd = kd;
 
         piston->m_body.m = piston->m_mass;
         piston->m_body.I = 1.0;
@@ -160,7 +171,6 @@ void EngineSimulator::placeAndInitialize() {
         rod->m_body.localToWorld(0, rod->getBigEndLocal(), &cl_x, &cl_y);
         rod->m_body.p_x += p_x + rod->m_crankshaft->m_p_x - cl_x;
         rod->m_body.p_y += p_y + rod->m_crankshaft->m_p_y - cl_y;
-        rod->m_body.localToWorld(0, rod->getLittleEndLocal(), &cl_x, &cl_y);
         
         piston->m_body.p_x = e_x + rod->m_crankshaft->m_p_x;
         piston->m_body.p_y = e_y + rod->m_crankshaft->m_p_y;

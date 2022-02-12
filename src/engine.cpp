@@ -1,5 +1,7 @@
 #include "../include/engine.h"
 
+#include "../include/constants.h"
+
 #include <assert.h>
 
 Engine::Engine() {
@@ -50,4 +52,9 @@ void Engine::destroy() {
     m_cylinderBanks = nullptr;
     m_pistons = nullptr;
     m_connectingRods = nullptr;
+}
+
+double Engine::getRpm() const {
+    if (m_crankshaftCount == 0) return 0;
+    return (getCrankshaft(0)->m_body.v_theta / (2 * Constants::pi)) * 60;
 }
