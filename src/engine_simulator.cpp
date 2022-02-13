@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <assert.h>
+#include <chrono>
 
 EngineSimulator::EngineSimulator() {
     m_engine = nullptr;
@@ -14,6 +15,8 @@ EngineSimulator::EngineSimulator() {
     m_linkConstraints = nullptr;
     m_combustionChambers = nullptr;
     m_crankshaftFrictionGenerators = nullptr;
+
+    m_physicsProcessingTime = 0.0;
 }
 
 EngineSimulator::~EngineSimulator() {
@@ -183,6 +186,8 @@ void EngineSimulator::placeAndInitialize() {
 }
 
 void EngineSimulator::update(float dt) {
+    auto s0 = std::chrono::steady_clock::now();
+
     for (int i = 0; i < m_steps; ++i) {
         m_system.process(dt / m_steps, 1);
 
@@ -191,6 +196,11 @@ void EngineSimulator::update(float dt) {
             m_combustionChambers[i].adiabaticCompression();
         }
     }
+
+    auto s1 = std::chrono::steady_clock::now();
+
+    const int lastFrame = std::chrono::duration_cast<std::chrono::microseconds>(s1 - s0).count();
+    m_physicsProcessingTime = m_physicsProcessingTime * 0.98 + 0.02 * lastFrame;
 }
 
 void EngineSimulator::destroy() {

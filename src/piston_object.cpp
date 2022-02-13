@@ -31,7 +31,10 @@ void PistonObject::render(const ViewParameters *view) {
 
     ysVector col = ysMath::Constants::One;
     for (int i = view->Layer0; i < layer; ++i) {
-        col = ysMath::Mul(col, ysMath::LoadVector(0.1f, 0.1f, 0.1f, 1.0f));
+        col = ysMath::Add(
+            ysMath::Mul(col, ysMath::LoadScalar(0.2f)),
+            ysMath::Mul(ysColor::srgbiToLinear(0x0E1012), ysMath::LoadScalar(0.8f))
+        );
     }
 
     resetShader();

@@ -56,5 +56,5 @@ void Engine::destroy() {
 
 double Engine::getRpm() const {
     if (m_crankshaftCount == 0) return 0;
-    return (getCrankshaft(0)->m_body.v_theta / (2 * Constants::pi)) * 60;
+    return -(getCrankshaft(0)->m_body.v_theta / (2 * Constants::pi)) * 60;
 }

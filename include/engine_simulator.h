@@ -19,6 +19,8 @@ class EngineSimulator {
 
         int m_steps;
 
+        double getAverageProcessingTime() const { return m_physicsProcessingTime; }
+
     protected:
         atg_scs::RigidBodySystem m_system;
 
@@ -30,6 +32,8 @@ class EngineSimulator {
         CrankshaftFriction *m_crankshaftFrictionGenerators;
 
         Engine *m_engine;
+
+        double m_physicsProcessingTime;
 };
 
 #endif /* ATG_ENGINE_SIM_ENGINE_SIMULATOR_H */

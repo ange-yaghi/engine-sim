@@ -101,7 +101,7 @@ void EngineSimApplication::initialize() {
 
     Engine::Parameters engineParams;
     engineParams.CylinderBanks = 2;
-    engineParams.CylinderCount = 6;
+    engineParams.CylinderCount = 8;
     engineParams.CrankshaftCount = 1;
     m_iceEngine.initialize(engineParams);
 
@@ -137,10 +137,19 @@ void EngineSimApplication::initialize() {
     pistonParams.Rod = m_iceEngine.getConnectingRod(5);
     m_iceEngine.getPiston(5)->initialize(pistonParams);
 
+    pistonParams.CylinderIndex = 3;
+    pistonParams.Bank = m_iceEngine.getCylinderBank(0);
+    pistonParams.Rod = m_iceEngine.getConnectingRod(6);
+    m_iceEngine.getPiston(6)->initialize(pistonParams);
+
+    pistonParams.Bank = m_iceEngine.getCylinderBank(1);
+    pistonParams.Rod = m_iceEngine.getConnectingRod(7);
+    m_iceEngine.getPiston(7)->initialize(pistonParams);
+
     CylinderBank::Parameters cbParams;
     cbParams.Angle = Constants::pi / 4;
     cbParams.Bore = 4.25;
-    cbParams.CylinderCount = 2;
+    cbParams.CylinderCount = 4;
     cbParams.DeckHeight = 9.8;
     m_iceEngine.getCylinderBank(0)->initialize(cbParams);
 
@@ -154,11 +163,12 @@ void EngineSimApplication::initialize() {
     crankshaftParams.MomentOfInertia = 600;
     crankshaftParams.Pos_x = 0;
     crankshaftParams.Pos_y = 0;
-    crankshaftParams.RodJournals = 3;
+    crankshaftParams.RodJournals = 4;
     m_iceEngine.getCrankshaft(0)->initialize(crankshaftParams);
     m_iceEngine.getCrankshaft(0)->setRodJournalAngle(0, 0);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(1, Constants::pi / 2);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(2, Constants::pi);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(1, -Constants::pi / 2);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(2, -Constants::pi);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(3, -3 * Constants::pi / 2);
 
     ConnectingRod::Parameters crParams;
     crParams.CenterOfMass = 0;
@@ -178,6 +188,10 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getConnectingRod(4)->initialize(crParams);
     m_iceEngine.getConnectingRod(5)->initialize(crParams);
 
+    crParams.Journal = 3;
+    m_iceEngine.getConnectingRod(6)->initialize(crParams);
+    m_iceEngine.getConnectingRod(7)->initialize(crParams);
+
     m_simulator.synthesize(&m_iceEngine);
     createObjects(&m_iceEngine);
 
@@ -192,7 +206,7 @@ void EngineSimApplication::process(float dt) {
 void EngineSimApplication::render() {
     SimulationObject::ViewParameters view;
     view.Layer0 = 0;
-    view.Layer1 = 2;
+    view.Layer1 = 3;
 
     for (SimulationObject *object : m_objects) {
         object->generateGeometry();
@@ -200,12 +214,13 @@ void EngineSimApplication::render() {
     }
 
     std::stringstream ss;
+    ss << std::lroundf(m_simulator.getAverageProcessingTime()) << " us    \n";
     ss << std::lroundf(m_iceEngine.getRpm()) << " RPM     \n";
     ss << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
     m_textRenderer.RenderText(
         ss.str(),
         50 - m_engine.GetScreenWidth() / 2.0,
-        50 + 64 - m_engine.GetScreenHeight() / 2.0,
+        50 + 64 + 64 - m_engine.GetScreenHeight() / 2.0,
         64
     );
 }
@@ -402,9 +417,6 @@ void EngineSimApplication::stopRecording() {
 
 void EngineSimApplication::recordFrame() {
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
-    const int width = m_engine.GetScreenWidth();
-    const int height = m_engine.GetScreenHeight();
-
     atg_dtv::Frame *frame = m_encoder.newFrame(true);
     if (frame != nullptr && m_encoder.getError() == atg_dtv::Encoder::Error::None) {
         m_engine.GetDevice()->ReadRenderTarget(m_engine.GetScreenRenderTarget(), frame->m_rgb);
