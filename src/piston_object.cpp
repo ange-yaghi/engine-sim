@@ -18,7 +18,7 @@ void PistonObject::generateGeometry() {
     params.x0 = -(float)m_piston->m_bank->m_bore / 2;
     params.x1 = (float)m_piston->m_bank->m_bore / 2;
     params.y0 = params.y1 = 0.0f;
-    params.lineWidth = m_piston->m_compressionHeight;
+    params.lineWidth = m_piston->m_compressionHeight * 2;
 
     gen->startShape();
     gen->generateLine2d(params);
@@ -41,7 +41,7 @@ void PistonObject::render(const ViewParameters *view) {
     setTransform(&m_piston->m_body);
 
     m_app->getShaders()->SetBaseColor(col);
-    m_app->drawGenerated(m_pistonBody, 0xFF - layer);
+    m_app->drawGenerated(m_pistonBody, 0x10 - layer);
 }
 
 void PistonObject::process(float dt) {

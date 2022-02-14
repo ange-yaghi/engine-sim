@@ -1,0 +1,207 @@
+#include "../include/ui_element.h"
+
+#include "../include/engine_sim_application.h"
+
+#include <assert.h>
+
+UiElement::UiElement() {
+    m_app = nullptr;
+    m_parent = nullptr;
+    m_checkMouse = false;
+    m_disabled = false;
+    m_index = -1;
+
+    m_draggable = false;
+}
+
+UiElement::~UiElement() {
+    /* void */
+}
+
+void UiElement::initialize(EngineSimApplication *app) {
+    m_app = app;
+}
+
+void UiElement::destroy() {
+    /* void */
+}
+
+void UiElement::update(float dt) {
+    for (UiElement *child : m_children) {
+        child->update(dt);
+    }
+}
+
+void UiElement::render() {
+    for (UiElement *child : m_children) {
+        child->render();
+    }
+}
+
+void UiElement::onMouseDown(const Point &mouseLocal) {
+    /* void */
+}
+
+void UiElement::onMouseClick(const Point &mouseLocal) {
+    /* void */
+}
+
+void UiElement::onDrag(const Point &p0, const Point &delta) {
+    if (m_draggable) {
+        m_localPosition = p0 + delta;
+    }
+}
+
+void UiElement::onMouseOver(const Point &mouseLocal) {
+    /* void */
+}
+
+UiElement *UiElement::mouseOver(const Point &mouseLocal) {
+    if (m_disabled) return nullptr;
+
+    const size_t n = getChildCount();
+    for (int i = n - 1; i >= 0; --i) {
+        UiElement *child = m_children[i];
+        UiElement *clickedElement = child->mouseOver(mouseLocal - child->m_localPosition);
+        if (clickedElement != nullptr) {
+            return clickedElement;
+        }
+    }
+
+    return (m_checkMouse && m_mouseBounds.overlaps(mouseLocal))
+        ? this
+        : nullptr;
+}
+
+Point UiElement::getWorldPosition() const {
+    return (m_parent != nullptr)
+        ? m_parent->getWorldPosition() + m_localPosition
+        : m_localPosition;
+}
+
+void UiElement::setLocalPosition(const Point &p, const Point &ref) {
+    const Point current = m_bounds.getPosition(ref) + m_localPosition;
+    m_localPosition += (p - current);
+}
+
+void UiElement::bringToFront(UiElement *element) {
+    assert(element->m_parent == this);
+
+    m_children.erase(m_children.begin() + element->m_index);
+    m_children.push_back(element);
+}
+
+void UiElement::activate() {
+    if (m_parent != nullptr) {
+        m_parent->bringToFront(this);
+        m_parent->activate();
+    }
+}
+
+float UiElement::pixelsToUnits(float length) const {
+    return m_app->pixelsToUnits(length);
+}
+
+Point UiElement::pixelsToUnits(const Point &p) const {
+    return { pixelsToUnits(p.x), pixelsToUnits(p.y) };
+}
+
+float UiElement::unitsToPixels(float x) const {
+    return m_app->unitsToPixels(x);
+}
+
+Point UiElement::unitsToPixels(const Point &p) const {
+    return { unitsToPixels(p.x), unitsToPixels(p.y) };
+}
+
+Point UiElement::getRenderPoint(const Point &p) const {
+    const Point offset(
+            -(float)m_app->getEngine()->GetScreenWidth() / 2,
+            -(float)m_app->getEngine()->GetScreenHeight() / 2);
+    const Point posPixels = localToWorld(p) + offset;
+
+    return { pixelsToUnits(posPixels.x), pixelsToUnits(posPixels.y) };
+}
+
+Bounds UiElement::getRenderBounds(const Bounds &b) const {
+    return { getRenderPoint(b.m0), getRenderPoint(b.m1) };
+}
+
+Bounds UiElement::unitsToPixels(const Bounds &b) const {
+    return { unitsToPixels(b.m0), unitsToPixels(b.m1) };
+}
+
+void UiElement::resetShader() {
+    m_app->getShaders()->ResetBrdfParameters();
+    m_app->getShaders()->SetColorReplace(true);
+    m_app->getShaders()->SetLit(false);
+    m_app->getShaders()->SetFogFar(2001.0f);
+    m_app->getShaders()->SetFogNear(2000.0f);
+    m_app->getShaders()->SetObjectTransform(ysMath::LoadIdentity());
+}
+
+void UiElement::drawFrame(
+        Bounds &bounds,
+        float thickness,
+        const ysVector &frameColor,
+        const ysVector &fillColor)
+{
+    GeometryGenerator *generator = m_app->getGeometryGenerator();
+
+    const Bounds worldBounds = getRenderBounds(bounds);
+    const Point position = worldBounds.getPosition(Bounds::center);
+
+    GeometryGenerator::FrameParameters params;
+    params.frameWidth = worldBounds.width();
+    params.frameHeight = worldBounds.height();
+    params.lineWidth = pixelsToUnits(thickness);
+    params.x = position.x;
+    params.y = position.y;
+
+    GeometryGenerator::Line2dParameters lineParams;
+    lineParams.lineWidth = worldBounds.height();
+    lineParams.y0 = lineParams.y1 = worldBounds.getPosition(Bounds::center).y;
+    lineParams.x0 = worldBounds.left();
+    lineParams.x1 = worldBounds.right();
+
+    GeometryGenerator::GeometryIndices frame, body;
+
+    generator->startShape();
+    generator->generateFrame(params);
+    generator->endShape(&frame);
+
+    generator->startShape();
+    generator->generateLine2d(lineParams);
+    generator->endShape(&body);
+
+    resetShader();
+    m_app->getShaders()->SetBaseColor(fillColor);
+    m_app->drawGenerated(body, 0x11);
+
+    m_app->getShaders()->SetBaseColor(frameColor);
+    m_app->drawGenerated(frame, 0x11);
+}
+
+void UiElement::drawText(
+        const std::string &s,
+        const Bounds &bounds,
+        float height)
+{
+    const Bounds renderBounds = unitsToPixels(getRenderBounds(bounds));
+
+    m_app->getTextRenderer()->RenderText(
+            s, renderBounds.left(), renderBounds.center_v() - height / 2, height);
+}
+
+void UiElement::drawCenteredText(
+        const std::string &s,
+        const Bounds &bounds,
+        float height)
+{
+    const Bounds renderBounds = unitsToPixels(getRenderBounds(bounds));
+    const Point center = renderBounds.getPosition(Bounds::center);
+
+    const float width = m_app->getTextRenderer()->CalculateWidth(s, height);
+    m_app->getTextRenderer()->RenderText(
+            s, center.x - width / 2, center.y - height / 2, height);
+}

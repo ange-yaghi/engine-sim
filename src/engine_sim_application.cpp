@@ -3,6 +3,8 @@
 #include "../include/piston_object.h"
 #include "../include/connecting_rod_object.h"
 #include "../include/constants.h"
+#include "../include/cylinder_pressure_gauge.h"
+#include "../include/units.h"
 
 #include <sstream>
 
@@ -29,7 +31,7 @@ EngineSimApplication::EngineSimApplication() {
     m_highlight1 = ysColor::srgbiToLinear(0xEF4545);
     m_highlight2 = ysColor::srgbiToLinear(0xFFFFFF);
 
-    m_displayHeight = 20.0f;
+    m_displayHeight = units::distance(2.0, units::foot);
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -107,12 +109,12 @@ void EngineSimApplication::initialize() {
 
     Piston::Parameters pistonParams;
     pistonParams.Bank = m_iceEngine.getCylinderBank(0);
-    pistonParams.CompressionHeight = 1.12;
+    pistonParams.CompressionHeight = units::distance(1.640, units::inch);
     pistonParams.CylinderIndex = 0;
     pistonParams.Displacement = 0;
     pistonParams.Rod = m_iceEngine.getConnectingRod(0);
     pistonParams.WristPinPosition = 0;
-    pistonParams.Mass = 1.0;
+    pistonParams.Mass = units::mass(880, units::g);
     m_iceEngine.getPiston(0)->initialize(pistonParams);
 
     pistonParams.Bank = m_iceEngine.getCylinderBank(1);
@@ -148,35 +150,44 @@ void EngineSimApplication::initialize() {
 
     CylinderBank::Parameters cbParams;
     cbParams.Angle = Constants::pi / 4;
-    cbParams.Bore = 4.25;
+    cbParams.Bore = units::distance(4.25, units::inch);
     cbParams.CylinderCount = 4;
-    cbParams.DeckHeight = 9.8;
+    cbParams.DeckHeight = units::distance(9.8, units::inch);
+    cbParams.Index = 0;
     m_iceEngine.getCylinderBank(0)->initialize(cbParams);
 
+    cbParams.Index = 1;
     cbParams.Angle = -Constants::pi / 4;
     m_iceEngine.getCylinderBank(1)->initialize(cbParams);
 
     Crankshaft::Parameters crankshaftParams;
-    crankshaftParams.CrankThrow = 2.0;
-    crankshaftParams.FlywheelMass = 50;
-    crankshaftParams.Mass = 75;
-    crankshaftParams.MomentOfInertia = 600;
+    crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
+    crankshaftParams.FlywheelMass = units::mass(29, units::lb);
+    crankshaftParams.Mass = units::mass(75, units::lb);
+
+    // Temporary moment of inertia approximation
+    const double crank_r = crankshaftParams.CrankThrow; 
+    const double flywheel_r = units::distance(14.0, units::inch) / 2.0;
+    const double I_crank = (1 / 2.0) * crankshaftParams.Mass * crank_r;
+    const double I_flywheel = (1 / 12.0) * crankshaftParams.FlywheelMass * flywheel_r * flywheel_r; 
+
+    crankshaftParams.MomentOfInertia = I_crank + I_flywheel;
     crankshaftParams.Pos_x = 0;
     crankshaftParams.Pos_y = 0;
     crankshaftParams.RodJournals = 4;
     m_iceEngine.getCrankshaft(0)->initialize(crankshaftParams);
     m_iceEngine.getCrankshaft(0)->setRodJournalAngle(0, 0);
     m_iceEngine.getCrankshaft(0)->setRodJournalAngle(1, -Constants::pi / 2);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(2, -Constants::pi);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(3, -3 * Constants::pi / 2);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(2, -3 * Constants::pi / 2);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(3, Constants::pi);
 
     ConnectingRod::Parameters crParams;
     crParams.CenterOfMass = 0;
     crParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     crParams.Journal = 0;
-    crParams.Length = 6.135;
-    crParams.Mass = 2.0;
-    crParams.MomentOfInertia = 2.0;
+    crParams.Length = units::distance(6.135, units::inch);
+    crParams.Mass = units::mass(785, units::g);
+    crParams.MomentOfInertia = (1 / 12.0) * crParams.Mass * crParams.Length * crParams.Length;
     m_iceEngine.getConnectingRod(0)->initialize(crParams);
     m_iceEngine.getConnectingRod(1)->initialize(crParams);
 
@@ -196,11 +207,17 @@ void EngineSimApplication::initialize() {
     createObjects(&m_iceEngine);
 
     m_simulator.placeAndInitialize();
+
+    m_uiManager.initialize(this);
+    CylinderPressureGauge *gauge = m_uiManager.getRoot()->addElement<CylinderPressureGauge>();
+    gauge->m_bounds = Bounds(300.0f, 500.0f, { 0.0f, 0.0f });
+    gauge->setLocalPosition(Point((float)m_engine.GetScreenWidth(), 0 ) + Point(-10.0f, 10.0f), Bounds::br);
+    gauge->m_simulator = &m_simulator;
 }
 
 void EngineSimApplication::process(float dt) {
     m_simulator.m_steps = 100;
-    m_simulator.update(1 / 60.0);
+    m_simulator.update((1 / 60.0) / 8);
 }
 
 void EngineSimApplication::render() {
@@ -223,6 +240,8 @@ void EngineSimApplication::render() {
         50 + 64 + 64 - m_engine.GetScreenHeight() / 2.0,
         64
     );
+
+    m_uiManager.render();
 }
 
 float EngineSimApplication::pixelsToUnits(float pixels) const {
@@ -272,6 +291,8 @@ void EngineSimApplication::run() {
         if (!m_paused || m_engine.ProcessKeyDown(ysKey::Code::Right)) {
             process(1 / 60.0f);
         }
+
+        m_uiManager.update(1 / 60.0f);
 
         renderScene();
 

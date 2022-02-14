@@ -10,6 +10,7 @@ class CylinderBank {
             double Bore;
             double DeckHeight;
             int CylinderCount;
+            int Index;
         };
 
     public:
@@ -23,6 +24,7 @@ class CylinderBank {
         double m_bore;
         double m_deckHeight;
         int m_cylinderCount;
+        int m_index;
 
         double m_dx;
         double m_dy;

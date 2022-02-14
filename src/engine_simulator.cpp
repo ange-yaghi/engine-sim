@@ -1,6 +1,7 @@
 #include "../include/engine_simulator.h"
 
 #include "../include/constants.h"
+#include "../include/units.h"
 
 #include <cmath>
 #include <assert.h>
@@ -181,7 +182,7 @@ void EngineSimulator::placeAndInitialize() {
     }
 
     for (int i = 0; i < cylinderCount; ++i) {
-        m_combustionChambers[i].initialize(100.0, 25.0);
+        m_combustionChambers[i].initialize(units::pressure(1, units::atm), units::celcius(25));
     }
 }
 
@@ -217,4 +218,10 @@ void EngineSimulator::destroy() {
     m_crankshaftFrictionGenerators = nullptr;
 
     m_engine = nullptr;
+}
+
+CombustionChamber *EngineSimulator::getCombustionChamber(int i) {
+    assert(i >= 0 && i < m_engine->getCylinderCount());
+
+    return &m_combustionChambers[i];
 }

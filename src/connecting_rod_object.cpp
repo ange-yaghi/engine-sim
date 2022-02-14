@@ -1,6 +1,7 @@
 #include "../include/connecting_rod_object.h"
 
 #include "../include/engine_sim_application.h"
+#include "../include/units.h"
 
 ConnectingRodObject::ConnectingRodObject() {
     m_connectingRod = nullptr;
@@ -17,7 +18,7 @@ void ConnectingRodObject::generateGeometry() {
     params.x0 = params.x1 = 0;
     params.y0 = m_connectingRod->getBigEndLocal();
     params.y1 = m_connectingRod->getLittleEndLocal();
-    params.lineWidth = 0.5;
+    params.lineWidth = units::distance(0.75, units::inch);
 
     gen->startShape();
     gen->generateLine2d(params);
@@ -40,7 +41,7 @@ void ConnectingRodObject::render(const ViewParameters *view) {
     setTransform(&m_connectingRod->m_body);
 
     m_app->getShaders()->SetBaseColor(col);
-    m_app->drawGenerated(m_connectingRodBody, 0xFF - layer);
+    m_app->drawGenerated(m_connectingRodBody, 0x10 - layer);
 }
 
 void ConnectingRodObject::process(float dt) {

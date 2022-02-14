@@ -5,6 +5,7 @@
 #include "engine_simulator.h"
 #include "engine.h"
 #include "simulation_object.h"
+#include "ui_manager.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -28,8 +29,13 @@ class EngineSimApplication {
         GeometryGenerator *getGeometryGenerator() { return &m_geometryGenerator; }
 
         dbasic::DefaultShaders *getShaders() { return &m_shaders; }
+        dbasic::TextRenderer *getTextRenderer() { return &m_textRenderer; }
 
         void createObjects(Engine *engine);
+        dbasic::DeltaEngine *getEngine() { return &m_engine; }
+
+        float pixelsToUnits(float pixels) const;
+        float unitsToPixels(float units) const;
 
     protected:
         void renderScene();
@@ -38,9 +44,6 @@ class EngineSimApplication {
         virtual void initialize();
         virtual void process(float dt);
         virtual void render();
-
-        float pixelsToUnits(float pixels) const;
-        float unitsToPixels(float units) const;
 
         float m_displayHeight;
 
@@ -65,6 +68,8 @@ class EngineSimApplication {
         std::vector<SimulationObject *> m_objects;
         Engine m_iceEngine;
         EngineSimulator m_simulator;
+
+        UiManager m_uiManager;
 
         bool m_paused;
 

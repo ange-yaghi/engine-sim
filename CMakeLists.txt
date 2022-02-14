@@ -31,6 +31,10 @@ add_executable(engine-sim WIN32
     src/connecting_rod_object.cpp
     src/combustion_chamber.cpp
     src/crankshaft_friction.cpp
+    src/ui_element.cpp
+    src/ui_manager.cpp
+    src/cylinder_pressure_gauge.cpp
+    src/ui_math.cpp
 
     # Include files
     include/delta.h
@@ -49,6 +53,11 @@ add_executable(engine-sim WIN32
     include/connecting_rod_object.h
     include/combustion_chamber.h
     include/crankshaft_friction.h
+    include/ui_element.h
+    include/ui_manager.h
+    include/cylinder_pressure_gauge.h
+    include/ui_math.h
+    include/units.h
 )
 
 target_link_libraries(engine-sim

@@ -1,6 +1,7 @@
 #include "../include/combustion_chamber.h"
 
 #include "../include/constants.h"
+#include "../include/units.h"
 
 #include <cmath>
 
@@ -19,19 +20,20 @@ CombustionChamber::~CombustionChamber() {
 
 void CombustionChamber::initialize(double p0, double t0) {
     m_pressure = m_crankcasePressure = p0;
-    m_pressure = m_crankcasePressure * 10;
     m_temperature = t0;
     m_volume = volume();
 }
 
 double CombustionChamber::volume() {
+    // Temp
+    const double combustionPortVolume = units::volume(118, units::cc);
+
     const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * Constants::pi;
     const double s =
         m_piston->relativeX() * m_bank->m_dx + m_piston->relativeY() * m_bank->m_dy;
-    const double displacement = area * (m_bank->m_deckHeight - s);
-    const double volume = displacement * area;
+    const double displacement = area * (m_bank->m_deckHeight - s - m_piston->m_compressionHeight);
 
-    return volume;
+    return displacement + combustionPortVolume;
 }
 
 void CombustionChamber::adiabaticCompression() {

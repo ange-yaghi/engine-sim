@@ -21,6 +21,9 @@ class EngineSimulator {
 
         double getAverageProcessingTime() const { return m_physicsProcessingTime; }
 
+        Engine *getEngine() const { return m_engine; }
+        CombustionChamber *getCombustionChamber(int i);
+
     protected:
         atg_scs::RigidBodySystem m_system;
 

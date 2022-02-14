@@ -20,6 +20,10 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double volume();
         void adiabaticCompression();
 
+        const double getPressure() const { return m_pressure; }
+        const double getTemperature() const { return m_temperature; }
+        const double getVolume() const { return m_volume; }
+
     protected:
         double m_pressure;
         double m_temperature;
