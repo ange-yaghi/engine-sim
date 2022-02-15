@@ -12,6 +12,7 @@ CombustionChamber::CombustionChamber() {
     m_crankcasePressure = 0.0;
     m_bank = nullptr;
     m_piston = nullptr;
+    m_blowbyK = 5000.0;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -34,6 +35,17 @@ double CombustionChamber::volume() {
     const double displacement = area * (m_bank->m_deckHeight - s - m_piston->m_compressionHeight);
 
     return displacement + combustionPortVolume;
+}
+
+void CombustionChamber::blowby(double dt) {
+    const double sgn = m_crankcasePressure > m_pressure
+        ? 1.0
+        : -1.0;
+    const double v_g = std::sqrt(std::abs(m_crankcasePressure - m_pressure));
+
+    const double newPressure = m_pressure + v_g * sgn * m_blowbyK * dt;
+    m_temperature = m_temperature * (newPressure / m_pressure);
+    m_pressure = newPressure;
 }
 
 void CombustionChamber::adiabaticCompression() {

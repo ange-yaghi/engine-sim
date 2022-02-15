@@ -20,7 +20,7 @@ class PistonObject : public SimulationObject {
 
     protected:
         GeometryGenerator::GeometryIndices
-            m_pistonBody;
+            m_wristPinHole;
 };
 
 #endif /* ATG_ENGINE_SIM_PISTON_OBJECT_H */

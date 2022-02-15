@@ -195,6 +195,7 @@ void EngineSimulator::update(float dt) {
         const int cylinderCount = m_engine->getCylinderCount();
         for (int i = 0; i < cylinderCount; ++i) {
             m_combustionChambers[i].adiabaticCompression();
+            m_combustionChambers[i].blowby(dt / m_steps);
         }
     }
 

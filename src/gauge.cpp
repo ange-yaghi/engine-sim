@@ -25,6 +25,14 @@ Gauge::Gauge() {
     m_needleInnerRadius = 0.0f;
     m_needleOuterRadius = 0.0f;
     m_needleWidth = 1.0f;
+
+    m_needlePosition = 0.0f;
+    m_needleVelocity = 0.0f;
+    m_needleMaxVelocity = 2.0f;
+    m_needleKs = 1000.0f;
+    m_needleKd = 25.0f;
+
+    m_gamma = 1.0f;
 }
 
 Gauge::~Gauge() {
@@ -40,13 +48,19 @@ void Gauge::destroy() {
 }
 
 void Gauge::update(float dt) {
-    /* void */
+    const float needle_s = std::powf((m_value - m_min) / std::abs(m_max - m_min), m_gamma);
+    const float F =
+        m_needleKs * (needle_s - m_needlePosition)
+        - m_needleKd * m_needleVelocity;
+
+    m_needlePosition += m_needleVelocity * dt;
+    m_needleVelocity = std::fminf(
+            m_needleMaxVelocity,
+            std::fmaxf(m_needleVelocity + F * dt, -m_needleMaxVelocity));
 }
 
 void Gauge::render() {
     GeometryGenerator *generator = m_app->getGeometryGenerator();
-
-    const float gamma = 0.5f;
 
     const Point origin = getRenderPoint(m_bounds.getPosition(Bounds::center) + m_center);
     const float outerRadius = pixelsToUnits(m_outerRadius);
@@ -59,9 +73,8 @@ void Gauge::render() {
 
     GeometryGenerator::Line2dParameters lineParams;
     generator->startShape();
-    float prevTheta = m_thetaMin;
     for (int i = 0; i <= std::abs(m_max - m_min); i += m_minorStep) {
-        const float s = std::powf((float)i / std::abs(m_max - m_min), gamma);
+        const float s = std::powf((float)i / std::abs(m_max - m_min), m_gamma);
         const float theta = s * m_thetaMax + (1 - s) * m_thetaMin;
 
         const float tickLength = (i % m_majorStep) == 0
@@ -93,16 +106,13 @@ void Gauge::render() {
                     Bounds(0.0f, 0.0f, unitsToPixels(text - origin) + m_bounds.getPosition(Bounds::center) + m_center, Bounds::center),
                     12);
         }
-
-        prevTheta = theta;
     }
 
     generator->endShape(&ticks);
 
     generator->startShape();
 
-    const float needle_s = std::powf((m_value - m_min) / std::abs(m_max - m_min), gamma);
-    const float needleAngle = needle_s * m_thetaMax + (1 - needle_s) * m_thetaMin;
+    const float needleAngle = m_needlePosition * m_thetaMax + (1 - m_needlePosition) * m_thetaMin;
     const Point needleDir(std::cos(needleAngle), std::sin(needleAngle));
     const Point needleOuter = needleDir * pixelsToUnits(m_needleOuterRadius) + origin;
     const Point needleInner = needleDir * pixelsToUnits(m_needleInnerRadius) + origin;
@@ -127,10 +137,10 @@ void Gauge::render() {
     for (const Band &band : m_bands) {
         ringParams.innerRadius = outerRadius - pixelsToUnits(band.width);
 
-        const float s0 = std::powf((float)band.start / std::abs(m_max - m_min), gamma);
+        const float s0 = std::powf((float)band.start / std::abs(m_max - m_min), m_gamma);
         const float angle0 = s0 * m_thetaMax + (1 - s0) * m_thetaMin;
 
-        const float s1 = std::powf((float)band.end / std::abs(m_max - m_min), gamma);
+        const float s1 = std::powf((float)band.end / std::abs(m_max - m_min), m_gamma);
         const float angle1 = s1 * m_thetaMax + (1 - s1) * m_thetaMin;
 
         ringParams.startAngle = std::fminf(angle0, angle1);

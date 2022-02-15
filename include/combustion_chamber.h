@@ -18,6 +18,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         CylinderBank *m_bank;
 
         double volume();
+        void blowby(double dt);
         void adiabaticCompression();
 
         const double getPressure() const { return m_pressure; }
@@ -25,6 +26,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         const double getVolume() const { return m_volume; }
 
     protected:
+        double m_blowbyK;
         double m_pressure;
         double m_temperature;
         double m_volume;

@@ -18,8 +18,8 @@ void CylinderBankObject::generateGeometry() {
     const float dy = m_bank->m_dx * (m_bank->m_bore / 2 + lineWidth / 2);
     const float top_x = m_bank->m_dx * m_bank->m_deckHeight;
     const float top_y = m_bank->m_dy * m_bank->m_deckHeight;
-    const float bottom_x = m_bank->m_dx * (0.5f * m_bank->m_deckHeight);
-    const float bottom_y = m_bank->m_dy * (0.5f * m_bank->m_deckHeight);
+    const float bottom_x = m_bank->m_dx * (0.4f * m_bank->m_deckHeight);
+    const float bottom_y = m_bank->m_dy * (0.4f * m_bank->m_deckHeight);
 
     GeometryGenerator::Line2dParameters params;
     params.lineWidth = lineWidth;

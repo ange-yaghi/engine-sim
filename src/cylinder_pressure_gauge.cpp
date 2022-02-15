@@ -24,7 +24,7 @@ void CylinderPressureGauge::destroy() {
 }
 
 void CylinderPressureGauge::update(float dt) {
-    /* void */
+    UiElement::update(dt);
 }
 
 void CylinderPressureGauge::render() {
@@ -78,6 +78,7 @@ void CylinderPressureGauge::render() {
         m_gauges[i]->m_needleOuterRadius = m_gauges[i]->m_outerRadius * 0.7f;
         m_gauges[i]->m_needleInnerRadius = -m_gauges[i]->m_outerRadius * 0.1f;
         m_gauges[i]->m_needleWidth = 2.0;
+        m_gauges[i]->m_gamma = 0.5f;
         m_gauges[i]->setBandCount(2);
         m_gauges[i]->setBand({ ysMath::Constants::One, 400, 1000, 3.0f }, 0);
         m_gauges[i]->setBand({ ysColor::srgbiToLinear(0x77CEE0), 0.0f, 14.6959f, 3.0f }, 1);

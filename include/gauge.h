@@ -35,6 +35,7 @@ class Gauge : public UiElement {
         int m_min;
         int m_max;
         int m_maxMinorTick;
+        float m_gamma;
 
         int m_minorStep;
         int m_majorStep;
@@ -51,9 +52,17 @@ class Gauge : public UiElement {
         float m_needleOuterRadius;
         float m_needleWidth;
 
+        float m_needleMaxVelocity;
+        float m_needleKs;
+        float m_needleKd;
+
         bool m_renderText;
 
         Point m_center;
+
+    protected:
+        float m_needlePosition;
+        float m_needleVelocity;
 
     protected:
         std::vector<Band> m_bands;

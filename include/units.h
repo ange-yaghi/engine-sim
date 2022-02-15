@@ -49,6 +49,14 @@ namespace units {
         return v * unit;
     }
 
+    inline double rpm(double rpm) {
+        return rpm * 0.104719755;
+    }
+
+    inline double toRpm(double rad_s) {
+        return rad_s / 0.104719755;
+    }
+
     inline double pressure(double v, double unit) {
         return v * unit;
     }

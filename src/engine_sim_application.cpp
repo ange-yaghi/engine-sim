@@ -233,7 +233,7 @@ void EngineSimApplication::initialize() {
 
 void EngineSimApplication::process(float dt) {
     m_simulator.m_steps = 100;
-    m_simulator.update((1 / 60.0) / 4);
+    m_simulator.update((1 / 60.0) / 10);
 }
 
 void EngineSimApplication::render() {
