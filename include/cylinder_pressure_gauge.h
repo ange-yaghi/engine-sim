@@ -5,6 +5,7 @@
 
 #include "engine.h"
 #include "engine_simulator.h"
+#include "gauge.h"
 
 class CylinderPressureGauge : public UiElement {
     public:
@@ -18,6 +19,9 @@ class CylinderPressureGauge : public UiElement {
         virtual void render();
 
         EngineSimulator *m_simulator;
+
+    protected:
+        std::vector<Gauge *> m_gauges;
 };
 
 #endif /* ATG_ENGINE_SIM_UI_CYLINDER_PRESSURE_GAUGE_H */

@@ -23,7 +23,12 @@ class SimulationObject {
 
     protected:
         void resetShader();
-        void setTransform(atg_scs::RigidBody *rigidBody);
+        void setTransform(
+            atg_scs::RigidBody *rigidBody,
+            float scale = 1.0f,
+            float lx = 0.0f,
+            float ly = 0.0f,
+            float theta = 0.0f);
 
         EngineSimApplication *m_app;
 };

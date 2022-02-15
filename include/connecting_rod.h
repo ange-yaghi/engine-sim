@@ -5,6 +5,7 @@
 
 #include "crankshaft.h"
 
+class Piston;
 class ConnectingRod : public Part {
     public:
         struct Parameters {
@@ -14,6 +15,7 @@ class ConnectingRod : public Part {
             double Length;
 
             Crankshaft *Crankshaft;
+            Piston *Piston;
             int Journal;
         };
 
@@ -32,6 +34,7 @@ class ConnectingRod : public Part {
         double m_I;
         int m_journal;
         Crankshaft *m_crankshaft;
+        Piston *m_piston;
 };
 
 #endif /* ATG_ENGINE_SIM_CONNECTING_ROD_H */

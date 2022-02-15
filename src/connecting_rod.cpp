@@ -7,6 +7,7 @@ ConnectingRod::ConnectingRod() {
     m_I = 0.0;
     m_journal = 0;
     m_crankshaft = nullptr;
+    m_piston = nullptr;
 }
 
 ConnectingRod::~ConnectingRod() {
@@ -20,6 +21,7 @@ void ConnectingRod::initialize(const Parameters &params) {
     m_I = params.MomentOfInertia;
     m_journal = params.Journal;
     m_crankshaft = params.Crankshaft;
+    m_piston = params.Piston;
 }
 
 double ConnectingRod::getBigEndLocal() const {

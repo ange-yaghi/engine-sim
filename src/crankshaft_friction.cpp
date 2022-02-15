@@ -20,7 +20,7 @@ void CrankshaftFriction::apply(atg_scs::SystemState *system) {
     system->t[m_crankshaft->m_body.index] +=
         F_fric + m_damping * m_crankshaft->m_body.v_theta;
 
-    if (system->v_theta[m_crankshaft->m_body.index] > -2.23598775) {
+    if (system->v_theta[m_crankshaft->m_body.index] > -20.23598775) {
         system->t[m_crankshaft->m_body.index] -= 140000;
     }
 }

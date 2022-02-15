@@ -47,7 +47,7 @@ void EngineSimulator::synthesize(Engine *engine) {
     m_linkConstraints = new atg_scs::LinkConstraint[linkCount];
     m_crankshaftFrictionGenerators = new CrankshaftFriction[crankCount];
 
-    const double ks = 500;
+    const double ks = 5000;
     const double kd = 10;
 
     for (int i = 0; i < crankCount; ++i) {

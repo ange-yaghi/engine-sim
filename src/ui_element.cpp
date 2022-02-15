@@ -203,5 +203,5 @@ void UiElement::drawCenteredText(
 
     const float width = m_app->getTextRenderer()->CalculateWidth(s, height);
     m_app->getTextRenderer()->RenderText(
-            s, center.x - width / 2, center.y - height / 2, height);
+            s, center.x - width / 2, center.y - height / 4, height);
 }

@@ -5,6 +5,8 @@
 #include "../include/constants.h"
 #include "../include/cylinder_pressure_gauge.h"
 #include "../include/units.h"
+#include "../include/crankshaft_object.h"
+#include "../include/cylinder_bank_object.h"
 
 #include <sstream>
 
@@ -25,7 +27,7 @@ EngineSimApplication::EngineSimApplication() {
         m_screenResolution[i][0] = m_screenResolution[i][1] = 0;
     }
 
-    m_background = ysColor::srgbiToLinear(0xFFFFFF);
+    m_background = ysColor::srgbiToLinear(0x0E1012);
     m_foreground = ysColor::srgbiToLinear(0xFFFFFF);
     m_shadow = ysColor::srgbiToLinear(0x0E1012);
     m_highlight1 = ysColor::srgbiToLinear(0xEF4545);
@@ -94,8 +96,8 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
 
 void EngineSimApplication::initialize() {
     m_shaders.SetClearColor(ysColor::srgbiToLinear(0x34, 0x98, 0xdb));
-    m_assetManager.CompileInterchangeFile((m_assetPath + "/icosphere").c_str(), 1.0f, true);
-    m_assetManager.LoadSceneFile((m_assetPath + "/icosphere").c_str(), true);
+    m_assetManager.CompileInterchangeFile((m_assetPath + "/assets").c_str(), 1.0f, true);
+    m_assetManager.LoadSceneFile((m_assetPath + "/assets").c_str(), true);
 
     m_textRenderer.SetEngine(&m_engine);
     m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
@@ -166,10 +168,11 @@ void EngineSimApplication::initialize() {
     crankshaftParams.Mass = units::mass(75, units::lb);
 
     // Temporary moment of inertia approximation
-    const double crank_r = crankshaftParams.CrankThrow; 
+    const double crank_r = crankshaftParams.CrankThrow;
     const double flywheel_r = units::distance(14.0, units::inch) / 2.0;
     const double I_crank = (1 / 2.0) * crankshaftParams.Mass * crank_r;
-    const double I_flywheel = (1 / 12.0) * crankshaftParams.FlywheelMass * flywheel_r * flywheel_r; 
+    const double I_flywheel =
+        (1 / 12.0) * crankshaftParams.FlywheelMass * flywheel_r * flywheel_r;
 
     crankshaftParams.MomentOfInertia = I_crank + I_flywheel;
     crankshaftParams.Pos_x = 0;
@@ -188,19 +191,32 @@ void EngineSimApplication::initialize() {
     crParams.Length = units::distance(6.135, units::inch);
     crParams.Mass = units::mass(785, units::g);
     crParams.MomentOfInertia = (1 / 12.0) * crParams.Mass * crParams.Length * crParams.Length;
+
+    crParams.Piston = m_iceEngine.getPiston(0);
     m_iceEngine.getConnectingRod(0)->initialize(crParams);
+
+    crParams.Piston = m_iceEngine.getPiston(1);
     m_iceEngine.getConnectingRod(1)->initialize(crParams);
 
     crParams.Journal = 1;
+    crParams.Piston = m_iceEngine.getPiston(2);
     m_iceEngine.getConnectingRod(2)->initialize(crParams);
+
+    crParams.Piston = m_iceEngine.getPiston(3);
     m_iceEngine.getConnectingRod(3)->initialize(crParams);
 
     crParams.Journal = 2;
+    crParams.Piston = m_iceEngine.getPiston(4);
     m_iceEngine.getConnectingRod(4)->initialize(crParams);
+
+    crParams.Piston = m_iceEngine.getPiston(5);
     m_iceEngine.getConnectingRod(5)->initialize(crParams);
 
     crParams.Journal = 3;
+    crParams.Piston = m_iceEngine.getPiston(6);
     m_iceEngine.getConnectingRod(6)->initialize(crParams);
+
+    crParams.Piston = m_iceEngine.getPiston(7);
     m_iceEngine.getConnectingRod(7)->initialize(crParams);
 
     m_simulator.synthesize(&m_iceEngine);
@@ -217,7 +233,7 @@ void EngineSimApplication::initialize() {
 
 void EngineSimApplication::process(float dt) {
     m_simulator.m_steps = 100;
-    m_simulator.update((1 / 60.0) / 8);
+    m_simulator.update((1 / 60.0) / 4);
 }
 
 void EngineSimApplication::render() {
@@ -342,6 +358,20 @@ void EngineSimApplication::createObjects(Engine *engine) {
         pistonObject->initialize(this);
         pistonObject->m_piston = engine->getPiston(i);
         m_objects.push_back(pistonObject);
+    }
+
+    for (int i = 0; i < engine->getCrankshaftCount(); ++i) {
+        CrankshaftObject *crankshaftObject = new CrankshaftObject;
+        crankshaftObject->initialize(this);
+        crankshaftObject->m_crankshaft = engine->getCrankshaft(i);
+        m_objects.push_back(crankshaftObject);
+    }
+
+    for (int i = 0; i < engine->getCylinderBankCount(); ++i) {
+        CylinderBankObject *cbObject = new CylinderBankObject;
+        cbObject->initialize(this);
+        cbObject->m_bank = engine->getCylinderBank(i);
+        m_objects.push_back(cbObject);
     }
 }
 

@@ -37,6 +37,11 @@ class EngineSimApplication {
         float pixelsToUnits(float pixels) const;
         float unitsToPixels(float units) const;
 
+        ysVector getBackgroundColor() const { return m_background; }
+        ysVector getHightlight1Color() const { return m_highlight1; }
+
+        dbasic::AssetManager *getAssetManager() { return &m_assetManager; }
+
     protected:
         void renderScene();
 

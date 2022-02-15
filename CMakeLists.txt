@@ -35,6 +35,9 @@ add_executable(engine-sim WIN32
     src/ui_manager.cpp
     src/cylinder_pressure_gauge.cpp
     src/ui_math.cpp
+    src/gauge.cpp
+    src/crankshaft_object.cpp
+    src/cylinder_bank_object.cpp
 
     # Include files
     include/delta.h
@@ -58,6 +61,8 @@ add_executable(engine-sim WIN32
     include/cylinder_pressure_gauge.h
     include/ui_math.h
     include/units.h
+    include/crankshaft_object.h
+    include/cylinder_bank_object.h
 )
 
 target_link_libraries(engine-sim
