@@ -14,11 +14,29 @@ project(engine-sim)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(engine-sim WIN32
+# ========================================================
+# GTEST
+
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    URL
+    https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
+)
+
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+set_property(TARGET gmock PROPERTY FOLDER "gtest")
+set_property(TARGET gmock_main PROPERTY FOLDER "gtest")
+set_property(TARGET gtest PROPERTY FOLDER "gtest")
+set_property(TARGET gtest_main PROPERTY FOLDER "gtest")
+
+# ========================================================
+
+add_library(engine-sim STATIC
     # Source files
     src/main.cpp
-    src/engine_sim_application.cpp
-    src/geometry_generator.cpp
     src/crankshaft.cpp
     src/cylinder_bank.cpp
     src/connecting_rod.cpp
@@ -26,11 +44,41 @@ add_executable(engine-sim WIN32
     src/part.cpp
     src/engine.cpp
     src/engine_simulator.cpp
+    src/combustion_chamber.cpp
+    src/crankshaft_friction.cpp
+    src/gas_system.cpp
+
+    # Include files
+    include/delta.h
+    include/dtv.h
+    include/crankshaft.h
+    include/cylinder_bank.h
+    include/connecting_rod.h
+    include/piston.h
+    include/part.h
+    include/engine.h
+    include/engine_simulator.h
+    include/combustion_chamber.h
+    include/crankshaft_friction.h
+    include/units.h
+    include/gas_system.h
+)
+
+target_link_libraries(engine-sim
+    simple-2d-constraint-solver
+    delta-basic)
+
+target_include_directories(engine-sim
+    PUBLIC dependencies/submodules)
+
+add_executable(engine-sim-app WIN32
+    # Source files
+    src/main.cpp
+    src/engine_sim_application.cpp
+    src/geometry_generator.cpp
     src/simulation_object.cpp
     src/piston_object.cpp
     src/connecting_rod_object.cpp
-    src/combustion_chamber.cpp
-    src/crankshaft_friction.cpp
     src/ui_element.cpp
     src/ui_manager.cpp
     src/cylinder_pressure_gauge.cpp
@@ -44,18 +92,9 @@ add_executable(engine-sim WIN32
     include/dtv.h
     include/engine_sim_application.h
     include/geometry_generator.h
-    include/crankshaft.h
-    include/cylinder_bank.h
-    include/connecting_rod.h
-    include/piston.h
-    include/part.h
-    include/engine.h
-    include/engine_simulator.h
     include/simulation_object.h
     include/piston_object.h
     include/connecting_rod_object.h
-    include/combustion_chamber.h
-    include/crankshaft_friction.h
     include/ui_element.h
     include/ui_manager.h
     include/cylinder_pressure_gauge.h
@@ -65,16 +104,33 @@ add_executable(engine-sim WIN32
     include/cylinder_bank_object.h
 )
 
-target_link_libraries(engine-sim
-    simple-2d-constraint-solver
-    delta-basic)
+target_link_libraries(engine-sim-app
+    engine-sim
+)
 
 if (DTV)
-    target_link_libraries(engine-sim
+    target_link_libraries(engine-sim-app
         direct-to-video)
 endif (DTV)
 
-target_include_directories(engine-sim
+target_include_directories(engine-sim-app
     PUBLIC dependencies/submodules)
 
 add_subdirectory(dependencies)
+
+# GTEST
+
+enable_testing()
+
+add_executable(engine-sim-test
+    # Source files
+    test/gas_system_tests.cpp
+)
+
+target_link_libraries(engine-sim-test
+    gtest_main
+    engine-sim
+)
+
+include(GoogleTest)
+gtest_discover_tests(engine-sim-test)

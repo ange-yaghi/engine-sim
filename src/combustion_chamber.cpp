@@ -6,13 +6,10 @@
 #include <cmath>
 
 CombustionChamber::CombustionChamber() {
-    m_pressure = 0.0;
-    m_temperature = 0.0;
-    m_volume = 0.0;
     m_crankcasePressure = 0.0;
     m_bank = nullptr;
     m_piston = nullptr;
-    m_blowbyK = 5000.0;
+    m_blowbyK = 5E-6;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -20,50 +17,48 @@ CombustionChamber::~CombustionChamber() {
 }
 
 void CombustionChamber::initialize(double p0, double t0) {
-    m_pressure = m_crankcasePressure = p0;
-    m_temperature = t0;
-    m_volume = volume();
+    m_crankcasePressure = p0;
+    m_system.initialize(p0, volume(), t0);
 }
 
-double CombustionChamber::volume() {
+double CombustionChamber::volume() const {
     // Temp
     const double combustionPortVolume = units::volume(118, units::cc);
 
     const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * Constants::pi;
     const double s =
         m_piston->relativeX() * m_bank->m_dx + m_piston->relativeY() * m_bank->m_dy;
-    const double displacement = area * (m_bank->m_deckHeight - s - m_piston->m_compressionHeight);
+    const double displacement =
+        area * (m_bank->m_deckHeight - s - m_piston->m_compressionHeight);
 
     return displacement + combustionPortVolume;
 }
 
-void CombustionChamber::blowby(double dt) {
-    const double sgn = m_crankcasePressure > m_pressure
-        ? 1.0
-        : -1.0;
-    const double v_g = std::sqrt(std::abs(m_crankcasePressure - m_pressure));
+void CombustionChamber::update(double dt) {
+    m_system.start();
 
-    const double newPressure = m_pressure + v_g * sgn * m_blowbyK * dt;
-    m_temperature = m_temperature * (newPressure / m_pressure);
-    m_pressure = newPressure;
+    m_system.setVolume(volume());
+    m_system.flow(m_blowbyK, dt, m_crankcasePressure, units::celcius(25.0));
+
+    if (m_system.pressure() < units::pressure(1.0, units::atm)) {
+        m_system.flow(0.0075, dt, units::pressure(1.0, units::atm), units::celcius(25.0));
+    }
+
+    if (volume() < units::volume(150, units::cc)) {
+        m_system.setN(0.00001);
+    }
+
+    m_system.end();
 }
 
-void CombustionChamber::adiabaticCompression() {
-    const double gamma = 7 / 5.0;
-    const double newVolume = volume();
-
-    const double k2 = m_pressure * m_volume / m_temperature;
-
-    m_pressure = m_pressure * std::pow((m_volume / newVolume), gamma);
-    m_volume = newVolume;
-
-    m_temperature = m_pressure * m_volume / k2;
+void CombustionChamber::flip() {
+    
 }
 
 void CombustionChamber::apply(atg_scs::SystemState *system) {
     const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * Constants::pi;
 
-    const double force = area * (m_pressure - m_crankcasePressure);
+    const double force = area * m_system.pressure();
     const double F_x = -m_bank->m_dx * force;
     const double F_y = -m_bank->m_dy * force;
 

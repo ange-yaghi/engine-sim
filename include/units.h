@@ -28,6 +28,10 @@ namespace units {
     extern constexpr double mL = cc;
     extern constexpr double L = mL * 1000.0;
 
+    // Area
+    extern constexpr double m2 = 1.0;
+    extern constexpr double cm2 = cm * cm;
+
     // Pressure
     extern constexpr double Pa = 1.0;
     extern constexpr double kPa = Pa * 1000.0;
@@ -46,6 +50,10 @@ namespace units {
 
     // Conversions
     inline double distance(double v, double unit) {
+        return v * unit;
+    }
+
+    inline double area(double v, double unit) {
         return v * unit;
     }
 

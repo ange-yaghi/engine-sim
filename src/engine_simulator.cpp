@@ -170,12 +170,12 @@ void EngineSimulator::placeAndInitialize() {
             ? std::acos((e_x - p_x) / rod->m_length)
             : 2 * Constants::pi - std::acos((e_x - p_x) / rod->m_length);
         rod->m_body.theta = theta - Constants::pi / 2;
-        
+
         double cl_x, cl_y;
         rod->m_body.localToWorld(0, rod->getBigEndLocal(), &cl_x, &cl_y);
         rod->m_body.p_x += p_x + rod->m_crankshaft->m_p_x - cl_x;
         rod->m_body.p_y += p_y + rod->m_crankshaft->m_p_y - cl_y;
-        
+
         piston->m_body.p_x = e_x + rod->m_crankshaft->m_p_x;
         piston->m_body.p_y = e_y + rod->m_crankshaft->m_p_y;
         piston->m_body.theta = bank->m_angle + Constants::pi;
@@ -189,13 +189,17 @@ void EngineSimulator::placeAndInitialize() {
 void EngineSimulator::update(float dt) {
     auto s0 = std::chrono::steady_clock::now();
 
+    const double dt_sub = (float)dt / m_steps;
     for (int i = 0; i < m_steps; ++i) {
-        m_system.process(dt / m_steps, 1);
+        m_system.process(dt_sub, 1);
 
         const int cylinderCount = m_engine->getCylinderCount();
         for (int i = 0; i < cylinderCount; ++i) {
-            m_combustionChambers[i].adiabaticCompression();
-            m_combustionChambers[i].blowby(dt / m_steps);
+            m_combustionChambers[i].update(dt_sub);
+        }
+
+        for (int i = 0; i < cylinderCount; ++i) {
+            m_combustionChambers[i].flip();
         }
     }
 

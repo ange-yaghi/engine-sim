@@ -3,7 +3,8 @@
 
 namespace Constants {
 
-    constexpr double pi = 3.14159;
+    extern constexpr double pi = 3.14159;
+    extern constexpr double R = 8.31446261815324;
 
 } /* namespace Constants */
 
