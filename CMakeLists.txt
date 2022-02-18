@@ -47,6 +47,9 @@ add_library(engine-sim STATIC
     src/combustion_chamber.cpp
     src/crankshaft_friction.cpp
     src/gas_system.cpp
+    src/function.cpp
+    src/camshaft.cpp
+    src/cylinder_head.cpp
 
     # Include files
     include/delta.h
@@ -62,6 +65,9 @@ add_library(engine-sim STATIC
     include/crankshaft_friction.h
     include/units.h
     include/gas_system.h
+    include/function.h
+    include/camshaft.h
+    include/cylinder_head.h
 )
 
 target_link_libraries(engine-sim
@@ -125,6 +131,7 @@ enable_testing()
 add_executable(engine-sim-test
     # Source files
     test/gas_system_tests.cpp
+    test/function_test.cpp
 )
 
 target_link_libraries(engine-sim-test

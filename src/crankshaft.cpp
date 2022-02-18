@@ -46,3 +46,7 @@ void Crankshaft::setRodJournalAngle(int i, double angle) {
 
     m_rodJournalAngles[i] = angle;
 }
+
+double Crankshaft::getAngle() const {
+    return m_body.theta - m_TDC;
+}

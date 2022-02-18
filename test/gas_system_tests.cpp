@@ -5,6 +5,7 @@
 
 TEST(GasSystemTests, GasSystemSanity) {
     GasSystem system;
+    system.initialize(0.0, 0.0, 0.0);
 }
 
 TEST(GasSystemTests, AdiabaticEnergyConservation) {
@@ -42,7 +43,7 @@ TEST(GasSystemTests, AdiabaticEnergyConservation) {
     const double finalMolecules = system.n();
 
     EXPECT_NEAR(finalMolecules, initialMolecules, 1E-6);
-    EXPECT_NEAR(finalSystemEnergy - initialSystemEnergy, W, 1E-4); 
+    EXPECT_NEAR(finalSystemEnergy - initialSystemEnergy, W, 1E-4);
 }
 
 TEST(GasSystemTests, PressureEqualizationEnergyConservation) {
