@@ -6,6 +6,7 @@
 #include "piston.h"
 #include "cylinder_bank.h"
 #include "gas_system.h"
+#include "cylinder_head.h"
 
 class CombustionChamber : public atg_scs::ForceGenerator {
     public:
@@ -17,11 +18,11 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         Piston *m_piston;
         CylinderBank *m_bank;
+        CylinderHead *m_head;
 
         double volume() const;
 
         void update(double dt);
-        void flip();
 
         double m_blowbyK;
         double m_crankcasePressure;

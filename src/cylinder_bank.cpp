@@ -33,3 +33,8 @@ void CylinderBank::initialize(const Parameters &params) {
 void CylinderBank::destroy() {
     /* void */
 }
+
+void CylinderBank::getTop(double *x, double *y) const {
+    *x = m_dx * m_deckHeight;
+    *y = m_dy * m_deckHeight;
+}

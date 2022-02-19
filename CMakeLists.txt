@@ -92,6 +92,7 @@ add_executable(engine-sim-app WIN32
     src/gauge.cpp
     src/crankshaft_object.cpp
     src/cylinder_bank_object.cpp
+    src/cylinder_head_object.cpp
 
     # Include files
     include/delta.h
@@ -108,6 +109,7 @@ add_executable(engine-sim-app WIN32
     include/units.h
     include/crankshaft_object.h
     include/cylinder_bank_object.h
+    include/cylinder_head_object.h
 )
 
 target_link_libraries(engine-sim-app

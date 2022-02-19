@@ -28,19 +28,8 @@ void PistonObject::render(const ViewParameters *view) {
     const int layer = m_piston->m_rod->m_journal;
     if (layer > view->Layer1 || layer < view->Layer0) return;
 
-    ysVector col = ysColor::srgbiToLinear(0x77CEE0);
-    ysVector holeCol = m_app->getBackgroundColor();
-    for (int i = view->Layer0; i < layer; ++i) {
-        col = ysMath::Add(
-            ysMath::Mul(col, ysMath::LoadScalar(0.2f)),
-            ysMath::Mul(ysColor::srgbiToLinear(0x0E1012), ysMath::LoadScalar(0.8f))
-        );
-
-        holeCol = ysMath::Add(
-            ysMath::Mul(holeCol, ysMath::LoadScalar(0.2f)),
-            ysMath::Mul(ysColor::srgbiToLinear(0x0E1012), ysMath::LoadScalar(0.8f))
-        );
-    }
+    ysVector col = tintByLayer(ysColor::srgbiToLinear(0x77CEE0), layer - view->Layer0);
+    ysVector holeCol = tintByLayer(m_app->getBackgroundColor(), layer - view->Layer0);
 
     resetShader();
     setTransform(

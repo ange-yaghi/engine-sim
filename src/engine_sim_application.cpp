@@ -7,6 +7,7 @@
 #include "../include/units.h"
 #include "../include/crankshaft_object.h"
 #include "../include/cylinder_bank_object.h"
+#include "../include/cylinder_head_object.h"
 
 #include <sstream>
 
@@ -151,11 +152,12 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getPiston(7)->initialize(pistonParams);
 
     CylinderBank::Parameters cbParams;
-    cbParams.Angle = Constants::pi / 4;
     cbParams.Bore = units::distance(4.25, units::inch);
     cbParams.CylinderCount = 4;
     cbParams.DeckHeight = units::distance(9.8, units::inch);
+
     cbParams.Index = 0;
+    cbParams.Angle = Constants::pi / 4;
     m_iceEngine.getCylinderBank(0)->initialize(cbParams);
 
     cbParams.Index = 1;
@@ -178,6 +180,7 @@ void EngineSimApplication::initialize() {
     crankshaftParams.Pos_x = 0;
     crankshaftParams.Pos_y = 0;
     crankshaftParams.RodJournals = 4;
+    crankshaftParams.TDC = Constants::pi / 4 - 2 * Constants::pi;
     m_iceEngine.getCrankshaft(0)->initialize(crankshaftParams);
     m_iceEngine.getCrankshaft(0)->setRodJournalAngle(0, 0);
     m_iceEngine.getCrankshaft(0)->setRodJournalAngle(1, -Constants::pi / 2);
@@ -218,6 +221,70 @@ void EngineSimApplication::initialize() {
 
     crParams.Piston = m_iceEngine.getPiston(7);
     m_iceEngine.getConnectingRod(7)->initialize(crParams);
+
+    // Camshaft
+    Camshaft *exhaustCamLeft = new Camshaft, *exhaustCamRight = new Camshaft;
+    Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
+    Function *camLift = new Function;
+    Function *noLift = new Function;
+    camLift->initialize(1, units::angle(20, units::deg));
+    camLift->addSample(0.0, units::distance(500, units::thou));
+    camLift->addSample(-units::angle(20, units::deg), units::distance(350, units::thou));
+    camLift->addSample(units::angle(20, units::deg), units::distance(350, units::thou));
+    camLift->addSample(-units::angle(40, units::deg), units::distance(100, units::thou));
+    camLift->addSample(units::angle(40, units::deg), units::distance(100, units::thou));
+    camLift->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
+
+    Camshaft::Parameters camParams;
+    camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
+    camParams.LobeProfile = camLift;
+    camParams.Lobes = 4;
+    exhaustCamRight->initialize(camParams);
+    exhaustCamLeft->initialize(camParams);
+    intakeCamLeft->initialize(camParams);
+    intakeCamRight->initialize(camParams);
+
+    // 1 8 4 3 6 5 7 2
+    exhaustCamRight->setLobeCenterline(0, units::angle(360.0 - 109 / 2.0, units::deg));
+    exhaustCamRight->setLobeCenterline(1, units::angle(360.0 - 109 / 2.0, units::deg) + 3 * units::angle(360, units::deg) / 4);
+    exhaustCamRight->setLobeCenterline(2, units::angle(360.0 - 109 / 2.0, units::deg) + 5 * units::angle(360, units::deg) / 4);
+    exhaustCamRight->setLobeCenterline(3, units::angle(360.0 - 109 / 2.0, units::deg) + 6 * units::angle(360, units::deg) / 4);
+    intakeCamRight->setLobeCenterline(0, units::angle(360.0 + 109 / 2.0, units::deg));
+    intakeCamRight->setLobeCenterline(1, units::angle(360.0 + 109 / 2.0, units::deg) + 3 * units::angle(360, units::deg) / 4);
+    intakeCamRight->setLobeCenterline(2, units::angle(360.0 + 109 / 2.0, units::deg) + 5 * units::angle(360, units::deg) / 4);
+    intakeCamRight->setLobeCenterline(3, units::angle(360.0 + 109 / 2.0, units::deg) + 6 * units::angle(360, units::deg) / 4);
+
+    exhaustCamLeft->setLobeCenterline(0, units::angle(360.0 - 109 / 2.0, units::deg) + 7 * units::angle(360, units::deg) / 4);
+    exhaustCamLeft->setLobeCenterline(1, units::angle(360.0 - 109 / 2.0, units::deg) + 2 * units::angle(360, units::deg) / 4);
+    exhaustCamLeft->setLobeCenterline(2, units::angle(360.0 - 109 / 2.0, units::deg) + 4 * units::angle(360, units::deg) / 4);
+    exhaustCamLeft->setLobeCenterline(3, units::angle(360.0 - 109 / 2.0, units::deg) + 1 * units::angle(360, units::deg) / 4);
+    intakeCamLeft->setLobeCenterline(0, units::angle(360.0 + 109 / 2.0, units::deg) + 7 * units::angle(360, units::deg) / 4);
+    intakeCamLeft->setLobeCenterline(1, units::angle(360.0 + 109 / 2.0, units::deg) + 2 * units::angle(360, units::deg) / 4);
+    intakeCamLeft->setLobeCenterline(2, units::angle(360.0 + 109 / 2.0, units::deg) + 4 * units::angle(360, units::deg) / 4);
+    intakeCamLeft->setLobeCenterline(3, units::angle(360.0 + 109 / 2.0, units::deg) + 1 * units::angle(360, units::deg) / 4);
+
+    Function *flow = new Function;
+    flow->initialize(1, units::distance(100, units::thou));
+    flow->addSample(units::distance(0, units::thou), 0.0);
+    flow->addSample(units::distance(100, units::thou), 0.001 * 2);
+    flow->addSample(units::distance(200, units::thou), 0.002 * 2);
+    flow->addSample(units::distance(300, units::thou), 0.003 * 2);
+    flow->addSample(units::distance(400, units::thou), 0.004 * 2);
+    flow->addSample(units::distance(500, units::thou), 0.005 * 2);
+
+    CylinderHead::Parameters chParams;
+    chParams.IntakePortFlow = chParams.ExhaustPortFlow = flow;
+
+    chParams.IntakeCam = intakeCamLeft;
+    chParams.ExhaustCam = exhaustCamLeft;
+    chParams.Bank = m_iceEngine.getCylinderBank(0);
+    m_iceEngine.getHead(0)->initialize(chParams);
+
+    chParams.IntakeCam = intakeCamRight;
+    chParams.ExhaustCam = exhaustCamRight;
+    chParams.Bank = m_iceEngine.getCylinderBank(1);
+    m_iceEngine.getHead(1)->initialize(chParams);
 
     m_simulator.synthesize(&m_iceEngine);
     createObjects(&m_iceEngine);
@@ -372,6 +439,11 @@ void EngineSimApplication::createObjects(Engine *engine) {
         cbObject->initialize(this);
         cbObject->m_bank = engine->getCylinderBank(i);
         m_objects.push_back(cbObject);
+
+        CylinderHeadObject *chObject = new CylinderHeadObject;
+        chObject->initialize(this);
+        chObject->m_head = engine->getHead(i);
+        m_objects.push_back(chObject);
     }
 }
 

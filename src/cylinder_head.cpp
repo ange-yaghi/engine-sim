@@ -25,6 +25,10 @@ void CylinderHead::initialize(const Parameters &params) {
     m_intakePortFlow = params.IntakePortFlow;
 }
 
+void CylinderHead::destroy() {
+    /* void */
+}
+
 double CylinderHead::intakeFlowRate(int cylinder) const {
     return m_intakePortFlow->sampleTriangle(
             intakeValveLift(cylinder));

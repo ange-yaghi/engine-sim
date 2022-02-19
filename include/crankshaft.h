@@ -30,7 +30,7 @@ class Crankshaft : public Part {
         double *m_rodJournalAngles;
         int m_rodJournalCount;
 
-        double m_TDC;
+        double m_tdc;
         double m_throw;
         double m_m;
         double m_I;

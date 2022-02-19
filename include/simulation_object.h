@@ -2,6 +2,7 @@
 #define ATG_ENGINE_SIM_SIMULATION_OBJECT_H
 
 #include "scs.h"
+#include "delta.h"
 
 class EngineSimApplication;
 class SimulationObject {
@@ -29,6 +30,7 @@ class SimulationObject {
             float lx = 0.0f,
             float ly = 0.0f,
             float theta = 0.0f);
+        ysVector tintByLayer(const ysVector &col, int layers) const;
 
         EngineSimApplication *m_app;
 };

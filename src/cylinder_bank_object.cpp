@@ -13,7 +13,7 @@ CylinderBankObject::~CylinderBankObject() {
 void CylinderBankObject::generateGeometry() {
     GeometryGenerator *gen = m_app->getGeometryGenerator();
 
-    const float lineWidth = m_bank->m_bore * 0.05f;
+    const float lineWidth = m_bank->m_bore * 0.1f;
     const float dx = -m_bank->m_dy * (m_bank->m_bore / 2 + lineWidth / 2);
     const float dy = m_bank->m_dx * (m_bank->m_bore / 2 + lineWidth / 2);
     const float top_x = m_bank->m_dx * m_bank->m_deckHeight;

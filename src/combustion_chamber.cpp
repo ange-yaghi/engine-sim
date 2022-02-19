@@ -9,6 +9,7 @@ CombustionChamber::CombustionChamber() {
     m_crankcasePressure = 0.0;
     m_bank = nullptr;
     m_piston = nullptr;
+    m_head = nullptr;
     m_blowbyK = 5E-6;
 }
 
@@ -40,19 +41,22 @@ void CombustionChamber::update(double dt) {
     m_system.setVolume(volume());
     m_system.flow(m_blowbyK, dt, m_crankcasePressure, units::celcius(25.0));
 
-    if (m_system.pressure() < units::pressure(1.0, units::atm)) {
-        m_system.flow(0.0075, dt, units::pressure(1.0, units::atm), units::celcius(25.0));
-    }
+    m_system.flow(m_head->intakeFlowRate(
+        m_piston->m_cylinderIndex),
+        dt,
+        units::pressure(1.0, units::atm),
+        units::celcius(25.0));
+    m_system.flow(m_head->exhaustFlowRate(
+        m_piston->m_cylinderIndex),
+        dt,
+        units::pressure(1.0, units::atm),
+        units::celcius(25.0));
 
-    if (volume() < units::volume(150, units::cc)) {
-        m_system.setN(0.00001);
+    if (m_system.pressure() > units::pressure(100.0, units::psi)) {
+        m_system.changeTemperature(units::celcius(1026.0) - m_system.temperature());
     }
 
     m_system.end();
-}
-
-void CombustionChamber::flip() {
-    
 }
 
 void CombustionChamber::apply(atg_scs::SystemState *system) {
@@ -66,9 +70,9 @@ void CombustionChamber::apply(atg_scs::SystemState *system) {
         m_piston->m_body.v_x * m_bank->m_dx + m_piston->m_body.v_y * m_bank->m_dy;
 
     const double F_fric = (v_s > 0)
-        ? -1000
-        : 1000;
-    const double F_damping = -v_s * 10.0;
+        ? -100
+        : 100;
+    const double F_damping = -v_s * 1.0;
 
     system->applyForce(
         0.0,

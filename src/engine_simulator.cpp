@@ -132,6 +132,7 @@ void EngineSimulator::synthesize(Engine *engine) {
         CombustionChamber &chamber = m_combustionChambers[i];
         chamber.m_bank = bank;
         chamber.m_piston = piston;
+        chamber.m_head = engine->getHead(bank->m_index);
 
         m_system.addForceGenerator(&chamber);
     }
@@ -196,10 +197,6 @@ void EngineSimulator::update(float dt) {
         const int cylinderCount = m_engine->getCylinderCount();
         for (int i = 0; i < cylinderCount; ++i) {
             m_combustionChambers[i].update(dt_sub);
-        }
-
-        for (int i = 0; i < cylinderCount; ++i) {
-            m_combustionChambers[i].flip();
         }
     }
 

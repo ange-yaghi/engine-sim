@@ -7,6 +7,7 @@
 Engine::Engine() {
     m_crankshafts = nullptr;
     m_cylinderBanks = nullptr;
+    m_heads = nullptr;
     m_pistons = nullptr;
     m_connectingRods = nullptr;
 
@@ -20,6 +21,7 @@ Engine::~Engine() {
     assert(m_cylinderBanks == nullptr);
     assert(m_pistons == nullptr);
     assert(m_connectingRods == nullptr);
+    assert(m_heads == nullptr);
 }
 
 void Engine::initialize(const Parameters &params) {
@@ -29,6 +31,7 @@ void Engine::initialize(const Parameters &params) {
 
     m_crankshafts = new Crankshaft[m_crankshaftCount];
     m_cylinderBanks = new CylinderBank[m_cylinderBankCount];
+    m_heads = new CylinderHead[m_cylinderBankCount];
     m_pistons = new Piston[m_cylinderCount];
     m_connectingRods = new ConnectingRod[m_cylinderCount];
 }
@@ -45,6 +48,7 @@ void Engine::destroy() {
 
     delete[] m_crankshafts;
     delete[] m_cylinderBanks;
+    delete[] m_heads;
     delete[] m_pistons;
     delete[] m_connectingRods;
 
@@ -52,6 +56,7 @@ void Engine::destroy() {
     m_cylinderBanks = nullptr;
     m_pistons = nullptr;
     m_connectingRods = nullptr;
+    m_heads = nullptr;
 }
 
 double Engine::getRpm() const {

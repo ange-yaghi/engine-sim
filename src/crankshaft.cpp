@@ -11,6 +11,7 @@ Crankshaft::Crankshaft() {
     m_I = 0.0;
     m_flywheelMass = 0.0;
     m_p_x = m_p_y = 0.0;
+    m_tdc = 0.0;
 }
 
 Crankshaft::~Crankshaft() {
@@ -26,6 +27,7 @@ void Crankshaft::initialize(Parameters &params) {
     m_rodJournalAngles = new double[m_rodJournalCount];
     m_p_x = params.Pos_x;
     m_p_y = params.Pos_y;
+    m_tdc = params.TDC;
 }
 
 void Crankshaft::destroy() {
@@ -48,5 +50,5 @@ void Crankshaft::setRodJournalAngle(int i, double angle) {
 }
 
 double Crankshaft::getAngle() const {
-    return m_body.theta - m_TDC;
+    return -(m_body.theta - m_tdc);
 }

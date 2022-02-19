@@ -24,6 +24,9 @@ class Camshaft : public Part {
         double valveLift(int lobe) const;
         double sampleLobe(double theta) const;
 
+        void setLobeCenterline(int lobe, double crankAngle) { m_lobeAngles[lobe] = crankAngle / 2; }
+        double getLobeCenterline(int lobe) const { return m_lobeAngles[lobe]; }
+
     protected:
         double getAngle() const;
 

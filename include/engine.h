@@ -7,6 +7,7 @@
 #include "connecting_rod.h"
 #include "crankshaft.h"
 #include "cylinder_bank.h"
+#include "cylinder_head.h"
 
 class Engine : public Part {
     public:
@@ -29,6 +30,7 @@ class Engine : public Part {
 
         Crankshaft *getCrankshaft(int i) const { return &m_crankshafts[i]; }
         CylinderBank *getCylinderBank(int i) const { return &m_cylinderBanks[i]; }
+        CylinderHead *getHead(int i) const { return &m_heads[i]; }
         Piston *getPiston(int i) const { return &m_pistons[i]; }
         ConnectingRod *getConnectingRod(int i) const { return &m_connectingRods[i]; }
 
@@ -39,6 +41,7 @@ class Engine : public Part {
         int m_crankshaftCount;
 
         CylinderBank *m_cylinderBanks;
+        CylinderHead *m_heads;
         int m_cylinderBankCount;
 
         Piston *m_pistons;

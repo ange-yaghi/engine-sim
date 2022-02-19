@@ -1,6 +1,8 @@
 #ifndef ATG_ENGINE_SIM_UNITS_H
 #define ATG_ENGINE_SIM_UNITS_H
 
+#include "constants.h"
+
 namespace units {
     // Force
     extern constexpr double N = 1.0;
@@ -45,6 +47,10 @@ namespace units {
     extern constexpr double K0 = 273.15;
     extern constexpr double C = K;
 
+    // Angles
+    extern constexpr double rad = 1.0;
+    extern constexpr double deg = rad * (Constants::pi / 180);
+
     // Constants
     extern constexpr double atm = 101.325 * kPa;
 
@@ -87,6 +93,10 @@ namespace units {
 
     inline double celcius(double T_C) {
         return T_C * C + K0;
+    }
+
+    inline double angle(double v, double unit) {
+        return v * unit;
     }
 };
 
