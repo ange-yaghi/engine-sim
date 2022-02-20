@@ -131,7 +131,10 @@ double GasSystem::kineticEnergy(double n) const {
 }
 
 double GasSystem::pressure() const {
-    return n() * Constants::R * temperature() / volume();
+    const double volume = this->volume();
+    return (volume != 0)
+        ? kineticEnergy() / (0.5 * degreesOfFreedom * volume)
+        : 0;
 }
 
 double GasSystem::temperature() const {

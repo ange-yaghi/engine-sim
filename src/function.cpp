@@ -96,6 +96,7 @@ double Function::sampleTriangle(double x) const {
     double sum = 0;
     double totalWeight = 0;
     for (int i = closest; i >= 0; --i) {
+        if (m_x[i] > x) continue;
         if (std::abs(x - m_x[i]) > m_filterWidth) break;
 
         const double w = triangle(m_x[i] - x);
@@ -103,7 +104,8 @@ double Function::sampleTriangle(double x) const {
         totalWeight += w;
     }
 
-    for (int i = closest + 1; i < m_size; ++i) {
+    for (int i = closest; i < m_size; ++i) {
+        if (m_x[i] <= x) continue;
         if (std::abs(m_x[i] - x) > m_filterWidth) break;
 
         const double w = triangle(m_x[i] - x);

@@ -26,6 +26,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         double m_blowbyK;
         double m_crankcasePressure;
+        double m_manifoldPressure;
 
         GasSystem m_system;
 };

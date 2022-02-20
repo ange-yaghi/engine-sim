@@ -7,6 +7,7 @@
 
 CombustionChamber::CombustionChamber() {
     m_crankcasePressure = 0.0;
+    m_manifoldPressure = units::pressure(1.0, units::atm);
     m_bank = nullptr;
     m_piston = nullptr;
     m_head = nullptr;
@@ -38,13 +39,17 @@ double CombustionChamber::volume() const {
 void CombustionChamber::update(double dt) {
     m_system.start();
 
+    if (m_system.pressure() > units::pressure(160.0, units::psi)) {
+        m_system.changeTemperature(units::celcius(1026.0) - m_system.temperature());
+    }
+
     m_system.setVolume(volume());
     m_system.flow(m_blowbyK, dt, m_crankcasePressure, units::celcius(25.0));
 
     m_system.flow(m_head->intakeFlowRate(
         m_piston->m_cylinderIndex),
         dt,
-        units::pressure(1.0, units::atm),
+        m_manifoldPressure,
         units::celcius(25.0));
     m_system.flow(m_head->exhaustFlowRate(
         m_piston->m_cylinderIndex),
@@ -52,27 +57,34 @@ void CombustionChamber::update(double dt) {
         units::pressure(1.0, units::atm),
         units::celcius(25.0));
 
-    if (m_system.pressure() > units::pressure(100.0, units::psi)) {
-        m_system.changeTemperature(units::celcius(1026.0) - m_system.temperature());
-    }
-
     m_system.end();
 }
 
 void CombustionChamber::apply(atg_scs::SystemState *system) {
     const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * Constants::pi;
 
-    const double force = area * m_system.pressure();
-    const double F_x = -m_bank->m_dx * force;
-    const double F_y = -m_bank->m_dy * force;
+    const float frictionFmep = units::pressure(11.6, units::psi);
 
     const double v_s =
         m_piston->m_body.v_x * m_bank->m_dx + m_piston->m_body.v_y * m_bank->m_dy;
 
+    double pressureDifferential = m_system.pressure() - m_crankcasePressure;
+    pressureDifferential = v_s < 0
+        ? pressureDifferential - frictionFmep
+        : pressureDifferential + frictionFmep;
+
+    const double force = area * pressureDifferential;
+    const double F_x = -m_bank->m_dx * force;
+    const double F_y = -m_bank->m_dy * force;
+
+    if (std::isnan(force) || std::isinf(force)) {
+        assert(false);
+    }
+
     const double F_fric = (v_s > 0)
-        ? -100
-        : 100;
-    const double F_damping = -v_s * 1.0;
+        ? -0
+        : 0;
+    const double F_damping = -v_s * 0.0;
 
     system->applyForce(
         0.0,

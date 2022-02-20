@@ -6,6 +6,7 @@
 #include "engine.h"
 #include "simulation_object.h"
 #include "ui_manager.h"
+#include "dynamometer.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -73,6 +74,8 @@ class EngineSimApplication {
         std::vector<SimulationObject *> m_objects;
         Engine m_iceEngine;
         EngineSimulator m_simulator;
+        Dynamometer m_dyno;
+        double m_torque;
 
         UiManager m_uiManager;
 

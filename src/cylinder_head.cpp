@@ -11,6 +11,8 @@ CylinderHead::CylinderHead() {
 
     m_exhaustPortFlow = nullptr;
     m_intakePortFlow = nullptr;
+
+    m_flow = 1.0;
 }
 
 CylinderHead::~CylinderHead() {
@@ -31,12 +33,12 @@ void CylinderHead::destroy() {
 
 double CylinderHead::intakeFlowRate(int cylinder) const {
     return m_intakePortFlow->sampleTriangle(
-            intakeValveLift(cylinder));
+            intakeValveLift(cylinder)) * m_flow;
 }
 
 double CylinderHead::exhaustFlowRate(int cylinder) const {
     return m_exhaustPortFlow->sampleTriangle(
-            exhaustValveLift(cylinder));
+            exhaustValveLift(cylinder)) * m_flow;
 }
 
 double CylinderHead::intakeValveLift(int cylinder) const {

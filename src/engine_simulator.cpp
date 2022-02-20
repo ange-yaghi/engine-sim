@@ -28,12 +28,24 @@ EngineSimulator::~EngineSimulator() {
     assert(m_crankshaftFrictionGenerators == nullptr);
 }
 
-void EngineSimulator::synthesize(Engine *engine) {
+void EngineSimulator::synthesize(Engine *engine, SystemType systemType) {
     static constexpr double pi = 3.14159265359;
 
-    m_system.initialize(
-        new atg_scs::GaussianEliminationSleSolver,
-        new atg_scs::Rk4OdeSolver);
+    if (systemType == SystemType::NsvOptimized) {
+        atg_scs::OptimizedNsvRigidBodySystem *system =
+            new atg_scs::OptimizedNsvRigidBodySystem;
+        system->initialize(
+            new atg_scs::GaussianEliminationSleSolver);
+        m_system = system;
+    }
+    else {
+        atg_scs::GenericRigidBodySystem *system =
+            new atg_scs::GenericRigidBodySystem;
+        system->initialize(
+            new atg_scs::GaussianEliminationSleSolver,
+            new atg_scs::NsvOdeSolver);
+        m_system = system;
+    }
 
     m_engine = engine;
 
@@ -66,13 +78,13 @@ void EngineSimulator::synthesize(Engine *engine) {
             engine->getCrankshaft(i)->m_m + engine->getCrankshaft(i)->m_flywheelMass;
         engine->getCrankshaft(i)->m_body.I = engine->getCrankshaft(i)->m_I;
 
-        m_system.addRigidBody(&engine->getCrankshaft(i)->m_body);
-        m_system.addConstraint(&m_crankConstraints[i]);
+        m_system->addRigidBody(&engine->getCrankshaft(i)->m_body);
+        m_system->addConstraint(&m_crankConstraints[i]);
 
         m_crankshaftFrictionGenerators[i].m_crankshaft = engine->getCrankshaft(i);
         m_crankshaftFrictionGenerators[i].m_damping = 0.1;
         m_crankshaftFrictionGenerators[i].m_friction = 0.1;
-        m_system.addForceGenerator(&m_crankshaftFrictionGenerators[i]);
+        m_system->addForceGenerator(&m_crankshaftFrictionGenerators[i]);
     }
 
     for (int i = 0; i < cylinderCount; ++i) {
@@ -123,18 +135,18 @@ void EngineSimulator::synthesize(Engine *engine) {
         connectingRod->m_body.m = connectingRod->m_m;
         connectingRod->m_body.I = connectingRod->m_I;
 
-        m_system.addRigidBody(&piston->m_body);
-        m_system.addRigidBody(&connectingRod->m_body);
-        m_system.addConstraint(&m_linkConstraints[i * 2 + 0]);
-        m_system.addConstraint(&m_linkConstraints[i * 2 + 1]);
-        m_system.addConstraint(&m_cylinderWallConstraints[i]);
+        m_system->addRigidBody(&piston->m_body);
+        m_system->addRigidBody(&connectingRod->m_body);
+        m_system->addConstraint(&m_linkConstraints[i * 2 + 0]);
+        m_system->addConstraint(&m_linkConstraints[i * 2 + 1]);
+        m_system->addConstraint(&m_cylinderWallConstraints[i]);
 
         CombustionChamber &chamber = m_combustionChambers[i];
         chamber.m_bank = bank;
         chamber.m_piston = piston;
         chamber.m_head = engine->getHead(bank->m_index);
 
-        m_system.addForceGenerator(&chamber);
+        m_system->addForceGenerator(&chamber);
     }
 }
 
@@ -192,7 +204,7 @@ void EngineSimulator::update(float dt) {
 
     const double dt_sub = (float)dt / m_steps;
     for (int i = 0; i < m_steps; ++i) {
-        m_system.process(dt_sub, 1);
+        m_system->process(dt_sub, 1);
 
         const int cylinderCount = m_engine->getCylinderCount();
         for (int i = 0; i < cylinderCount; ++i) {

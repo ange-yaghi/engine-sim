@@ -9,10 +9,16 @@
 
 class EngineSimulator {
     public:
+        enum class SystemType {
+            NsvOptimized,
+            Generic
+        };
+
+    public:
         EngineSimulator();
         ~EngineSimulator();
 
-        void synthesize(Engine *engine);
+        void synthesize(Engine *engine, SystemType systemType);
         void placeAndInitialize();
         void update(float dt);
         void destroy();
@@ -23,9 +29,10 @@ class EngineSimulator {
 
         Engine *getEngine() const { return m_engine; }
         CombustionChamber *getCombustionChamber(int i);
+        atg_scs::RigidBodySystem *getSystem() { return m_system; }
 
     protected:
-        atg_scs::RigidBodySystem m_system;
+        atg_scs::RigidBodySystem *m_system;
 
         atg_scs::FixedPositionConstraint *m_crankConstraints;
         atg_scs::LineConstraint *m_cylinderWallConstraints;

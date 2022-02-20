@@ -24,6 +24,10 @@ namespace units {
     extern constexpr double foot = inch * 12.0;
     extern constexpr double thou = inch / 1000.0;
 
+    // Torque
+    extern constexpr double Nm = N * m;
+    extern constexpr double ft_lb = foot * lbf;
+
     // Volume
     extern constexpr double m3 = 1.0;
     extern constexpr double cc = cm * cm * cm;
@@ -60,6 +64,10 @@ namespace units {
     }
 
     inline double area(double v, double unit) {
+        return v * unit;
+    }
+
+    inline double torque(double v, double unit) {
         return v * unit;
     }
 

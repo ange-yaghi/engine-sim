@@ -226,7 +226,6 @@ void EngineSimApplication::initialize() {
     Camshaft *exhaustCamLeft = new Camshaft, *exhaustCamRight = new Camshaft;
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift = new Function;
-    Function *noLift = new Function;
     camLift->initialize(1, units::angle(20, units::deg));
     camLift->addSample(0.0, units::distance(500, units::thou));
     camLift->addSample(-units::angle(20, units::deg), units::distance(350, units::thou));
@@ -267,11 +266,11 @@ void EngineSimApplication::initialize() {
     Function *flow = new Function;
     flow->initialize(1, units::distance(100, units::thou));
     flow->addSample(units::distance(0, units::thou), 0.0);
-    flow->addSample(units::distance(100, units::thou), 0.001 * 2);
-    flow->addSample(units::distance(200, units::thou), 0.002 * 2);
-    flow->addSample(units::distance(300, units::thou), 0.003 * 2);
-    flow->addSample(units::distance(400, units::thou), 0.004 * 2);
-    flow->addSample(units::distance(500, units::thou), 0.005 * 2);
+    flow->addSample(units::distance(100, units::thou), 0.001 * 30);
+    flow->addSample(units::distance(200, units::thou), 0.002 * 30);
+    flow->addSample(units::distance(300, units::thou), 0.003 * 30);
+    flow->addSample(units::distance(400, units::thou), 0.004 * 30);
+    flow->addSample(units::distance(500, units::thou), 0.005 * 30);
 
     CylinderHead::Parameters chParams;
     chParams.IntakePortFlow = chParams.ExhaustPortFlow = flow;
@@ -286,10 +285,13 @@ void EngineSimApplication::initialize() {
     chParams.Bank = m_iceEngine.getCylinderBank(1);
     m_iceEngine.getHead(1)->initialize(chParams);
 
-    m_simulator.synthesize(&m_iceEngine);
+    m_simulator.synthesize(&m_iceEngine, EngineSimulator::SystemType::NsvOptimized);
+    m_simulator.getSystem()->addForceGenerator(m_dyno.getEngineLoad());
     createObjects(&m_iceEngine);
 
     m_simulator.placeAndInitialize();
+
+    m_dyno.initialize(m_iceEngine.getCrankshaft(0));
 
     m_uiManager.initialize(this);
     CylinderPressureGauge *gauge = m_uiManager.getRoot()->addElement<CylinderPressureGauge>();
@@ -300,7 +302,9 @@ void EngineSimApplication::initialize() {
 
 void EngineSimApplication::process(float dt) {
     m_simulator.m_steps = 100;
-    m_simulator.update((1 / 60.0) / 10);
+    m_simulator.update((1 / 60.0) / 1);
+
+    m_dyno.update(dt);
 }
 
 void EngineSimApplication::render() {
@@ -313,7 +317,13 @@ void EngineSimApplication::render() {
         object->render(&view);
     }
 
+    m_torque = m_dyno.getLastMeasurement().Torque;
+    if (m_dyno.isReady()) {
+        m_dyno.startMeasurement(0.1, units::rpm(3000));
+    }
+
     std::stringstream ss;
+    ss << "Torque: " << m_torque << " ft-lb    \n";
     ss << std::lroundf(m_simulator.getAverageProcessingTime()) << " us    \n";
     ss << std::lroundf(m_iceEngine.getRpm()) << " RPM     \n";
     ss << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
@@ -355,6 +365,18 @@ void EngineSimApplication::run() {
 
         if (m_engine.ProcessKeyDown(ysKey::Code::F)) {
             m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
+        }
+
+        double manifoldPressure = units::pressure(0.25, units::atm);
+        if (m_engine.IsKeyDown(ysKey::Code::A)) {
+            manifoldPressure = units::pressure(1.0, units::atm);
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::S)) {
+            manifoldPressure = units::pressure(0.0, units::atm);
+        }
+
+        for (int i = 0; i < m_iceEngine.getCylinderCount(); ++i) {
+            m_simulator.getCombustionChamber(i)->m_manifoldPressure = manifoldPressure;
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::V) &&
