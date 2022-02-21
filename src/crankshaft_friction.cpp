@@ -22,7 +22,7 @@ void CrankshaftFriction::apply(atg_scs::SystemState *system) {
     system->t[m_crankshaft->m_body.index] +=
         F_fric + m_damping * m_crankshaft->m_body.v_theta;
 
-    if (system->v_theta[m_crankshaft->m_body.index] > -units::rpm(300)) {
-        system->t[m_crankshaft->m_body.index] -= 140000 / 2.0f;
+    if (system->v_theta[m_crankshaft->m_body.index] > -units::rpm(200)) {
+        system->t[m_crankshaft->m_body.index] -= units::torque(2000, units::ft_lb);
     }
 }

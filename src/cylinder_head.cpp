@@ -13,6 +13,7 @@ CylinderHead::CylinderHead() {
     m_intakePortFlow = nullptr;
 
     m_flow = 1.0;
+    m_combustionChamberVolume = 0.0;
 }
 
 CylinderHead::~CylinderHead() {
@@ -25,6 +26,7 @@ void CylinderHead::initialize(const Parameters &params) {
     m_intakeCamshaft = params.IntakeCam;
     m_exhaustPortFlow = params.ExhaustPortFlow;
     m_intakePortFlow = params.IntakePortFlow;
+    m_combustionChamberVolume = params.CombustionChamberVolume;
 }
 
 void CylinderHead::destroy() {

@@ -2,6 +2,7 @@
 
 #include "../include/cylinder_bank.h"
 #include "../include/engine_sim_application.h"
+#include "../include/constants.h"
 
 CylinderHeadObject::CylinderHeadObject() {
     m_head = nullptr;
@@ -19,10 +20,13 @@ void CylinderHeadObject::render(const ViewParameters *view) {
     resetShader();
 
     const double s = m_head->m_bank->m_bore / 2.0;
+    const double boreSurfaceArea =
+        Constants::pi * m_head->m_bank->m_bore * m_head->m_bank->m_bore / 4.0;
+    const double chamberHeight = m_head->m_combustionChamberVolume / boreSurfaceArea;
 
     const double theta = m_head->m_bank->m_angle;
     double x, y;
-    m_head->m_bank->getTop(&x, &y);
+    m_head->m_bank->getPositionAboveDeck(chamberHeight, &x, &y);
 
     const ysMatrix scale = ysMath::ScaleTransform(ysMath::LoadScalar(s));
     const ysMatrix rotation = ysMath::RotationTransform(

@@ -5,6 +5,7 @@
 UiManager::UiManager() {
     m_app = nullptr;
     m_dragStart = nullptr;
+    m_hover = nullptr;
 }
 
 UiManager::~UiManager() {
@@ -27,8 +28,15 @@ void UiManager::update(float dt) {
     m_app->getEngine()->GetOsMousePos(&mouse_x, &mouse_y);
 
     Point mousePos = { (float)mouse_x, (float)mouse_y };
+    UiElement *newHover = m_root.mouseOver(mousePos);
+    if (newHover != m_hover) {
+        if (m_hover != nullptr) m_hover->onMouseLeave();
+        if (newHover != nullptr) newHover->onMouseOver(mousePos);
+        m_hover = newHover;
+    }
+
     if (m_app->getEngine()->ProcessMouseButtonDown(ysMouse::Button::Left)) {
-        m_dragStart = m_root.mouseOver(mousePos);
+        m_dragStart = m_hover;
         m_mouse_p0 = mousePos;
         if (m_dragStart != nullptr) {
             m_drag_p0 = m_dragStart->getLocalPosition();
@@ -36,7 +44,9 @@ void UiManager::update(float dt) {
         }
     }
     else if (m_app->getEngine()->ProcessMouseButtonUp(ysMouse::Button::Left)) {
-        UiElement *dragRelease = m_root.mouseOver(mousePos);
+        UiElement *dragRelease = m_hover;
+
+        if (m_dragStart != nullptr) m_dragStart->onMouseUp(mousePos);
 
         if (dragRelease != nullptr && m_dragStart == dragRelease) {
             m_dragStart->onMouseClick(m_dragStart->worldToLocal(mousePos));

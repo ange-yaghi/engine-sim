@@ -30,6 +30,7 @@ class Piston : public Part {
 
         ConnectingRod *m_rod;
         CylinderBank *m_bank;
+        atg_scs::LineConstraint *m_cylinderConstraint;
         int m_cylinderIndex;
         double m_compressionHeight;
         double m_displacement;

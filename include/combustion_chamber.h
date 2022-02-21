@@ -10,6 +10,12 @@
 
 class CombustionChamber : public atg_scs::ForceGenerator {
     public:
+        struct FlameEvent {
+            double lastVolume;
+            double travel;
+        };
+
+    public:
         CombustionChamber();
         virtual ~CombustionChamber();
 
@@ -22,6 +28,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         double volume() const;
 
+        void ignite();
         void update(double dt);
 
         double m_blowbyK;
@@ -29,6 +36,8 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double m_manifoldPressure;
 
         GasSystem m_system;
+        FlameEvent m_flameEvent;
+        bool m_lit;
 };
 
 #endif /* ATG_ENGINE_SIM_COMBUSTION_CHAMBER_H */

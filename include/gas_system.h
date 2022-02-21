@@ -7,6 +7,7 @@ class GasSystem {
             double n_mol = 0.0;
             double E_k = 0.0;
             double V = 0.0;
+            double afr = 0.0;
         };
 
     public:
@@ -20,7 +21,8 @@ class GasSystem {
 
         void changeVolume(double dV);
         void changePressure(double pressure);
-        void changeTemperature(double temperature);
+        void changeTemperature(double dT);
+        void changeTemperature(double dT, double n);
 
         void flow(double dn, GasSystem *target);
         void flow(double dn, double T_env);
@@ -34,6 +36,7 @@ class GasSystem {
         double pressureEquilibriumMaxFlow(double P_env, double T_env) const;
 
         double n() const;
+        double n(double V) const;
         double kineticEnergy() const;
         double kineticEnergy(double n) const;
         double kineticEnergyPerMol() const { return kineticEnergy(1.0); }

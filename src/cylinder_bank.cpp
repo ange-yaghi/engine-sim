@@ -34,7 +34,11 @@ void CylinderBank::destroy() {
     /* void */
 }
 
-void CylinderBank::getTop(double *x, double *y) const {
-    *x = m_dx * m_deckHeight;
-    *y = m_dy * m_deckHeight;
+void CylinderBank::getPositionAboveDeck(double h, double *x, double *y) const {
+    *x = m_dx * (m_deckHeight + h);
+    *y = m_dy * (m_deckHeight + h);
+}
+
+double CylinderBank::boreSurfaceArea() const {
+    return Constants::pi * m_bore * m_bore / 4.0;
 }

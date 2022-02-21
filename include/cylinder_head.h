@@ -16,6 +16,8 @@ class CylinderHead : public Part {
 
             Function *ExhaustPortFlow;
             Function *IntakePortFlow;
+
+            double CombustionChamberVolume;
         };
 
     public:
@@ -38,6 +40,7 @@ class CylinderHead : public Part {
         Function *m_intakePortFlow;
 
         double m_flow;
+        double m_combustionChamberVolume;
 };
 
 #endif /* ATG_ENGINE_SIM_CYLINDER_HEAD_H */

@@ -82,8 +82,8 @@ void EngineSimulator::synthesize(Engine *engine, SystemType systemType) {
         m_system->addConstraint(&m_crankConstraints[i]);
 
         m_crankshaftFrictionGenerators[i].m_crankshaft = engine->getCrankshaft(i);
-        m_crankshaftFrictionGenerators[i].m_damping = 0.1;
-        m_crankshaftFrictionGenerators[i].m_friction = 0.1;
+        m_crankshaftFrictionGenerators[i].m_damping = 0.0;
+        m_crankshaftFrictionGenerators[i].m_friction = 0.0;
         m_system->addForceGenerator(&m_crankshaftFrictionGenerators[i]);
     }
 
@@ -105,6 +105,8 @@ void EngineSimulator::synthesize(Engine *engine, SystemType systemType) {
         m_cylinderWallConstraints[i].m_p0_y = crankshaft->m_p_y;
         m_cylinderWallConstraints[i].m_ks = ks;
         m_cylinderWallConstraints[i].m_kd = kd;
+
+        piston->m_cylinderConstraint = &m_cylinderWallConstraints[i];
 
         m_linkConstraints[i * 2 + 0].setBody1(&connectingRod->m_body);
         m_linkConstraints[i * 2 + 0].setBody2(&piston->m_body);

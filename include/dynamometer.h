@@ -1,56 +1,28 @@
 #ifndef ATG_ENGINE_SIM_DYNAMOMETER_H
 #define ATG_ENGINE_SIM_DYNAMOMETER_H
 
-#include "engine_load.h"
+#include "crankshaft.h"
+#include "scs.h"
 
 class Dynamometer {
-    public:
-        enum class State {
-            Idle,
-            Measuring,
-            Timeout,
-            Complete
-        };
-
-        struct Measurement {
-            double Speed = 0;
-            double Torque = 0;
-
-            double Window = 0;
-            int Samples = 0;
-        };
-
     public:
         Dynamometer();
         ~Dynamometer();
 
-        void initialize(Crankshaft *crankshaft);
+        void initialize(Crankshaft *crankshaft, atg_scs::RigidBodySystem *system);
 
-        bool isComplete() const { return m_state == State::Complete; }
-        bool isReady() const;
-        void startMeasurement(double window, double speed);
-        Measurement getLastMeasurement() const { return m_lastMeasurement; }
+        double readTorque() const;
 
-        EngineLoad *getEngineLoad() { return &m_device; }
+        void setEnabled(bool enabled);
+        bool isEnabled() const { return m_enabled; }
 
-        void update(double dt);
-
-        double m_timeout;
-        double m_maxTorque;
+        void setSpeed(double speed) { m_constraint.m_rotationSpeed = speed; }
+        double getSpeed() const { return m_constraint.m_rotationSpeed; }
 
     protected:
-        State measure(double dt);
-
-        EngineLoad m_device;
-
-        Measurement m_lastMeasurement;
-        double m_measurementTimeLeft;
-        double m_timeoutTimeLeft;
-        double m_maxSpeedDeviation;
-
-        double m_torqueVelocity;
-
-        State m_state;
+        bool m_enabled;
+        atg_scs::ConstantRotationConstraint m_constraint;
+        atg_scs::RigidBodySystem *m_system;
 };
 
 #endif /* ATG_ENGINE_SIM_DYNAMOMETER_H */

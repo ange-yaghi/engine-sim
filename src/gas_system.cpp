@@ -20,6 +20,7 @@ void GasSystem::initialize(double P, double V, double T) {
     state.n_mol = P * V / (Constants::R * T);
     state.V = V;
     state.E_k = T * (0.5 * degreesOfFreedom * state.n_mol * Constants::R);
+    state.afr = 0.0;
 }
 
 void GasSystem::setVolume(double V) {
@@ -48,6 +49,10 @@ void GasSystem::changePressure(double dP) {
 
 void GasSystem::changeTemperature(double dT) {
     next.E_k += dT * 0.5 * degreesOfFreedom * n() * Constants::R;
+}
+
+void GasSystem::changeTemperature(double dT, double n) {
+    next.E_k += dT * 0.5 * degreesOfFreedom * n * Constants::R;
 }
 
 void GasSystem::flow(double dn, GasSystem *target) {
@@ -120,6 +125,10 @@ double GasSystem::pressureEquilibriumMaxFlow(double P_env, double T_env) const {
 
 double GasSystem::n() const {
     return state.n_mol;
+}
+
+double GasSystem::n(double V) const {
+    return (V / volume()) * n();
 }
 
 double GasSystem::kineticEnergy() const {

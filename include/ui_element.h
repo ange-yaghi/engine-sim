@@ -10,6 +10,11 @@
 class EngineSimApplication;
 class UiElement {
     public:
+        enum class Event {
+            Clicked
+        };
+
+    public:
         UiElement();
         virtual ~UiElement();
 
@@ -19,16 +24,23 @@ class UiElement {
         virtual void update(float dt);
         virtual void render();
 
+        virtual void signal(UiElement *element, Event event);
         virtual void onMouseDown(const Point &mouseLocal);
+        virtual void onMouseUp(const Point &mouseLocal);
         virtual void onMouseClick(const Point &mouseLocal);
         virtual void onDrag(const Point &p0, const Point &delta);
         virtual void onMouseOver(const Point &mouseLocal);
+        virtual void onMouseLeave();
+
+        bool isMouseOver() const { return m_mouseOver; }
+        bool isMouseHeld() const { return m_mouseHeld; }
 
         template <typename T_Element>
-        T_Element *addElement() {
+        T_Element *addElement(UiElement *signalTarget = nullptr) {
             T_Element *newElement = new T_Element;
             newElement->initialize(m_app);
             newElement->m_parent = this;
+            newElement->m_signalTarget = signalTarget;
             newElement->m_index = (int)m_children.size();
             m_children.push_back(newElement);
 
@@ -54,6 +66,8 @@ class UiElement {
         Bounds m_bounds;
 
     protected:
+        void signal(Event event);
+
         float pixelsToUnits(float length) const;
         Point pixelsToUnits(const Point &p) const;
         float unitsToPixels(float x) const;
@@ -81,6 +95,7 @@ class UiElement {
     protected:
         std::vector<UiElement *> m_children;
         UiElement *m_parent;
+        UiElement *m_signalTarget;
 
     protected:
         Point m_localPosition;
@@ -90,6 +105,8 @@ class UiElement {
         int m_index;
 
         bool m_draggable;
+        bool m_mouseOver;
+        bool m_mouseHeld;
 
     protected:
         EngineSimApplication *m_app;

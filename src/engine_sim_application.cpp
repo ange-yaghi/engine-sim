@@ -8,6 +8,8 @@
 #include "../include/crankshaft_object.h"
 #include "../include/cylinder_bank_object.h"
 #include "../include/cylinder_head_object.h"
+#include "../include/ui_button.h"
+#include "../include/combustion_chamber_object.h"
 
 #include <sstream>
 
@@ -33,6 +35,12 @@ EngineSimApplication::EngineSimApplication() {
     m_shadow = ysColor::srgbiToLinear(0x0E1012);
     m_highlight1 = ysColor::srgbiToLinear(0xEF4545);
     m_highlight2 = ysColor::srgbiToLinear(0xFFFFFF);
+    m_pink = ysColor::srgbiToLinear(0xF394BE);
+    m_red = ysColor::srgbiToLinear(0xEE4445);
+    m_orange = ysColor::srgbiToLinear(0xF4802A);
+    m_yellow = ysColor::srgbiToLinear(0xFDBD2E);
+    m_blue = ysColor::srgbiToLinear(0x77CEE0);
+    m_green = ysColor::srgbiToLinear(0xBDD869);
 
     m_displayHeight = units::distance(2.0, units::foot);
 }
@@ -266,14 +274,15 @@ void EngineSimApplication::initialize() {
     Function *flow = new Function;
     flow->initialize(1, units::distance(100, units::thou));
     flow->addSample(units::distance(0, units::thou), 0.0);
-    flow->addSample(units::distance(100, units::thou), 0.001 * 30);
-    flow->addSample(units::distance(200, units::thou), 0.002 * 30);
-    flow->addSample(units::distance(300, units::thou), 0.003 * 30);
-    flow->addSample(units::distance(400, units::thou), 0.004 * 30);
-    flow->addSample(units::distance(500, units::thou), 0.005 * 30);
+    flow->addSample(units::distance(100, units::thou), 0.001 * 60);
+    flow->addSample(units::distance(200, units::thou), 0.002 * 60);
+    flow->addSample(units::distance(300, units::thou), 0.003 * 60);
+    flow->addSample(units::distance(400, units::thou), 0.004 * 60);
+    flow->addSample(units::distance(500, units::thou), 0.005 * 60);
 
     CylinderHead::Parameters chParams;
     chParams.IntakePortFlow = chParams.ExhaustPortFlow = flow;
+    chParams.CombustionChamberVolume = units::volume(118.0, units::cc);
 
     chParams.IntakeCam = intakeCamLeft;
     chParams.ExhaustCam = exhaustCamLeft;
@@ -286,25 +295,27 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getHead(1)->initialize(chParams);
 
     m_simulator.synthesize(&m_iceEngine, EngineSimulator::SystemType::NsvOptimized);
-    m_simulator.getSystem()->addForceGenerator(m_dyno.getEngineLoad());
-    createObjects(&m_iceEngine);
+    createObjects(&m_iceEngine, &m_simulator);
 
     m_simulator.placeAndInitialize();
 
-    m_dyno.initialize(m_iceEngine.getCrankshaft(0));
+    m_dyno.initialize(m_iceEngine.getCrankshaft(0), m_simulator.getSystem());
 
     m_uiManager.initialize(this);
     CylinderPressureGauge *gauge = m_uiManager.getRoot()->addElement<CylinderPressureGauge>();
     gauge->m_bounds = Bounds(300.0f, 500.0f, { 0.0f, 0.0f });
-    gauge->setLocalPosition(Point((float)m_engine.GetScreenWidth(), 0 ) + Point(-10.0f, 10.0f), Bounds::br);
+    gauge->setLocalPosition(Point((float)m_engine.GetScreenWidth(), 0) + Point(-10.0f, 10.0f), Bounds::br);
     gauge->m_simulator = &m_simulator;
+
+    UiButton *button = m_uiManager.getRoot()->addElement<UiButton>();
+    button->m_text = "Test Button";
+    button->m_bounds = Bounds(200.0f, 50.0f, { 0.0f, 0.0f });
+    button->setLocalPosition(Point(0.0f, 400.0f), Bounds::tl);
 }
 
 void EngineSimApplication::process(float dt) {
     m_simulator.m_steps = 100;
-    m_simulator.update((1 / 60.0) / 1);
-
-    m_dyno.update(dt);
+    m_simulator.update((1 / 60.0) / 10);
 }
 
 void EngineSimApplication::render() {
@@ -317,13 +328,10 @@ void EngineSimApplication::render() {
         object->render(&view);
     }
 
-    m_torque = m_dyno.getLastMeasurement().Torque;
-    if (m_dyno.isReady()) {
-        m_dyno.startMeasurement(0.1, units::rpm(3000));
-    }
+    m_torque = m_torque * 0.95 + 0.05 * units::convert(m_dyno.readTorque(), units::ft_lb);
 
     std::stringstream ss;
-    ss << "Torque: " << m_torque << " ft-lb    \n";
+    ss << "Dyno: " << m_torque << " ft-lb // " << m_torque * m_iceEngine.getRpm() / 5252.0 << " hp    \n";
     ss << std::lroundf(m_simulator.getAverageProcessingTime()) << " us    \n";
     ss << std::lroundf(m_iceEngine.getRpm()) << " RPM     \n";
     ss << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
@@ -372,7 +380,12 @@ void EngineSimApplication::run() {
             manifoldPressure = units::pressure(1.0, units::atm);
         }
         else if (m_engine.IsKeyDown(ysKey::Code::S)) {
-            manifoldPressure = units::pressure(0.0, units::atm);
+            manifoldPressure = units::pressure(025, units::atm);
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
+            m_dyno.setEnabled(!m_dyno.isEnabled());
+            m_dyno.setSpeed(units::rpm(4000));
         }
 
         for (int i = 0; i < m_iceEngine.getCylinderCount(); ++i) {
@@ -436,7 +449,7 @@ void EngineSimApplication::drawGenerated(const GeometryGenerator::GeometryIndice
         layer);
 }
 
-void EngineSimApplication::createObjects(Engine *engine) {
+void EngineSimApplication::createObjects(Engine *engine, EngineSimulator *simulator) {
     for (int i = 0; i < engine->getCylinderCount(); ++i) {
         ConnectingRodObject *rodObject = new ConnectingRodObject;
         rodObject->initialize(this);
@@ -447,6 +460,11 @@ void EngineSimApplication::createObjects(Engine *engine) {
         pistonObject->initialize(this);
         pistonObject->m_piston = engine->getPiston(i);
         m_objects.push_back(pistonObject);
+
+        CombustionChamberObject *ccObject = new CombustionChamberObject;
+        ccObject->initialize(this);
+        ccObject->m_chamber = simulator->getCombustionChamber(i);
+        m_objects.push_back(ccObject);
     }
 
     for (int i = 0; i < engine->getCrankshaftCount(); ++i) {

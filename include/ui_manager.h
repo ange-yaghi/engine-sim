@@ -23,6 +23,7 @@ class UiManager {
         UiElement m_root;
 
         UiElement *m_dragStart;
+        UiElement *m_hover;
         Point m_mouse_p0;
         Point m_drag_p0;
 

@@ -32,7 +32,7 @@ class EngineSimApplication {
         dbasic::DefaultShaders *getShaders() { return &m_shaders; }
         dbasic::TextRenderer *getTextRenderer() { return &m_textRenderer; }
 
-        void createObjects(Engine *engine);
+        void createObjects(Engine *engine, EngineSimulator *simulator);
         dbasic::DeltaEngine *getEngine() { return &m_engine; }
 
         float pixelsToUnits(float pixels) const;
@@ -40,6 +40,13 @@ class EngineSimApplication {
 
         ysVector getBackgroundColor() const { return m_background; }
         ysVector getHightlight1Color() const { return m_highlight1; }
+        ysVector getWhite() const { return ysMath::Constants::One; }
+        ysVector getPink() const { return m_pink; }
+        ysVector getGreen() const { return m_green; }
+        ysVector getYellow() const { return m_yellow; }
+        ysVector getRed() const { return m_red; }
+        ysVector getOrange() const { return m_orange; }
+        ysVector getBlue() const { return m_blue; }
 
         dbasic::AssetManager *getAssetManager() { return &m_assetManager; }
 
@@ -99,6 +106,13 @@ class EngineSimApplication {
         ysVector m_shadow;
         ysVector m_highlight1;
         ysVector m_highlight2;
+
+        ysVector m_pink;
+        ysVector m_orange;
+        ysVector m_yellow;
+        ysVector m_red;
+        ysVector m_green;
+        ysVector m_blue;
 
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
         atg_dtv::Encoder m_encoder;

@@ -2,6 +2,7 @@
 
 #include "../include/constants.h"
 #include "../include/units.h"
+#include "../include/piston.h"
 
 #include <cmath>
 
@@ -11,7 +12,8 @@ CombustionChamber::CombustionChamber() {
     m_bank = nullptr;
     m_piston = nullptr;
     m_head = nullptr;
-    m_blowbyK = 5E-6;
+    m_blowbyK = 5E-5;
+    m_lit = false;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -24,10 +26,9 @@ void CombustionChamber::initialize(double p0, double t0) {
 }
 
 double CombustionChamber::volume() const {
-    // Temp
-    const double combustionPortVolume = units::volume(118, units::cc);
+    const double combustionPortVolume = m_head->m_combustionChamberVolume;
 
-    const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * Constants::pi;
+    const double area = m_bank->boreSurfaceArea();
     const double s =
         m_piston->relativeX() * m_bank->m_dx + m_piston->relativeY() * m_bank->m_dy;
     const double displacement =
@@ -36,12 +37,14 @@ double CombustionChamber::volume() const {
     return displacement + combustionPortVolume;
 }
 
+void CombustionChamber::ignite() {
+    m_flameEvent.lastVolume = volume();
+    m_flameEvent.travel = 0;
+    m_lit = true;
+}
+
 void CombustionChamber::update(double dt) {
     m_system.start();
-
-    if (m_system.pressure() > units::pressure(160.0, units::psi)) {
-        m_system.changeTemperature(units::celcius(1026.0) - m_system.temperature());
-    }
 
     m_system.setVolume(volume());
     m_system.flow(m_blowbyK, dt, m_crankcasePressure, units::celcius(25.0));
@@ -57,22 +60,44 @@ void CombustionChamber::update(double dt) {
         units::pressure(1.0, units::atm),
         units::celcius(25.0));
 
+    if (m_lit) {
+        const double totalTravel = volume() / m_bank->boreSurfaceArea();
+        const double expansion = volume() / m_flameEvent.lastVolume;
+        const double lastTravel = m_flameEvent.travel * expansion;
+        m_flameEvent.lastVolume = volume();
+
+        m_flameEvent.travel =
+            std::fmin(lastTravel + dt * 2.25, totalTravel);
+
+        if (lastTravel < m_flameEvent.travel) {
+            const double litVolume = (m_flameEvent.travel - lastTravel) * m_bank->boreSurfaceArea();
+            const double n = m_system.n(litVolume);
+            m_system.changeTemperature(units::celcius(2138), n);
+        }
+
+        if (m_flameEvent.travel >= totalTravel) {
+            const double finalTemp = m_system.temperature();
+            m_lit = false;
+        }
+    }
+
     m_system.end();
+
+    // temp
+    if (volume() < m_head->m_combustionChamberVolume * 10.0
+        && m_system.pressure() > units::pressure(30, units::psi))
+    {
+        if (!m_lit) ignite();
+    }
 }
 
 void CombustionChamber::apply(atg_scs::SystemState *system) {
     const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * Constants::pi;
 
-    const float frictionFmep = units::pressure(11.6, units::psi);
-
     const double v_s =
         m_piston->m_body.v_x * m_bank->m_dx + m_piston->m_body.v_y * m_bank->m_dy;
 
-    double pressureDifferential = m_system.pressure() - m_crankcasePressure;
-    pressureDifferential = v_s < 0
-        ? pressureDifferential - frictionFmep
-        : pressureDifferential + frictionFmep;
-
+    const double pressureDifferential = m_system.pressure() - m_crankcasePressure;
     const double force = area * pressureDifferential;
     const double F_x = -m_bank->m_dx * force;
     const double F_y = -m_bank->m_dy * force;
@@ -81,9 +106,13 @@ void CombustionChamber::apply(atg_scs::SystemState *system) {
         assert(false);
     }
 
+    const double cylinderWallForce = std::sqrt(
+        m_piston->m_cylinderConstraint->F_x[0][0] * m_piston->m_cylinderConstraint->F_x[0][0]
+        + m_piston->m_cylinderConstraint->F_y[0][0] * m_piston->m_cylinderConstraint->F_y[0][0]);
+
     const double F_fric = (v_s > 0)
-        ? -0
-        : 0;
+        ? -cylinderWallForce * 0.5 - 100
+        : cylinderWallForce * 0.5 + 100;
     const double F_damping = -v_s * 0.0;
 
     system->applyForce(

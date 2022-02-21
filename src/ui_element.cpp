@@ -7,11 +7,14 @@
 UiElement::UiElement() {
     m_app = nullptr;
     m_parent = nullptr;
+    m_signalTarget = nullptr;
     m_checkMouse = false;
     m_disabled = false;
     m_index = -1;
 
     m_draggable = false;
+    m_mouseOver = false;
+    m_mouseHeld = false;
 }
 
 UiElement::~UiElement() {
@@ -38,12 +41,20 @@ void UiElement::render() {
     }
 }
 
-void UiElement::onMouseDown(const Point &mouseLocal) {
+void UiElement::signal(UiElement *element, Event event) {
     /* void */
 }
 
+void UiElement::onMouseDown(const Point &mouseLocal) {
+    m_mouseHeld = true;
+}
+
+void UiElement::onMouseUp(const Point &mouseLocal) {
+    m_mouseHeld = false;
+}
+
 void UiElement::onMouseClick(const Point &mouseLocal) {
-    /* void */
+    signal(Event::Clicked);
 }
 
 void UiElement::onDrag(const Point &p0, const Point &delta) {
@@ -53,7 +64,11 @@ void UiElement::onDrag(const Point &p0, const Point &delta) {
 }
 
 void UiElement::onMouseOver(const Point &mouseLocal) {
-    /* void */
+    m_mouseOver = true;
+}
+
+void UiElement::onMouseLeave() {
+    m_mouseOver = false;
 }
 
 UiElement *UiElement::mouseOver(const Point &mouseLocal) {
@@ -96,6 +111,12 @@ void UiElement::activate() {
         m_parent->bringToFront(this);
         m_parent->activate();
     }
+}
+
+void UiElement::signal(Event event) {
+    if (m_signalTarget == nullptr) return;
+
+    m_signalTarget->signal(this, event);
 }
 
 float UiElement::pixelsToUnits(float length) const {

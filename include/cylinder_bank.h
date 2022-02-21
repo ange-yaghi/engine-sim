@@ -20,7 +20,8 @@ class CylinderBank {
         void initialize(const Parameters &params);
         void destroy();
 
-        void getTop(double *x, double *y) const;
+        void getPositionAboveDeck(double h, double *x, double *y) const;
+        double boreSurfaceArea() const;
 
         double m_angle;
         double m_bore;

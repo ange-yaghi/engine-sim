@@ -6,6 +6,7 @@
 Piston::Piston() {
     m_rod = nullptr;
     m_bank = nullptr;
+    m_cylinderConstraint = nullptr;
     m_cylinderIndex = -1;
     m_compressionHeight = 0.0;
     m_displacement = 0.0;
