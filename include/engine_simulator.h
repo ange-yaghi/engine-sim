@@ -3,7 +3,7 @@
 
 #include "engine.h"
 #include "combustion_chamber.h"
-#include "crankshaft_friction.h"
+#include "crankshaft_load.h"
 
 #include "scs.h"
 
@@ -29,6 +29,7 @@ class EngineSimulator {
 
         Engine *getEngine() const { return m_engine; }
         CombustionChamber *getCombustionChamber(int i);
+        CrankshaftLoad *getCrankshaftLoad(int i);
         atg_scs::RigidBodySystem *getSystem() { return m_system; }
 
     protected:
@@ -39,7 +40,7 @@ class EngineSimulator {
         atg_scs::LinkConstraint *m_linkConstraints;
 
         CombustionChamber *m_combustionChambers;
-        CrankshaftFriction *m_crankshaftFrictionGenerators;
+        CrankshaftLoad *m_crankshaftLoads;
 
         Engine *m_engine;
 

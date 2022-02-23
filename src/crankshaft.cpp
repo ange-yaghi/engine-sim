@@ -1,5 +1,7 @@
 #include "../include/crankshaft.h"
 
+#include "../include/constants.h"
+
 #include <cmath>
 #include <assert.h>
 
@@ -51,4 +53,11 @@ void Crankshaft::setRodJournalAngle(int i, double angle) {
 
 double Crankshaft::getAngle() const {
     return -(m_body.theta - m_tdc);
+}
+
+double Crankshaft::getCycleAngle() const {
+    const double wrapped = std::fmod(getAngle(), 4 * Constants::pi);
+    return (wrapped < 0)
+        ? wrapped + 4 * Constants::pi
+        : wrapped;
 }

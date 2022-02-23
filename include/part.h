@@ -6,7 +6,7 @@
 class Part {
     public:
         Part();
-        ~Part();
+        virtual ~Part();
 
         virtual void destroy();
 

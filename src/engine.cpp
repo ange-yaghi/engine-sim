@@ -46,6 +46,8 @@ void Engine::destroy() {
         m_connectingRods[i].destroy();
     }
 
+    m_ignitionModule.destroy();
+
     delete[] m_crankshafts;
     delete[] m_cylinderBanks;
     delete[] m_heads;

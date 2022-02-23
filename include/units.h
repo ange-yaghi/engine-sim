@@ -33,6 +33,11 @@ namespace units {
     extern constexpr double cc = cm * cm * cm;
     extern constexpr double mL = cc;
     extern constexpr double L = mL * 1000.0;
+    extern constexpr double cubic_feet = foot * foot * foot;
+
+    // Flow
+    extern constexpr double m3_per_sec = m3;
+    extern constexpr double cfm = cubic_feet / 60;
 
     // Area
     extern constexpr double m2 = 1.0;
@@ -88,6 +93,10 @@ namespace units {
     }
 
     inline double volume(double v, double unit) {
+        return v * unit;
+    }
+
+    inline double flow(double v, double unit) {
         return v * unit;
     }
 

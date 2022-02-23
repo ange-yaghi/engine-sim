@@ -8,6 +8,7 @@
 #include "crankshaft.h"
 #include "cylinder_bank.h"
 #include "cylinder_head.h"
+#include "ignition_module.h"
 
 class Engine : public Part {
     public:
@@ -33,6 +34,7 @@ class Engine : public Part {
         CylinderHead *getHead(int i) const { return &m_heads[i]; }
         Piston *getPiston(int i) const { return &m_pistons[i]; }
         ConnectingRod *getConnectingRod(int i) const { return &m_connectingRods[i]; }
+        IgnitionModule *getIgnitionModule() { return &m_ignitionModule; }
 
         double getRpm() const;
 
@@ -47,6 +49,8 @@ class Engine : public Part {
         Piston *m_pistons;
         ConnectingRod *m_connectingRods;
         int m_cylinderCount;
+
+        IgnitionModule m_ignitionModule;
 };
 
 #endif /* ATG_ENGINE_SIM_ENGINE_H */

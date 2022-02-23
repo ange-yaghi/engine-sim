@@ -13,6 +13,7 @@ class CrankshaftFriction : public atg_scs::ForceGenerator {
         virtual void apply(atg_scs::SystemState *system);
 
         Crankshaft *m_crankshaft;
+        atg_scs::FixedPositionConstraint *m_constraint;
 
         double m_friction;
         double m_damping;

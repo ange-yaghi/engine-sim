@@ -12,7 +12,7 @@ CombustionChamber::CombustionChamber() {
     m_bank = nullptr;
     m_piston = nullptr;
     m_head = nullptr;
-    m_blowbyK = 5E-5;
+    m_blowbyK = 3E-4;
     m_lit = false;
 }
 
@@ -67,10 +67,11 @@ void CombustionChamber::update(double dt) {
         m_flameEvent.lastVolume = volume();
 
         m_flameEvent.travel =
-            std::fmin(lastTravel + dt * 2.25, totalTravel);
+            std::fmin(lastTravel + dt * 100.5, totalTravel);
 
         if (lastTravel < m_flameEvent.travel) {
-            const double litVolume = (m_flameEvent.travel - lastTravel) * m_bank->boreSurfaceArea();
+            const double litVolume =
+                (m_flameEvent.travel - lastTravel) * m_bank->boreSurfaceArea();
             const double n = m_system.n(litVolume);
             m_system.changeTemperature(units::celcius(2138), n);
         }
@@ -82,13 +83,6 @@ void CombustionChamber::update(double dt) {
     }
 
     m_system.end();
-
-    // temp
-    if (volume() < m_head->m_combustionChamberVolume * 10.0
-        && m_system.pressure() > units::pressure(30, units::psi))
-    {
-        if (!m_lit) ignite();
-    }
 }
 
 void CombustionChamber::apply(atg_scs::SystemState *system) {
@@ -111,8 +105,8 @@ void CombustionChamber::apply(atg_scs::SystemState *system) {
         + m_piston->m_cylinderConstraint->F_y[0][0] * m_piston->m_cylinderConstraint->F_y[0][0]);
 
     const double F_fric = (v_s > 0)
-        ? -cylinderWallForce * 0.5 - 100
-        : cylinderWallForce * 0.5 + 100;
+        ? -cylinderWallForce * 0.1 - 500
+        : cylinderWallForce * 0.1 + 500;
     const double F_damping = -v_s * 0.0;
 
     system->applyForce(

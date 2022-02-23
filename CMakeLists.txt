@@ -52,6 +52,9 @@ add_library(engine-sim STATIC
     src/cylinder_head.cpp
     src/dynamometer.cpp
     src/engine_load.cpp
+    src/ignition_module.cpp
+    src/utilities.cpp
+    src/crankshaft_load.cpp
 
     # Include files
     include/delta.h
@@ -72,6 +75,9 @@ add_library(engine-sim STATIC
     include/cylinder_head.h
     include/dynamometer.h
     include/engine_load.h
+    include/ignition_module.h
+    include/utilities.h
+    include/crankshaft_load.h
 )
 
 target_link_libraries(engine-sim
