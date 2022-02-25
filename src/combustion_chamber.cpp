@@ -14,6 +14,7 @@ CombustionChamber::CombustionChamber() {
     m_head = nullptr;
     m_blowbyK = 3E-4;
     m_lit = false;
+    m_peakTemperature = 0;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -38,12 +39,21 @@ double CombustionChamber::volume() const {
 }
 
 void CombustionChamber::ignite() {
-    m_flameEvent.lastVolume = volume();
-    m_flameEvent.travel = 0;
-    m_lit = true;
+    if (!m_lit) {
+        m_flameEvent.lastVolume = volume();
+        m_flameEvent.travel_x = 0;
+        m_flameEvent.travel_y = 0;
+        m_flameEvent.lit_n = 0;
+        m_flameEvent.total_n = m_system.n();
+        m_lit = true;
+    }
 }
 
 void CombustionChamber::update(double dt) {
+    if (m_system.temperature() > m_peakTemperature) {
+        m_peakTemperature = m_system.temperature();
+    }
+
     m_system.start();
 
     m_system.setVolume(volume());
@@ -61,25 +71,31 @@ void CombustionChamber::update(double dt) {
         units::celcius(25.0));
 
     if (m_lit) {
-        const double totalTravel = volume() / m_bank->boreSurfaceArea();
+        const double totalTravel_x = m_bank->m_bore / 2;
+        const double totalTravel_y = volume() / m_bank->boreSurfaceArea();
         const double expansion = volume() / m_flameEvent.lastVolume;
-        const double lastTravel = m_flameEvent.travel * expansion;
-        m_flameEvent.lastVolume = volume();
+        const double lastTravel_x = m_flameEvent.travel_x * expansion;
+        const double lastTravel_y = m_flameEvent.travel_y * expansion;
 
-        m_flameEvent.travel =
-            std::fmin(lastTravel + dt * 100.5, totalTravel);
+        m_flameEvent.travel_x =
+            std::fmin(lastTravel_x + (dt * 7) / 2, totalTravel_x);
+        m_flameEvent.travel_y =
+            std::fmin(lastTravel_y + dt * 7, totalTravel_y);
 
-        if (lastTravel < m_flameEvent.travel) {
+        if (lastTravel_x < m_flameEvent.travel_x || lastTravel_y < m_flameEvent.travel_y) {
             const double litVolume =
-                (m_flameEvent.travel - lastTravel) * m_bank->boreSurfaceArea();
+                (2 * m_flameEvent.travel_x * m_flameEvent.travel_y) - (2 * lastTravel_x * lastTravel_y);
             const double n = m_system.n(litVolume);
-            m_system.changeTemperature(units::celcius(2138), n);
-        }
+            m_system.changeTemperature(units::celcius(2138) * 1.0, n);
 
-        if (m_flameEvent.travel >= totalTravel) {
+            m_flameEvent.lit_n += n;
+        }
+        else {
             const double finalTemp = m_system.temperature();
             m_lit = false;
         }
+
+        m_flameEvent.lastVolume = volume();
     }
 
     m_system.end();
@@ -87,9 +103,11 @@ void CombustionChamber::update(double dt) {
 
 void CombustionChamber::apply(atg_scs::SystemState *system) {
     const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * Constants::pi;
+    const double v_x = system->v_x[m_piston->m_body.index];
+    const double v_y = system->v_y[m_piston->m_body.index];
 
     const double v_s =
-        m_piston->m_body.v_x * m_bank->m_dx + m_piston->m_body.v_y * m_bank->m_dy;
+        v_x * m_bank->m_dx + v_y * m_bank->m_dy;
 
     const double pressureDifferential = m_system.pressure() - m_crankcasePressure;
     const double force = area * pressureDifferential;
@@ -104,15 +122,18 @@ void CombustionChamber::apply(atg_scs::SystemState *system) {
         m_piston->m_cylinderConstraint->F_x[0][0] * m_piston->m_cylinderConstraint->F_x[0][0]
         + m_piston->m_cylinderConstraint->F_y[0][0] * m_piston->m_cylinderConstraint->F_y[0][0]);
 
+    const double v_s_mag = std::abs(v_s);
+    const double frictionCoeff = 0.06 + v_s_mag * 0.01;
+    const double ringFriction = v_s_mag * units::force(6.0, units::N);
+
     const double F_fric = (v_s > 0)
-        ? -cylinderWallForce * 0.1 - 500
-        : cylinderWallForce * 0.1 + 500;
-    const double F_damping = -v_s * 0.0;
+        ? -cylinderWallForce * frictionCoeff - ringFriction
+        : cylinderWallForce * frictionCoeff + ringFriction;
 
     system->applyForce(
         0.0,
         0.0,
-        F_x + (F_fric + F_damping) * m_bank->m_dx,
-        F_y + (F_fric + F_damping) * m_bank->m_dy,
+        F_x + F_fric * m_bank->m_dx,
+        F_y + F_fric * m_bank->m_dy,
         m_piston->m_body.index);
 }

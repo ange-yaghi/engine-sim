@@ -202,32 +202,42 @@ void EngineSimulator::placeAndInitialize() {
     m_engine->getIgnitionModule()->reset();
 }
 
-void EngineSimulator::update(float dt) {
-    auto s0 = std::chrono::steady_clock::now();
+void EngineSimulator::start() {
+    m_simulationStart = std::chrono::steady_clock::now();
+    m_currentIteration = 0;
+}
 
-    const double dt_sub = (float)dt / m_steps;
-    for (int i = 0; i < m_steps; ++i) {
-        m_system->process(dt_sub, 1);
+bool EngineSimulator::simulateStep(float dt) {
+    if (m_currentIteration >= m_steps) {
+        auto s1 = std::chrono::steady_clock::now();
 
-        IgnitionModule *im = m_engine->getIgnitionModule();
-        im->update(dt_sub);
+        const int lastFrame =
+            std::chrono::duration_cast<std::chrono::microseconds>(s1 - m_simulationStart).count();
+        m_physicsProcessingTime = m_physicsProcessingTime * 0.98 + 0.02 * lastFrame;
 
-        const int cylinderCount = m_engine->getCylinderCount();
-        for (int i = 0; i < cylinderCount; ++i) {
-            if (im->getIgnitionEvent(i)) {
-                m_combustionChambers[i].ignite();
-            }
-
-            m_combustionChambers[i].update(dt_sub);
-        }
-
-        im->resetIgnitionEvents();
+        return false;
     }
 
-    auto s1 = std::chrono::steady_clock::now();
+    const double dt_sub = (float)dt / m_steps;
+    m_system->process(dt_sub, 1);
 
-    const int lastFrame = std::chrono::duration_cast<std::chrono::microseconds>(s1 - s0).count();
-    m_physicsProcessingTime = m_physicsProcessingTime * 0.98 + 0.02 * lastFrame;
+    IgnitionModule *im = m_engine->getIgnitionModule();
+    im->update(dt_sub);
+
+    const int cylinderCount = m_engine->getCylinderCount();
+    for (int i = 0; i < cylinderCount; ++i) {
+        if (im->getIgnitionEvent(i)) {
+            m_combustionChambers[i].ignite();
+        }
+
+        m_combustionChambers[i].update(dt_sub);
+    }
+
+    im->resetIgnitionEvents();
+
+    ++m_currentIteration;
+
+    return true;
 }
 
 void EngineSimulator::destroy() {

@@ -183,9 +183,9 @@ void EngineSimApplication::initialize() {
     // Temporary moment of inertia approximation
     const double crank_r = crankshaftParams.CrankThrow;
     const double flywheel_r = units::distance(14.0, units::inch) / 2.0;
-    const double I_crank = (1 / 2.0) * crankshaftParams.Mass * crank_r;
+    const double I_crank = (1 / 2.0) * crankshaftParams.Mass * crank_r * crank_r;
     const double I_flywheel =
-        (1 / 12.0) * crankshaftParams.FlywheelMass * flywheel_r * flywheel_r;
+        (1 / 2.0) * crankshaftParams.FlywheelMass * flywheel_r * flywheel_r;
 
     crankshaftParams.MomentOfInertia = I_crank + I_flywheel;
     crankshaftParams.Pos_x = 0;
@@ -241,8 +241,8 @@ void EngineSimApplication::initialize() {
     camLift->addSample(0.0, units::distance(500, units::thou));
     camLift->addSample(-units::angle(20, units::deg), units::distance(450, units::thou));
     camLift->addSample(units::angle(20, units::deg), units::distance(450, units::thou));
-    camLift->addSample(-units::angle(40, units::deg), units::distance(300, units::thou));
-    camLift->addSample(units::angle(40, units::deg), units::distance(300, units::thou));
+    camLift->addSample(-units::angle(40, units::deg), units::distance(50, units::thou));
+    camLift->addSample(units::angle(40, units::deg), units::distance(50, units::thou));
     camLift->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
     camLift->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
 
@@ -279,7 +279,7 @@ void EngineSimApplication::initialize() {
     const double flow_t = units::celcius(25.0);
     const double P = units::pressure(1.0, units::psi);
     const double v = units::flow(1, units::cfm);
-    const double n_flow = (P * v) / (Constants::R * flow_t);
+    const double n_flow = 1.0 * (P * v) / (Constants::R * flow_t);
 
     Function *flow = new Function;
     flow->initialize(1, units::distance(100, units::thou));
@@ -346,11 +346,29 @@ void EngineSimApplication::initialize() {
     button->m_text = "Test Button";
     button->m_bounds = Bounds(200.0f, 50.0f, { 0.0f, 0.0f });
     button->setLocalPosition(Point(0.0f, 400.0f), Bounds::tl);
+
+    m_oscilloscope = m_uiManager.getRoot()->addElement<Oscilloscope>();
+    m_oscilloscope->setBufferSize(4096);
+    m_oscilloscope->m_bounds = Bounds(200.0f, 200.0f, { 0.0f, 0.0f });
+    m_oscilloscope->setLocalPosition({ 0.0f, 900.0f });
+    m_oscilloscope->m_xMin = units::angle(0.0f, units::deg);
+    m_oscilloscope->m_xMax = units::angle(720.0f, units::deg);
+    m_oscilloscope->m_yMin = units::pressure(0.0, units::psi);
+    m_oscilloscope->m_yMax = units::pressure(2000.0, units::psi);
+    m_oscilloscope->m_lineWidth = 1.0f;
 }
 
 void EngineSimApplication::process(float dt) {
-    m_simulator.m_steps = 100;
-    m_simulator.update((1 / 60.0) / 10);
+    m_simulator.m_steps = 200;
+    m_simulator.start();
+
+    while (m_simulator.simulateStep((1 / 60.0) / 1)) {
+        //m_oscilloscope->addDataPoint(
+        //    m_iceEngine.getCrankshaft(0)->getCycleAngle(), m_dyno.readTorque());
+        m_oscilloscope->addDataPoint(
+            m_iceEngine.getCrankshaft(0)->getCycleAngle(),
+            m_simulator.getCombustionChamber(1)->m_system.pressure());
+    }
 }
 
 void EngineSimApplication::render() {

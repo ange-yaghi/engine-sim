@@ -92,6 +92,10 @@ namespace units {
         return v * unit;
     }
 
+    inline double force(double v, double unit) {
+        return v * unit;
+    }
+
     inline double volume(double v, double unit) {
         return v * unit;
     }

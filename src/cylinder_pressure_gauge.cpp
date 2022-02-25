@@ -60,8 +60,10 @@ void CylinderPressureGauge::render() {
                 0,
                 piston->m_bank->m_cylinderCount - piston->m_cylinderIndex - 1).inset(5.0f);
 
+        const double value = units::convert(chamber->m_system.pressure(), units::psi);
+
         std::stringstream ss;
-        ss << std::lroundf(units::convert(chamber->m_system.pressure(), units::psi));
+        ss << std::lroundf(value);
         drawCenteredText(ss.str(), b_cyl.verticalSplit(0.0f, 2 / 6.0f), b_cyl.height() / 6);
 
         m_gauges[i]->m_bounds = b_cyl;

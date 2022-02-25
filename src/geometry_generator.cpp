@@ -737,7 +737,7 @@ bool GeometryGenerator::startPath(PathParameters &params) {
     const int n = params.n0 + params.n1;
     if (n < 2) return true;
 
-    ysVector2 *p2 = (1 >= params.n0) ? params.p1 : params.p0;
+    Point *p2 = (1 >= params.n0) ? params.p1 : params.p0;
     const int i1 = (1 >= params.n0) ? 0 : 1;
 
     const float dx = p2[i1].x - params.p0[0].x;
@@ -774,18 +774,45 @@ bool GeometryGenerator::startPath(PathParameters &params) {
     params.v1 = 1;
     params.pdir_x = dir_x;
     params.pdir_y = dir_y;
+    params.perp_x = perp_x;
+    params.perp_y = perp_y;
 
     return true;
 }
 
-bool GeometryGenerator::generatePathSegment(PathParameters &params) {
+bool GeometryGenerator::generatePathSegment(PathParameters &params, bool detached) {
     const int n = params.n0 + params.n1;
 
-    if (params.i >= n - 1) return true;
+    if (params.i > n - 1) return true;
 
-    ysVector2 *p0 = (params.i >= params.n0) ? params.p1 : params.p0;
+    Point *p0 = (params.i >= params.n0) ? params.p1 : params.p0;
     const int i0 = (params.i >= params.n0) ? (params.i - params.n0) : params.i;
-    ysVector2 *p1 = (params.i + 1 >= params.n0) ? params.p1 : params.p0;
+
+    if (params.i == n - 1) {
+        dbasic::Vertex *vertex;
+        vertex = writeVertex();
+        vertex->Normal = ysMath::Constants::ZAxis;
+        vertex->Pos = ysMath::LoadVector(
+            p0[i0].x + params.perp_x * params.width / 2,
+            p0[i0].y + params.perp_y * params.width / 2);
+        vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+        vertex = writeVertex();
+        vertex->Normal = ysMath::Constants::ZAxis;
+        vertex->Pos = ysMath::LoadVector(
+            p0[i0].x - params.perp_x * params.width / 2,
+            p0[i0].y - params.perp_y * params.width / 2);
+        vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+        if (!detached) {
+            writeFace(params.v0, params.v1, params.v1 + 1);
+            writeFace(params.v1, params.v1 + 2, params.v1 + 1);
+        }
+
+        return true;
+    }
+
+    Point *p1 = (params.i + 1 >= params.n0) ? params.p1 : params.p0;
     const int i1 = (params.i + 1 >= params.n0) ? (params.i + 1 - params.n0) : params.i + 1;
 
     const float dx1 = p1[i1].x - p0[i0].x;
@@ -823,32 +850,17 @@ bool GeometryGenerator::generatePathSegment(PathParameters &params) {
         p0[i0].y - perp_y * params.width / 2);
     vertex->TexCoord = ysVector2(0.0f, 0.0f);
 
-    writeFace(params.v0, params.v1, params.v1 + 1);
-    writeFace(params.v1, params.v1 + 2, params.v1 + 1);
-
-    if (params.i + 1 == n - 1) {
-        vertex = writeVertex();
-        vertex->Normal = ysMath::Constants::ZAxis;
-        vertex->Pos = ysMath::LoadVector(
-            p1[i1].x + perp_x * params.width / 2,
-            p1[i1].y + perp_y * params.width / 2);
-        vertex->TexCoord = ysVector2(0.0f, 0.0f);
-
-        vertex = writeVertex();
-        vertex->Normal = ysMath::Constants::ZAxis;
-        vertex->Pos = ysMath::LoadVector(
-            p1[i1].x - perp_x * params.width / 2,
-            p1[i1].y - perp_y * params.width / 2);
-        vertex->TexCoord = ysVector2(0.0f, 0.0f);
-
-        writeFace(params.v0 + 2, params.v1 + 2, params.v1 + 3);
-        writeFace(params.v1 + 2, params.v1 + 4, params.v1 + 3);
+    if (!detached) {
+        writeFace(params.v0, params.v1, params.v1 + 1);
+        writeFace(params.v1, params.v1 + 2, params.v1 + 1);
     }
 
     params.v0 = params.v1 + 1;
     params.v1 = params.v1 + 2;
     params.pdir_x = dir_x;
     params.pdir_y = dir_y;
+    params.perp_x = perp_x;
+    params.perp_y = perp_y;
 
     return true;
 }

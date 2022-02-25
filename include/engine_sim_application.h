@@ -7,6 +7,7 @@
 #include "simulation_object.h"
 #include "ui_manager.h"
 #include "dynamometer.h"
+#include "oscilloscope.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -85,6 +86,7 @@ class EngineSimApplication {
         double m_torque;
 
         UiManager m_uiManager;
+        Oscilloscope *m_oscilloscope;
 
         bool m_paused;
 

@@ -49,14 +49,12 @@ void CrankshaftLoad::limit(atg_scs::Matrix *lambda, atg_scs::SystemState *state)
         lambda->get(0, bcIndex) * lambda->get(0, bcIndex)
         + lambda->get(0, bcIndex + 1) * lambda->get(0, bcIndex + 1));
 
-    const double frictionTorque =
-        (state->v_theta[m_crankshaft->m_body.index] < 0)
-            ? 0.001 * normalForce
-            : -0.001 * normalForce;
-    const double dampingFriction =
-        -state->v_theta[m_crankshaft->m_body.index] * 0.0;
-    double minTorque = -std::abs(frictionTorque + dampingFriction);
-    double maxTorque = std::abs(frictionTorque + dampingFriction);
+    const double v_theta = units::distance(std::abs(state->v_theta[m_crankshaft->m_body.index]), units::inch);
+    const double frictionCoeff = 0.06 + v_theta * 0.01;
+    const double frictionForce = frictionCoeff * normalForce;
+    const double staticFriction = units::torque(0.0, units::ft_lb);
+    double minTorque = frictionForce * units::distance(1.0, units::inch);
+    double maxTorque = frictionForce * units::distance(1.0, units::inch);
 
     if (m_enableDyno) {
         minTorque = m_minDynoTorque;

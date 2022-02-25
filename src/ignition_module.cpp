@@ -42,6 +42,8 @@ void IgnitionModule::reset() {
 }
 
 void IgnitionModule::update(double dt) {
+    if (m_crankshaft->m_body.v_theta >= 0) return;
+
     const double cycleAngle = m_crankshaft->getCycleAngle();
     const double fourPi = 4 * Constants::pi;
     const double advance = getTimingAdvance();

@@ -7,6 +7,8 @@
 
 #include "scs.h"
 
+#include <chrono>
+
 class EngineSimulator {
     public:
         enum class SystemType {
@@ -20,7 +22,9 @@ class EngineSimulator {
 
         void synthesize(Engine *engine, SystemType systemType);
         void placeAndInitialize();
-        void update(float dt);
+
+        void start();
+        bool simulateStep(float dt);
         void destroy();
 
         int m_steps;
@@ -41,6 +45,10 @@ class EngineSimulator {
 
         CombustionChamber *m_combustionChambers;
         CrankshaftLoad *m_crankshaftLoads;
+
+        std::chrono::steady_clock::time_point m_simulationStart;
+        std::chrono::steady_clock::time_point m_simulationEnd;
+        int m_currentIteration;
 
         Engine *m_engine;
 

@@ -3,6 +3,8 @@
 
 #include "delta.h"
 
+#include "../include/ui_math.h"
+
 class GeometryGenerator {
 public:
     struct GeometryIndices {
@@ -88,8 +90,8 @@ public:
     };
 
     struct PathParameters {
-        ysVector2 *p0;
-        ysVector2 *p1;
+        Point *p0;
+        Point *p1;
         int n0;
         int n1;
 
@@ -99,6 +101,7 @@ public:
         int v0 = -1;
         int v1 = -1;
         float pdir_x, pdir_y;
+        float perp_x, perp_y;
     };
 
 public:
@@ -166,7 +169,7 @@ public:
         float x, float y, float width, float height);
 
     bool startPath(PathParameters &params);
-    bool generatePathSegment(PathParameters &params);
+    bool generatePathSegment(PathParameters &params, bool detached = false);
 
     void startShape();
     void endShape(GeometryIndices *indices);

@@ -106,6 +106,7 @@ add_executable(engine-sim-app WIN32
     src/ui_button.cpp
     src/ui_utilities.cpp
     src/combustion_chamber_object.cpp
+    src/oscilloscope.cpp
 
     # Include files
     include/delta.h
@@ -126,6 +127,7 @@ add_executable(engine-sim-app WIN32
     include/ui_button.h
     include/ui_utilities.h
     include/combustion_chamber_object.h
+    include/oscilloscope.h
 )
 
 target_link_libraries(engine-sim-app
