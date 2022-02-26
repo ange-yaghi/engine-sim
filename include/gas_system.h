@@ -24,13 +24,13 @@ class GasSystem {
         void changeTemperature(double dT);
         void changeTemperature(double dT, double n);
 
-        void flow(double dn, GasSystem *target);
-        void flow(double dn, double T_env);
-        void loseN(double dn);
-        void gainN(double dn, double E_k_per_mol);
+        double flow(double dn, GasSystem *target);
+        double flow(double dn, double T_env);
+        double loseN(double dn);
+        double gainN(double dn, double E_k_per_mol);
 
-        void flow(double k_flow, double dt, GasSystem *target);
-        void flow(double k_flow, double dt, double P_env, double T_env);
+        double flow(double k_flow, double dt, GasSystem *target);
+        double flow(double k_flow, double dt, double P_env, double T_env);
 
         double pressureEquilibriumMaxFlow(const GasSystem *b) const;
         double pressureEquilibriumMaxFlow(double P_env, double T_env) const;

@@ -18,7 +18,7 @@ void Dynamometer::initialize(CrankshaftLoad *constraint) {
 
 double Dynamometer::readTorque() const {
     return isEnabled()
-        ? m_constraint->F_t[0][0]
+        ? m_constraint->getDynoTorque()
         : 0;
 }
 

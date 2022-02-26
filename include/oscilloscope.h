@@ -33,6 +33,7 @@ class Oscilloscope : public UiElement {
         double m_yMax;
 
         double m_lineWidth;
+        bool m_drawReverse;
 
     protected:
         DataPoint *m_points;

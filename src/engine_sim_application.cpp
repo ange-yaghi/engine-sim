@@ -43,8 +43,11 @@ EngineSimApplication::EngineSimApplication() {
     m_green = ysColor::srgbiToLinear(0xBDD869);
 
     m_displayHeight = units::distance(2.0, units::foot);
+    m_audioBuffer = nullptr;
+    m_audioSource = nullptr;
 
     m_torque = 0;
+    m_dynoSpeed = 0;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -290,8 +293,18 @@ void EngineSimApplication::initialize() {
     flow->addSample(units::distance(400, units::thou), n_flow * 215);
     flow->addSample(units::distance(500, units::thou), n_flow * 237);
 
+    Function *exhaustFlow = new Function;
+    exhaustFlow->initialize(1, units::distance(100, units::thou));
+    exhaustFlow->addSample(units::distance(0, units::thou), 0.0);
+    exhaustFlow->addSample(units::distance(100, units::thou), n_flow * 70 * 0.5);
+    exhaustFlow->addSample(units::distance(200, units::thou), n_flow * 133 * 0.5);
+    exhaustFlow->addSample(units::distance(300, units::thou), n_flow * 180 * 0.5);
+    exhaustFlow->addSample(units::distance(400, units::thou), n_flow * 215 * 0.5);
+    exhaustFlow->addSample(units::distance(500, units::thou), n_flow * 237 * 0.5);
+
     CylinderHead::Parameters chParams;
-    chParams.IntakePortFlow = chParams.ExhaustPortFlow = flow;
+    chParams.IntakePortFlow = flow;
+    chParams.ExhaustPortFlow = exhaustFlow;
     chParams.CombustionChamberVolume = units::volume(118.0, units::cc);
 
     chParams.IntakeCam = intakeCamLeft;
@@ -350,25 +363,64 @@ void EngineSimApplication::initialize() {
     m_oscilloscope = m_uiManager.getRoot()->addElement<Oscilloscope>();
     m_oscilloscope->setBufferSize(4096);
     m_oscilloscope->m_bounds = Bounds(200.0f, 200.0f, { 0.0f, 0.0f });
-    m_oscilloscope->setLocalPosition({ 0.0f, 900.0f });
+    m_oscilloscope->setLocalPosition({ 50.0f, 900.0f });
     m_oscilloscope->m_xMin = units::angle(0.0f, units::deg);
     m_oscilloscope->m_xMax = units::angle(720.0f, units::deg);
-    m_oscilloscope->m_yMin = units::pressure(0.0, units::psi);
-    m_oscilloscope->m_yMax = units::pressure(2000.0, units::psi);
+    m_oscilloscope->m_yMin = -0.0; // -units::pressure(1.0, units::psi);
+    m_oscilloscope->m_yMax = 2.0; // units::pressure(1.0, units::psi);
     m_oscilloscope->m_lineWidth = 1.0f;
+    m_oscilloscope->m_drawReverse = true;
+
+    ysAudioParameters params;
+    params.m_bitsPerSample = 32;
+    params.m_channelCount = 1;
+    params.m_sampleRate = 44000;
+    m_audioBuffer = m_engine.GetAudioDevice()->CreateBuffer(&params, (params.m_sampleRate / 60) * 2);
+
+    m_audioSource = m_engine.GetAudioDevice()->CreateSource(m_audioBuffer);
+    m_audioSource->SetMode(ysAudioSource::Mode::Loop);
+    m_audioSource->SetPan(0.0f);
+    m_audioSource->SetVolume(0.5f);
 }
 
 void EngineSimApplication::process(float dt) {
     m_simulator.m_steps = 200;
     m_simulator.start();
 
+    m_dynoSpeed = std::fmodf(
+        m_dynoSpeed + units::rpm(300) * dt,
+        units::rpm(6000));
+
+    //m_oscilloscope->addDataPoint(
+    //    -m_iceEngine.getCrankshaft(0)->m_body.v_theta,
+    //    m_torque);
+
     while (m_simulator.simulateStep((1 / 60.0) / 1)) {
-        //m_oscilloscope->addDataPoint(
-        //    m_iceEngine.getCrankshaft(0)->getCycleAngle(), m_dyno.readTorque());
         m_oscilloscope->addDataPoint(
             m_iceEngine.getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getCombustionChamber(1)->m_system.pressure());
+            m_simulator.getCombustionChamber(5)->m_turbulence);
+
     }
+
+    SampleOffset size0, size1;
+    void *data0, *data1;
+    m_audioSource->LockBufferSegment(0, 128, &data0, &size0, &data1, &size1);
+
+    int *samples0 = reinterpret_cast<int *>(data0);
+    int *samples1 = reinterpret_cast<int *>(data1);
+
+    for (int i = 0; i < 44000 / 60; ++i) {
+        const double v = m_simulator.getCombustionChamber(0)->m_system.pressure();
+        int sample = std::lround(v * 100);
+
+        if (i > size0) {
+            samples0[i] = sample;
+        }
+        else {
+            samples1[i + size0] = sample;
+        }
+    }
+    m_audioSource->UnlockBufferSegments(data0, size0, data1, size1);
 }
 
 void EngineSimApplication::render() {
@@ -381,10 +433,16 @@ void EngineSimApplication::render() {
         object->render(&view);
     }
 
-    m_torque = m_torque * 0.95 + 0.05 * units::convert(m_dyno.readTorque(), units::ft_lb);
+    m_torque = m_torque * 0.95 + 0.05 * units::convert(m_simulator.getCrankshaftLoad(0)->getDynoTorque(), units::ft_lb);
+
+    double burnedFuel = 0;
+    for (int i = 0; i < m_iceEngine.getCylinderCount(); ++i) {
+        burnedFuel += m_simulator.getCombustionChamber(i)->m_nBurntFuel;
+    }
 
     std::stringstream ss;
     ss << "Dyno: " << m_torque << " ft-lb // " << m_torque * m_iceEngine.getRpm() / 5252.0 << " hp    \n";
+    ss << units::convert(burnedFuel, units::g) << " g \n";
     ss << std::lroundf(m_simulator.getAverageProcessingTime()) << " us    \n";
     ss << std::lroundf(m_iceEngine.getRpm()) << " RPM     \n";
     ss << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
@@ -436,9 +494,11 @@ void EngineSimApplication::run() {
             manifoldPressure = units::pressure(0.0, units::atm);
         }
 
+        m_dyno.setSpeed(m_dynoSpeed);
+        m_dyno.setSpeed(units::rpm(200.0));
+
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_dyno.setEnabled(!m_dyno.isEnabled());
-            m_dyno.setSpeed(units::rpm(2000));
         }
 
         for (int i = 0; i < m_iceEngine.getCylinderCount(); ++i) {

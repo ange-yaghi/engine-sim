@@ -13,6 +13,7 @@ Oscilloscope::Oscilloscope() {
     m_writeIndex = 0;
     m_bufferSize = 0;
     m_pointCount = 0;
+    m_drawReverse = true;
 }
 
 Oscilloscope::~Oscilloscope() {
@@ -41,7 +42,7 @@ void Oscilloscope::update(float dt) {
 }
 
 void Oscilloscope::render() {
-    if (m_pointCount <= 0) return;
+    if (m_pointCount <= 0) return;    
 
     for (int i = 0; i < m_pointCount; ++i) {
         const int index = (m_writeIndex - m_pointCount + i + m_bufferSize) % m_bufferSize;
@@ -95,7 +96,7 @@ void Oscilloscope::render() {
             || std::abs(p_i.x - prev.x) > 0.01 * (m_xMax - m_xMin);
         m_app->getGeometryGenerator()->generatePathSegment(
             params,
-            detached || lastDetached);
+            (detached || lastDetached) && !m_drawReverse);
 
         lastDetached = detached;
 
@@ -106,16 +107,17 @@ void Oscilloscope::render() {
 
     resetShader();
 
+    drawFrame(m_bounds, 1.0, m_app->getWhite(), m_app->getBackgroundColor());
     m_app->getShaders()->SetBaseColor(m_app->getRed());
-    m_app->drawGenerated(lines);
+    m_app->drawGenerated(lines, 0x11);
 }
 
 Point Oscilloscope::dataPointToRenderPosition(const DataPoint &p) const {
     const float width = m_bounds.width();
     const float height = m_bounds.height();
 
-    const float s_x = (float)(p.x / (m_xMax - m_xMin));
-    const float s_y = (float)(p.y / (m_yMax - m_yMin));
+    const float s_x = (float)((p.x - m_xMin) / (m_xMax - m_xMin));
+    const float s_y = (float)((p.y - m_yMin) / (m_yMax - m_yMin));
 
     const Point local = { s_x * width, s_y * height };
 

@@ -3,5 +3,6 @@
 
 double modularDistance(double a, double b, double mod = 1.0);
 double positiveMod(double x, double mod);
+double erfApproximation(double x);
 
 #endif /* ATG_ENGINE_SIM_UTILITIES_H */

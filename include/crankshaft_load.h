@@ -14,6 +14,10 @@ class CrankshaftLoad : public atg_scs::Constraint {
         virtual void calculate(Output *output, atg_scs::SystemState *state);
         virtual void limit(atg_scs::Matrix *lambda, atg_scs::SystemState *state);
 
+        double getDynoTorque() const;
+        double getAppliedFrictionTorque() const;
+        double calculateFrictionTorque(double normalForce, double v_theta) const;
+
         atg_scs::FixedPositionConstraint *m_bearingConstraint;
 
         double m_loadTorque;

@@ -83,6 +83,7 @@ class EngineSimApplication {
         Engine m_iceEngine;
         EngineSimulator m_simulator;
         Dynamometer m_dyno;
+        double m_dynoSpeed;
         double m_torque;
 
         UiManager m_uiManager;
@@ -115,6 +116,9 @@ class EngineSimApplication {
         ysVector m_red;
         ysVector m_green;
         ysVector m_blue;
+
+        ysAudioBuffer *m_audioBuffer;
+        ysAudioSource *m_audioSource;
 
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
         atg_dtv::Encoder m_encoder;

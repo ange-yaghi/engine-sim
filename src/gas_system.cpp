@@ -55,7 +55,7 @@ void GasSystem::changeTemperature(double dT, double n) {
     next.E_k += dT * 0.5 * degreesOfFreedom * n * Constants::R;
 }
 
-void GasSystem::flow(double dn, GasSystem *target) {
+double GasSystem::flow(double dn, GasSystem *target) {
     if (dn >= 0) {
         loseN(dn);
         target->gainN(dn, kineticEnergyPerMol());
@@ -64,9 +64,11 @@ void GasSystem::flow(double dn, GasSystem *target) {
         gainN(-dn, target->kineticEnergyPerMol());
         target->loseN(-dn);
     }
+
+    return dn;
 }
 
-void GasSystem::flow(double dn, double T_env) {
+double GasSystem::flow(double dn, double T_env) {
     if (dn >= 0) {
         loseN(dn);
     }
@@ -74,19 +76,25 @@ void GasSystem::flow(double dn, double T_env) {
         const double E_k_per_mol = 0.5 * T_env * Constants::R * degreesOfFreedom;
         gainN(-dn, E_k_per_mol);
     }
+
+    return dn;
 }
 
-void GasSystem::loseN(double dn) {
+double GasSystem::loseN(double dn) {
     next.E_k -= kineticEnergy(dn);
     next.n_mol -= dn;
+
+    return -dn;
 }
 
-void GasSystem::gainN(double dn, double E_k_per_mol) {
+double GasSystem::gainN(double dn, double E_k_per_mol) {
     next.E_k += dn * E_k_per_mol;
     next.n_mol += dn;
+
+    return dn;
 }
 
-void GasSystem::flow(double k_flow, double dt, GasSystem *target) {
+double GasSystem::flow(double k_flow, double dt, GasSystem *target) {
     const double flowRate =
         std::fmin(
             std::sqrt(std::abs(pressure() - target->pressure())) * k_flow * dt,
@@ -95,10 +103,10 @@ void GasSystem::flow(double k_flow, double dt, GasSystem *target) {
         ? -1.0
         : 1.0;
 
-    flow(flowDirection * flowRate, target);
+    return flow(flowDirection * flowRate, target);
 }
 
-void GasSystem::flow(double k_flow, double dt, double P_env, double T_env) {
+double GasSystem::flow(double k_flow, double dt, double P_env, double T_env) {
     const double flowRate =
         std::fmin(
             std::sqrt(std::abs(pressure() - P_env)) * k_flow * dt,
@@ -107,7 +115,7 @@ void GasSystem::flow(double k_flow, double dt, double P_env, double T_env) {
         ? -1.0
         : 1.0;
 
-    flow(flowDirection * flowRate, T_env);
+    return flow(flowDirection * flowRate, T_env);
 }
 
 double GasSystem::pressureEquilibriumMaxFlow(const GasSystem *b) const {
