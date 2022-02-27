@@ -22,6 +22,8 @@ CombustionChamber::CombustionChamber() {
     m_turbulentFlameSpeed = nullptr;
     m_nBurntFuel = 0;
     m_turbulence = 0;
+
+    m_exhaustFlow = 0;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -102,6 +104,8 @@ void CombustionChamber::update(double dt) {
         dt,
         units::pressure(1.0, units::atm),
         units::celcius(25.0));
+
+    m_exhaustFlow = exhaustFlow;
 
     const double netFlow = (exhaustFlow + intakeFlow);
 

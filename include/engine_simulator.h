@@ -27,6 +27,8 @@ class EngineSimulator {
         bool simulateStep(float dt);
         void destroy();
 
+        int getCurrentIteration() const { return m_currentIteration; }
+
         int m_steps;
 
         double getAverageProcessingTime() const { return m_physicsProcessingTime; }

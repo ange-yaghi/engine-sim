@@ -48,6 +48,7 @@ EngineSimApplication::EngineSimApplication() {
 
     m_torque = 0;
     m_dynoSpeed = 0;
+    m_audioFrame = 9;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -364,10 +365,10 @@ void EngineSimApplication::initialize() {
     m_oscilloscope->setBufferSize(4096);
     m_oscilloscope->m_bounds = Bounds(200.0f, 200.0f, { 0.0f, 0.0f });
     m_oscilloscope->setLocalPosition({ 50.0f, 900.0f });
-    m_oscilloscope->m_xMin = units::angle(0.0f, units::deg);
-    m_oscilloscope->m_xMax = units::angle(720.0f, units::deg);
-    m_oscilloscope->m_yMin = -0.0; // -units::pressure(1.0, units::psi);
-    m_oscilloscope->m_yMax = 2.0; // units::pressure(1.0, units::psi);
+    m_oscilloscope->m_xMin = 0.0f;
+    m_oscilloscope->m_xMax = 44000 / 60.0;
+    m_oscilloscope->m_yMin = 0.0; // -units::pressure(1.0, units::psi);
+    m_oscilloscope->m_yMax = 1.0; // units::pressure(1.0, units::psi);
     m_oscilloscope->m_lineWidth = 1.0f;
     m_oscilloscope->m_drawReverse = true;
 
@@ -375,12 +376,12 @@ void EngineSimApplication::initialize() {
     params.m_bitsPerSample = 32;
     params.m_channelCount = 1;
     params.m_sampleRate = 44000;
-    m_audioBuffer = m_engine.GetAudioDevice()->CreateBuffer(&params, (params.m_sampleRate / 60) * 2);
+    m_audioBuffer = m_engine.GetAudioDevice()->CreateBuffer(&params, (params.m_sampleRate / 60) * 10);
 
     m_audioSource = m_engine.GetAudioDevice()->CreateSource(m_audioBuffer);
     m_audioSource->SetMode(ysAudioSource::Mode::Loop);
     m_audioSource->SetPan(0.0f);
-    m_audioSource->SetVolume(0.5f);
+    m_audioSource->SetVolume(1.0f);
 }
 
 void EngineSimApplication::process(float dt) {
@@ -395,32 +396,59 @@ void EngineSimApplication::process(float dt) {
     //    -m_iceEngine.getCrankshaft(0)->m_body.v_theta,
     //    m_torque);
 
-    while (m_simulator.simulateStep((1 / 60.0) / 1)) {
-        m_oscilloscope->addDataPoint(
-            m_iceEngine.getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getCombustionChamber(5)->m_turbulence);
+    Function exhaust;
+    exhaust.initialize(m_simulator.m_steps, ((double)1 / m_simulator.m_steps) * (1 / 60.0));
+    double flowDC = 0;
 
+    while (m_simulator.simulateStep((1 / 60.0) / 1)) {
+        const double t = m_simulator.getCurrentIteration() * ((double)1 / m_simulator.m_steps) * (1 / 60.0);
+        
+        double totalFlow = 0;
+        for (int i = 0; i < 8; ++i) {
+            totalFlow += -m_simulator.getCombustionChamber(i)->m_exhaustFlow;
+        }
+
+        exhaust.addSample(
+            t,
+            totalFlow);
+
+        flowDC += totalFlow;
     }
+
+    flowDC /= m_simulator.m_steps;
 
     SampleOffset size0, size1;
     void *data0, *data1;
-    m_audioSource->LockBufferSegment(0, 128, &data0, &size0, &data1, &size1);
+    m_audioSource->LockBufferSegment(m_audioFrame * (44000 / 60), 44000 / 60, &data0, &size0, &data1, &size1);
 
     int *samples0 = reinterpret_cast<int *>(data0);
     int *samples1 = reinterpret_cast<int *>(data1);
 
+    double flow = 0;
     for (int i = 0; i < 44000 / 60; ++i) {
-        const double v = m_simulator.getCombustionChamber(0)->m_system.pressure();
-        int sample = std::lround(v * 100);
+        flow = exhaust.sampleTriangle((1 / 60.0) * (double)i / (44000 / 60)) - flowDC;
 
-        if (i > size0) {
+        int sample = std::lround(flow * 200 * 2000000000);
+
+        m_oscilloscope->addDataPoint(
+            i,
+            flow * 200);
+
+        if (i < size0) {
             samples0[i] = sample;
         }
         else {
             samples1[i + size0] = sample;
         }
     }
+
     m_audioSource->UnlockBufferSegments(data0, size0, data1, size1);
+
+    for (int i = 0; i < 8; ++i) {
+        exhaust.destroy();
+    }
+
+    m_audioFrame = (m_audioFrame + 1) % 10;
 }
 
 void EngineSimApplication::render() {
@@ -495,7 +523,7 @@ void EngineSimApplication::run() {
         }
 
         m_dyno.setSpeed(m_dynoSpeed);
-        m_dyno.setSpeed(units::rpm(200.0));
+        //m_dyno.setSpeed(units::rpm(200.0));
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_dyno.setEnabled(!m_dyno.isEnabled());

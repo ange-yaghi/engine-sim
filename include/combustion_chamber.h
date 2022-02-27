@@ -61,6 +61,8 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double m_nBurntFuel;
         double m_turbulence;
 
+        double m_exhaustFlow;
+
     protected:
         double calculateFrictionForce(double v) const;
 };

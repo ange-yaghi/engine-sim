@@ -119,6 +119,7 @@ class EngineSimApplication {
 
         ysAudioBuffer *m_audioBuffer;
         ysAudioSource *m_audioSource;
+        int m_audioFrame;
 
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
         atg_dtv::Encoder m_encoder;
