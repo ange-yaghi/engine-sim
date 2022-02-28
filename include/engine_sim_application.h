@@ -8,6 +8,7 @@
 #include "ui_manager.h"
 #include "dynamometer.h"
 #include "oscilloscope.h"
+#include "audio_buffer.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -117,9 +118,10 @@ class EngineSimApplication {
         ysVector m_green;
         ysVector m_blue;
 
-        ysAudioBuffer *m_audioBuffer;
+        ysAudioBuffer *m_outputAudioBuffer;
+        AudioBuffer m_audioBuffer;
         ysAudioSource *m_audioSource;
-        int m_audioFrame;
+        int m_lastAudioSample;
 
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
         atg_dtv::Encoder m_encoder;

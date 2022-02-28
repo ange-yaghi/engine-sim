@@ -80,6 +80,13 @@ void CombustionChamber::ignite() {
         m_flameEvent.total_n = m_system.n();
         m_flameEvent.percentageLit = 0;
         m_lit = true;
+
+        m_flameEvent.turbulence = 0.5 + 0.5 * ((double)rand() / RAND_MAX);
+        m_flameEvent.temperature = (1.5 + 1.0 * ((double)rand() / RAND_MAX)) * units::celcius(2138);
+
+        if (rand() % 10 == 0) {
+            m_flameEvent.turbulence = 100;
+        }
     }
 }
 
@@ -131,7 +138,7 @@ void CombustionChamber::update(double dt) {
         const double v_s =
             v_x * m_bank->m_dx + v_y * m_bank->m_dy;
 
-        const double turbulence = erfApproximation(m_turbulence);
+        const double turbulence = erfApproximation(m_turbulence * m_flameEvent.turbulence);
         const double turbulentFlameSpeed = units::distance(15.0, units::m);
         const double flameSpeed = turbulence * turbulentFlameSpeed + (1 - turbulence) * units::distance(0.7, units::m);
 
@@ -147,7 +154,7 @@ void CombustionChamber::update(double dt) {
                 lastTravel_x * lastTravel_x * Constants::pi * lastTravel_y;
             const double litVolume = burnedVolume - prevBurnedVolume;
             const double n = (litVolume / volume()) * m_system.n();
-            m_system.changeTemperature(units::celcius(2138) * 2.0, n);
+            m_system.changeTemperature(m_flameEvent.temperature, n);
 
             m_flameEvent.lit_n += n;
             m_flameEvent.percentageLit += litVolume / volume();

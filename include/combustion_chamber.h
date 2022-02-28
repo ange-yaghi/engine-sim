@@ -15,6 +15,8 @@ class CombustionChamber : public atg_scs::ForceGenerator {
             double lit_n;
             double total_n;
             double percentageLit;
+            double turbulence;
+            double temperature;
 
             double lastVolume;
             double travel_x;
