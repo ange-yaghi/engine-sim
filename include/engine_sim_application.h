@@ -122,6 +122,8 @@ class EngineSimApplication {
         AudioBuffer m_audioBuffer;
         ysAudioSource *m_audioSource;
         int m_lastAudioSample;
+        double m_audioSyncedTimeDelta;
+        double m_averageAudioSyncedTimeDelta;
 
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
         atg_dtv::Encoder m_encoder;

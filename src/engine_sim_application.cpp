@@ -23,7 +23,7 @@ EngineSimApplication::EngineSimApplication() {
     m_geometryVertexBuffer = nullptr;
     m_geometryIndexBuffer = nullptr;
 
-    m_paused = true;
+    m_paused = false;
     m_recording = false;
     m_screenResolutionIndex = 0;
     for (int i = 0; i < ScreenResolutionHistoryLength; ++i) {
@@ -49,6 +49,9 @@ EngineSimApplication::EngineSimApplication() {
 
     m_torque = 0;
     m_dynoSpeed = 0;
+
+    m_averageAudioSyncedTimeDelta = 0;
+    m_audioSyncedTimeDelta = 0;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -362,25 +365,25 @@ void EngineSimApplication::initialize() {
     button->setLocalPosition(Point(0.0f, 400.0f), Bounds::tl);
 
     m_oscilloscope = m_uiManager.getRoot()->addElement<Oscilloscope>();
-    m_oscilloscope->setBufferSize(44000 / 60);
+    m_oscilloscope->setBufferSize(44100 / 30);
     m_oscilloscope->m_bounds = Bounds(200.0f, 200.0f, { 0.0f, 0.0f });
     m_oscilloscope->setLocalPosition({ 50.0f, 900.0f });
     m_oscilloscope->m_xMin = 0.0f;
-    m_oscilloscope->m_xMax = 44000 / 60.0;
+    m_oscilloscope->m_xMax = 44100 / 60.0;
     m_oscilloscope->m_yMin = 0.0; // -units::pressure(1.0, units::psi);
     m_oscilloscope->m_yMax = 1.0; // units::pressure(1.0, units::psi);
     m_oscilloscope->m_lineWidth = 1.0f;
     m_oscilloscope->m_drawReverse = true;
 
-    m_audioBuffer.initialize(44000, 44000 * 5);
-    m_audioBuffer.m_writePointer = 44000 * 2;
+    m_audioBuffer.initialize(44100, 44100 * 5);
+    m_audioBuffer.m_writePointer = 44100 * 0.1;
 
     ysAudioParameters params;
-    params.m_bitsPerSample = 32;
+    params.m_bitsPerSample = 16;
     params.m_channelCount = 1;
-    params.m_sampleRate = 44000;
+    params.m_sampleRate = 44100;
     m_outputAudioBuffer =
-        m_engine.GetAudioDevice()->CreateBuffer(&params, 44000 * 5);
+        m_engine.GetAudioDevice()->CreateBuffer(&params, 44100 * 5);
 
     m_audioSource = m_engine.GetAudioDevice()->CreateSource(m_outputAudioBuffer);
     m_audioSource->SetMode(ysAudioSource::Mode::Loop);
@@ -390,10 +393,19 @@ void EngineSimApplication::initialize() {
 
 void EngineSimApplication::process(float frame_dt) {
     static double flow = 0;
+    static double flowDerivative = 0;
+    static double flowDC = 0.5;
+    static double test = 0;
+    static double whiteNoise = 0;
+    static double continuousSampleDelta = 44100 / 60.0;
 
     const int audioPosition = m_audioSource->GetCurrentPosition();
-    const double dt = m_audioBuffer.timeDelta(m_lastAudioSample, audioPosition);
-    const int sampleDelta = m_audioBuffer.sampleDelta(m_lastAudioSample, audioPosition);
+    continuousSampleDelta = 0.99 * continuousSampleDelta + 0.01 * m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
+    const int sampleDelta = std::lround(continuousSampleDelta);
+    const double dt = m_audioBuffer.offsetToTime(sampleDelta);   
+
+    m_audioSyncedTimeDelta = dt;
+    m_averageAudioSyncedTimeDelta = m_audioSyncedTimeDelta * 0.01 + m_averageAudioSyncedTimeDelta * 0.99;
 
     if (sampleDelta == 0) return;
 
@@ -411,8 +423,8 @@ void EngineSimApplication::process(float frame_dt) {
     //    m_torque);
 
     Function exhaust;
-    exhaust.initialize(m_simulator.m_steps, (dt / m_simulator.m_steps));
-    double flowDC = 0;
+    exhaust.initialize(m_simulator.m_steps, 5.0 * (dt / m_simulator.m_steps));
+    double currentFlowDC = 0;
 
     do {
         const double t =
@@ -433,46 +445,62 @@ void EngineSimApplication::process(float frame_dt) {
                 bankFactor * factor * -m_simulator.getCombustionChamber(i)->m_exhaustFlow;
         }
 
-        const double flowSample = std::pow(std::abs(totalFlow), 0.5);
+        const double flowSample = totalFlow * totalFlow;// erf(30 * std::pow(totalFlow * totalFlow, 0.25));
         exhaust.addSample(
             t,
             flowSample);
+        //exhaust.addSample(
+        //    t,
+        //    std::sin(10000 * (test + t))
+        //);
 
         //m_oscilloscope->addDataPoint(
         //    t,
         //    totalFlow * 200);
 
-        flowDC += flowSample;
+        currentFlowDC += flowSample;
     } while (m_simulator.simulateStep(dt));
 
-    flowDC /= m_simulator.m_steps;
+    test += dt;
+
+    currentFlowDC /= m_simulator.m_steps;
+    flowDC = 0.99 * flowDC + 0.01 * currentFlowDC;
 
     for (int i = 0; i < sampleDelta; ++i) {
-        flow = exhaust.sampleTriangle(dt * (double)i / sampleDelta) - flowDC;
+        const double newFlow = 0.9 * flow + 0.1 * (exhaust.sampleTriangle(dt * (double)i / sampleDelta));
+        flowDerivative = (newFlow - flow) / m_audioBuffer.offsetToTime(1);
+        flow = newFlow;
 
-        int sample = std::lround(flow * 30 * 2000000000);
+        flowDC = 0.99 * flowDC + 0.01 * flow;
+
+        whiteNoise = 0.9 * whiteNoise + 0.1 * (((double)rand() / RAND_MAX) - 0.5) * 2.0;
+
+        const double sample = (flow - flowDC) * 100000;
 
         m_oscilloscope->addDataPoint(
             i,
-            flow * 30);
+            sample);
 
-        m_audioBuffer.writeSample(sample, m_audioBuffer.m_writePointer, i);
+        m_audioBuffer.writeSample(std::lround(sample * 60000), m_audioBuffer.m_writePointer, i);
     }
 
     SampleOffset size0, size1;
     void *data0, *data1;
+
     m_audioSource->LockBufferSegment(
             m_audioBuffer.m_writePointer, sampleDelta, &data0, &size0, &data1, &size1);
 
     m_audioBuffer.copyBuffer(
-            reinterpret_cast<int *>(data0), m_audioBuffer.m_writePointer, size0);
+            reinterpret_cast<int16_t *>(data0), m_audioBuffer.m_writePointer, size0);
     m_audioBuffer.copyBuffer(
-            reinterpret_cast<int *>(data1),
-            m_audioBuffer.getBufferIndex(m_audioBuffer.m_writePointer, size1),
+            reinterpret_cast<int16_t *>(data1),
+            m_audioBuffer.getBufferIndex(m_audioBuffer.m_writePointer, size0),
             size1);
 
     m_audioSource->UnlockBufferSegments(data0, size0, data1, size1);
-    m_audioBuffer.commitBlock(m_audioBuffer.m_writePointer, sampleDelta);
+    m_audioBuffer.commitBlock(sampleDelta);
+
+    m_audioBuffer.checkForDiscontinuitiy(8000);
 
     exhaust.destroy();
 }
@@ -495,6 +523,7 @@ void EngineSimApplication::render() {
     }
 
     std::stringstream ss;
+    ss << m_averageAudioSyncedTimeDelta / (1 / 60.0) << "\n";
     ss << "Dyno: " << m_torque << " ft-lb // " << m_torque * m_iceEngine.getRpm() / 5252.0 << " hp    \n";
     ss << units::convert(burnedFuel, units::g) << " g \n";
     ss << std::lroundf(m_simulator.getAverageProcessingTime()) << " us    \n";
