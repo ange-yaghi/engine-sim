@@ -401,7 +401,7 @@ void EngineSimApplication::process(float frame_dt) {
 
     const int audioPosition = m_audioSource->GetCurrentPosition();
     continuousSampleDelta = 0.99 * continuousSampleDelta + 0.01 * m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
-    const int sampleDelta = std::lround(continuousSampleDelta);
+    const int sampleDelta = m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
     const double dt = m_audioBuffer.offsetToTime(sampleDelta);   
 
     m_audioSyncedTimeDelta = dt;
@@ -445,10 +445,10 @@ void EngineSimApplication::process(float frame_dt) {
                 bankFactor * factor * -m_simulator.getCombustionChamber(i)->m_exhaustFlow;
         }
 
-        const double flowSample = totalFlow * totalFlow;// erf(30 * std::pow(totalFlow * totalFlow, 0.25));
+        const double flowRate = totalFlow / (dt / m_simulator.m_steps);// erf(30 * std::pow(totalFlow * totalFlow, 0.25));
         exhaust.addSample(
             t,
-            flowSample);
+            flowRate);
         //exhaust.addSample(
         //    t,
         //    std::sin(10000 * (test + t))
@@ -458,7 +458,7 @@ void EngineSimApplication::process(float frame_dt) {
         //    t,
         //    totalFlow * 200);
 
-        currentFlowDC += flowSample;
+        currentFlowDC += flowRate;
     } while (m_simulator.simulateStep(dt));
 
     test += dt;
@@ -466,8 +466,40 @@ void EngineSimApplication::process(float frame_dt) {
     currentFlowDC /= m_simulator.m_steps;
     flowDC = 0.99 * flowDC + 0.01 * currentFlowDC;
 
+    struct Osc {
+        double freq = 100.0;
+        double oscDisp = 0.0;
+        double oscVel = 0.0;
+        double oscK_d = 0.0;
+        double s = 1.0;
+    };
+
+    static Osc oscillators[] = {
+        { 50.0, 0.0, 0.0, 10.0, 3.0 },
+        { 60.0, 0.0, 0.0, 10.0, 2.0 },
+        { 70.0, 0.0, 0.0, 10.0, 1.0 },
+        { 100.0, 0.0, 0.0, 10.0, 2.0 },
+        { 110.0, 0.0, 0.0, 10.0, 2.0 },
+        { 120.0, 0.0, 0.0, 10.0, 2.0 },
+        { 130.0, 0.0, 0.0, 10.0, 3.0 },
+        { 140.0, 0.0, 0.0, 10.0, 3.0 },
+        { 150.0, 0.0, 0.0, 10.0, 3.0 },
+        { 160.0, 0.0, 0.0, 10.0, 4.0 },
+        { 170.0, 0.0, 0.0, 10.0, 4.0 },
+        { 180.0, 0.0, 0.0, 10.0, 4.0 },
+        { 190.0, 0.0, 0.0, 10.0, 5.0 },
+        { 200.0, 0.0, 0.0, 10.0, 5.0 },
+    };
+
+    constexpr int osc_count = sizeof(oscillators) / sizeof(Osc);
+
+    double pulse = 0;
+    if (m_engine.ProcessKeyDown(ysKey::Code::T)) {
+        pulse = 2000;
+    }
+
     for (int i = 0; i < sampleDelta; ++i) {
-        const double newFlow = 0.9 * flow + 0.1 * (exhaust.sampleTriangle(dt * (double)i / sampleDelta));
+        const double newFlow = 0.9 * flow + 0.1 * (exhaust.sampleTriangle(dt * m_audioBuffer.offsetToTime(i)));
         flowDerivative = (newFlow - flow) / m_audioBuffer.offsetToTime(1);
         flow = newFlow;
 
@@ -475,7 +507,27 @@ void EngineSimApplication::process(float frame_dt) {
 
         whiteNoise = 0.9 * whiteNoise + 0.1 * (((double)rand() / RAND_MAX) - 0.5) * 2.0;
 
-        const double sample = (flow - flowDC) * 100000;
+        double sample = 0;
+        const double transformedF = (flowDerivative > 0)
+            ? std::pow(flowDerivative, 0.25)
+            : 0;
+        for (int j = 0; j < osc_count; ++j) {
+            double ks = oscillators[j].freq * 2 * Constants::pi;
+            ks = ks * ks;
+
+            oscillators[j].oscVel +=
+                ((-oscillators[j].oscDisp * ks - oscillators[j].oscK_d * oscillators[j].oscVel)) * m_audioBuffer.offsetToTime(1);
+            if (i == 0) {
+                oscillators[j].oscVel += pulse * m_audioBuffer.offsetToTime(1);
+            }
+            //oscillators[j].oscVel += 2 * transformedF * m_audioBuffer.offsetToTime(1);
+            oscillators[j].oscDisp += oscillators[j].oscVel * m_audioBuffer.offsetToTime(1);
+            oscillators[j].oscDisp = erf(oscillators[j].oscDisp);
+
+            sample += (1.0 / osc_count) * oscillators[j].s * oscillators[j].oscDisp * 5000;
+        }
+
+        //sample = (flow - flowDC) * 0.01;
 
         m_oscilloscope->addDataPoint(
             i,
