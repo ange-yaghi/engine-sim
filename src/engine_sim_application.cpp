@@ -389,10 +389,16 @@ void EngineSimApplication::initialize() {
     m_audioSource->SetMode(ysAudioSource::Mode::Loop);
     m_audioSource->SetPan(0.0f);
     m_audioSource->SetVolume(1.0f);
+
+    m_audioImpulseResponse.initialize(16);
+    m_audioImpulseResponse.getImpulseResponse()[0] = 1;
+    m_audioImpulseResponse.getImpulseResponse()[4] = 0.5;
+    m_audioImpulseResponse.getImpulseResponse()[8] = 1;
 }
 
 void EngineSimApplication::process(float frame_dt) {
     static double flow = 0;
+    static double smoothFlow = 0;
     static double flowDerivative = 0;
     static double flowDC = 0.5;
     static double test = 0;
@@ -423,7 +429,7 @@ void EngineSimApplication::process(float frame_dt) {
     //    m_torque);
 
     Function exhaust;
-    exhaust.initialize(m_simulator.m_steps, 5.0 * (dt / m_simulator.m_steps));
+    exhaust.initialize(m_simulator.m_steps, (dt / m_simulator.m_steps));
     double currentFlowDC = 0;
 
     do {
@@ -463,9 +469,6 @@ void EngineSimApplication::process(float frame_dt) {
 
     test += dt;
 
-    currentFlowDC /= m_simulator.m_steps;
-    flowDC = 0.99 * flowDC + 0.01 * currentFlowDC;
-
     struct Osc {
         double freq = 100.0;
         double oscDisp = 0.0;
@@ -475,59 +478,113 @@ void EngineSimApplication::process(float frame_dt) {
     };
 
     static Osc oscillators[] = {
-        { 50.0, 0.0, 0.0, 10.0, 3.0 },
-        { 60.0, 0.0, 0.0, 10.0, 2.0 },
-        { 70.0, 0.0, 0.0, 10.0, 1.0 },
-        { 100.0, 0.0, 0.0, 10.0, 2.0 },
-        { 110.0, 0.0, 0.0, 10.0, 2.0 },
-        { 120.0, 0.0, 0.0, 10.0, 2.0 },
-        { 130.0, 0.0, 0.0, 10.0, 3.0 },
-        { 140.0, 0.0, 0.0, 10.0, 3.0 },
-        { 150.0, 0.0, 0.0, 10.0, 3.0 },
-        { 160.0, 0.0, 0.0, 10.0, 4.0 },
-        { 170.0, 0.0, 0.0, 10.0, 4.0 },
-        { 180.0, 0.0, 0.0, 10.0, 4.0 },
-        { 190.0, 0.0, 0.0, 10.0, 5.0 },
-        { 200.0, 0.0, 0.0, 10.0, 5.0 },
+        { 50.0, 0.0, 0.0, 10.0, 5.0 },
+        { 51.0, 0.0, 0.0, 10.0, 5.0 },
+        { 52.0, 0.0, 0.0, 10.0, 5.0 },
+        { 53.0, 0.0, 0.0, 10.0, 5.0 },
+        { 54.0, 0.0, 0.0, 10.0, 5.0 },
+        { 55.0, 0.0, 0.0, 10.0, 5.0 },
+        { 60.0, 0.0, 0.0, 10.0, 10.0 },
+        { 65.0, 0.0, 0.0, 10.0, 10.0 },
+        { 70.0, 0.0, 0.0, 10.0, 10.0 },
+        { 100.0, 0.0, 0.0, 10.0, 1.0 },
+        { 110.0, 0.0, 0.0, 10.0, 1.0 },
+        { 120.0, 0.0, 0.0, 10.0, 1.0 },
+        { 130.0, 0.0, 0.0, 10.0, 1.0 },
+        { 140.0, 0.0, 0.0, 10.0, 1.0 },
+        { 150.0, 0.0, 0.0, 10.0, 1.0 },
+        { 160.0, 0.0, 0.0, 10.0, 1.0 },
+        { 170.0, 0.0, 0.0, 10.0, 1.0 },
+        { 180.0, 0.0, 0.0, 10.0, 1.0 },
+        { 191.0, 0.0, 0.0, 10.0, 1.0 },
+        { 192.0, 0.0, 0.0, 10.0, 1.0 },
+        { 193.0, 0.0, 0.0, 10.0, 1.0 },
+        { 194.0, 0.0, 0.0, 10.0, 1.0 },
+        { 195.0, 0.0, 0.0, 10.0, 1.0 },
+        { 196.0, 0.0, 0.0, 10.0, 1.0 },
+        { 197.0, 0.0, 0.0, 10.0, 1.0 },
+        { 198.0, 0.0, 0.0, 10.0, 1.0 },
+        { 200.0, 0.0, 0.0, 100.0, 1.0 },
+        { 500.0, 0.0, 0.0, 100.0, 1.0 },
+        { 550.0, 0.0, 0.0, 100.0, 1.0 },
+        { 600.0, 0.0, 0.0, 100.0, 1.0 },
+        { 700.0, 0.0, 0.0, 100.0, 1.0 },
+        { 800.0, 0.0, 0.0, 100.0, 1.0 },
+        { 2000.0, 0.0, 0.0, 1000.0, 2.0 },
+        { 2010.0, 0.0, 0.0, 1000.0, 2.0 },
+        { 2020.0, 0.0, 0.0, 1000.0, 2.0 },
+        { 2030.0, 0.0, 0.0, 1000.0, 2.0 },
+        { 2100.0, 0.0, 0.0, 1000.0, 2.0 },
+        { 2200.0, 0.0, 0.0, 1000.0, 2.0 },
+        { 2300.0, 0.0, 0.0, 1000.0, 2.0 },
+        { 2400.0, 0.0, 0.0, 1000.0, 2.0 },
+        { 2500.0, 0.0, 0.0, 1000.0, 2.0 },
     };
 
     constexpr int osc_count = sizeof(oscillators) / sizeof(Osc);
 
     double pulse = 0;
     if (m_engine.ProcessKeyDown(ysKey::Code::T)) {
-        pulse = 2000;
+        pulse = 1;
     }
 
     for (int i = 0; i < sampleDelta; ++i) {
-        const double newFlow = 0.9 * flow + 0.1 * (exhaust.sampleTriangle(dt * m_audioBuffer.offsetToTime(i)));
-        flowDerivative = (newFlow - flow) / m_audioBuffer.offsetToTime(1);
+        const double newFlow = 0.0 * flow + 1.0 * (exhaust.sampleTriangle(m_audioBuffer.offsetToTime(i)));
+        const double newSmoothFlow = 0.95 * smoothFlow + 0.05 * newFlow;
+        flowDerivative = (newSmoothFlow - smoothFlow) / m_audioBuffer.offsetToTime(1);
         flow = newFlow;
+        smoothFlow = newSmoothFlow;
 
-        flowDC = 0.99 * flowDC + 0.01 * flow;
+        flowDC = 0.999 * flowDC + 0.001 * flow;
 
-        whiteNoise = 0.9 * whiteNoise + 0.1 * (((double)rand() / RAND_MAX) - 0.5) * 2.0;
+        whiteNoise = 0.95 * whiteNoise + 0.05 * (((double)rand() / RAND_MAX) - 0.5) * 12.0;
 
         double sample = 0;
         const double transformedF = (flowDerivative > 0)
             ? std::pow(flowDerivative, 0.25)
             : 0;
         for (int j = 0; j < osc_count; ++j) {
-            double ks = oscillators[j].freq * 2 * Constants::pi;
-            ks = ks * ks;
+            const double ks_sqrt = oscillators[j].freq * 2 * Constants::pi;
+            const double ks = ks_sqrt * ks_sqrt;
+            const double sgn = oscillators[j].oscDisp < 0
+                ? -1.0
+                : 1.0;
+
+            // Spring energy = 0.5 * k * x^2
+            // Kinetic energy = 0.5 * m * v^2
+            // k * pulse * pulse = m * v * v
+            // => pulse * pulse * k = = v * v
+            // => pulse * sqrt(k) = v
 
             oscillators[j].oscVel +=
                 ((-oscillators[j].oscDisp * ks - oscillators[j].oscK_d * oscillators[j].oscVel)) * m_audioBuffer.offsetToTime(1);
             if (i == 0) {
-                oscillators[j].oscVel += pulse * m_audioBuffer.offsetToTime(1);
+                oscillators[j].oscVel += ks_sqrt * pulse;
             }
-            //oscillators[j].oscVel += 2 * transformedF * m_audioBuffer.offsetToTime(1);
-            oscillators[j].oscDisp += oscillators[j].oscVel * m_audioBuffer.offsetToTime(1);
-            oscillators[j].oscDisp = erf(oscillators[j].oscDisp);
 
-            sample += (1.0 / osc_count) * oscillators[j].s * oscillators[j].oscDisp * 5000;
+            //if (transformedF > 20) {
+            //oscillators[j].oscVel += 0.0005 * ks_sqrt * std::fmin(std::fmax((flow - flowDC), -1.0), 1.0);
+            //}
+
+            oscillators[j].oscVel += ks_sqrt * (0.00001 * flowDerivative);
+
+            oscillators[j].oscDisp += oscillators[j].oscVel * m_audioBuffer.offsetToTime(1);
+
+            sample += (1.0 / osc_count) * oscillators[j].s * oscillators[j].oscDisp;
         }
 
-        //sample = (flow - flowDC) * 0.01;
+        //sample = 0.00001 * flowDerivative;
+
+        //sample += ((smoothFlow - flowDC) * 0.015);
+        //sample += ((flow - flowDC) * 0.002);
+        //sample += ((flow - flowDC) * 0.004) * whiteNoise;
+        //sample = 0.00001 * flowDerivative;
+        //sample = m_audioImpulseResponse.f(sample);
+
+        sample *= 0.01;
+
+        if (sample > 0.2) sample -= (sample - 0.2) * 0.5;
+        else if (sample < -0.2) sample -= -(-0.2 - sample) * 0.5;
 
         m_oscilloscope->addDataPoint(
             i,

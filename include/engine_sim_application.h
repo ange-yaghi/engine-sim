@@ -9,6 +9,7 @@
 #include "dynamometer.h"
 #include "oscilloscope.h"
 #include "audio_buffer.h"
+#include "convolution_filter.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -124,6 +125,7 @@ class EngineSimApplication {
         int m_lastAudioSample;
         double m_audioSyncedTimeDelta;
         double m_averageAudioSyncedTimeDelta;
+        ConvolutionFilter m_audioImpulseResponse;
 
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
         atg_dtv::Encoder m_encoder;

@@ -56,6 +56,8 @@ add_library(engine-sim STATIC
     src/utilities.cpp
     src/crankshaft_load.cpp
     src/audio_buffer.cpp
+    src/filter.cpp
+    src/convolution_filter.cpp
 
     # Include files
     include/delta.h
@@ -80,6 +82,8 @@ add_library(engine-sim STATIC
     include/utilities.h
     include/crankshaft_load.h
     include/audio_buffer.h
+    include/filter.h
+    include/convolution_filter.h
 )
 
 target_link_libraries(engine-sim
