@@ -369,7 +369,7 @@ void EngineSimApplication::initialize() {
     m_oscilloscope->m_bounds = Bounds(200.0f, 200.0f, { 0.0f, 0.0f });
     m_oscilloscope->setLocalPosition({ 50.0f, 900.0f });
     m_oscilloscope->m_xMin = 0.0f;
-    m_oscilloscope->m_xMax = 44100 / 60.0;
+    m_oscilloscope->m_xMax = 1 / 60.0;  44100 / 60.0;
     m_oscilloscope->m_yMin = 0.0; // -units::pressure(1.0, units::psi);
     m_oscilloscope->m_yMax = 1.0; // units::pressure(1.0, units::psi);
     m_oscilloscope->m_lineWidth = 1.0f;
@@ -460,9 +460,9 @@ void EngineSimApplication::process(float frame_dt) {
         //    std::sin(10000 * (test + t))
         //);
 
-        //m_oscilloscope->addDataPoint(
-        //    t,
-        //    totalFlow * 200);
+        m_oscilloscope->addDataPoint(
+            t,
+            flowRate / 100);
 
         currentFlowDC += flowRate;
     } while (m_simulator.simulateStep(dt));
@@ -478,47 +478,16 @@ void EngineSimApplication::process(float frame_dt) {
     };
 
     static Osc oscillators[] = {
-        { 50.0, 0.0, 0.0, 10.0, 5.0 },
-        { 51.0, 0.0, 0.0, 10.0, 5.0 },
-        { 52.0, 0.0, 0.0, 10.0, 5.0 },
-        { 53.0, 0.0, 0.0, 10.0, 5.0 },
-        { 54.0, 0.0, 0.0, 10.0, 5.0 },
-        { 55.0, 0.0, 0.0, 10.0, 5.0 },
-        { 60.0, 0.0, 0.0, 10.0, 10.0 },
-        { 65.0, 0.0, 0.0, 10.0, 10.0 },
-        { 70.0, 0.0, 0.0, 10.0, 10.0 },
-        { 100.0, 0.0, 0.0, 10.0, 1.0 },
-        { 110.0, 0.0, 0.0, 10.0, 1.0 },
-        { 120.0, 0.0, 0.0, 10.0, 1.0 },
-        { 130.0, 0.0, 0.0, 10.0, 1.0 },
-        { 140.0, 0.0, 0.0, 10.0, 1.0 },
-        { 150.0, 0.0, 0.0, 10.0, 1.0 },
-        { 160.0, 0.0, 0.0, 10.0, 1.0 },
-        { 170.0, 0.0, 0.0, 10.0, 1.0 },
-        { 180.0, 0.0, 0.0, 10.0, 1.0 },
-        { 191.0, 0.0, 0.0, 10.0, 1.0 },
-        { 192.0, 0.0, 0.0, 10.0, 1.0 },
-        { 193.0, 0.0, 0.0, 10.0, 1.0 },
-        { 194.0, 0.0, 0.0, 10.0, 1.0 },
-        { 195.0, 0.0, 0.0, 10.0, 1.0 },
-        { 196.0, 0.0, 0.0, 10.0, 1.0 },
-        { 197.0, 0.0, 0.0, 10.0, 1.0 },
-        { 198.0, 0.0, 0.0, 10.0, 1.0 },
-        { 200.0, 0.0, 0.0, 100.0, 1.0 },
-        { 500.0, 0.0, 0.0, 100.0, 1.0 },
-        { 550.0, 0.0, 0.0, 100.0, 1.0 },
-        { 600.0, 0.0, 0.0, 100.0, 1.0 },
-        { 700.0, 0.0, 0.0, 100.0, 1.0 },
-        { 800.0, 0.0, 0.0, 100.0, 1.0 },
-        { 2000.0, 0.0, 0.0, 1000.0, 2.0 },
-        { 2010.0, 0.0, 0.0, 1000.0, 2.0 },
-        { 2020.0, 0.0, 0.0, 1000.0, 2.0 },
-        { 2030.0, 0.0, 0.0, 1000.0, 2.0 },
-        { 2100.0, 0.0, 0.0, 1000.0, 2.0 },
-        { 2200.0, 0.0, 0.0, 1000.0, 2.0 },
-        { 2300.0, 0.0, 0.0, 1000.0, 2.0 },
-        { 2400.0, 0.0, 0.0, 1000.0, 2.0 },
-        { 2500.0, 0.0, 0.0, 1000.0, 2.0 },
+        { 50.0, 0.0, 0.0, 100.0, 10.0 },
+        { 51.0, 0.0, 0.0, 100.0, 10.0 },
+        { 52.0, 0.0, 0.0, 100.0, 10.0 },
+        { 53.0, 0.0, 0.0, 100.0, 10.0 },
+        { 54.0, 0.0, 0.0, 100.0, 10.0 },
+
+        { 500.0, 0.0, 0.0, 1000.0, 10.0 },
+        { 150.0, 0.0, 0.0, 1000.0, 10.0 },
+        { 150.0, 0.0, 0.0, 10000.0, 100.0 },
+        { 150.0, 0.0, 0.0, 100.0, 1.0 }
     };
 
     constexpr int osc_count = sizeof(oscillators) / sizeof(Osc);
@@ -531,13 +500,13 @@ void EngineSimApplication::process(float frame_dt) {
     for (int i = 0; i < sampleDelta; ++i) {
         const double newFlow = 0.0 * flow + 1.0 * (exhaust.sampleTriangle(m_audioBuffer.offsetToTime(i)));
         const double newSmoothFlow = 0.95 * smoothFlow + 0.05 * newFlow;
-        flowDerivative = (newSmoothFlow - smoothFlow) / m_audioBuffer.offsetToTime(1);
+        flowDerivative = (newFlow - flow) / m_audioBuffer.offsetToTime(1);
         flow = newFlow;
         smoothFlow = newSmoothFlow;
 
         flowDC = 0.999 * flowDC + 0.001 * flow;
 
-        whiteNoise = 0.95 * whiteNoise + 0.05 * (((double)rand() / RAND_MAX) - 0.5) * 12.0;
+        whiteNoise = 0.99 * whiteNoise + 0.01 * (((double)rand() / RAND_MAX) - 0.5) * 12.0;
 
         double sample = 0;
         const double transformedF = (flowDerivative > 0)
@@ -557,7 +526,7 @@ void EngineSimApplication::process(float frame_dt) {
             // => pulse * sqrt(k) = v
 
             oscillators[j].oscVel +=
-                ((-oscillators[j].oscDisp * ks - oscillators[j].oscK_d * oscillators[j].oscVel)) * m_audioBuffer.offsetToTime(1);
+                ((sgn * -oscillators[j].oscDisp * oscillators[j].oscDisp * ks - oscillators[j].oscK_d * oscillators[j].oscVel)) * m_audioBuffer.offsetToTime(1);
             if (i == 0) {
                 oscillators[j].oscVel += ks_sqrt * pulse;
             }
@@ -575,13 +544,14 @@ void EngineSimApplication::process(float frame_dt) {
 
         //sample = 0.00001 * flowDerivative;
 
-        //sample += ((smoothFlow - flowDC) * 0.015);
-        //sample += ((flow - flowDC) * 0.002);
-        //sample += ((flow - flowDC) * 0.004) * whiteNoise;
-        //sample = 0.00001 * flowDerivative;
+        sample += ((smoothFlow - flowDC) * 0.15);
+        //sample = ((flow - flowDC) * 0.1);
+        //sample *= 0.2;
+        //sample += ((flow - flowDC)) * whiteNoise;
+        //sample += 0.000000001 * flowDerivative * flowDerivative * flowDerivative;
         //sample = m_audioImpulseResponse.f(sample);
 
-        sample *= 0.01;
+        //sample *= 0.00001;
 
         if (sample > 0.2) sample -= (sample - 0.2) * 0.5;
         else if (sample < -0.2) sample -= -(-0.2 - sample) * 0.5;
