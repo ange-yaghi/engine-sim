@@ -36,7 +36,7 @@ bool AudioBuffer::checkForDiscontinuitiy(int threshold) const {
         const int i0 = getBufferIndex(i + m_writePointer);
         const int i1 = getBufferIndex(i0 + 1);
 
-        if (std::abs(m_samples[i0] - m_samples[i1]) > threshold) {
+        if (std::abs(m_samples[i0] - m_samples[i1]) >= threshold) {
             return true;
         }
     }
