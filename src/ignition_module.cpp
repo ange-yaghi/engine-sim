@@ -81,6 +81,5 @@ double IgnitionModule::getTimingAdvance() {
 }
 
 IgnitionModule::SparkPlug *IgnitionModule::getPlug(int i) {
-    while (i < 0) i += m_cylinderCount;
-    return &m_plugs[i % m_cylinderCount];
+    return &m_plugs[((i % m_cylinderCount) + m_cylinderCount) % m_cylinderCount];
 }
