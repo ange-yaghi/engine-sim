@@ -10,7 +10,9 @@
 #include "../include/cylinder_head_object.h"
 #include "../include/ui_button.h"
 #include "../include/combustion_chamber_object.h"
+#include "../include/csv_io.h"
 
+#include <stdlib.h>
 #include <sstream>
 
 EngineSimApplication::EngineSimApplication() {
@@ -52,6 +54,12 @@ EngineSimApplication::EngineSimApplication() {
 
     m_averageAudioSyncedTimeDelta = 0;
     m_audioSyncedTimeDelta = 0;
+
+    m_oscillatorDataLeft = "../assets/oscillator_data_left.csv";
+    m_oscillatorDataRight = "../assets/oscillator_data_right.csv";
+    m_oscillatorsLeft = m_oscillatorsRight = nullptr;
+    m_oscillatorCountLeft = m_oscillatorCountRight = 0;
+    updateOscillatorData();
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -248,8 +256,8 @@ void EngineSimApplication::initialize() {
     camLift->addSample(0.0, units::distance(500, units::thou));
     camLift->addSample(-units::angle(20, units::deg), units::distance(450, units::thou));
     camLift->addSample(units::angle(20, units::deg), units::distance(450, units::thou));
-    camLift->addSample(-units::angle(40, units::deg), units::distance(00, units::thou));
-    camLift->addSample(units::angle(40, units::deg), units::distance(00, units::thou));
+    camLift->addSample(-units::angle(40, units::deg), units::distance(0, units::thou));
+    camLift->addSample(units::angle(40, units::deg), units::distance(0, units::thou));
     camLift->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
     camLift->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
     camLift->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -403,17 +411,18 @@ void EngineSimApplication::process(float frame_dt) {
     static double smoothFlow[2] = { 0, 0 };
     static double flowDerivative[2] = { 0, 0 };
     static double flowDC[2] = { 0.5, 0.5 };
-    static double test = 0;
     static double whiteNoise = 0;
     static double continuousSampleDelta = 44100 / 60.0;
 
     const int audioPosition = m_audioSource->GetCurrentPosition();
-    continuousSampleDelta = 0.99 * continuousSampleDelta + 0.01 * m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
+    continuousSampleDelta =
+        0.99 * continuousSampleDelta + 0.01 * m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
     const int sampleDelta = m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
-    const double dt = m_audioBuffer.offsetToTime(sampleDelta);   
+    const double dt = m_audioBuffer.offsetToTime(sampleDelta);
 
     m_audioSyncedTimeDelta = dt;
-    m_averageAudioSyncedTimeDelta = m_audioSyncedTimeDelta * 0.01 + m_averageAudioSyncedTimeDelta * 0.99;
+    m_averageAudioSyncedTimeDelta =
+        m_audioSyncedTimeDelta * 0.01 + m_averageAudioSyncedTimeDelta * 0.99;
 
     if (sampleDelta == 0) return;
 
@@ -445,7 +454,7 @@ void EngineSimApplication::process(float frame_dt) {
         double flowRight = 0;
         for (int i = 0; i < 8; ++i) {
             const double factor = (i == (4 - 1) || i == (7 - 1))
-                ? 0.2
+                ? 0.0
                 : 1.0;
             const bool left = (i == 0 || i == 2 || i == 4 || i == 6);
             const double bankFactor = left
@@ -453,7 +462,7 @@ void EngineSimApplication::process(float frame_dt) {
                 : 1.0;
 
             flowLeft +=
-                0.5 * (1 - bankFactor) * factor * -m_simulator.getCombustionChamber(i)->m_exhaustFlow;
+                (1 - bankFactor) * factor * -m_simulator.getCombustionChamber(i)->m_exhaustFlow;
             flowRight +=
                 bankFactor * factor * -m_simulator.getCombustionChamber(i)->m_exhaustFlow;
         }
@@ -479,8 +488,7 @@ void EngineSimApplication::process(float frame_dt) {
         currentFlowDC[1] += flowRateRight;
     } while (m_simulator.simulateStep(dt));
 
-    test += dt;
-
+    /*
     struct Osc {
         double freq = 100.0;
         double oscDisp = 0.0;
@@ -506,6 +514,7 @@ void EngineSimApplication::process(float frame_dt) {
     };
 
     constexpr int osc_count = sizeof(oscillators) / sizeof(Osc);
+    */
 
     double pulse = 0;
     if (m_engine.ProcessKeyDown(ysKey::Code::T)) {
@@ -513,14 +522,18 @@ void EngineSimApplication::process(float frame_dt) {
     }
 
     for (int i = 0; i < sampleDelta; ++i) {
-        const double newFlowLeft = 0.0 * flow[0] + 1.0 * (exhaustLeft.sampleTriangle(m_audioBuffer.offsetToTime(i)));
-        const double newFlowRight = 0.0 * flow[1] + 1.0 * (exhaustRight.sampleTriangle(m_audioBuffer.offsetToTime(i)));
+        const double newFlowLeft =
+            0.0 * flow[0] + 1.0 * (exhaustLeft.sampleTriangle(m_audioBuffer.offsetToTime(i)));
+        const double newFlowRight =
+            0.0 * flow[1] + 1.0 * (exhaustRight.sampleTriangle(m_audioBuffer.offsetToTime(i)));
 
-        const double newSmoothFlowLeft = 0.0 * smoothFlow[0] + 1.0 * newFlowLeft;
-        const double newSmoothFlowRight = 0.0 * smoothFlow[1] + 1.0 * newFlowRight;
+        const double newSmoothFlowLeft = 0.9 * smoothFlow[0] + 0.1 * newFlowLeft;
+        const double newSmoothFlowRight = 0.9 * smoothFlow[1] + 0.1 * newFlowRight;
 
-        flowDerivative[0] = (newSmoothFlowLeft - smoothFlow[0]) / m_audioBuffer.offsetToTime(1);
-        flowDerivative[1] = (newSmoothFlowRight - smoothFlow[1]) / m_audioBuffer.offsetToTime(1);
+        flowDerivative[0] =
+            (newSmoothFlowLeft - smoothFlow[0]) / m_audioBuffer.offsetToTime(1);
+        flowDerivative[1] =
+            (newSmoothFlowRight - smoothFlow[1]) / m_audioBuffer.offsetToTime(1);
 
         flow[0] = newFlowLeft;
         flow[1] = newFlowRight;
@@ -534,10 +547,11 @@ void EngineSimApplication::process(float frame_dt) {
         whiteNoise = 0.9 * whiteNoise + 0.1 * (((double)rand() / RAND_MAX) - 0.5) * 12.0;
 
         double sample = 0;
-        for (int j = 0; j < osc_count; ++j) {
-            const double ks_sqrt = oscillators[j].freq * 2 * Constants::pi;
+        for (int j = 0; j < m_oscillatorCountLeft; ++j) {
+            Oscillator &osc = m_oscillatorsLeft[j];
+            const double ks_sqrt = osc.freq * 2 * Constants::pi;
             const double ks = ks_sqrt * ks_sqrt;
-            const double sgn = oscillators[j].oscDisp < 0
+            const double sgn = osc.disp < 0
                 ? -1.0
                 : 1.0;
 
@@ -547,21 +561,43 @@ void EngineSimApplication::process(float frame_dt) {
             // => pulse * pulse * k = = v * v
             // => pulse * sqrt(k) = v
 
-            oscillators[j].oscVel +=
-                ((sgn * -oscillators[j].oscDisp * oscillators[j].oscDisp * ks - oscillators[j].oscK_d * oscillators[j].oscVel)) * m_audioBuffer.offsetToTime(1);
+            osc.vel +=
+                ((sgn * -osc.disp * osc.disp * ks - osc.k_d * osc.vel)) * m_audioBuffer.offsetToTime(1);
             if (i == 0) {
-                oscillators[j].oscVel += ks_sqrt * pulse;
+                osc.vel += ks_sqrt * pulse;
             }
 
             //if (transformedF > 20) {
             //oscillators[j].oscVel += 0.0005 * ks_sqrt * std::fmin(std::fmax((flow - flowDC), -1.0), 1.0);
             //}
 
-            oscillators[j].oscVel += ks_sqrt * (0.00001 * (flowDerivative[0] + flowDerivative[1]));
+            osc.vel += ks_sqrt * (0.00001 * (flowDerivative[0]));
+            osc.vel = std::fmin(std::fmax(osc.vel, -10000), 10000);
 
-            oscillators[j].oscDisp += oscillators[j].oscVel * m_audioBuffer.offsetToTime(1);
+            osc.disp += osc.vel * m_audioBuffer.offsetToTime(1);
 
-            //sample += (1.0 / osc_count) * oscillators[j].s * oscillators[j].oscDisp;
+            sample += (1.0 / m_oscillatorCountLeft) * osc.s * osc.disp;
+        }
+
+        for (int j = 0; j < m_oscillatorCountRight; ++j) {
+            Oscillator &osc = m_oscillatorsRight[j];
+            const double ks_sqrt = osc.freq * 2 * Constants::pi;
+            const double ks = ks_sqrt * ks_sqrt;
+            const double sgn = osc.disp < 0
+                ? -1.0
+                : 1.0;
+
+            osc.vel +=
+                ((sgn * -osc.disp * osc.disp * ks - osc.k_d * osc.vel)) * m_audioBuffer.offsetToTime(1);
+            if (i == 0) {
+                osc.vel += ks_sqrt * pulse;
+            }
+
+            osc.vel += ks_sqrt * (0.00001 * (flowDerivative[1]));
+            osc.vel = std::fmin(std::fmax(osc.vel, -10000), 10000);
+
+            osc.disp += osc.vel * m_audioBuffer.offsetToTime(1);
+            sample += (1.0 / m_oscillatorCountRight) * osc.s * osc.disp;
         }
 
         //sample = 0.00001 * flowDerivative;
@@ -570,12 +606,14 @@ void EngineSimApplication::process(float frame_dt) {
         //sample = ((flow[0] - flowDC[0]) * 0.1);
         //sample *= 0.2;
         //sample += (flowDerivative[0] + flowDerivative[1]) * 0.0001;
-        sample += (flowDerivative[0] + flowDerivative[1]) * 0.0001;
+        //sample = (flowDerivative[0] + flowDerivative[1]) * 0.0001;
         //sample += (flow[0] + flow[1]);
         //sample += 0.0001 * flowDerivative;
         //sample = m_audioImpulseResponse.f(sample);
 
-        sample *= 0.007;
+        //sample += whiteNoise * (flow[0] + flow[1]);
+
+        sample *= 0.004;
 
         if (sample > 0.2) sample -= (sample - 0.2) * 0.5;
         else if (sample < -0.2) sample -= -(-0.2 - sample) * 0.5;
@@ -653,6 +691,54 @@ float EngineSimApplication::unitsToPixels(float units) const {
     return units * f;
 }
 
+void EngineSimApplication::updateOscillatorData() {
+    if (m_oscillatorsLeft != nullptr) delete[] m_oscillatorsLeft;
+    if (m_oscillatorsRight != nullptr) delete[] m_oscillatorsRight;
+
+    atg_csv::CsvData csvData;
+    csvData.initialize(4);
+    atg_csv::CsvData::ErrorCode err = csvData.loadCsv(m_oscillatorDataLeft.c_str());
+    if (err != atg_csv::CsvData::ErrorCode::Success) {
+        m_oscillatorCountLeft = 0;
+        m_oscillatorsLeft = nullptr;
+
+        return;
+    }
+
+    m_oscillatorsLeft = new Oscillator[(size_t)csvData.m_rows - 1];
+    m_oscillatorCountLeft = csvData.m_rows - 1;
+
+    for (int i = 1; i < csvData.m_rows; ++i) {
+        Oscillator &osc = m_oscillatorsLeft[(size_t)i - 1];
+        osc.freq = strtod(csvData.readEntry(i, 0), nullptr);
+        osc.k_d = strtod(csvData.readEntry(i, 1), nullptr);
+        osc.s = strtod(csvData.readEntry(i, 2), nullptr);
+    }
+
+    csvData.destroy();
+
+    // Right bank
+    err = csvData.loadCsv(m_oscillatorDataRight.c_str());
+    if (err != atg_csv::CsvData::ErrorCode::Success) {
+        m_oscillatorCountRight = 0;
+        m_oscillatorsRight = nullptr;
+
+        return;
+    }
+
+    m_oscillatorsRight = new Oscillator[(size_t)csvData.m_rows - 1];
+    m_oscillatorCountRight = csvData.m_rows - 1;
+
+    for (int i = 1; i < csvData.m_rows; ++i) {
+        Oscillator &osc = m_oscillatorsRight[(size_t)i - 1];
+        osc.freq = strtod(csvData.readEntry(i, 0), nullptr);
+        osc.k_d = strtod(csvData.readEntry(i, 1), nullptr);
+        osc.s = strtod(csvData.readEntry(i, 2), nullptr);
+    }
+
+    csvData.destroy();
+}
+
 void EngineSimApplication::run() {
     while (true) {
         if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
@@ -671,6 +757,10 @@ void EngineSimApplication::run() {
 
         if (m_engine.ProcessKeyDown(ysKey::Code::F)) {
             m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::R)) {
+            updateOscillatorData();
         }
 
         double manifoldPressure = units::pressure(0.25, units::atm);

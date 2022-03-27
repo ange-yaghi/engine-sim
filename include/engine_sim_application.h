@@ -16,6 +16,14 @@
 
 #include <vector>
 
+struct Oscillator {
+    double freq = 100.0;
+    double disp = 0.0;
+    double vel = 0.0;
+    double k_d = 0.0;
+    double s = 1.0;
+};
+
 class EngineSimApplication {
     public:
         EngineSimApplication();
@@ -52,6 +60,18 @@ class EngineSimApplication {
         ysVector getBlue() const { return m_blue; }
 
         dbasic::AssetManager *getAssetManager() { return &m_assetManager; }
+
+    protected:
+        Oscillator *m_oscillatorsLeft;
+        int m_oscillatorCountLeft;
+
+        Oscillator *m_oscillatorsRight;
+        int m_oscillatorCountRight;
+
+        std::string m_oscillatorDataLeft;
+        std::string m_oscillatorDataRight;
+
+        void updateOscillatorData();
 
     protected:
         void renderScene();

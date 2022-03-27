@@ -28,7 +28,7 @@ void PistonObject::render(const ViewParameters *view) {
     const int layer = m_piston->m_rod->m_journal;
     if (layer > view->Layer1 || layer < view->Layer0) return;
 
-    ysVector col = tintByLayer(ysColor::srgbiToLinear(0x77CEE0), layer - view->Layer0);
+    ysVector col = tintByLayer(ysColor::srgbiToLinear(0xFFFFFF), layer - view->Layer0);
     ysVector holeCol = tintByLayer(m_app->getBackgroundColor(), layer - view->Layer0);
 
     resetShader();

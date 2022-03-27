@@ -7,6 +7,6 @@
 [submodule "dependencies/submodules/direct-to-video"]
 	path = dependencies/submodules/direct-to-video
 	url = https://github.com/ange-yaghi/direct-to-video
-[submodule ".\\dependencies\\submodules\\csv-io"]
-	path = .\\dependencies\\submodules\\csv-io
+[submodule "dependencies/submodules/csv-io"]
+	path = dependencies/submodules/csv-io
 	url = https://github.com/ange-yaghi/csv-io

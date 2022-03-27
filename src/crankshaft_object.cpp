@@ -22,13 +22,7 @@ void CrankshaftObject::render(const ViewParameters *view) {
         const int layer = i;
         if (layer > view->Layer1 || layer < view->Layer0) return;
 
-        ysVector col = ysColor::srgbiToLinear(0xF394BE);
-        for (int i = view->Layer0; i < layer; ++i) {
-            col = ysMath::Add(
-                ysMath::Mul(col, ysMath::LoadScalar(0.2f)),
-                ysMath::Mul(ysColor::srgbiToLinear(0x0E1012), ysMath::LoadScalar(0.8f))
-            );
-        }
+        const ysVector col = tintByLayer(ysColor::srgbiToLinear(0xAAAAAA), i);
 
         resetShader();
         setTransform(

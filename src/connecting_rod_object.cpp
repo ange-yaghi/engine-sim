@@ -30,14 +30,9 @@ void ConnectingRodObject::render(const ViewParameters *view) {
     if (layer > view->Layer1 || layer < view->Layer0) return;
 
     ysVector col = m_connectingRod->m_piston->m_bank->m_index % 2 == 0
-        ? ysColor::srgbiToLinear(0xF4802A)
-        : ysColor::srgbiToLinear(0xEE4445);
-    for (int i = view->Layer0; i < layer; ++i) {
-        col = ysMath::Add(
-            ysMath::Mul(col, ysMath::LoadScalar(0.2f)),
-            ysMath::Mul(m_app->getBackgroundColor(), ysMath::LoadScalar(0.8f))
-        );
-    }
+        ? ysColor::srgbiToLinear(0xEEEEEE)
+        : ysColor::srgbiToLinear(0xDDDDDD);
+    col = tintByLayer(col, layer);
 
     resetShader();
     setTransform(
