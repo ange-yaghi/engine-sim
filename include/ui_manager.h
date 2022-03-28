@@ -27,6 +27,8 @@ class UiManager {
         Point m_mouse_p0;
         Point m_drag_p0;
 
+        int m_lastMouseScroll;
+
     protected:
         EngineSimApplication *m_app;
 };

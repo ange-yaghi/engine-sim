@@ -152,12 +152,12 @@ void Gauge::render() {
         generator->endShape(&bandIndices);
 
         m_app->getShaders()->SetBaseColor(band.color);
-        m_app->drawGenerated(bandIndices, 0x11);
+        m_app->drawGenerated(bandIndices, 0x11, m_app->getShaders()->GetUiFlags());
     }
 
     m_app->getShaders()->SetBaseColor(ysMath::Constants::One);
-    m_app->drawGenerated(ticks, 0x11);
+    m_app->drawGenerated(ticks, 0x11, m_app->getShaders()->GetUiFlags());
 
     m_app->getShaders()->SetBaseColor(m_app->getHightlight1Color());
-    m_app->drawGenerated(needle, 0x11);
+    m_app->drawGenerated(needle, 0x11, m_app->getShaders()->GetUiFlags());
 }

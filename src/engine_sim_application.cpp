@@ -16,10 +16,6 @@
 #include <sstream>
 
 EngineSimApplication::EngineSimApplication() {
-    m_cameraTarget = ysMath::Constants::Zero;
-    m_cameraPosition = ysMath::LoadVector(0.0f, 0.0f, 5.0f);
-    m_cameraUp = ysMath::Constants::YAxis;
-
     m_assetPath = "";
 
     m_geometryVertexBuffer = nullptr;
@@ -44,7 +40,7 @@ EngineSimApplication::EngineSimApplication() {
     m_blue = ysColor::srgbiToLinear(0x77CEE0);
     m_green = ysColor::srgbiToLinear(0xBDD869);
 
-    m_displayHeight = units::distance(2.0, units::foot);
+    m_displayHeight = (float)units::distance(2.0, units::foot);
     m_outputAudioBuffer = nullptr;
     m_audioSource = nullptr;
     m_lastAudioSample = 0;
@@ -54,6 +50,10 @@ EngineSimApplication::EngineSimApplication() {
 
     m_averageAudioSyncedTimeDelta = 0;
     m_audioSyncedTimeDelta = 0;
+
+    m_engineView = nullptr;
+    m_gaugeCluster = nullptr;
+    m_temperatureGauge = nullptr;
 
     m_oscillatorDataLeft = "../assets/oscillator_data_left.csv";
     m_oscillatorDataRight = "../assets/oscillator_data_right.csv";
@@ -100,15 +100,17 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     m_engine.CreateGameWindow(settings);
 
     m_engine.InitializeShaderSet(&m_shaderSet);
-    m_engine.InitializeDefaultShaders(&m_shaders, &m_shaderSet);
+    m_shaders.Initialize(
+        &m_shaderSet,
+        m_engine.GetScreenRenderTarget(),
+        m_engine.GetDefaultShaderProgram(),
+        m_engine.GetDefaultInputLayout());
     m_engine.InitializeConsoleShaders(&m_shaderSet);
     m_engine.SetShaderSet(&m_shaderSet);
 
     m_shaders.SetClearColor(ysColor::srgbiToLinear(0x34, 0x98, 0xdb));
 
     m_assetManager.SetEngine(&m_engine);
-
-    m_shaders.SetCameraMode(dbasic::DefaultShaders::CameraMode::Target);
 
     m_engine.GetDevice()->CreateIndexBuffer(
         &m_geometryIndexBuffer, sizeof(unsigned short) * 100000, nullptr);
@@ -193,7 +195,7 @@ void EngineSimApplication::initialize() {
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
     crankshaftParams.FlywheelMass = units::mass(29, units::lb);
-    crankshaftParams.Mass = units::mass(75, units::lb);
+    crankshaftParams.Mass = units::mass(75, units::lb) * 100;
 
     // Temporary moment of inertia approximation
     const double crank_r = crankshaftParams.CrankThrow;
@@ -369,6 +371,13 @@ void EngineSimApplication::initialize() {
     gauge->setLocalPosition(Point((float)m_engine.GetScreenWidth(), 0) + Point(-10.0f, 10.0f), Bounds::br);
     gauge->m_simulator = &m_simulator;
 
+    m_engineView = m_uiManager.getRoot()->addElement<EngineView>();
+    m_gaugeCluster = m_uiManager.getRoot()->addElement<GaugeCluster>();
+    m_gaugeCluster->m_simulator = &m_simulator;
+
+    m_temperatureGauge = m_uiManager.getRoot()->addElement<CylinderTemperatureGauge>();
+    m_temperatureGauge->m_simulator = &m_simulator;
+
     UiButton *button = m_uiManager.getRoot()->addElement<UiButton>();
     button->m_text = "Test Button";
     button->m_bounds = Bounds(200.0f, 50.0f, { 0.0f, 0.0f });
@@ -432,8 +441,8 @@ void EngineSimApplication::process(float frame_dt) {
     m_simulator.start();
 
     m_dynoSpeed = std::fmodf(
-        m_dynoSpeed + units::rpm(300) * dt,
-        units::rpm(6000));
+        (float)(m_dynoSpeed + units::rpm(300) * dt),
+        (float)units::rpm(6000));
 
     //m_oscilloscope->addDataPoint(
     //    -m_iceEngine.getCrankshaft(0)->m_body.v_theta,
@@ -664,6 +673,7 @@ void EngineSimApplication::render() {
         burnedFuel += m_simulator.getCombustionChamber(i)->m_nBurntFuel;
     }
 
+    /*
     std::stringstream ss;
     ss << m_averageAudioSyncedTimeDelta / (1 / 60.0) << "\n";
     ss << "Dyno: " << m_torque << " ft-lb // " << m_torque * m_iceEngine.getRpm() / 5252.0 << " hp    \n";
@@ -676,7 +686,7 @@ void EngineSimApplication::render() {
         50 - m_engine.GetScreenWidth() / 2.0,
         50 + 64 + 64 - m_engine.GetScreenHeight() / 2.0,
         64
-    );
+    );*/
 
     m_uiManager.render();
 }
@@ -827,8 +837,16 @@ void EngineSimApplication::destroy() {
 }
 
 void EngineSimApplication::drawGenerated(const GeometryGenerator::GeometryIndices &indices, int layer) {
+    drawGenerated(indices, layer, m_shaders.GetRegularFlags());
+}
+
+void EngineSimApplication::drawGenerated(
+    const GeometryGenerator::GeometryIndices &indices,
+    int layer,
+    dbasic::StageEnableFlags flags)
+{
     m_engine.DrawGeneric(
-        m_shaders.GetRegularFlags(),
+        flags,
         m_geometryIndexBuffer,
         m_geometryVertexBuffer,
         sizeof(dbasic::Vertex),
@@ -882,23 +900,25 @@ void EngineSimApplication::renderScene() {
 
     const int screenWidth = m_engine.GetGameWindow()->GetGameWidth();
     const int screenHeight = m_engine.GetGameWindow()->GetGameHeight();
+    const float aspectRatio = screenWidth / (float)screenHeight;
 
-    m_shaders.SetScreenDimensions((float)screenWidth, (float)screenHeight);
+    const Point cameraPos = m_engineView->getCameraPosition();
+    m_shaders.m_cameraPosition = ysMath::LoadVector(cameraPos.x, cameraPos.y);
 
-    m_shaders.SetCameraPosition(m_cameraPosition);
-    m_shaders.SetCameraTarget(m_cameraTarget);
-    m_shaders.SetCameraUp(m_cameraUp);
-    m_shaders.CalculateUiCamera();
+    m_shaders.CalculateCamera(
+        aspectRatio * m_displayHeight / m_engineView->m_zoom,
+        m_displayHeight / m_engineView->m_zoom);
+    m_shaders.CalculateUiCamera(aspectRatio * m_displayHeight, m_displayHeight);
 
-    if (screenWidth > 0 && screenHeight > 0) {
-        const float aspectRatio = screenWidth / (float)screenHeight;
-        m_shaders.SetProjection(ysMath::Transpose(
-            ysMath::OrthographicProjection(
-                aspectRatio * m_displayHeight,
-                m_displayHeight,
-                0.001f,
-                500.0f)));
-    }
+    Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
+    Grid grid;
+    grid.v_cells = 16;
+    grid.h_cells = 19;
+    m_engineView->m_bounds = grid.get(windowBounds, 4, 1, 11, 11);
+    m_engineView->setLocalPosition({ 0, 0 });
+
+    m_gaugeCluster->m_bounds = grid.get(windowBounds, 14, 1, 5, 11);
+    m_temperatureGauge->m_bounds = grid.get(windowBounds, 0, 1, 4, 11);
 
     m_geometryGenerator.reset();
 

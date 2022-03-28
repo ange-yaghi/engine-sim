@@ -6,6 +6,7 @@ UiManager::UiManager() {
     m_app = nullptr;
     m_dragStart = nullptr;
     m_hover = nullptr;
+    m_lastMouseScroll = 0;
 }
 
 UiManager::~UiManager() {
@@ -55,8 +56,17 @@ void UiManager::update(float dt) {
         m_dragStart = nullptr;
     }
 
+    const int newMouseScroll = m_app->getEngine()->GetMouseWheel();
+    if (m_lastMouseScroll != newMouseScroll) {
+        if (m_hover != nullptr) {
+            m_hover->onMouseScroll(newMouseScroll - m_lastMouseScroll);
+        }
+
+        m_lastMouseScroll = newMouseScroll;
+    }
+
     if (m_dragStart != nullptr) {
-        m_dragStart->onDrag(m_drag_p0, mousePos - m_mouse_p0);
+        m_dragStart->onDrag(m_drag_p0, m_mouse_p0, mousePos);
     }
 }
 

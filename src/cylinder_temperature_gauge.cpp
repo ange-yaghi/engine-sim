@@ -1,0 +1,101 @@
+#include "../include/cylinder_temperature_gauge.h"
+
+#include "../include/units.h"
+#include "../include/gauge.h"
+#include "../include/constants.h"
+#include "../include/engine_sim_application.h"
+#include "../include/ui_utilities.h"
+
+#include <sstream>
+
+CylinderTemperatureGauge::CylinderTemperatureGauge() {
+    m_simulator = nullptr;
+    m_maxTemperature = 2000.0;
+    m_minTemperature = 200.0;
+}
+
+CylinderTemperatureGauge::~CylinderTemperatureGauge() {
+    /* void */
+}
+
+void CylinderTemperatureGauge::initialize(EngineSimApplication *app) {
+    UiElement::initialize(app);
+}
+
+void CylinderTemperatureGauge::destroy() {
+    UiElement::destroy();
+}
+
+void CylinderTemperatureGauge::update(float dt) {
+    UiElement::update(dt);
+}
+
+void CylinderTemperatureGauge::render() {
+    drawFrame(m_bounds, 1.0, ysMath::Constants::One, m_app->getBackgroundColor());
+
+    const Bounds title = m_bounds.verticalSplit(1.0f, 0.9f);
+    const Bounds body = m_bounds.verticalSplit(0.0f, 0.9f);
+
+    drawCenteredText("Cyl. Temp. // Firing Order", title.inset(10.0f), 24.0f);
+
+    Engine *engine = m_simulator->getEngine();
+    const int banks = engine->getCylinderBankCount();
+
+    Grid grid;
+    grid.h_cells = banks;
+    grid.v_cells = 1;
+
+    GeometryGenerator *generator = m_app->getGeometryGenerator();
+
+    const ysVector background = m_app->getBackgroundColor();
+    const ysVector hot = ysColor::srgbiToLinear(0xFF8224);
+    const ysVector cold = mix(background, hot, 0.01f);
+
+    float maxTemperature = m_maxTemperature;
+    float minTemperature = m_minTemperature;
+
+    for (int i = 0; i < engine->getCylinderCount(); ++i) {
+        Piston *piston = engine->getPiston(i);
+        CombustionChamber *chamber = m_simulator->getCombustionChamber(i);
+        const int bankIndex = piston->m_bank->m_index;
+
+        const Bounds &b = grid.get(body, bankIndex, 0);
+
+        Grid bankGrid = { 1, piston->m_bank->m_cylinderCount };
+        const Bounds &b_cyl =
+            bankGrid.get(
+                b,
+                0,
+                piston->m_bank->m_cylinderCount - piston->m_cylinderIndex - 1).inset(5.0f);
+
+        const double temperature = chamber->m_system.temperature();
+        double value = temperature - m_minTemperature;
+        value = value * value;
+        value = value * value;
+
+        maxTemperature = std::fmax(maxTemperature, value);
+        minTemperature = std::fmin(minTemperature, temperature);
+
+        const Bounds worldBounds = getRenderBounds(b_cyl);
+        const Point position = worldBounds.getPosition(Bounds::center);
+
+        GeometryGenerator::Circle2dParameters params;
+        params.center_x = position.x;
+        params.center_y = position.y;
+        params.radius = worldBounds.height() / 3;
+        params.maxEdgeLength = pixelsToUnits(5.0f);
+
+        GeometryGenerator::GeometryIndices indices;
+        generator->startShape();
+        generator->generateCircle2d(params);
+        generator->endShape(&indices);
+
+        m_app->getShaders()->SetBaseColor(mix(cold, hot, value / m_maxTemperature));
+        m_app->drawGenerated(indices, 0x11, m_app->getShaders()->GetUiFlags());
+    }
+
+    m_maxTemperature = 0.99 * m_maxTemperature + 0.01 * maxTemperature;
+    m_minTemperature = 0.99 * m_minTemperature + 0.01 * minTemperature;
+
+    UiElement::render();
+}

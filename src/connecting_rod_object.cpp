@@ -16,9 +16,9 @@ void ConnectingRodObject::generateGeometry() {
 
     GeometryGenerator::Line2dParameters params;
     params.x0 = params.x1 = 0;
-    params.y0 = m_connectingRod->getBigEndLocal() + m_connectingRod->m_crankshaft->m_throw * 0.6f;
-    params.y1 = m_connectingRod->getLittleEndLocal();
-    params.lineWidth = m_connectingRod->m_crankshaft->m_throw * 0.5f;
+    params.y0 = (float)(m_connectingRod->getBigEndLocal() + m_connectingRod->m_crankshaft->m_throw * 0.6);
+    params.y1 = (float)m_connectingRod->getLittleEndLocal();
+    params.lineWidth = (float)(m_connectingRod->m_crankshaft->m_throw * 0.5);
 
     gen->startShape();
     gen->generateLine2d(params);

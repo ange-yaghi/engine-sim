@@ -57,9 +57,9 @@ void UiElement::onMouseClick(const Point &mouseLocal) {
     signal(Event::Clicked);
 }
 
-void UiElement::onDrag(const Point &p0, const Point &delta) {
+void UiElement::onDrag(const Point &p0, const Point &mouse0, const Point &mouse) {
     if (m_draggable) {
-        m_localPosition = p0 + delta;
+        m_localPosition = p0 + (mouse - mouse0);
     }
 }
 
@@ -69,6 +69,10 @@ void UiElement::onMouseOver(const Point &mouseLocal) {
 
 void UiElement::onMouseLeave() {
     m_mouseOver = false;
+}
+
+void UiElement::onMouseScroll(int mouseScroll) {
+    /* void */
 }
 
 UiElement *UiElement::mouseOver(const Point &mouseLocal) {
@@ -141,7 +145,7 @@ Point UiElement::getRenderPoint(const Point &p) const {
             -(float)m_app->getEngine()->GetScreenHeight() / 2);
     const Point posPixels = localToWorld(p) + offset;
 
-    return { pixelsToUnits(posPixels.x), pixelsToUnits(posPixels.y) };
+    return pixelsToUnits(posPixels);
 }
 
 Bounds UiElement::getRenderBounds(const Bounds &b) const {
@@ -153,11 +157,7 @@ Bounds UiElement::unitsToPixels(const Bounds &b) const {
 }
 
 void UiElement::resetShader() {
-    m_app->getShaders()->ResetBrdfParameters();
-    m_app->getShaders()->SetColorReplace(true);
-    m_app->getShaders()->SetLit(false);
-    m_app->getShaders()->SetFogFar(2001.0f);
-    m_app->getShaders()->SetFogNear(2000.0f);
+    m_app->getShaders()->ResetBaseColor();
     m_app->getShaders()->SetObjectTransform(ysMath::LoadIdentity());
 }
 
@@ -165,7 +165,8 @@ void UiElement::drawFrame(
         Bounds &bounds,
         float thickness,
         const ysVector &frameColor,
-        const ysVector &fillColor)
+        const ysVector &fillColor,
+        bool fill)
 {
     GeometryGenerator *generator = m_app->getGeometryGenerator();
 
@@ -187,20 +188,22 @@ void UiElement::drawFrame(
 
     GeometryGenerator::GeometryIndices frame, body;
 
+    resetShader();
+    if (fill) {
+        generator->startShape();
+        generator->generateLine2d(lineParams);
+        generator->endShape(&body);
+
+        m_app->getShaders()->SetBaseColor(fillColor);
+        m_app->drawGenerated(body, 0x11, m_app->getShaders()->GetUiFlags());
+    }
+
     generator->startShape();
     generator->generateFrame(params);
     generator->endShape(&frame);
 
-    generator->startShape();
-    generator->generateLine2d(lineParams);
-    generator->endShape(&body);
-
-    resetShader();
-    m_app->getShaders()->SetBaseColor(fillColor);
-    m_app->drawGenerated(body, 0x11);
-
     m_app->getShaders()->SetBaseColor(frameColor);
-    m_app->drawGenerated(frame, 0x11);
+    m_app->drawGenerated(frame, 0x11, m_app->getShaders()->GetUiFlags());
 }
 
 void UiElement::drawText(

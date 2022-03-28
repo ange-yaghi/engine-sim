@@ -109,7 +109,7 @@ void Oscilloscope::render() {
 
     drawFrame(m_bounds, 1.0, m_app->getWhite(), m_app->getBackgroundColor());
     m_app->getShaders()->SetBaseColor(m_app->getRed());
-    m_app->drawGenerated(lines, 0x11);
+    m_app->drawGenerated(lines, 0x11, m_app->getShaders()->GetUiFlags());
 }
 
 Point Oscilloscope::dataPointToRenderPosition(const DataPoint &p) const {

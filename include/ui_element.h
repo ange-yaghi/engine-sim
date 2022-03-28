@@ -28,9 +28,10 @@ class UiElement {
         virtual void onMouseDown(const Point &mouseLocal);
         virtual void onMouseUp(const Point &mouseLocal);
         virtual void onMouseClick(const Point &mouseLocal);
-        virtual void onDrag(const Point &p0, const Point &delta);
+        virtual void onDrag(const Point &p0, const Point &mouse0, const Point &mouse);
         virtual void onMouseOver(const Point &mouseLocal);
         virtual void onMouseLeave();
+        virtual void onMouseScroll(int mouseScroll);
 
         bool isMouseOver() const { return m_mouseOver; }
         bool isMouseHeld() const { return m_mouseHeld; }
@@ -82,7 +83,8 @@ class UiElement {
                 Bounds &bounds,
                 float thickness,
                 const ysVector &frameColor,
-                const ysVector &fillColor);
+                const ysVector &fillColor,
+                bool fill = true);
         void drawText(
                 const std::string &s,
                 const Bounds &bounds,

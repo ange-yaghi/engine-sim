@@ -18,6 +18,10 @@ struct Point {
         return { x - b.x, y - b.y };
     }
 
+    Point operator-() const {
+        return { -x, -y };
+    }
+
     Point operator*(const Point &b) const {
         return { x * b.x, y * b.y };
     }

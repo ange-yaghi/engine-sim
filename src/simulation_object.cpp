@@ -31,11 +31,7 @@ void SimulationObject::destroy() {
 }
 
 void SimulationObject::resetShader() {
-    m_app->getShaders()->ResetBrdfParameters();
-    m_app->getShaders()->SetColorReplace(true);
-    m_app->getShaders()->SetLit(false);
-    m_app->getShaders()->SetFogFar(2001.0f);
-    m_app->getShaders()->SetFogNear(2000.0f);
+    m_app->getShaders()->ResetBaseColor();
     m_app->getShaders()->SetObjectTransform(ysMath::LoadIdentity());
 }
 
