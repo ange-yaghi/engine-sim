@@ -8,6 +8,8 @@
 
 #include <sstream>
 
+#undef min
+
 CylinderTemperatureGauge::CylinderTemperatureGauge() {
     m_simulator = nullptr;
     m_maxTemperature = 2000.0;
@@ -28,6 +30,29 @@ void CylinderTemperatureGauge::destroy() {
 
 void CylinderTemperatureGauge::update(float dt) {
     UiElement::update(dt);
+
+    const double smoothingFactor = std::min(1.0, dt / 1.0);
+
+    Engine *engine = m_simulator->getEngine();
+
+    double maxTemperature = m_maxTemperature;
+    double minTemperature = m_minTemperature;
+
+    for (int i = 0; i < engine->getCylinderCount(); ++i) {
+        Piston *piston = engine->getPiston(i);
+        CombustionChamber *chamber = m_simulator->getCombustionChamber(i);
+
+        const double temperature = chamber->m_system.temperature();
+        double value = temperature - m_minTemperature;
+        value = value * value;
+        value = value * value;
+
+        maxTemperature = std::fmax(maxTemperature, value);
+        minTemperature = std::fmin(minTemperature, temperature);
+    }
+
+    m_maxTemperature = (1 - smoothingFactor) * m_maxTemperature + smoothingFactor * maxTemperature;
+    m_minTemperature = (1 - smoothingFactor) * m_minTemperature + smoothingFactor * minTemperature;
 }
 
 void CylinderTemperatureGauge::render() {
@@ -36,7 +61,7 @@ void CylinderTemperatureGauge::render() {
     const Bounds title = m_bounds.verticalSplit(1.0f, 0.9f);
     const Bounds body = m_bounds.verticalSplit(0.0f, 0.9f);
 
-    drawCenteredText("Cyl. Temp. // Firing Order", title.inset(10.0f), 24.0f);
+    drawCenteredText("Cyl. Temp.", title.inset(10.0f), 24.0f);
 
     Engine *engine = m_simulator->getEngine();
     const int banks = engine->getCylinderBankCount();
@@ -49,10 +74,7 @@ void CylinderTemperatureGauge::render() {
 
     const ysVector background = m_app->getBackgroundColor();
     const ysVector hot = ysColor::srgbiToLinear(0xFF8224);
-    const ysVector cold = mix(background, hot, 0.01f);
-
-    float maxTemperature = m_maxTemperature;
-    float minTemperature = m_minTemperature;
+    const ysVector cold = mix(background, hot, 0.001f);
 
     for (int i = 0; i < engine->getCylinderCount(); ++i) {
         Piston *piston = engine->getPiston(i);
@@ -73,16 +95,13 @@ void CylinderTemperatureGauge::render() {
         value = value * value;
         value = value * value;
 
-        maxTemperature = std::fmax(maxTemperature, value);
-        minTemperature = std::fmin(minTemperature, temperature);
-
         const Bounds worldBounds = getRenderBounds(b_cyl);
         const Point position = worldBounds.getPosition(Bounds::center);
 
         GeometryGenerator::Circle2dParameters params;
         params.center_x = position.x;
         params.center_y = position.y;
-        params.radius = worldBounds.height() / 3;
+        params.radius = (worldBounds.height() / 2) * 0.9f;
         params.maxEdgeLength = pixelsToUnits(5.0f);
 
         GeometryGenerator::GeometryIndices indices;
@@ -93,9 +112,6 @@ void CylinderTemperatureGauge::render() {
         m_app->getShaders()->SetBaseColor(mix(cold, hot, value / m_maxTemperature));
         m_app->drawGenerated(indices, 0x11, m_app->getShaders()->GetUiFlags());
     }
-
-    m_maxTemperature = 0.99 * m_maxTemperature + 0.01 * maxTemperature;
-    m_minTemperature = 0.99 * m_minTemperature + 0.01 * minTemperature;
 
     UiElement::render();
 }

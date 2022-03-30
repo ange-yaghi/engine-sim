@@ -3,7 +3,6 @@
 #include "../include/piston_object.h"
 #include "../include/connecting_rod_object.h"
 #include "../include/constants.h"
-#include "../include/cylinder_pressure_gauge.h"
 #include "../include/units.h"
 #include "../include/crankshaft_object.h"
 #include "../include/cylinder_bank_object.h"
@@ -366,10 +365,6 @@ void EngineSimApplication::initialize() {
     m_dyno.initialize(m_simulator.getCrankshaftLoad(0));
 
     m_uiManager.initialize(this);
-    CylinderPressureGauge *gauge = m_uiManager.getRoot()->addElement<CylinderPressureGauge>();
-    gauge->m_bounds = Bounds(300.0f, 500.0f, { 0.0f, 0.0f });
-    gauge->setLocalPosition(Point((float)m_engine.GetScreenWidth(), 0) + Point(-10.0f, 10.0f), Bounds::br);
-    gauge->m_simulator = &m_simulator;
 
     m_engineView = m_uiManager.getRoot()->addElement<EngineView>();
     m_gaugeCluster = m_uiManager.getRoot()->addElement<GaugeCluster>();
@@ -377,11 +372,6 @@ void EngineSimApplication::initialize() {
 
     m_temperatureGauge = m_uiManager.getRoot()->addElement<CylinderTemperatureGauge>();
     m_temperatureGauge->m_simulator = &m_simulator;
-
-    UiButton *button = m_uiManager.getRoot()->addElement<UiButton>();
-    button->m_text = "Test Button";
-    button->m_bounds = Bounds(200.0f, 50.0f, { 0.0f, 0.0f });
-    button->setLocalPosition(Point(0.0f, 400.0f), Bounds::tl);
 
     m_oscilloscope = m_uiManager.getRoot()->addElement<Oscilloscope>();
     m_oscilloscope->setBufferSize(44100 / 30);
@@ -606,7 +596,7 @@ void EngineSimApplication::process(float frame_dt) {
             osc.vel = std::fmin(std::fmax(osc.vel, -10000), 10000);
 
             osc.disp += osc.vel * m_audioBuffer.offsetToTime(1);
-            sample += (1.0 / m_oscillatorCountRight) * osc.s * osc.disp;
+            //sample += (1.0 / m_oscillatorCountRight) * osc.s * osc.disp;
         }
 
         //sample = 0.00001 * flowDerivative;
@@ -615,7 +605,7 @@ void EngineSimApplication::process(float frame_dt) {
         //sample = ((flow[0] - flowDC[0]) * 0.1);
         //sample *= 0.2;
         //sample += (flowDerivative[0] + flowDerivative[1]) * 0.0001;
-        //sample = (flowDerivative[0] + flowDerivative[1]) * 0.0001;
+        sample += (flowDerivative[0] + flowDerivative[1]) * 0.001;
         //sample += (flow[0] + flow[1]);
         //sample += 0.0001 * flowDerivative;
         //sample = m_audioImpulseResponse.f(sample);
@@ -623,9 +613,10 @@ void EngineSimApplication::process(float frame_dt) {
         //sample += whiteNoise * (flow[0] + flow[1]);
 
         sample *= 0.004;
+        sample *= 0.5;
 
-        if (sample > 0.2) sample -= (sample - 0.2) * 0.5;
-        else if (sample < -0.2) sample -= -(-0.2 - sample) * 0.5;
+        //if (sample > 0.2) sample -= (sample - 0.2) * 0.9;
+       // else if (sample < -0.2) sample -= -(-0.2 - sample) * 0.9;
 
         m_oscilloscope->addDataPoint(
             i,
