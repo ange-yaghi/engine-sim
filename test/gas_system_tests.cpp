@@ -88,7 +88,7 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlow) {
     system1.initialize(
         units::pressure(1.0, units::atm),
         units::volume(1.0, units::cc),
-        units::celcius(25.0)
+        units::celcius(2500.0)
     );
 
     system2.initialize(
@@ -130,6 +130,26 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfinite) {
     EXPECT_NEAR(system1.pressure(), P_env, 1E-6);
 }
 
+TEST(GasSystemTests, PressureEquilibriumMaxFlowInfiniteOverpressure) {
+    GasSystem system1;
+    system1.initialize(
+        units::pressure(100.0, units::atm),
+        units::volume(1.0, units::m3),
+        units::celcius(2500.0)
+    );
+
+    const double P_env = units::pressure(2.0, units::atm);
+    const double T_env = units::celcius(25.0);
+
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
+
+    system1.start();
+    system1.flow(maxFlow, T_env);
+    system1.end();
+
+    EXPECT_NEAR(system1.pressure(), P_env, 1E-6);
+}
+
 TEST(GasSystemTests, FlowVariableVolume) {
     GasSystem system1;
     system1.initialize(
@@ -156,4 +176,48 @@ TEST(GasSystemTests, FlowVariableVolume) {
     }
 
     EXPECT_FALSE(true);
+}
+
+TEST(GasSystemTests, PowerStrokeTest) {
+    GasSystem system1;
+    system1.initialize(
+        units::pressure(100.0, units::atm),
+        units::volume(1.0, units::m3),
+        units::celcius(2000.0)
+    );
+
+    const double dV = units::volume(1000000.0, units::cc) / 100;
+    for (int i = 0; i < 100; ++i) {
+        system1.start();
+        const double flowRate0 = system1.flow(1.0, 1 / 60.0, units::pressure(1.0, units::atm), units::celcius(25.0));
+        if (flowRate0 < 0) {
+            int a = 0;
+        }
+
+        //system1.changeVolume(-dV);
+        system1.end();
+
+        std::cerr << i << ", " << flowRate0 << ", " << system1.pressure() << "\n";
+    }
+
+    EXPECT_FALSE(true);
+}
+
+TEST(GasSystemTests, FlowLimit) {
+    GasSystem system1;
+    system1.initialize(
+        units::pressure(100.0, units::atm),
+        units::volume(1.0, units::m3),
+        units::celcius(2000.0)
+    );
+
+    const double P_env = units::pressure(1.0, units::atm);
+    const double T_env = units::celcius(25.0);
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
+
+    system1.start();
+    system1.flow(5.0, 1 / 60.0, P_env, T_env);
+    system1.end();
+
+    EXPECT_NEAR(system1.pressure(), P_env, 1E-6);
 }

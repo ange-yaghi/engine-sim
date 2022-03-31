@@ -83,14 +83,14 @@ double GasSystem::loseN(double dn) {
     next.E_k -= kineticEnergy(dn);
     next.n_mol -= dn;
 
-    return -dn;
+    return dn;
 }
 
 double GasSystem::gainN(double dn, double E_k_per_mol) {
     next.E_k += dn * E_k_per_mol;
     next.n_mol += dn;
 
-    return dn;
+    return -dn;
 }
 
 double GasSystem::flow(double k_flow, double dt, GasSystem *target) {
