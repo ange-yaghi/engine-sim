@@ -109,7 +109,7 @@ double GasSystem::flow(double k_flow, double dt, double P_env, double T_env) {
     const double flowRate =
         std::fmin(
             std::sqrt(std::abs(pressure() - P_env)) * k_flow * dt,
-            std::abs(pressureEquilibriumMaxFlow(P_env, T_env)));
+            std::abs(pressureEquilibriumMaxFlow(P_env, T_env, pressure() > P_env)));
     const double flowDirection = (pressure() < P_env)
         ? -1.0
         : 1.0;
@@ -123,11 +123,14 @@ double GasSystem::pressureEquilibriumMaxFlow(const GasSystem *b) const {
         (b->volume() * b->kineticEnergyPerMol() + volume() * kineticEnergyPerMol());
 }
 
-double GasSystem::pressureEquilibriumMaxFlow(double P_env, double T_env) const {
-    const double E_k_per_mol_env = 0.5 * T_env * Constants::R * degreesOfFreedom;
-    return
-        (kineticEnergy() - 0.5 * degreesOfFreedom * P_env * volume()) /
-        E_k_per_mol_env;
+double GasSystem::pressureEquilibriumMaxFlow(double P_env, double T_env, bool out) const {
+    if (out) {
+        return -(P_env * (0.5 * degreesOfFreedom * volume()) - kineticEnergy()) / kineticEnergyPerMol();
+    }
+    else {
+        const double E_k_per_mol_env = 0.5 * T_env * Constants::R * degreesOfFreedom;
+        return -(P_env * (0.5 * degreesOfFreedom * volume()) - kineticEnergy()) / E_k_per_mol_env;
+    }
 }
 
 double GasSystem::n() const {

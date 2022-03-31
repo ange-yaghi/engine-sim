@@ -33,7 +33,7 @@ class GasSystem {
         double flow(double k_flow, double dt, double P_env, double T_env);
 
         double pressureEquilibriumMaxFlow(const GasSystem *b) const;
-        double pressureEquilibriumMaxFlow(double P_env, double T_env) const;
+        double pressureEquilibriumMaxFlow(double P_env, double T_env, bool out) const;
 
         double n() const;
         double n(double V) const;

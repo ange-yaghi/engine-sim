@@ -121,7 +121,7 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfinite) {
     const double P_env = units::pressure(2.0, units::atm);
     const double T_env = units::celcius(25.0);
 
-    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env, false);
 
     system1.start();
     system1.flow(maxFlow, T_env);
@@ -141,7 +141,7 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfiniteOverpressure) {
     const double P_env = units::pressure(2.0, units::atm);
     const double T_env = units::celcius(25.0);
 
-    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env, true);
 
     system1.start();
     system1.flow(maxFlow, T_env);
@@ -161,7 +161,7 @@ TEST(GasSystemTests, FlowVariableVolume) {
     const double P_env = units::pressure(2.0, units::atm);
     const double T_env = units::celcius(25.0);
 
-    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env, true);
 
     const double dV = units::volume(1000000.0, units::cc) / 100;
     for (int i = 0; i < 100; ++i) {
@@ -213,11 +213,25 @@ TEST(GasSystemTests, FlowLimit) {
 
     const double P_env = units::pressure(1.0, units::atm);
     const double T_env = units::celcius(25.0);
-    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env, true);
 
     system1.start();
-    system1.flow(5.0, 1 / 60.0, P_env, T_env);
+    system1.flow(15.0, 1 / 60.0, P_env, T_env);
     system1.end();
 
     EXPECT_NEAR(system1.pressure(), P_env, 1E-6);
+}
+
+TEST(GasSystemTests, IdealGasLaw) {
+    GasSystem system1;
+    system1.initialize(
+        units::pressure(100.0, units::atm),
+        units::volume(1.0, units::m3),
+        units::celcius(2000.0)
+    );
+
+    const double PV = system1.pressure() * system1.volume();
+    const double nRT = system1.n() * Constants::R * system1.temperature();
+
+    EXPECT_NEAR(PV, nRT, 1E-6);
 }
