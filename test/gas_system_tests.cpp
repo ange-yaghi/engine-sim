@@ -129,3 +129,31 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfinite) {
 
     EXPECT_NEAR(system1.pressure(), P_env, 1E-6);
 }
+
+TEST(GasSystemTests, FlowVariableVolume) {
+    GasSystem system1;
+    system1.initialize(
+        units::pressure(100.0, units::atm),
+        units::volume(1.0, units::m3),
+        units::celcius(25.0)
+    );
+
+    const double P_env = units::pressure(2.0, units::atm);
+    const double T_env = units::celcius(25.0);
+
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
+
+    const double dV = units::volume(1000000.0, units::cc) / 100;
+    for (int i = 0; i < 100; ++i) {
+        system1.start();
+        const double flowRate0 = system1.flow(0.01, 1/60.0, units::pressure(0.1, units::atm), units::celcius(25.0));
+        const double flowRate1 = system1.flow(0.01, 1 / 60.0, units::pressure(0.2, units::atm), units::celcius(25.0));
+        system1.changeVolume(-dV);
+        system1.changeTemperature(100);
+        system1.end();
+
+        std::cerr << flowRate0 << ", " << flowRate1 << "\n";
+    }
+
+    EXPECT_FALSE(true);
+}

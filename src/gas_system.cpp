@@ -56,28 +56,27 @@ void GasSystem::changeTemperature(double dT, double n) {
 }
 
 double GasSystem::flow(double dn, GasSystem *target) {
+    double flow = 0;
     if (dn >= 0) {
-        loseN(dn);
+        flow = loseN(dn);
         target->gainN(dn, kineticEnergyPerMol());
     }
     else {
-        gainN(-dn, target->kineticEnergyPerMol());
+        flow = gainN(-dn, target->kineticEnergyPerMol());
         target->loseN(-dn);
     }
 
-    return dn;
+    return flow;
 }
 
 double GasSystem::flow(double dn, double T_env) {
     if (dn >= 0) {
-        loseN(dn);
+        return loseN(dn);
     }
     else {
         const double E_k_per_mol = 0.5 * T_env * Constants::R * degreesOfFreedom;
-        gainN(-dn, E_k_per_mol);
+        return gainN(-dn, E_k_per_mol);
     }
-
-    return dn;
 }
 
 double GasSystem::loseN(double dn) {

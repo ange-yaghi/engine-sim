@@ -194,7 +194,7 @@ void EngineSimApplication::initialize() {
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
     crankshaftParams.FlywheelMass = units::mass(29, units::lb);
-    crankshaftParams.Mass = units::mass(75, units::lb) * 100;
+    crankshaftParams.Mass = units::mass(75, units::lb) * 1;
 
     // Temporary moment of inertia approximation
     const double crank_r = crankshaftParams.CrankThrow;
@@ -252,24 +252,38 @@ void EngineSimApplication::initialize() {
     // Camshaft
     Camshaft *exhaustCamLeft = new Camshaft, *exhaustCamRight = new Camshaft;
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
-    Function *camLift = new Function;
-    camLift->initialize(1, units::angle(20, units::deg));
-    camLift->addSample(0.0, units::distance(500, units::thou));
-    camLift->addSample(-units::angle(20, units::deg), units::distance(450, units::thou));
-    camLift->addSample(units::angle(20, units::deg), units::distance(450, units::thou));
-    camLift->addSample(-units::angle(40, units::deg), units::distance(0, units::thou));
-    camLift->addSample(units::angle(40, units::deg), units::distance(0, units::thou));
-    camLift->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
-    camLift->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
-    camLift->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
-    camLift->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
+    Function *camLift0 = new Function;
+    camLift0->initialize(1, units::angle(20, units::deg));
+    camLift0->addSample(0.0, units::distance(500, units::thou));
+    camLift0->addSample(-units::angle(20, units::deg), units::distance(450, units::thou));
+    camLift0->addSample(units::angle(20, units::deg), units::distance(450, units::thou));
+    camLift0->addSample(-units::angle(40, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(40, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
+
+    Function *camLift1 = new Function;
+    camLift1->initialize(1, units::angle(20, units::deg));
+    camLift1->addSample(0.0, units::distance(100, units::thou));
+    camLift1->addSample(-units::angle(20, units::deg), units::distance(100, units::thou));
+    camLift1->addSample(units::angle(20, units::deg), units::distance(0, units::thou));
+    camLift1->addSample(-units::angle(40, units::deg), units::distance(0, units::thou));
+    camLift1->addSample(units::angle(40, units::deg), units::distance(0, units::thou));
+    camLift1->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift1->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift1->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
+    camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Camshaft::Parameters camParams;
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
-    camParams.LobeProfile = camLift;
     camParams.Lobes = 4;
+
+    camParams.LobeProfile = camLift0;
     exhaustCamRight->initialize(camParams);
     exhaustCamLeft->initialize(camParams);
+    camParams.LobeProfile = camLift0;
     intakeCamLeft->initialize(camParams);
     intakeCamRight->initialize(camParams);
 
@@ -417,9 +431,11 @@ void EngineSimApplication::process(float frame_dt) {
     continuousSampleDelta =
         0.99 * continuousSampleDelta + 0.01 * m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
     const int sampleDelta = m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
-    const double dt = m_audioBuffer.offsetToTime(sampleDelta);
 
-    m_audioSyncedTimeDelta = dt;
+    const double rt_dt = m_audioBuffer.offsetToTime(sampleDelta);
+    const double dt = rt_dt / 1.0;
+
+    m_audioSyncedTimeDelta = rt_dt;
     m_averageAudioSyncedTimeDelta =
         m_audioSyncedTimeDelta * 0.01 + m_averageAudioSyncedTimeDelta * 0.99;
 
@@ -433,20 +449,21 @@ void EngineSimApplication::process(float frame_dt) {
     m_dynoSpeed = std::fmodf(
         (float)(m_dynoSpeed + units::rpm(300) * dt),
         (float)units::rpm(6000));
+    //m_dynoSpeed = units::rpm(200);
 
     //m_oscilloscope->addDataPoint(
     //    -m_iceEngine.getCrankshaft(0)->m_body.v_theta,
     //    m_torque);
 
     Function exhaustLeft;
-    exhaustLeft.initialize(m_simulator.m_steps, (dt / m_simulator.m_steps));
+    exhaustLeft.initialize(m_simulator.m_steps, (rt_dt / m_simulator.m_steps));
     Function exhaustRight;
-    exhaustRight.initialize(m_simulator.m_steps, (dt / m_simulator.m_steps));
+    exhaustRight.initialize(m_simulator.m_steps, (rt_dt / m_simulator.m_steps));
     double currentFlowDC[2] = { 0, 0 };
 
     do {
         const double t =
-            m_simulator.getCurrentIteration() * (dt / m_simulator.m_steps);
+            m_simulator.getCurrentIteration() * (rt_dt / m_simulator.m_steps);
 
         // 1 8 4 3 5 7 2
         double flowLeft = 0;
@@ -466,54 +483,18 @@ void EngineSimApplication::process(float frame_dt) {
                 bankFactor * factor * -m_simulator.getCombustionChamber(i)->m_exhaustFlow;
         }
 
-        const double flowRateLeft = flowLeft / (dt / m_simulator.m_steps);// erf(30 * std::pow(totalFlow * totalFlow, 0.25));
+        const double flowRateLeft = flowLeft / (dt / m_simulator.m_steps);
         exhaustLeft.addSample(
             t,
             flowRateLeft);
-        const double flowRateRight = flowRight / (dt / m_simulator.m_steps);// erf(30 * std::pow(totalFlow * totalFlow, 0.25));
+        const double flowRateRight = flowRight / (dt / m_simulator.m_steps);
         exhaustRight.addSample(
             t,
             flowRateRight);
-        //exhaust.addSample(
-        //    t,
-        //    std::sin(10000 * (test + t))
-        //);
-
-        //m_oscilloscope->addDataPoint(
-        //    t,
-        //    flowRate / 100);
 
         currentFlowDC[0] += flowRateLeft;
         currentFlowDC[1] += flowRateRight;
     } while (m_simulator.simulateStep(dt));
-
-    /*
-    struct Osc {
-        double freq = 100.0;
-        double oscDisp = 0.0;
-        double oscVel = 0.0;
-        double oscK_d = 0.0;
-        double s = 1.0;
-    };
-
-    static Osc oscillators[] = {
-        { 50.0, 0.0, 0.0, 100.0, 10.0 },
-        { 51.0, 0.0, 0.0, 100.0, 10.0 },
-        { 52.0, 0.0, 0.0, 100.0, 10.0 },
-        { 53.0, 0.0, 0.0, 100.0, 10.0 },
-        { 54.0, 0.0, 0.0, 100.0, 10.0 },
-        { 10.0, 0.0, 0.0, 10.0, 40.0 },
-        { 50.0, 0.0, 0.0, 1000.0, 100.0 },
-        { 100.0, 0.0, 0.0, 100.0, 10.0 },
-
-        { 500.0, 0.0, 0.0, 1000.0, 10.0 },
-        { 150.0, 0.0, 0.0, 1000.0, 10.0 },
-        { 150.0, 0.0, 0.0, 10000.0, 100.0 },
-        { 150.0, 0.0, 0.0, 100.0, 1.0 }
-    };
-
-    constexpr int osc_count = sizeof(oscillators) / sizeof(Osc);
-    */
 
     double pulse = 0;
     if (m_engine.ProcessKeyDown(ysKey::Code::T)) {
@@ -526,8 +507,8 @@ void EngineSimApplication::process(float frame_dt) {
         const double newFlowRight =
             0.0 * flow[1] + 1.0 * (exhaustRight.sampleTriangle(m_audioBuffer.offsetToTime(i)));
 
-        const double newSmoothFlowLeft = 0.9 * smoothFlow[0] + 0.1 * newFlowLeft;
-        const double newSmoothFlowRight = 0.9 * smoothFlow[1] + 0.1 * newFlowRight;
+        const double newSmoothFlowLeft = 0.0 * smoothFlow[0] + 1.0 * newFlowLeft;
+        const double newSmoothFlowRight = 0.0 * smoothFlow[1] + 1.0 * newFlowRight;
 
         flowDerivative[0] =
             (newSmoothFlowLeft - smoothFlow[0]) / m_audioBuffer.offsetToTime(1);
@@ -566,16 +547,12 @@ void EngineSimApplication::process(float frame_dt) {
                 osc.vel += ks_sqrt * pulse;
             }
 
-            //if (transformedF > 20) {
-            //oscillators[j].oscVel += 0.0005 * ks_sqrt * std::fmin(std::fmax((flow - flowDC), -1.0), 1.0);
-            //}
-
             osc.vel += ks_sqrt * (0.00001 * (flowDerivative[0]));
             osc.vel = std::fmin(std::fmax(osc.vel, -10000), 10000);
 
             osc.disp += osc.vel * m_audioBuffer.offsetToTime(1);
 
-            sample += (1.0 / m_oscillatorCountLeft) * osc.s * osc.disp;
+            //sample += (1.0 / m_oscillatorCountLeft) * osc.s * osc.disp;
         }
 
         for (int j = 0; j < m_oscillatorCountRight; ++j) {
@@ -614,9 +591,10 @@ void EngineSimApplication::process(float frame_dt) {
 
         sample *= 0.004;
         sample *= 0.5;
+        sample *= 1.0;
 
         //if (sample > 0.2) sample -= (sample - 0.2) * 0.9;
-       // else if (sample < -0.2) sample -= -(-0.2 - sample) * 0.9;
+        //else if (sample < -0.2) sample -= -(-0.2 - sample) * 0.9;
 
         m_oscilloscope->addDataPoint(
             i,

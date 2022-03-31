@@ -98,23 +98,31 @@ void CombustionChamber::update(double dt) {
     m_system.start();
 
     m_system.setVolume(volume());
-    m_system.flow(m_blowbyK, dt, m_crankcasePressure, units::celcius(25.0));
+    //m_system.flow(m_blowbyK, dt, m_crankcasePressure, units::celcius(25.0));
 
     const double start_n = m_system.n();
-    const double intakeFlow = m_system.flow(
-        m_head->intakeFlowRate(m_piston->m_cylinderIndex),
-        dt,
-        m_manifoldPressure,
-        units::celcius(25.0));
-    const double exhaustFlow = m_system.flow(
-        m_head->exhaustFlowRate(m_piston->m_cylinderIndex),
-        dt,
-        units::pressure(1.0, units::atm),
-        units::celcius(25.0));
+
+    double intakeFlow = 0;
+    if (m_head->exhaustFlowRate(m_piston->m_cylinderIndex) <= 0) {
+        intakeFlow = m_system.flow(
+            m_head->intakeFlowRate(m_piston->m_cylinderIndex),
+            dt,
+            m_manifoldPressure,
+            units::celcius(25.0));
+    }
+
+    double exhaustFlow = 0;
+    if (m_system.pressure() > units::pressure(1.0, units::atm)) {
+        exhaustFlow = m_system.flow(
+            m_head->exhaustFlowRate(m_piston->m_cylinderIndex),
+            dt,
+            units::pressure(1.0, units::atm),
+            units::celcius(25.0));
+    }
 
     m_exhaustFlow = exhaustFlow;
 
-    const double netFlow = (exhaustFlow + intakeFlow);
+    const double netFlow = (exhaustFlow - intakeFlow);
 
     if (netFlow <= 0) {
         m_turbulence += 30000 * netFlow * netFlow;
