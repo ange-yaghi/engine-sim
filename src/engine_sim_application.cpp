@@ -10,6 +10,8 @@
 #include "../include/ui_button.h"
 #include "../include/combustion_chamber_object.h"
 #include "../include/csv_io.h"
+#include "../include/exhaust_system.h"
+#include "../include/feedback_comb_filter.h"
 
 #include <stdlib.h>
 #include <sstream>
@@ -134,6 +136,8 @@ void EngineSimApplication::initialize() {
     engineParams.CylinderBanks = 2;
     engineParams.CylinderCount = 8;
     engineParams.CrankshaftCount = 1;
+    engineParams.ExhaustSystemCount = 2;
+    engineParams.IntakeCount = 1;
     m_iceEngine.initialize(engineParams);
 
     Piston::Parameters pistonParams;
@@ -194,7 +198,7 @@ void EngineSimApplication::initialize() {
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
     crankshaftParams.FlywheelMass = units::mass(29, units::lb);
-    crankshaftParams.Mass = units::mass(75, units::lb) * 1;
+    crankshaftParams.Mass = units::mass(75, units::lb);
 
     // Temporary moment of inertia approximation
     const double crank_r = crankshaftParams.CrankThrow;
@@ -254,11 +258,11 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(20, units::deg));
-    camLift0->addSample(0.0, units::distance(500, units::thou));
-    camLift0->addSample(-units::angle(20, units::deg), units::distance(450, units::thou));
-    camLift0->addSample(units::angle(20, units::deg), units::distance(450, units::thou));
-    camLift0->addSample(-units::angle(40, units::deg), units::distance(0, units::thou));
-    camLift0->addSample(units::angle(40, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(0.0, units::distance(300, units::thou));
+    camLift0->addSample(-units::angle(20, units::deg), units::distance(150, units::thou));
+    camLift0->addSample(units::angle(20, units::deg), units::distance(150, units::thou));
+    camLift0->addSample(-units::angle(40, units::deg), units::distance(10, units::thou));
+    camLift0->addSample(units::angle(40, units::deg), units::distance(10, units::thou));
     camLift0->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -289,23 +293,23 @@ void EngineSimApplication::initialize() {
 
     // 1 8 4 3 6 5 7 2
     const double lobeSeparation = 109;
-    exhaustCamRight->setLobeCenterline(0, units::angle(360.0 - lobeSeparation / 2.0, units::deg));
-    exhaustCamRight->setLobeCenterline(1, units::angle(360.0 - lobeSeparation / 2.0, units::deg) + 3 * units::angle(360, units::deg) / 4);
-    exhaustCamRight->setLobeCenterline(2, units::angle(360.0 - lobeSeparation / 2.0, units::deg) + 5 * units::angle(360, units::deg) / 4);
-    exhaustCamRight->setLobeCenterline(3, units::angle(360.0 - lobeSeparation / 2.0, units::deg) + 6 * units::angle(360, units::deg) / 4);
-    intakeCamRight->setLobeCenterline(0, units::angle(360.0 + lobeSeparation / 2.0, units::deg));
-    intakeCamRight->setLobeCenterline(1, units::angle(360.0 + lobeSeparation / 2.0, units::deg) + 3 * units::angle(360, units::deg) / 4);
-    intakeCamRight->setLobeCenterline(2, units::angle(360.0 + lobeSeparation / 2.0, units::deg) + 5 * units::angle(360, units::deg) / 4);
-    intakeCamRight->setLobeCenterline(3, units::angle(360.0 + lobeSeparation / 2.0, units::deg) + 6 * units::angle(360, units::deg) / 4);
+    exhaustCamRight->setLobeCenterline(0, units::angle(360 - lobeSeparation, units::deg));
+    exhaustCamRight->setLobeCenterline(1, units::angle(360 - lobeSeparation, units::deg) + 3 * units::angle(360, units::deg) / 4);
+    exhaustCamRight->setLobeCenterline(2, units::angle(360 - lobeSeparation, units::deg) + 5 * units::angle(360, units::deg) / 4);
+    exhaustCamRight->setLobeCenterline(3, units::angle(360 - lobeSeparation, units::deg) + 6 * units::angle(360, units::deg) / 4);
+    intakeCamRight->setLobeCenterline(0, units::angle(360 + lobeSeparation, units::deg));
+    intakeCamRight->setLobeCenterline(1, units::angle(360 + lobeSeparation, units::deg) + 3 * units::angle(360, units::deg) / 4);
+    intakeCamRight->setLobeCenterline(2, units::angle(360 + lobeSeparation, units::deg) + 5 * units::angle(360, units::deg) / 4);
+    intakeCamRight->setLobeCenterline(3, units::angle(360 + lobeSeparation, units::deg) + 6 * units::angle(360, units::deg) / 4);
 
-    exhaustCamLeft->setLobeCenterline(0, units::angle(360.0 - lobeSeparation / 2.0, units::deg) + 7 * units::angle(360, units::deg) / 4);
-    exhaustCamLeft->setLobeCenterline(1, units::angle(360.0 - lobeSeparation / 2.0, units::deg) + 2 * units::angle(360, units::deg) / 4);
-    exhaustCamLeft->setLobeCenterline(2, units::angle(360.0 - lobeSeparation / 2.0, units::deg) + 4 * units::angle(360, units::deg) / 4);
-    exhaustCamLeft->setLobeCenterline(3, units::angle(360.0 - lobeSeparation / 2.0, units::deg) + 1 * units::angle(360, units::deg) / 4);
-    intakeCamLeft->setLobeCenterline(0, units::angle(360.0 + lobeSeparation / 2.0, units::deg) + 7 * units::angle(360, units::deg) / 4);
-    intakeCamLeft->setLobeCenterline(1, units::angle(360.0 + lobeSeparation / 2.0, units::deg) + 2 * units::angle(360, units::deg) / 4);
-    intakeCamLeft->setLobeCenterline(2, units::angle(360.0 + lobeSeparation / 2.0, units::deg) + 4 * units::angle(360, units::deg) / 4);
-    intakeCamLeft->setLobeCenterline(3, units::angle(360.0 + lobeSeparation / 2.0, units::deg) + 1 * units::angle(360, units::deg) / 4);
+    exhaustCamLeft->setLobeCenterline(0, units::angle(360 - lobeSeparation, units::deg) + 7 * units::angle(360, units::deg) / 4);
+    exhaustCamLeft->setLobeCenterline(1, units::angle(360 - lobeSeparation, units::deg) + 2 * units::angle(360, units::deg) / 4);
+    exhaustCamLeft->setLobeCenterline(2, units::angle(360 - lobeSeparation, units::deg) + 4 * units::angle(360, units::deg) / 4);
+    exhaustCamLeft->setLobeCenterline(3, units::angle(360 - lobeSeparation, units::deg) + 1 * units::angle(360, units::deg) / 4);
+    intakeCamLeft->setLobeCenterline(0, units::angle(360 + lobeSeparation, units::deg) + 7 * units::angle(360, units::deg) / 4);
+    intakeCamLeft->setLobeCenterline(1, units::angle(360 + lobeSeparation, units::deg) + 2 * units::angle(360, units::deg) / 4);
+    intakeCamLeft->setLobeCenterline(2, units::angle(360 + lobeSeparation, units::deg) + 4 * units::angle(360, units::deg) / 4);
+    intakeCamLeft->setLobeCenterline(3, units::angle(360 + lobeSeparation, units::deg) + 1 * units::angle(360, units::deg) / 4);
 
     // n = PV / RT
     const double flow_t = units::celcius(25.0);
@@ -345,6 +349,23 @@ void EngineSimApplication::initialize() {
     chParams.ExhaustCam = exhaustCamRight;
     chParams.Bank = m_iceEngine.getCylinderBank(1);
     m_iceEngine.getHead(1)->initialize(chParams);
+
+    Intake::Parameters inParams;
+    inParams.inputFlowK = n_flow * 800;
+    inParams.volume = units::volume(5000.0, units::cc);
+    m_iceEngine.getIntake(0)->initialize(inParams);
+
+    ExhaustSystem::Parameters esParams;
+    esParams.flowK = n_flow * 2000;
+    esParams.volume = units::volume(10.0, units::L);
+    m_iceEngine.getExhaustSystem(0)->initialize(esParams); 
+    m_iceEngine.getExhaustSystem(1)->initialize(esParams);
+
+    m_iceEngine.getHead(0)->setAllExhaustSystems(m_iceEngine.getExhaustSystem(0));
+    m_iceEngine.getHead(1)->setAllExhaustSystems(m_iceEngine.getExhaustSystem(1));
+
+    m_iceEngine.getHead(0)->setAllIntakes(m_iceEngine.getIntake(0));
+    m_iceEngine.getHead(1)->setAllIntakes(m_iceEngine.getIntake(0));
 
     Function *timingCurve = new Function;
     timingCurve->initialize(1, units::rpm(1000));
@@ -392,7 +413,7 @@ void EngineSimApplication::initialize() {
     m_oscilloscope->m_bounds = Bounds(200.0f, 200.0f, { 0.0f, 0.0f });
     m_oscilloscope->setLocalPosition({ 50.0f, 900.0f });
     m_oscilloscope->m_xMin = 0.0f;
-    m_oscilloscope->m_xMax = 44100 / 60.0;
+    m_oscilloscope->m_xMax = cycle; //44100 / 60.0;
     m_oscilloscope->m_yMin = 0.0; // -units::pressure(1.0, units::psi);
     m_oscilloscope->m_yMax = 1.0; // units::pressure(1.0, units::psi);
     m_oscilloscope->m_lineWidth = 1.0f;
@@ -420,6 +441,7 @@ void EngineSimApplication::initialize() {
 }
 
 void EngineSimApplication::process(float frame_dt) {
+    static double volume = 0;
     static double flow[2] = { 0, 0 };
     static double smoothFlow[2] = { 0, 0 };
     static double flowDerivative[2] = { 0, 0 };
@@ -427,13 +449,29 @@ void EngineSimApplication::process(float frame_dt) {
     static double whiteNoise = 0;
     static double continuousSampleDelta = 44100 / 60.0;
 
+    static FeedbackCombFilter *fcf = nullptr;
+    if (fcf == nullptr) {
+        fcf = new FeedbackCombFilter[2];
+
+        fcf[0].initialize(100);
+        fcf[0].a_M = 0.742;
+
+        fcf[1].initialize(50);
+        fcf[1].a_M = 0.733;
+    }
+
     const int audioPosition = m_audioSource->GetCurrentPosition();
     continuousSampleDelta =
         0.99 * continuousSampleDelta + 0.01 * m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
     const int sampleDelta = m_audioBuffer.offsetDelta(m_lastAudioSample, audioPosition);
 
+    double speed = 1.0;
+    if (m_engine.IsKeyDown(ysKey::Code::Control)) {
+        speed = 1 / 30.0;
+    }
+
     const double rt_dt = m_audioBuffer.offsetToTime(sampleDelta);
-    const double dt = rt_dt / 1.0;
+    const double dt = rt_dt * speed;
 
     m_audioSyncedTimeDelta = rt_dt;
     m_averageAudioSyncedTimeDelta =
@@ -443,13 +481,13 @@ void EngineSimApplication::process(float frame_dt) {
 
     m_lastAudioSample = audioPosition;
 
-    m_simulator.m_steps = std::lround(350 * (dt * 60));
+    m_simulator.m_steps = std::lround(250 * (dt * 60));
     m_simulator.start();
 
     m_dynoSpeed = std::fmodf(
         (float)(m_dynoSpeed + units::rpm(300) * dt),
         (float)units::rpm(6000));
-    //m_dynoSpeed = units::rpm(200);
+    m_dynoSpeed = units::rpm(500);
 
     //m_oscilloscope->addDataPoint(
     //    -m_iceEngine.getCrankshaft(0)->m_body.v_theta,
@@ -466,31 +504,46 @@ void EngineSimApplication::process(float frame_dt) {
             m_simulator.getCurrentIteration() * (rt_dt / m_simulator.m_steps);
 
         // 1 8 4 3 5 7 2
-        double flowLeft = 0;
-        double flowRight = 0;
-        for (int i = 0; i < 8; ++i) {
-            const double factor = (i == (4 - 1) || i == (7 - 1))
-                ? 0.0
-                : 1.0;
-            const bool left = (i == 0 || i == 2 || i == 4 || i == 6);
-            const double bankFactor = left
-                ? 0.0
-                : 1.0;
+        //double flowLeft = m_iceEngine.getExhaustSystem(0)->m_flow;
+        //double flowRight = m_iceEngine.getExhaustSystem(1)->m_flow;
 
-            flowLeft +=
-                (1 - bankFactor) * factor * -m_simulator.getCombustionChamber(i)->m_exhaustFlow;
-            flowRight +=
-                bankFactor * factor * -m_simulator.getCombustionChamber(i)->m_exhaustFlow;
+        double flowLeft = 0, flowRight = 0;
+        for (int i = 0; i < 1; ++i) {
+            if (i % 2 == 0) {
+                flowLeft += m_simulator.getCombustionChamber(i)->m_exhaustFlow;
+            }
+            else {
+                flowRight += m_simulator.getCombustionChamber(i)->m_exhaustFlow;
+            }
         }
 
         const double flowRateLeft = flowLeft / (dt / m_simulator.m_steps);
+        const double flowRateRight = flowRight / (dt / m_simulator.m_steps);
+
+        if (m_simulator.getCurrentIteration() != 0) {
+            flowDerivative[0] = (flowRateLeft - flow[0]) / (dt / m_simulator.m_steps);
+            flowDerivative[1] = (flowRateRight - flow[1]) / (dt / m_simulator.m_steps);
+        }
+
+        flow[0] = flowRateLeft;
+        flow[1] = flowRateRight;
+
+        const double flowDerivativeLeft = std::pow(std::abs(flowDerivative[0]), 0.5) * (flowDerivative[0] < 0 ? -1 : 1);
+        const double flowDerivativeRight = std::pow(std::abs(flowDerivative[1]), 0.5) * (flowDerivative[1] < 0 ? -1 : 1);
+
+        if (m_simulator.getCurrentIteration() != 0) {
+            m_oscilloscope->addDataPoint(
+                m_iceEngine.getCrankshaft(0)->getCycleAngle(),
+                //(flowRateLeft + flowRateRight));
+                (flowDerivativeLeft + flowDerivativeRight) * 0.01);
+        }
+        
         exhaustLeft.addSample(
             t,
-            flowRateLeft);
-        const double flowRateRight = flowRight / (dt / m_simulator.m_steps);
+            flowDerivativeLeft * 5000);
         exhaustRight.addSample(
             t,
-            flowRateRight);
+            flowDerivativeRight * 5000);
 
         currentFlowDC[0] += flowRateLeft;
         currentFlowDC[1] += flowRateRight;
@@ -507,16 +560,11 @@ void EngineSimApplication::process(float frame_dt) {
         const double newFlowRight =
             0.0 * flow[1] + 1.0 * (exhaustRight.sampleTriangle(m_audioBuffer.offsetToTime(i)));
 
-        const double newSmoothFlowLeft = 0.0 * smoothFlow[0] + 1.0 * newFlowLeft;
-        const double newSmoothFlowRight = 0.0 * smoothFlow[1] + 1.0 * newFlowRight;
+        const double newSmoothFlowLeft = (0.9 * smoothFlow[0] / 1.2 + 0.1 * newFlowLeft) * 1.2;
+        const double newSmoothFlowRight = (0.9 * smoothFlow[1] / 1.2 + 0.1 * newFlowRight) * 1.2;
 
-        flowDerivative[0] =
-            (newSmoothFlowLeft - smoothFlow[0]) / m_audioBuffer.offsetToTime(1);
-        flowDerivative[1] =
-            (newSmoothFlowRight - smoothFlow[1]) / m_audioBuffer.offsetToTime(1);
-
-        flow[0] = newFlowLeft;
-        flow[1] = newFlowRight;
+        flowDerivative[0] = newFlowLeft;
+        flowDerivative[1] = newFlowRight;
 
         smoothFlow[0] = newSmoothFlowLeft;
         smoothFlow[1] = newSmoothFlowRight;
@@ -547,12 +595,12 @@ void EngineSimApplication::process(float frame_dt) {
                 osc.vel += ks_sqrt * pulse;
             }
 
-            osc.vel += ks_sqrt * (0.00001 * (flowDerivative[0]));
+            osc.vel += ks_sqrt * std::abs(0.001 * (flowDerivative[0]));
             osc.vel = std::fmin(std::fmax(osc.vel, -10000), 10000);
 
             osc.disp += osc.vel * m_audioBuffer.offsetToTime(1);
 
-            //sample += (1.0 / m_oscillatorCountLeft) * osc.s * osc.disp;
+            sample += (1.0 / m_oscillatorCountLeft) * osc.s * osc.disp;
         }
 
         for (int j = 0; j < m_oscillatorCountRight; ++j) {
@@ -569,11 +617,13 @@ void EngineSimApplication::process(float frame_dt) {
                 osc.vel += ks_sqrt * pulse;
             }
 
-            osc.vel += ks_sqrt * (0.00001 * (flowDerivative[1]));
+            osc.vel += ks_sqrt * std::abs(0.001 * (flowDerivative[1]));
             osc.vel = std::fmin(std::fmax(osc.vel, -10000), 10000);
 
             osc.disp += osc.vel * m_audioBuffer.offsetToTime(1);
-            //sample += (1.0 / m_oscillatorCountRight) * osc.s * osc.disp;
+            osc.disp = std::fmin(osc.disp, 1.0);
+
+            sample += (1.0 / m_oscillatorCountRight) * osc.s * osc.disp;
         }
 
         //sample = 0.00001 * flowDerivative;
@@ -582,23 +632,37 @@ void EngineSimApplication::process(float frame_dt) {
         //sample = ((flow[0] - flowDC[0]) * 0.1);
         //sample *= 0.2;
         //sample += (flowDerivative[0] + flowDerivative[1]) * 0.0001;
-        sample += (flowDerivative[0] + flowDerivative[1]) * 0.001;
+        //sample = (flowDerivative[0] + flowDerivative[1]) * 0.1;
         //sample += (flow[0] + flow[1]);
         //sample += 0.0001 * flowDerivative;
         //sample = m_audioImpulseResponse.f(sample);
-
+        //sample = 0.9 * sample + 0.1 * sample * whiteNoise;
         //sample += whiteNoise * (flow[0] + flow[1]);
+
+        //sample += flow[0] + flow[1];
 
         sample *= 0.004;
         sample *= 0.5;
-        sample *= 1.0;
+        sample *= 0.02;
 
-        //if (sample > 0.2) sample -= (sample - 0.2) * 0.9;
-        //else if (sample < -0.2) sample -= -(-0.2 - sample) * 0.9;
+        //sample = std::pow(std::abs(sample), 0.5) * (sample < 0 ? -1 : 1);
 
-        m_oscilloscope->addDataPoint(
-            i,
-            sample);
+        sample = fcf[0].f(sample) * 0.5 + fcf[1].f(sample) * 0.5;
+
+        if (sample > 0.5) sample -= (sample - 0.5) * 0.95;
+        else if (sample < -0.5) sample -= -(-0.5 - sample) * 0.95;
+
+        //sample = std::erf(sample) * 0.8;
+
+        //m_oscilloscope->addDataPoint(
+        //    i,
+        //    sample);
+
+        if (sample > volume) {
+            volume = sample;
+        }
+
+        volume = volume * 0.999;
 
         m_audioBuffer.writeSample(std::lround(sample * 60000), m_audioBuffer.m_writePointer, i);
     }
@@ -618,8 +682,6 @@ void EngineSimApplication::process(float frame_dt) {
 
     m_audioSource->UnlockBufferSegments(data0, size0, data1, size1);
     m_audioBuffer.commitBlock(sampleDelta);
-
-    m_audioBuffer.checkForDiscontinuitiy(8000);
 
     exhaustLeft.destroy();
     exhaustRight.destroy();
@@ -642,20 +704,20 @@ void EngineSimApplication::render() {
         burnedFuel += m_simulator.getCombustionChamber(i)->m_nBurntFuel;
     }
 
-    /*
     std::stringstream ss;
-    ss << m_averageAudioSyncedTimeDelta / (1 / 60.0) << "\n";
+    /*ss << m_averageAudioSyncedTimeDelta / (1 / 60.0) << "\n";
     ss << "Dyno: " << m_torque << " ft-lb // " << m_torque * m_iceEngine.getRpm() / 5252.0 << " hp    \n";
     ss << units::convert(burnedFuel, units::g) << " g \n";
     ss << std::lroundf(m_simulator.getAverageProcessingTime()) << " us    \n";
     ss << std::lroundf(m_iceEngine.getRpm()) << " RPM     \n";
-    ss << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
+    ss << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";*/
+    ss << units::convert(m_iceEngine.getIntake(0)->m_system.pressure(), units::psi) << "\n";
     m_textRenderer.RenderText(
         ss.str(),
         50 - m_engine.GetScreenWidth() / 2.0,
         50 + 64 + 64 - m_engine.GetScreenHeight() / 2.0,
         64
-    );*/
+    );
 
     m_uiManager.render();
 }
@@ -742,23 +804,21 @@ void EngineSimApplication::run() {
             updateOscillatorData();
         }
 
-        double manifoldPressure = units::pressure(0.25, units::atm);
+        double throttle = 0.999; 
         if (m_engine.IsKeyDown(ysKey::Code::A)) {
-            manifoldPressure = units::pressure(1.0, units::atm);
+            throttle = 0.0;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::S)) {
-            manifoldPressure = units::pressure(0.0, units::atm);
+            throttle = 1.0;
         }
 
+        m_iceEngine.getIntake(0)->m_throttle = throttle;
+
         m_dyno.setSpeed(m_dynoSpeed);
-        //m_dyno.setSpeed(units::rpm(200.0));
+        m_dyno.setSpeed(units::rpm(500.0));
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_dyno.setEnabled(!m_dyno.isEnabled());
-        }
-
-        for (int i = 0; i < m_iceEngine.getCylinderCount(); ++i) {
-            m_simulator.getCombustionChamber(i)->m_manifoldPressure = manifoldPressure;
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::V) &&

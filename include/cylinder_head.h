@@ -5,6 +5,8 @@
 
 #include "function.h"
 #include "camshaft.h"
+#include "exhaust_system.h"
+#include "intake.h"
 
 class CylinderBank;
 class CylinderHead : public Part {
@@ -31,6 +33,15 @@ class CylinderHead : public Part {
         double exhaustFlowRate(int cylinder) const;
         double intakeValveLift(int cylinder) const;
         double exhaustValveLift(int cylinder) const;
+
+        void setAllExhaustSystems(ExhaustSystem *system);
+        void setExhaustSystem(int i, ExhaustSystem *system);
+
+        void setAllIntakes(Intake *intake);
+        void setIntake(int i, Intake *intake);
+
+        ExhaustSystem **m_exhaustSystems;
+        Intake **m_intakes;
 
         CylinderBank *m_bank;
         Camshaft *m_exhaustCamshaft;

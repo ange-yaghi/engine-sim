@@ -97,12 +97,28 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlow) {
         units::celcius(25.0)
     );
 
-    const double maxFlow = system1.pressureEquilibriumMaxFlow(&system2);
+    const double maxFlowIn = system1.pressureEquilibriumMaxFlow(&system2);
 
     system1.start();
     system2.start();
 
-    system1.flow(maxFlow, &system2);
+    system1.flow(maxFlowIn, &system2);
+
+    system1.end();
+    system2.end();
+
+    EXPECT_NEAR(system1.pressure(), system2.pressure(), 1E-6);
+
+    system1.start();
+    system1.changePressure(units::pressure(100.0, units::atm));
+    system1.end();
+
+    const double maxFlowOut = system1.pressureEquilibriumMaxFlow(&system2);
+
+    system1.start();
+    system2.start();
+
+    system1.flow(maxFlowOut, &system2);
 
     system1.end();
     system2.end();
@@ -121,7 +137,7 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfinite) {
     const double P_env = units::pressure(2.0, units::atm);
     const double T_env = units::celcius(25.0);
 
-    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env, false);
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
 
     system1.start();
     system1.flow(maxFlow, T_env);
@@ -141,7 +157,7 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfiniteOverpressure) {
     const double P_env = units::pressure(2.0, units::atm);
     const double T_env = units::celcius(25.0);
 
-    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env, true);
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
 
     system1.start();
     system1.flow(maxFlow, T_env);
@@ -161,7 +177,7 @@ TEST(GasSystemTests, FlowVariableVolume) {
     const double P_env = units::pressure(2.0, units::atm);
     const double T_env = units::celcius(25.0);
 
-    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env, true);
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
 
     const double dV = units::volume(1000000.0, units::cc) / 100;
     for (int i = 0; i < 100; ++i) {
@@ -174,8 +190,6 @@ TEST(GasSystemTests, FlowVariableVolume) {
 
         std::cerr << flowRate0 << ", " << flowRate1 << "\n";
     }
-
-    EXPECT_FALSE(true);
 }
 
 TEST(GasSystemTests, PowerStrokeTest) {
@@ -199,8 +213,6 @@ TEST(GasSystemTests, PowerStrokeTest) {
 
         std::cerr << i << ", " << flowRate0 << ", " << system1.pressure() << "\n";
     }
-
-    EXPECT_FALSE(true);
 }
 
 TEST(GasSystemTests, FlowLimit) {
@@ -213,7 +225,7 @@ TEST(GasSystemTests, FlowLimit) {
 
     const double P_env = units::pressure(1.0, units::atm);
     const double T_env = units::celcius(25.0);
-    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env, true);
+    const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
 
     system1.start();
     system1.flow(15.0, 1 / 60.0, P_env, T_env);

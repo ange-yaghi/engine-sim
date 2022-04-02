@@ -5,12 +5,12 @@
 #include "../include/piston.h"
 #include "../include/connecting_rod.h"
 #include "../include/utilities.h"
+#include "../include/exhaust_system.h"
 
 #include <cmath>
 
 CombustionChamber::CombustionChamber() {
     m_crankcasePressure = 0.0;
-    m_manifoldPressure = units::pressure(1.0, units::atm);
     m_bank = nullptr;
     m_piston = nullptr;
     m_head = nullptr;
@@ -22,8 +22,6 @@ CombustionChamber::CombustionChamber() {
     m_turbulentFlameSpeed = nullptr;
     m_nBurntFuel = 0;
     m_turbulence = 0;
-
-    m_exhaustFlow = 0;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -82,7 +80,8 @@ void CombustionChamber::ignite() {
         m_lit = true;
 
         m_flameEvent.turbulence = 0.5 + 0.5 * ((double)rand() / RAND_MAX);
-        m_flameEvent.temperature = (1.5 + 1.0 * ((double)rand() / RAND_MAX)) * units::celcius(2138);
+        m_flameEvent.temperature =
+            (1.5 + 1.0 * ((double)rand() / RAND_MAX)) * units::celcius(2138);
 
         if (rand() % 10 == 0) {
             m_flameEvent.turbulence = 100;
@@ -90,42 +89,43 @@ void CombustionChamber::ignite() {
     }
 }
 
+void CombustionChamber::start() {
+    m_system.start();
+}
+
 void CombustionChamber::update(double dt) {
+    m_system.start();
+    m_system.setVolume(volume());
+    m_system.end();
+
+    m_intakeFlowRate = m_head->intakeFlowRate(m_piston->m_cylinderIndex);
+    m_exhaustFlowRate = m_head->exhaustFlowRate(m_piston->m_cylinderIndex);
+}
+
+void CombustionChamber::flow(double dt) {
     if (m_system.temperature() > m_peakTemperature) {
         m_peakTemperature = m_system.temperature();
     }
 
-    m_system.start();
-
-    m_system.setVolume(volume());
-    //m_system.flow(m_blowbyK, dt, m_crankcasePressure, units::celcius(25.0));
+    m_system.flow(m_blowbyK, dt, m_crankcasePressure, units::celcius(25.0));
 
     const double start_n = m_system.n();
 
-    double intakeFlow = 0;
-    if (m_head->exhaustFlowRate(m_piston->m_cylinderIndex) <= 0) {
-        intakeFlow = m_system.flow(
-            m_head->intakeFlowRate(m_piston->m_cylinderIndex),
+    const double intakeFlow = m_system.flow(
+            m_intakeFlowRate,
             dt,
-            m_manifoldPressure,
-            units::celcius(25.0));
-    }
+            &m_head->m_intakes[m_piston->m_cylinderIndex]->m_system);
 
-    double exhaustFlow = 0;
-    if (m_system.pressure() > units::pressure(1.0, units::atm)) {
-        exhaustFlow = m_system.flow(
-            m_head->exhaustFlowRate(m_piston->m_cylinderIndex),
+    const double exhaustFlow = m_system.flow(
+            m_exhaustFlowRate,
             dt,
-            units::pressure(1.0, units::atm),
-            units::celcius(25.0));
-    }
+            &m_head->m_exhaustSystems[m_piston->m_cylinderIndex]->m_system);
 
     m_exhaustFlow = exhaustFlow;
-
-    const double netFlow = (exhaustFlow - intakeFlow);
+    const double netFlow = (exhaustFlow + intakeFlow);
 
     if (netFlow <= 0) {
-        m_turbulence += 30000 * netFlow * netFlow;
+        m_turbulence += 30000 * netFlow * netFlow * 12;
     }
     else {
         if (start_n > 0) {
@@ -140,15 +140,10 @@ void CombustionChamber::update(double dt) {
         const double lastTravel_x = m_flameEvent.travel_x;
         const double lastTravel_y = m_flameEvent.travel_y * expansion;
 
-        const double v_x = m_piston->m_body.v_x;
-        const double v_y = m_piston->m_body.v_y;
-
-        const double v_s =
-            v_x * m_bank->m_dx + v_y * m_bank->m_dy;
-
         const double turbulence = erfApproximation(m_turbulence * m_flameEvent.turbulence);
         const double turbulentFlameSpeed = units::distance(15.0, units::m);
-        const double flameSpeed = turbulence * turbulentFlameSpeed + (1 - turbulence) * units::distance(0.7, units::m);
+        const double flameSpeed =
+            turbulence * turbulentFlameSpeed + (1 - turbulence) * units::distance(0.7, units::m);
 
         m_flameEvent.travel_x =
             std::fmin(lastTravel_x + dt * flameSpeed, totalTravel_x);
@@ -157,7 +152,8 @@ void CombustionChamber::update(double dt) {
 
         if (lastTravel_x < m_flameEvent.travel_x || lastTravel_y < m_flameEvent.travel_y) {
             const double burnedVolume =
-                m_flameEvent.travel_x * m_flameEvent.travel_x * Constants::pi * m_flameEvent.travel_y;
+                m_flameEvent.travel_x * m_flameEvent.travel_x
+                * Constants::pi * m_flameEvent.travel_y;
             const double prevBurnedVolume =
                 lastTravel_x * lastTravel_x * Constants::pi * lastTravel_y;
             const double litVolume = burnedVolume - prevBurnedVolume;
@@ -182,7 +178,9 @@ void CombustionChamber::update(double dt) {
 
         m_flameEvent.lastVolume = volume();
     }
+}
 
+void CombustionChamber::end() {
     m_system.end();
 }
 

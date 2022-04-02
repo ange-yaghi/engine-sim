@@ -58,6 +58,9 @@ add_library(engine-sim STATIC
     src/audio_buffer.cpp
     src/filter.cpp
     src/convolution_filter.cpp
+    src/exhaust_system.cpp
+    src/intake.cpp
+    src/feedback_comb_filter.cpp
 
     # Include files
     include/delta.h
@@ -84,6 +87,9 @@ add_library(engine-sim STATIC
     include/audio_buffer.h
     include/filter.h
     include/convolution_filter.h
+    include/exhaust_system.h
+    include/intake.h
+    include/feedback_comb_filter.h
 )
 
 target_link_libraries(engine-sim

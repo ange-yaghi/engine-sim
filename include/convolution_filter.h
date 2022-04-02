@@ -1,7 +1,9 @@
 #ifndef ATG_ENGINE_SIM_CONVOLUTION_FILTER_H
 #define ATG_ENGINE_SIM_CONVOLUTION_FILTER_H
 
-class ConvolutionFilter {
+#include "filter.h"
+
+class ConvolutionFilter : public Filter {
     public:
         ConvolutionFilter();
         virtual ~ConvolutionFilter();

@@ -196,7 +196,9 @@ void EngineSimulator::placeAndInitialize() {
     }
 
     for (int i = 0; i < cylinderCount; ++i) {
-        m_combustionChambers[i].initialize(units::pressure(1, units::atm), units::celcius(25));
+        m_combustionChambers[i].initialize(
+            units::pressure(1, units::atm) + units::pressure(5.0, units::psi),
+            units::celcius(25));
     }
 
     m_engine->getIgnitionModule()->reset();
@@ -211,7 +213,7 @@ bool EngineSimulator::simulateStep(float dt) {
     if (m_currentIteration >= m_steps) {
         auto s1 = std::chrono::steady_clock::now();
 
-        const int lastFrame =
+        const long long lastFrame =
             std::chrono::duration_cast<std::chrono::microseconds>(s1 - m_simulationStart).count();
         m_physicsProcessingTime = m_physicsProcessingTime * 0.98 + 0.02 * lastFrame;
 
@@ -219,6 +221,7 @@ bool EngineSimulator::simulateStep(float dt) {
     }
 
     const double dt_sub = (float)dt / m_steps;
+
     m_system->process(dt_sub, 1);
 
     IgnitionModule *im = m_engine->getIgnitionModule();
@@ -231,6 +234,33 @@ bool EngineSimulator::simulateStep(float dt) {
         }
 
         m_combustionChambers[i].update(dt_sub);
+    }
+
+    const int iterations = 16;
+    for (int i = 0; i < iterations; ++i) {
+        for (int j = 0; j < m_engine->getExhaustSystemCount(); ++j) {
+            m_engine->getExhaustSystem(j)->start();
+            m_engine->getExhaustSystem(j)->process(dt_sub / iterations);
+        }
+
+        for (int j = 0; j < m_engine->getIntakeCount(); ++j) {
+            m_engine->getIntake(j)->start();
+            m_engine->getIntake(j)->process(dt_sub / iterations);
+        }
+
+        for (int j = 0; j < cylinderCount; ++j) {
+            m_combustionChambers[j].start();
+            m_combustionChambers[j].flow(dt_sub / iterations);
+            m_combustionChambers[j].end();
+        }
+
+        for (int j = 0; j < m_engine->getIntakeCount(); ++j) {
+            m_engine->getIntake(j)->end();
+        }
+
+        for (int j = 0; j < m_engine->getExhaustSystemCount(); ++j) {
+            m_engine->getExhaustSystem(j)->end();
+        }
     }
 
     im->resetIgnitionEvents();

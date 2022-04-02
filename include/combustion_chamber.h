@@ -45,11 +45,13 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double volume() const;
 
         void ignite();
+        void start();
         void update(double dt);
+        void flow(double dt);
+        void end();
 
         double m_blowbyK;
         double m_crankcasePressure;
-        double m_manifoldPressure;
 
         Function *m_totalPropagationToTurbulence;
         Function *m_turbulentFlameSpeed;
@@ -59,14 +61,16 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         FrictionModelParams m_frictionModel;
 
+        double m_exhaustFlow;
         double m_peakTemperature;
         double m_nBurntFuel;
         double m_turbulence;
 
-        double m_exhaustFlow;
-
     protected:
         double calculateFrictionForce(double v) const;
+
+        double m_intakeFlowRate;
+        double m_exhaustFlowRate;
 };
 
 #endif /* ATG_ENGINE_SIM_COMBUSTION_CHAMBER_H */

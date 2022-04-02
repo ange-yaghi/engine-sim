@@ -109,7 +109,7 @@ double GasSystem::flow(double k_flow, double dt, double P_env, double T_env) {
     const double flowRate =
         std::fmin(
             std::sqrt(std::abs(pressure() - P_env)) * k_flow * dt,
-            std::abs(pressureEquilibriumMaxFlow(P_env, T_env, pressure() > P_env)));
+            std::abs(pressureEquilibriumMaxFlow(P_env, T_env)));
     const double flowDirection = (pressure() < P_env)
         ? -1.0
         : 1.0;
@@ -118,13 +118,31 @@ double GasSystem::flow(double k_flow, double dt, double P_env, double T_env) {
 }
 
 double GasSystem::pressureEquilibriumMaxFlow(const GasSystem *b) const {
-    return
-        (b->volume() * kineticEnergy() - volume() * b->kineticEnergy()) /
-        (b->volume() * b->kineticEnergyPerMol() + volume() * kineticEnergyPerMol());
+    // pressure_a = (kineticEnergy() + n * b->kineticEnergyPerMol()) / (0.5 * degreesOfFreedom * volume())
+    // pressure_b = (b->kineticEnergy() - n *  / (0.5 * b->degreesOfFreedom * b->volume())
+    // pressure_a = pressure_b
+
+    // E_a = kineticEnergy()
+    // E_b = b->kineticEnergy()
+    // D_a = E_a / n()
+    // D_b = E_b / b->n()
+    // Q_a = 1 / (0.5 * degreesOfFreedom * volume())
+    // Q_b = 1 / (0.5 * b->degreesOfFreedom * b->volume())
+    // pressure_a = Q_a * (E_a + dn * D_b)
+    // pressure_b = Q_b * (E_b - dn * D_b)
+
+    if (pressure() > b->pressure()) {
+        return  (b->volume() * kineticEnergy() - volume() * b->kineticEnergy()) /
+                (b->volume() * kineticEnergyPerMol() + volume() * kineticEnergyPerMol());
+    }
+    else {
+        return  (b->volume() * kineticEnergy() - volume() * b->kineticEnergy()) /
+                (b->volume() * b->kineticEnergyPerMol() + volume() * b->kineticEnergyPerMol());
+    }
 }
 
-double GasSystem::pressureEquilibriumMaxFlow(double P_env, double T_env, bool out) const {
-    if (out) {
+double GasSystem::pressureEquilibriumMaxFlow(double P_env, double T_env) const {
+    if (pressure() > P_env) {
         return -(P_env * (0.5 * degreesOfFreedom * volume()) - kineticEnergy()) / kineticEnergyPerMol();
     }
     else {
