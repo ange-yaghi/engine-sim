@@ -14,6 +14,7 @@
 #include "engine_view.h"
 #include "gauge_cluster.h"
 #include "cylinder_temperature_gauge.h"
+#include "synthesizer.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -37,8 +38,13 @@ class EngineSimApplication {
         void run();
         void destroy();
 
-        void drawGenerated(const GeometryGenerator::GeometryIndices &indices, int layer = 0);
-        void drawGenerated(const GeometryGenerator::GeometryIndices &indices, int layer, dbasic::StageEnableFlags flags);
+        void drawGenerated(
+                const GeometryGenerator::GeometryIndices &indices,
+                int layer = 0);
+        void drawGenerated(
+                const GeometryGenerator::GeometryIndices &indices,
+                int layer,
+                dbasic::StageEnableFlags flags);
         GeometryGenerator *getGeometryGenerator() { return &m_geometryGenerator; }
 
         Shaders *getShaders() { return &m_shaders; }
@@ -110,6 +116,7 @@ class EngineSimApplication {
         EngineView *m_engineView;
         GaugeCluster *m_gaugeCluster;
         CylinderTemperatureGauge *m_temperatureGauge;
+        Synthesizer m_synthesizer;
 
         bool m_paused;
 

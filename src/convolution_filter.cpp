@@ -38,12 +38,22 @@ double ConvolutionFilter::f(double sample) {
     m_shiftRegister[m_shiftOffset] = sample;
 
     double result = 0;
+
+    for (int i = 0; i < m_sampleCount - m_shiftOffset; ++i) {
+        result += m_impulseResponse[i] * m_shiftRegister[i + m_shiftOffset];
+    }
+
+    for (int i = m_sampleCount - m_shiftOffset; i < m_sampleCount; ++i) {
+        result += m_impulseResponse[i] * m_shiftRegister[i - (m_sampleCount - m_shiftOffset)];
+    }
+
+    /*
     for (int i = 0; i < m_sampleCount; ++i) {
         const int shiftedIndex = (i + m_shiftOffset) % m_sampleCount;
         result += m_impulseResponse[i] * m_shiftRegister[shiftedIndex];
-    }
+    }*/
 
-    m_shiftOffset = (m_shiftOffset + 1) % m_sampleCount;
+    m_shiftOffset = (m_shiftOffset - 1 + m_sampleCount) % m_sampleCount;
 
     return result;
 }

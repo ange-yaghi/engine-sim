@@ -61,6 +61,7 @@ add_library(engine-sim STATIC
     src/exhaust_system.cpp
     src/intake.cpp
     src/feedback_comb_filter.cpp
+    src/synthesizer.cpp
 
     # Include files
     include/delta.h
@@ -90,6 +91,7 @@ add_library(engine-sim STATIC
     include/exhaust_system.h
     include/intake.h
     include/feedback_comb_filter.h
+    include/synthesizer.h
 )
 
 target_link_libraries(engine-sim
@@ -173,6 +175,7 @@ add_executable(engine-sim-test
     # Source files
     test/gas_system_tests.cpp
     test/function_test.cpp
+    test/synthesizer_tests.cpp
 )
 
 target_link_libraries(engine-sim-test
