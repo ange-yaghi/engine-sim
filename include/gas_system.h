@@ -45,6 +45,7 @@ class GasSystem {
         double volume() const;
 
         int degreesOfFreedom = 5;
+        double specificGravity = 1.0;
 
     protected:
         State state, next;

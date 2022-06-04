@@ -50,6 +50,11 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         void flow(double dt);
         void end();
 
+        double getLastIterationExhaustFlow() const { return m_exhaustFlow; }
+
+        void resetLastTimestepExhaustFlow() { m_lastTimestepTotalExhaustFlow = 0; }
+        double getLastTimestepExhaustFlow() const { return m_lastTimestepTotalExhaustFlow; }
+
         double m_blowbyK;
         double m_crankcasePressure;
 
@@ -61,7 +66,6 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         FrictionModelParams m_frictionModel;
 
-        double m_exhaustFlow;
         double m_peakTemperature;
         double m_nBurntFuel;
         double m_turbulence;
@@ -71,6 +75,9 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         double m_intakeFlowRate;
         double m_exhaustFlowRate;
+
+        double m_lastTimestepTotalExhaustFlow;
+        double m_exhaustFlow;
 };
 
 #endif /* ATG_ENGINE_SIM_COMBUSTION_CHAMBER_H */

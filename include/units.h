@@ -35,9 +35,15 @@ namespace units {
     extern constexpr double L = mL * 1000.0;
     extern constexpr double cubic_feet = foot * foot * foot;
 
-    // Flow
-    extern constexpr double m3_per_sec = m3;
-    extern constexpr double cfm = cubic_feet / 60;
+    // Molecular
+    extern constexpr double mol = 1.0;
+    extern constexpr double kmol = mol / 1000.0;
+    extern constexpr double mmol = mol / 1000000.0;
+    extern constexpr double lbmol = mol * 453.59237;
+
+    // Flow-rate (moles)
+    extern constexpr double mol_per_sec = mol;
+    extern constexpr double scfm = 0.002641 * lbmol;
 
     // Area
     extern constexpr double m2 = 1.0;
@@ -49,7 +55,7 @@ namespace units {
     extern constexpr double MPa = Pa * 1000000.0;
 
     extern constexpr double psi = lbf / (inch * inch);
-    extern constexpr double inHg = Pa * 0.00029530;
+    extern constexpr double inHg = Pa * 3386.3886666666713;
 
     // Temperature
     extern constexpr double K = 1.0;

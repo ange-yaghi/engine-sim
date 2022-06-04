@@ -6,6 +6,7 @@ Intake::Intake() {
     m_inputFlowK = 0;
     m_flow = 0;
     m_throttle = 1.0;
+    m_flowRate = 0;
 }
 
 Intake::~Intake() {

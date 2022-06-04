@@ -209,7 +209,7 @@ void EngineSimulator::start() {
     m_currentIteration = 0;
 }
 
-bool EngineSimulator::simulateStep(float dt) {
+bool EngineSimulator::simulateStep(double dt) {
     if (m_currentIteration >= m_steps) {
         auto s1 = std::chrono::steady_clock::now();
 
@@ -219,8 +219,13 @@ bool EngineSimulator::simulateStep(float dt) {
 
         return false;
     }
+    else if (m_currentIteration == 0) {
+        for (int j = 0; j < m_engine->getIntakeCount(); ++j) {
+            m_engine->getIntake(j)->m_flowRate = 0;
+        }
+    }
 
-    const double dt_sub = (float)dt / m_steps;
+    const double dt_sub = dt / m_steps;
 
     m_system->process(dt_sub, 1);
 
@@ -236,6 +241,10 @@ bool EngineSimulator::simulateStep(float dt) {
         m_combustionChambers[i].update(dt_sub);
     }
 
+    for (int i = 0; i < cylinderCount; ++i) {
+        m_combustionChambers[i].resetLastTimestepExhaustFlow();
+    }
+
     const int iterations = 16;
     for (int i = 0; i < iterations; ++i) {
         for (int j = 0; j < m_engine->getExhaustSystemCount(); ++j) {
@@ -246,6 +255,9 @@ bool EngineSimulator::simulateStep(float dt) {
         for (int j = 0; j < m_engine->getIntakeCount(); ++j) {
             m_engine->getIntake(j)->start();
             m_engine->getIntake(j)->process(dt_sub / iterations);
+
+            m_engine->getIntake(j)->m_flowRate +=
+                -m_engine->getIntake(j)->m_flow / dt;
         }
 
         for (int j = 0; j < cylinderCount; ++j) {

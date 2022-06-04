@@ -53,7 +53,7 @@ EngineSimApplication::EngineSimApplication() {
     m_audioSyncedTimeDelta = 0;
 
     m_engineView = nullptr;
-    m_gaugeCluster = nullptr;
+    m_rightGaugeCluster = nullptr;
     m_temperatureGauge = nullptr;
 
     m_oscillatorDataLeft = "../assets/oscillator_data_left.csv";
@@ -197,7 +197,7 @@ void EngineSimApplication::initialize() {
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
-    crankshaftParams.FlywheelMass = units::mass(29, units::lb);
+    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 20;
     crankshaftParams.Mass = units::mass(75, units::lb);
 
     // Temporary moment of inertia approximation
@@ -259,10 +259,10 @@ void EngineSimApplication::initialize() {
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(20, units::deg));
     camLift0->addSample(0.0, units::distance(500, units::thou));
-    camLift0->addSample(-units::angle(20, units::deg), units::distance(400, units::thou));
-    camLift0->addSample(units::angle(20, units::deg), units::distance(400, units::thou));
-    camLift0->addSample(-units::angle(40, units::deg), units::distance(10, units::thou));
-    camLift0->addSample(units::angle(40, units::deg), units::distance(10, units::thou));
+    camLift0->addSample(-units::angle(20, units::deg), units::distance(250, units::thou));
+    camLift0->addSample(units::angle(20, units::deg), units::distance(250, units::thou));
+    camLift0->addSample(-units::angle(40, units::deg), units::distance(50, units::thou));
+    camLift0->addSample(units::angle(40, units::deg), units::distance(50, units::thou));
     camLift0->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -273,8 +273,8 @@ void EngineSimApplication::initialize() {
     camLift1->addSample(0.0, units::distance(500, units::thou));
     camLift1->addSample(-units::angle(20, units::deg), units::distance(250, units::thou));
     camLift1->addSample(units::angle(20, units::deg), units::distance(250, units::thou));
-    camLift1->addSample(-units::angle(40, units::deg), units::distance(10, units::thou));
-    camLift1->addSample(units::angle(40, units::deg), units::distance(10, units::thou));
+    camLift1->addSample(-units::angle(40, units::deg), units::distance(100, units::thou));
+    camLift1->addSample(units::angle(40, units::deg), units::distance(100, units::thou));
     camLift1->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
     camLift1->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
     camLift1->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -292,7 +292,7 @@ void EngineSimApplication::initialize() {
     intakeCamRight->initialize(camParams);
 
     // 1 8 4 3 6 5 7 2
-    const double lobeSeparation = 110;
+    const double lobeSeparation = 114;
     exhaustCamRight->setLobeCenterline(0, units::angle(360 - lobeSeparation, units::deg));
     exhaustCamRight->setLobeCenterline(1, units::angle(360 - lobeSeparation, units::deg) + 3 * units::angle(360, units::deg) / 4);
     exhaustCamRight->setLobeCenterline(2, units::angle(360 - lobeSeparation, units::deg) + 5 * units::angle(360, units::deg) / 4);
@@ -314,7 +314,7 @@ void EngineSimApplication::initialize() {
     // n = PV / RT
     const double flow_t = units::celcius(25.0);
     const double P = units::pressure(1.0, units::psi);
-    const double v = units::flow(1, units::cfm);
+    const double v = 0.001;
     const double n_flow = 1.0 * (P * v) / (Constants::R * flow_t);
 
     Function *flow = new Function;
@@ -331,14 +331,14 @@ void EngineSimApplication::initialize() {
     exhaustFlow->addSample(units::distance(0, units::thou), 0.0);
     exhaustFlow->addSample(units::distance(100, units::thou), n_flow * 70);
     exhaustFlow->addSample(units::distance(200, units::thou), n_flow * 133);
-    exhaustFlow->addSample(units::distance(300, units::thou), n_flow * 180);
+    exhaustFlow->addSample(units::distance(300, units::thou), n_flow * 180 );
     exhaustFlow->addSample(units::distance(400, units::thou), n_flow * 215);
     exhaustFlow->addSample(units::distance(500, units::thou), n_flow * 237);
 
     CylinderHead::Parameters chParams;
     chParams.IntakePortFlow = flow;
     chParams.ExhaustPortFlow = exhaustFlow;
-    chParams.CombustionChamberVolume = units::volume(118.0 + 50, units::cc);
+    chParams.CombustionChamberVolume = units::volume(118.0, units::cc);
 
     chParams.IntakeCam = intakeCamLeft;
     chParams.ExhaustCam = exhaustCamLeft;
@@ -351,7 +351,7 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getHead(1)->initialize(chParams);
 
     Intake::Parameters inParams;
-    inParams.inputFlowK = n_flow * 200;
+    inParams.inputFlowK = n_flow * 100;
     inParams.volume = units::volume(5000.0, units::cc);
     m_iceEngine.getIntake(0)->initialize(inParams);
 
@@ -402,19 +402,19 @@ void EngineSimApplication::initialize() {
     m_uiManager.initialize(this);
 
     m_engineView = m_uiManager.getRoot()->addElement<EngineView>();
-    m_gaugeCluster = m_uiManager.getRoot()->addElement<GaugeCluster>();
-    m_gaugeCluster->m_simulator = &m_simulator;
+    m_rightGaugeCluster = m_uiManager.getRoot()->addElement<RightGaugeCluster>();
+    m_rightGaugeCluster->m_simulator = &m_simulator;
 
-    m_temperatureGauge = m_uiManager.getRoot()->addElement<CylinderTemperatureGauge>();
-    m_temperatureGauge->m_simulator = &m_simulator;
+    //m_temperatureGauge = m_uiManager.getRoot()->addElement<CylinderTemperatureGauge>();
+    //m_temperatureGauge->m_simulator = &m_simulator;
 
     m_oscilloscope = m_uiManager.getRoot()->addElement<Oscilloscope>();
     m_oscilloscope->setBufferSize(44100 / 30);
     m_oscilloscope->m_bounds = Bounds(200.0f, 200.0f, { 0.0f, 0.0f });
     m_oscilloscope->setLocalPosition({ 50.0f, 900.0f });
     m_oscilloscope->m_xMin = 0.0f;
-    m_oscilloscope->m_xMax = 44100 / 60.0;
-    m_oscilloscope->m_yMin = 0.0; // -units::pressure(1.0, units::psi);
+    m_oscilloscope->m_xMax = 44100 / 8;
+    m_oscilloscope->m_yMin = -1.0; // -units::pressure(1.0, units::psi);
     m_oscilloscope->m_yMax = 1.0; // units::pressure(1.0, units::psi);
     m_oscilloscope->m_lineWidth = 1.0f;
     m_oscilloscope->m_drawReverse = true;
@@ -453,12 +453,9 @@ void EngineSimApplication::initialize() {
 void EngineSimApplication::process(float frame_dt) {
     const int steps = 9000;
 
-    const int audioPosition = m_audioSource->GetCurrentPosition();
-    const int sampleDelta = frame_dt * 44100;
-
     double speed = 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::Control)) {
-        speed = 1 / 30.0;
+        speed = 1 / 100.0;
     }
 
     //const double rt_dt = frame_dt; // m_audioBuffer.offsetToTime(sampleDelta);
@@ -468,7 +465,13 @@ void EngineSimApplication::process(float frame_dt) {
     m_simulator.m_steps = std::round(rt_dt / timestep);
 
     if (m_synthesizer.getInputWriteOffset() < 1000) {
-        m_simulator.m_steps += 1;
+        ++m_simulator.m_steps;
+    }
+    else if (m_synthesizer.getInputWriteOffset() > 1000) {
+        m_simulator.m_steps -= (m_synthesizer.getInputWriteOffset() - 1000);
+        if (m_simulator.m_steps < 0) {
+            m_simulator.m_steps = 0;
+        }
     }
 
     const double dt = m_simulator.m_steps * timestep;
@@ -477,31 +480,26 @@ void EngineSimApplication::process(float frame_dt) {
     m_averageAudioSyncedTimeDelta =
         m_audioSyncedTimeDelta * 0.01 + m_averageAudioSyncedTimeDelta * 0.99;
 
-    if (sampleDelta == 0) return;
-
-    m_lastAudioSample = audioPosition;
     m_simulator.start();
 
     m_dynoSpeed = std::fmodf(
         (float)(m_dynoSpeed + units::rpm(300) * dt),
-        (float)units::rpm(6000));
-    m_dynoSpeed = units::rpm(500);
+        (float)units::rpm(9000));
+    //m_dynoSpeed = units::rpm(500);
 
     int i = 0;
-    while (m_simulator.simulateStep(dt)) {
-        const double t =
-            m_simulator.getCurrentIteration() * timestep;
-
+    while (m_simulator.simulateStep(dt * speed)) {
         double data[8];
         data[0] = data[1] = 0;
 
-        // 1 8 4 3 5 7 2
+        // 1 8 4 3 6 5 7 2
         for (int i = 0; i < 8; ++i) {
-            if (i % 2 == 0) {
-                data[0] += 50000 * m_simulator.getCombustionChamber(i)->m_exhaustFlow / dt;
+            const double exhaustFlow = m_simulator.getCombustionChamber(i)->getLastTimestepExhaustFlow();
+            if (i % 2 == 0) { //i == 1 || i == 4 || i == 6 || i == 7) {
+                data[0] += 50000 * exhaustFlow / (dt * speed);
             }
             else {
-                data[1] += 50000 * m_simulator.getCombustionChamber(i)->m_exhaustFlow / dt;
+                data[1] += 50000 * exhaustFlow / (dt * speed);
             }
         }
 
@@ -532,16 +530,22 @@ void EngineSimApplication::process(float frame_dt) {
 
     //maxWrite = 44100 / 60.0;
 
+    static int oscSampleOffset = 0;
+
     int16_t *samples = new int16_t[maxWrite];
     const int readSamples = m_synthesizer.readAudioOutput(maxWrite, samples);
 
     for (int i = 0; i < readSamples; ++i) {
         const int16_t sample = samples[i];
-        m_oscilloscope->addDataPoint(
-            i,
-            sample / (60000.0f));
+        if (oscSampleOffset % 2 == 0) {
+            m_oscilloscope->addDataPoint(
+                oscSampleOffset,
+                sample / (float)(INT16_MAX));
+        }
 
         m_audioBuffer.writeSample(sample, m_audioBuffer.m_writePointer, i);
+
+        oscSampleOffset = (oscSampleOffset + 1) % (44100 / 8);
     }
 
     delete[] samples;
@@ -676,17 +680,23 @@ void EngineSimApplication::run() {
         }
 
         double throttle = 0.999;
-        if (m_engine.IsKeyDown(ysKey::Code::A)) {
+        if (m_engine.IsKeyDown(ysKey::Code::Q)) {
+            throttle = 0.98;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::W)) {
+            throttle = 0.95;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::E)) {
+            throttle = 0.8;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::R)) {
             throttle = 0.0;
         }
-        else if (m_engine.IsKeyDown(ysKey::Code::S)) {
-            throttle = 1.0;
-        }
 
-        m_iceEngine.getIntake(0)->m_throttle = throttle;
+        m_iceEngine.setThrottle(throttle);
 
         m_dyno.setSpeed(m_dynoSpeed);
-        m_dyno.setSpeed(units::rpm(500.0));
+        //m_dyno.setSpeed(units::rpm(500.0));
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_dyno.setEnabled(!m_dyno.isEnabled());
@@ -818,13 +828,13 @@ void EngineSimApplication::renderScene() {
 
     Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
     Grid grid;
-    grid.v_cells = 16;
-    grid.h_cells = 19;
-    m_engineView->m_bounds = grid.get(windowBounds, 4, 1, 11, 11);
+    grid.v_cells = 2;
+    grid.h_cells = 3;
+    m_engineView->m_bounds = grid.get(windowBounds, 1, 0, 1, 1);
     m_engineView->setLocalPosition({ 0, 0 });
 
-    m_gaugeCluster->m_bounds = grid.get(windowBounds, 14, 1, 5, 11);
-    m_temperatureGauge->m_bounds = grid.get(windowBounds, 0, 1, 4, 11);
+    m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 2);
+    //m_temperatureGauge->m_bounds = grid.get(windowBounds, 0, 1, 4, 11);
 
     m_geometryGenerator.reset();
 

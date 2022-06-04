@@ -22,6 +22,11 @@ CombustionChamber::CombustionChamber() {
     m_turbulentFlameSpeed = nullptr;
     m_nBurntFuel = 0;
     m_turbulence = 0;
+
+    m_lastTimestepTotalExhaustFlow = 0;
+    m_exhaustFlow = 0;
+    m_exhaustFlowRate = 0;
+    m_intakeFlowRate = 0;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -122,14 +127,19 @@ void CombustionChamber::flow(double dt) {
             &m_head->m_exhaustSystems[m_piston->m_cylinderIndex]->m_system);
 
     m_exhaustFlow = exhaustFlow;
-    const double netFlow = (exhaustFlow + intakeFlow);
+    m_lastTimestepTotalExhaustFlow += exhaustFlow;
+    const double netFlow = exhaustFlow + intakeFlow;
 
     if (netFlow <= 0) {
-        m_turbulence += 30000 * netFlow * netFlow * 12;
+        m_turbulence += -0.5 * netFlow * 12 * 3;
     }
     else {
         if (start_n > 0) {
-            m_turbulence -= m_turbulence * (netFlow / start_n);
+            m_turbulence -= 2 * m_turbulence * (netFlow / start_n);
+
+            if (m_turbulence < 0) {
+                m_turbulence = 0;
+            }
         }
     }
 
@@ -141,9 +151,9 @@ void CombustionChamber::flow(double dt) {
         const double lastTravel_y = m_flameEvent.travel_y * expansion;
 
         const double turbulence = erfApproximation(m_turbulence * m_flameEvent.turbulence);
-        const double turbulentFlameSpeed = units::distance(15.0, units::m);
+        const double turbulentFlameSpeed = units::distance(30.0, units::m);
         const double flameSpeed =
-            turbulence * turbulentFlameSpeed + (1 - turbulence) * units::distance(0.7, units::m);
+            turbulence * turbulentFlameSpeed + (1 - turbulence) * units::distance(0.03, units::m);
 
         m_flameEvent.travel_x =
             std::fmin(lastTravel_x + dt * flameSpeed, totalTravel_x);

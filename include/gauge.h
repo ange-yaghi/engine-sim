@@ -6,6 +6,8 @@
 #include "engine.h"
 #include "engine_simulator.h"
 
+#include <string>
+
 class Gauge : public UiElement {
     public:
         struct Band {
@@ -13,6 +15,9 @@ class Gauge : public UiElement {
             float start;
             float end;
             float width;
+            float radial_offset = 0.0f;
+            float shorten_start = 0.0f;
+            float shorten_end = 0.0f;
         };
 
     public:

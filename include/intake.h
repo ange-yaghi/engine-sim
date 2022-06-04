@@ -27,6 +27,8 @@ class Intake : public Part {
         double m_throttle;
         double m_inputFlowK;
         double m_flow;
+
+        double m_flowRate;
 };
 
 #endif /* ATG_ENGINE_SIM_INTAKE_H */

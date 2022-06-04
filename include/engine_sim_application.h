@@ -12,7 +12,7 @@
 #include "convolution_filter.h"
 #include "shaders.h"
 #include "engine_view.h"
-#include "gauge_cluster.h"
+#include "right_gauge_cluster.h"
 #include "cylinder_temperature_gauge.h"
 #include "synthesizer.h"
 
@@ -114,7 +114,7 @@ class EngineSimApplication {
         UiManager m_uiManager;
         Oscilloscope *m_oscilloscope;
         EngineView *m_engineView;
-        GaugeCluster *m_gaugeCluster;
+        RightGaugeCluster *m_rightGaugeCluster;
         CylinderTemperatureGauge *m_temperatureGauge;
         Synthesizer m_synthesizer;
 

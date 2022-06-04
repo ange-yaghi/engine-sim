@@ -2,6 +2,7 @@
 
 #include "../include/constants.h"
 
+#include <cmath>
 #include <assert.h>
 
 Engine::Engine() {
@@ -17,6 +18,8 @@ Engine::Engine() {
     m_cylinderBankCount = 0;
     m_cylinderCount = 0;
     m_intakeCount = 0;
+
+    m_throttle = 0.0f;
 }
 
 Engine::~Engine() {
@@ -80,6 +83,54 @@ void Engine::destroy() {
     m_heads = nullptr;
     m_exhaustSystems = nullptr;
     m_intakes = nullptr;
+}
+
+void Engine::setThrottle(double throttle) {
+    const float throttlePlateThrottle = std::cos(throttle * 3.14159 / 2);
+    for (int i = 0; i < m_intakeCount; ++i) {
+        m_intakes[i].m_throttle = throttle;
+    }
+
+    m_throttle = throttle;
+}
+
+double Engine::getThrottle() const {
+    return m_throttle;
+}
+
+double Engine::getDisplacement() const {
+    double displacement = 0;
+    for (int i = 0; i < m_cylinderCount; ++i) {
+        const Piston &piston = m_pistons[i];
+        const CylinderBank &bank = *piston.m_bank;
+        const ConnectingRod &rod = *piston.m_rod;
+        const Crankshaft &shaft = *rod.m_crankshaft;
+
+        const double r = bank.m_bore / 2.0;
+        const double V = Constants::pi * r * r * shaft.m_throw;
+
+        displacement += V;
+    }
+
+    return displacement;
+}
+
+double Engine::getIntakeFlowRate() const {
+    double airIntake = 0;
+    for (int i = 0; i < m_intakeCount; ++i) {
+        airIntake += m_intakes[i].m_flowRate;
+    }
+
+    return airIntake;
+}
+
+double Engine::getManifoldPressure() const {
+    double averagePressure = 0.0;
+    for (int i = 0; i < m_intakeCount; ++i) {
+        averagePressure += m_intakes[i].m_system.pressure();
+    }
+
+    return averagePressure / m_intakeCount;
 }
 
 double Engine::getRpm() const {

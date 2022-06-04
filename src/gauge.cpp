@@ -132,19 +132,19 @@ void Gauge::render() {
     ringParams.drawArrow = false;
     ringParams.center_x = origin.x;
     ringParams.center_y = origin.y;
-    ringParams.outerRadius = outerRadius;
     ringParams.maxEdgeLength = pixelsToUnits(5);
     for (const Band &band : m_bands) {
-        ringParams.innerRadius = outerRadius - pixelsToUnits(band.width);
+        ringParams.outerRadius = outerRadius + pixelsToUnits(band.radial_offset);
+        ringParams.innerRadius = outerRadius + pixelsToUnits(band.radial_offset - band.width);
 
-        const float s0 = std::powf((float)band.start / std::abs(m_max - m_min), m_gamma);
+        const float s0 = std::powf((float)(band.start - m_min) / std::abs(m_max - m_min), m_gamma);
         const float angle0 = s0 * m_thetaMax + (1 - s0) * m_thetaMin;
 
-        const float s1 = std::powf((float)band.end / std::abs(m_max - m_min), m_gamma);
+        const float s1 = std::powf((float)(band.end - m_min) / std::abs(m_max - m_min), m_gamma);
         const float angle1 = s1 * m_thetaMax + (1 - s1) * m_thetaMin;
 
-        ringParams.startAngle = std::fminf(angle0, angle1);
-        ringParams.endAngle = std::fmaxf(angle0, angle1);
+        ringParams.startAngle = std::fminf(angle0, angle1) + band.shorten_end;
+        ringParams.endAngle = std::fmaxf(angle0, angle1) - band.shorten_start;
 
         GeometryGenerator::GeometryIndices bandIndices;
         generator->startShape();

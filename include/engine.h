@@ -29,6 +29,13 @@ class Engine : public Part {
         void initialize(const Parameters &params);
         virtual void destroy();
 
+        virtual void setThrottle(double throttle);
+        virtual double getThrottle() const;
+        virtual double getDisplacement() const;
+        virtual double getIntakeFlowRate() const;
+
+        virtual double getManifoldPressure() const;
+
         int getCylinderBankCount() const { return m_cylinderBankCount; }
         int getCylinderCount() const { return m_cylinderCount; }
         int getCrankshaftCount() const { return m_crankshaftCount; }
@@ -65,6 +72,8 @@ class Engine : public Part {
         int m_intakeCount;
 
         IgnitionModule m_ignitionModule;
+
+        float m_throttle;
 };
 
 #endif /* ATG_ENGINE_SIM_ENGINE_H */

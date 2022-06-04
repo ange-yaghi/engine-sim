@@ -24,7 +24,7 @@ class EngineSimulator {
         void placeAndInitialize();
 
         void start();
-        bool simulateStep(float dt);
+        bool simulateStep(double dt);
         void destroy();
 
         int getCurrentIteration() const { return m_currentIteration; }

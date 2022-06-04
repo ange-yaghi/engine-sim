@@ -124,8 +124,10 @@ add_executable(engine-sim-app WIN32
     src/oscilloscope.cpp
     src/shaders.cpp
     src/engine_view.cpp
-    src/gauge_cluster.cpp
+    src/right_gauge_cluster.cpp
     src/cylinder_temperature_gauge.cpp
+    src/labeled_gauge.cpp
+    src/throttle_display.cpp
 
     # Include files
     include/delta.h
@@ -149,8 +151,10 @@ add_executable(engine-sim-app WIN32
     include/oscilloscope.h
     include/shaders.h
     include/engine_view.h
-    include/gauge_cluster.h
+    include/right_gauge_cluster.h
     include/cylinder_temperature_gauge.h
+    include/labeled_gauge.h
+    include/throttle_display.h
 )
 
 target_link_libraries(engine-sim-app
