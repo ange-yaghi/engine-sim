@@ -33,8 +33,7 @@ class GasSystem {
         void changeEnergy(double dE);
 
         double react(double n, const Mix &mix);
-        double flow(double dn, GasSystem *target);
-        double flow(double dn, double T_env, const Mix &mix = {});
+        double flow(double dn, double E_k_per_mol, const Mix &mix = {});
         double loseN(double dn);
         double gainN(double dn, double E_k_per_mol, const Mix &mix = {});
 

@@ -108,6 +108,7 @@ double GasSystem::react(double n, const Mix &mix) {
     return a_n_fuel;
 }
 
+/*
 double GasSystem::flow(double dn, GasSystem *target) {
     double flow = 0;
     if (dn >= 0) {
@@ -120,14 +121,13 @@ double GasSystem::flow(double dn, GasSystem *target) {
     }
 
     return flow;
-}
+}*/
 
-double GasSystem::flow(double dn, double T_env, const Mix &mix) {
+double GasSystem::flow(double dn, double E_k_per_mol, const Mix &mix) {
     if (dn >= 0) {
         return loseN(dn);
     }
     else {
-        const double E_k_per_mol = 0.5 * T_env * Constants::R * degreesOfFreedom;
         return gainN(-dn, E_k_per_mol, mix);
     }
 }
@@ -167,7 +167,10 @@ double GasSystem::flow(double k_flow, double dt, GasSystem *target) {
         ? -1.0
         : 1.0;
 
-    return flow(flowDirection * flowRate, target);
+    const double dn = flow(flowDirection * flowRate, target->kineticEnergyPerMol(), target->mix());
+    target->flow(-dn, kineticEnergyPerMol(), mix());
+
+    return dn;
 }
 
 double GasSystem::flow(double k_flow, double dt, double P_env, double T_env, const Mix &mix) {
@@ -179,7 +182,8 @@ double GasSystem::flow(double k_flow, double dt, double P_env, double T_env, con
         ? -1.0
         : 1.0;
 
-    return flow(flowDirection * flowRate, T_env, mix);
+    const double E_k_per_mol = 0.5 * T_env * Constants::R * degreesOfFreedom;
+    return flow(flowDirection * flowRate, E_k_per_mol, mix);
 }
 
 double GasSystem::pressureEquilibriumMaxFlow(const GasSystem *b) const {
