@@ -49,8 +49,8 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_tachometer->m_gauge->m_minorStep = 100;
     m_tachometer->m_gauge->m_majorStep = 1000;
     m_tachometer->m_gauge->m_maxMinorTick = 7000;
-    m_tachometer->m_gauge->m_thetaMin = Constants::pi * 1.2;
-    m_tachometer->m_gauge->m_thetaMax = -0.2 * Constants::pi;
+    m_tachometer->m_gauge->m_thetaMin = constants::pi * 1.2;
+    m_tachometer->m_gauge->m_thetaMax = -0.2 * constants::pi;
     m_tachometer->m_gauge->m_needleWidth = 4.0;
     m_tachometer->m_gauge->m_gamma = 1.0f;
     m_tachometer->m_gauge->m_needleKs = 1000.0f;
@@ -72,8 +72,8 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_speedometer->m_gauge->m_minorStep = 5;
     m_speedometer->m_gauge->m_majorStep = 10;
     m_speedometer->m_gauge->m_maxMinorTick = 200;
-    m_speedometer->m_gauge->m_thetaMin = Constants::pi * 1.2;
-    m_speedometer->m_gauge->m_thetaMax = -0.2 * Constants::pi;
+    m_speedometer->m_gauge->m_thetaMin = constants::pi * 1.2;
+    m_speedometer->m_gauge->m_thetaMax = -0.2 * constants::pi;
     m_speedometer->m_gauge->m_needleWidth = 4.0;
     m_speedometer->m_gauge->m_gamma = 1.0f;
     m_speedometer->m_gauge->m_needleKs = 1000.0f;
@@ -89,8 +89,8 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_manifoldVacuumGauge->m_gauge->m_minorStep = 1;
     m_manifoldVacuumGauge->m_gauge->m_majorStep = 5;
     m_manifoldVacuumGauge->m_gauge->m_maxMinorTick = 200;
-    m_manifoldVacuumGauge->m_gauge->m_thetaMin = Constants::pi * 1.2;
-    m_manifoldVacuumGauge->m_gauge->m_thetaMax = -0.2 * Constants::pi;
+    m_manifoldVacuumGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
+    m_manifoldVacuumGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
     m_manifoldVacuumGauge->m_gauge->m_needleWidth = 4.0;
     m_manifoldVacuumGauge->m_gauge->m_gamma = 1.0f;
     m_manifoldVacuumGauge->m_gauge->m_needleKs = 1000.0f;
@@ -117,8 +117,8 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_volumetricEffGauge->m_gauge->m_minorStep = 5;
     m_volumetricEffGauge->m_gauge->m_majorStep = 10;
     m_volumetricEffGauge->m_gauge->m_maxMinorTick = 200;
-    m_volumetricEffGauge->m_gauge->m_thetaMin = Constants::pi * 1.2;
-    m_volumetricEffGauge->m_gauge->m_thetaMax = -0.2 * Constants::pi;
+    m_volumetricEffGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
+    m_volumetricEffGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
     m_volumetricEffGauge->m_gauge->m_needleWidth = 4.0;
     m_volumetricEffGauge->m_gauge->m_gamma = 1.0f;
     m_volumetricEffGauge->m_gauge->m_needleKs = 1000.0f;
@@ -140,8 +140,8 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_intakeCfmGauge->m_gauge->m_minorStep = 20;
     m_intakeCfmGauge->m_gauge->m_majorStep = 100;
     m_intakeCfmGauge->m_gauge->m_maxMinorTick = 1200;
-    m_intakeCfmGauge->m_gauge->m_thetaMin = Constants::pi * 1.2;
-    m_intakeCfmGauge->m_gauge->m_thetaMax = -0.2 * Constants::pi;
+    m_intakeCfmGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
+    m_intakeCfmGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
     m_intakeCfmGauge->m_gauge->m_needleWidth = 4.0;
     m_intakeCfmGauge->m_gauge->m_gamma = 1.0f;
     m_intakeCfmGauge->m_gauge->m_needleKs = 1000.0f;
@@ -219,13 +219,13 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
     // PV = nRT
     const double rpm = engine->getRpm();
     const double theoreticalAirPerRevolution = (ambientPressure * engine->getDisplacement())
-        / (Constants::R * ambientTemperature);
+        / (constants::R * ambientTemperature);
     const double theoreticalAirPerSecond = theoreticalAirPerRevolution * rpm / 60.0;
     const double actualAirPerSecond = engine->getIntakeFlowRate();
 
     const Bounds cfmBounds = grid.get(right, 0, 1, 1, 1);
     m_intakeCfmGauge->m_bounds = cfmBounds;
-    m_intakeCfmGauge->m_gauge->m_value = units::convert(actualAirPerSecond * 60, units::scfm);
+    m_intakeCfmGauge->m_gauge->m_value = units::convert(actualAirPerSecond, units::scfm);
 
     const Bounds volumetricEfficiencyBounds = grid.get(right, 0, 2, 1, 1);
     m_volumetricEffGauge->m_bounds = volumetricEfficiencyBounds;

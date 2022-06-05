@@ -182,8 +182,8 @@ void EngineSimulator::placeAndInitialize() {
 
         const double theta = ((e_y - p_y) > 0)
             ? std::acos((e_x - p_x) / rod->m_length)
-            : 2 * Constants::pi - std::acos((e_x - p_x) / rod->m_length);
-        rod->m_body.theta = theta - Constants::pi / 2;
+            : 2 * constants::pi - std::acos((e_x - p_x) / rod->m_length);
+        rod->m_body.theta = theta - constants::pi / 2;
 
         double cl_x, cl_y;
         rod->m_body.localToWorld(0, rod->getBigEndLocal(), &cl_x, &cl_y);
@@ -192,7 +192,7 @@ void EngineSimulator::placeAndInitialize() {
 
         piston->m_body.p_x = e_x + rod->m_crankshaft->m_p_x;
         piston->m_body.p_y = e_y + rod->m_crankshaft->m_p_y;
-        piston->m_body.theta = bank->m_angle + Constants::pi;
+        piston->m_body.theta = bank->m_angle + constants::pi;
     }
 
     for (int i = 0; i < cylinderCount; ++i) {
@@ -245,7 +245,7 @@ bool EngineSimulator::simulateStep(double dt) {
         m_combustionChambers[i].resetLastTimestepExhaustFlow();
     }
 
-    const int iterations = 16;
+    constexpr int iterations = 16;
     for (int i = 0; i < iterations; ++i) {
         for (int j = 0; j < m_engine->getExhaustSystemCount(); ++j) {
             m_engine->getExhaustSystem(j)->start();

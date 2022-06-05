@@ -1,7 +1,7 @@
 #ifndef ATG_ENGINE_SIM_CONSTANTS_H
 #define ATG_ENGINE_SIM_CONSTANTS_H
 
-namespace Constants {
+namespace constants {
 
     extern constexpr double pi = 3.14159;
     extern constexpr double R = 8.31446261815324;

@@ -4,7 +4,7 @@
 #include "../include/constants.h"
 
 Gauge::Gauge() {
-    m_thetaMin = Constants::pi;
+    m_thetaMin = constants::pi;
     m_thetaMax = 0.0f;
 
     m_min = m_max = 0;

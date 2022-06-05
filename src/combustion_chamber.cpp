@@ -96,7 +96,7 @@ void CombustionChamber::ignite() {
         const double r = (double)rand() / RAND_MAX;
         const double s = ((fuel_air_ratio - fuel_air_low) / (fuel_air_high - fuel_air_low)) * (r * 0.5 + 0.5);
 
-        m_flameEvent.efficiency = 0.7 + 0.1 * ((double)rand() / RAND_MAX);
+        m_flameEvent.efficiency = 0.7 + 0.3 * ((double)rand() / RAND_MAX);
         m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
 
         if (rand() % 4 == 0) {
@@ -175,9 +175,9 @@ void CombustionChamber::flow(double dt) {
         if (lastTravel_x < m_flameEvent.travel_x || lastTravel_y < m_flameEvent.travel_y) {
             const double burnedVolume =
                 m_flameEvent.travel_x * m_flameEvent.travel_x
-                * Constants::pi * m_flameEvent.travel_y;
+                * constants::pi * m_flameEvent.travel_y;
             const double prevBurnedVolume =
-                lastTravel_x * lastTravel_x * Constants::pi * lastTravel_y;
+                lastTravel_x * lastTravel_x * constants::pi * lastTravel_y;
             const double litVolume = burnedVolume - prevBurnedVolume;
             const double n = (litVolume / volume()) * m_system.n();
             //m_system.changeTemperature(m_flameEvent.temperature, n);
@@ -218,12 +218,12 @@ double CombustionChamber::calculateFrictionForce(double v_s) const {
         + m_piston->m_cylinderConstraint->F_y[0][0] * m_piston->m_cylinderConstraint->F_y[0][0]);
 
     const double F_coul = m_frictionModel.frictionCoeff * cylinderWallForce;
-    const double v_st = m_frictionModel.breakawayFrictionVelocity * Constants::root_2;
+    const double v_st = m_frictionModel.breakawayFrictionVelocity * constants::root_2;
     const double v_coul = m_frictionModel.breakawayFrictionVelocity / 10;
     const double F_brk = m_frictionModel.breakawayFriction;
     const double v = std::abs(v_s);
 
-    const double F_0 = Constants::root_2 * Constants::e * (F_brk - F_coul);
+    const double F_0 = constants::root_2 * constants::e * (F_brk - F_coul);
     const double F_1 = v / v_st;
     const double F_2 = std::exp(-F_1 * F_1) * F_1;
     const double F_3 = F_coul * std::tanh(v / v_coul);
@@ -233,7 +233,7 @@ double CombustionChamber::calculateFrictionForce(double v_s) const {
 }
 
 void CombustionChamber::apply(atg_scs::SystemState *system) {
-    const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * Constants::pi;
+    const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * constants::pi;
     const double v_x = system->v_x[m_piston->m_body.index];
     const double v_y = system->v_y[m_piston->m_body.index];
 

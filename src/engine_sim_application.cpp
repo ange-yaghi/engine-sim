@@ -188,11 +188,11 @@ void EngineSimApplication::initialize() {
     cbParams.DeckHeight = units::distance(9.8, units::inch);
 
     cbParams.Index = 0;
-    cbParams.Angle = Constants::pi / 4;
+    cbParams.Angle = constants::pi / 4;
     m_iceEngine.getCylinderBank(0)->initialize(cbParams);
 
     cbParams.Index = 1;
-    cbParams.Angle = -Constants::pi / 4;
+    cbParams.Angle = -constants::pi / 4;
     m_iceEngine.getCylinderBank(1)->initialize(cbParams);
 
     Crankshaft::Parameters crankshaftParams;
@@ -211,12 +211,12 @@ void EngineSimApplication::initialize() {
     crankshaftParams.Pos_x = 0;
     crankshaftParams.Pos_y = 0;
     crankshaftParams.RodJournals = 4;
-    crankshaftParams.TDC = Constants::pi / 4 - 2 * Constants::pi;
+    crankshaftParams.TDC = constants::pi / 4 - 2 * constants::pi;
     m_iceEngine.getCrankshaft(0)->initialize(crankshaftParams);
     m_iceEngine.getCrankshaft(0)->setRodJournalAngle(0, 0);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(1, -Constants::pi / 2);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(2, -3 * Constants::pi / 2);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(3, Constants::pi);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(1, -constants::pi / 2);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(2, -3 * constants::pi / 2);
+    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(3, constants::pi);
 
     ConnectingRod::Parameters crParams;
     crParams.CenterOfMass = 0;
@@ -258,19 +258,23 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
-    camLift0->addSample(0.0, units::distance(600, units::thou));
-    camLift0->addSample(-units::angle(10, units::deg), units::distance(550, units::thou));
-    camLift0->addSample(units::angle(10, units::deg), units::distance(550, units::thou));
-    camLift0->addSample(-units::angle(20, units::deg), units::distance(500, units::thou));
-    camLift0->addSample(units::angle(20, units::deg), units::distance(500, units::thou));
-    camLift0->addSample(-units::angle(30, units::deg), units::distance(400, units::thou));
-    camLift0->addSample(units::angle(30, units::deg), units::distance(400, units::thou));
-    camLift0->addSample(-units::angle(40, units::deg), units::distance(100, units::thou));
-    camLift0->addSample(units::angle(40, units::deg), units::distance(100, units::thou));
-    camLift0->addSample(-units::angle(50, units::deg), units::distance(20, units::thou));
-    camLift0->addSample(units::angle(50, units::deg), units::distance(20, units::thou));
-    camLift0->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
-    camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(0.0, units::distance(650, units::thou));
+    camLift0->addSample(-units::angle(10, units::deg), units::distance(600, units::thou));
+    camLift0->addSample(units::angle(10, units::deg), units::distance(600, units::thou));
+    camLift0->addSample(-units::angle(20, units::deg), units::distance(550, units::thou));
+    camLift0->addSample(units::angle(20, units::deg), units::distance(550, units::thou));
+    camLift0->addSample(-units::angle(30, units::deg), units::distance(500, units::thou));
+    camLift0->addSample(units::angle(30, units::deg), units::distance(500, units::thou));
+    camLift0->addSample(-units::angle(40, units::deg), units::distance(400, units::thou));
+    camLift0->addSample(units::angle(40, units::deg), units::distance(400, units::thou));
+    camLift0->addSample(-units::angle(50, units::deg), units::distance(250, units::thou));
+    camLift0->addSample(units::angle(50, units::deg), units::distance(250, units::thou));
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(150, units::thou));
+    camLift0->addSample(units::angle(60, units::deg), units::distance(150, units::thou));
+    camLift0->addSample(-units::angle(70, units::deg), units::distance(75, units::thou));
+    camLift0->addSample(units::angle(70, units::deg), units::distance(75, units::thou));
+    camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Function *camLift1 = new Function;
     camLift1->initialize(1, units::angle(20, units::deg));
@@ -317,29 +321,25 @@ void EngineSimApplication::initialize() {
     intakeCamLeft->setLobeCenterline(2, units::angle(360 + lobeSeparation, units::deg) + 4 * units::angle(360, units::deg) / 4);
     intakeCamLeft->setLobeCenterline(3, units::angle(360 + lobeSeparation, units::deg) + 1 * units::angle(360, units::deg) / 4);
 
-    // n = PV / RT
-    const double flow_t = units::celcius(25.0);
-    const double P = units::pressure(1.0, units::psi);
-    const double v = 0.001;
-    const double n_flow = 1.0 * (P * v) / (Constants::R * flow_t);
-
     Function *flow = new Function;
     flow->initialize(1, units::distance(100, units::thou));
     flow->addSample(units::distance(0, units::thou), 0.0);
-    flow->addSample(units::distance(100, units::thou), n_flow * 70);
-    flow->addSample(units::distance(200, units::thou), n_flow * 133);
-    flow->addSample(units::distance(300, units::thou), n_flow * 180);
-    flow->addSample(units::distance(400, units::thou), n_flow * 215);
-    flow->addSample(units::distance(500, units::thou), n_flow * 237);
+    flow->addSample(units::distance(100, units::thou), GasSystem::k_28inH2O(76.0));
+    flow->addSample(units::distance(200, units::thou), GasSystem::k_28inH2O(146.0));
+    flow->addSample(units::distance(300, units::thou), GasSystem::k_28inH2O(212.0));
+    flow->addSample(units::distance(400, units::thou), GasSystem::k_28inH2O(255.0));
+    flow->addSample(units::distance(500, units::thou), GasSystem::k_28inH2O(294.0));
+    flow->addSample(units::distance(600, units::thou), GasSystem::k_28inH2O(314.0));
 
     Function *exhaustFlow = new Function;
     exhaustFlow->initialize(1, units::distance(100, units::thou));
     exhaustFlow->addSample(units::distance(0, units::thou), 0.0);
-    exhaustFlow->addSample(units::distance(100, units::thou), n_flow * 70);
-    exhaustFlow->addSample(units::distance(200, units::thou), n_flow * 133);
-    exhaustFlow->addSample(units::distance(300, units::thou), n_flow * 180 );
-    exhaustFlow->addSample(units::distance(400, units::thou), n_flow * 215);
-    exhaustFlow->addSample(units::distance(500, units::thou), n_flow * 237);
+    exhaustFlow->addSample(units::distance(100, units::thou), GasSystem::k_28inH2O(70.0));
+    exhaustFlow->addSample(units::distance(200, units::thou), GasSystem::k_28inH2O(132.0));
+    exhaustFlow->addSample(units::distance(300, units::thou), GasSystem::k_28inH2O(156.0));
+    exhaustFlow->addSample(units::distance(400, units::thou), GasSystem::k_28inH2O(181.0));
+    exhaustFlow->addSample(units::distance(500, units::thou), GasSystem::k_28inH2O(207.0));
+    exhaustFlow->addSample(units::distance(600, units::thou), GasSystem::k_28inH2O(228.0));
 
     CylinderHead::Parameters chParams;
     chParams.IntakePortFlow = flow;
@@ -359,12 +359,12 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getHead(1)->initialize(chParams);
 
     Intake::Parameters inParams;
-    inParams.inputFlowK = n_flow * 100;
+    inParams.inputFlowK = GasSystem::k_carb(750.0);
     inParams.volume = units::volume(5000.0, units::cc);
     m_iceEngine.getIntake(0)->initialize(inParams);
 
     ExhaustSystem::Parameters esParams;
-    esParams.flowK = n_flow * 200;
+    esParams.flowK = GasSystem::k_carb(1000.0);
     esParams.volume = units::volume(1.0, units::L);
     m_iceEngine.getExhaustSystem(0)->initialize(esParams);
     m_iceEngine.getExhaustSystem(1)->initialize(esParams);
@@ -452,14 +452,14 @@ void EngineSimApplication::initialize() {
     synthParams.AudioSampleRate = 44100;
     synthParams.InputBufferSize = 100000;
     synthParams.InputChannelCount = 8;
-    synthParams.InputSampleRate = 9000;
+    synthParams.InputSampleRate = 12000;
     synthParams.Latency = 0.01;
     m_synthesizer.initialize(synthParams);
     m_synthesizer.startAudioRenderingThread();
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    const int steps = 9000;
+    const int steps = 12000;
 
     double speed = 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::Control)) {

@@ -34,8 +34,8 @@ void AfrCluster::initialize(EngineSimApplication *app) {
     m_intakeAfrGauge->m_gauge->m_minorStep = 1;
     m_intakeAfrGauge->m_gauge->m_majorStep = 5;
     m_intakeAfrGauge->m_gauge->m_maxMinorTick = 7000;
-    m_intakeAfrGauge->m_gauge->m_thetaMin = Constants::pi * 1.2;
-    m_intakeAfrGauge->m_gauge->m_thetaMax = -0.2 * Constants::pi;
+    m_intakeAfrGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
+    m_intakeAfrGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
     m_intakeAfrGauge->m_gauge->m_needleWidth = 4.0;
     m_intakeAfrGauge->m_gauge->m_gamma = 1.0f;
     m_intakeAfrGauge->m_gauge->m_needleKs = 1000.0f;
@@ -51,8 +51,8 @@ void AfrCluster::initialize(EngineSimApplication *app) {
     m_exhaustAfrGauge->m_gauge->m_minorStep = 5;
     m_exhaustAfrGauge->m_gauge->m_majorStep = 10;
     m_exhaustAfrGauge->m_gauge->m_maxMinorTick = 200;
-    m_exhaustAfrGauge->m_gauge->m_thetaMin = Constants::pi * 1.2;
-    m_exhaustAfrGauge->m_gauge->m_thetaMax = -0.2 * Constants::pi;
+    m_exhaustAfrGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
+    m_exhaustAfrGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
     m_exhaustAfrGauge->m_gauge->m_needleWidth = 4.0;
     m_exhaustAfrGauge->m_gauge->m_gamma = 1.0f;
     m_exhaustAfrGauge->m_gauge->m_needleKs = 1000.0f;

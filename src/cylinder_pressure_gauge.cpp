@@ -73,8 +73,8 @@ void CylinderPressureGauge::render() {
         m_gauges[i]->m_minorStep = 20;
         m_gauges[i]->m_majorStep = 100;
         m_gauges[i]->m_maxMinorTick = 400;
-        m_gauges[i]->m_thetaMin = Constants::pi * 1.2;
-        m_gauges[i]->m_thetaMax = -0.2 * Constants::pi;
+        m_gauges[i]->m_thetaMin = constants::pi * 1.2;
+        m_gauges[i]->m_thetaMax = -0.2 * constants::pi;
         m_gauges[i]->m_outerRadius = std::fmin(b_cyl.width(), b_cyl.height()) / 2.0f;
         m_gauges[i]->m_value = units::convert(chamber->m_system.pressure(), units::psi);
         m_gauges[i]->m_needleOuterRadius = m_gauges[i]->m_outerRadius * 0.7f;

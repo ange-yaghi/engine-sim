@@ -21,7 +21,7 @@ void CylinderHeadObject::render(const ViewParameters *view) {
 
     const double s = m_head->m_bank->m_bore / 2.0;
     const double boreSurfaceArea =
-        Constants::pi * m_head->m_bank->m_bore * m_head->m_bank->m_bore / 4.0;
+        constants::pi * m_head->m_bank->m_bore * m_head->m_bank->m_bore / 4.0;
     const double chamberHeight = m_head->m_combustionChamberVolume / boreSurfaceArea;
 
     const double theta = m_head->m_bank->m_angle;

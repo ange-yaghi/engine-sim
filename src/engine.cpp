@@ -112,7 +112,7 @@ double Engine::getDisplacement() const {
         const Crankshaft &shaft = *rod.m_crankshaft;
 
         const double r = bank.m_bore / 2.0;
-        const double V = Constants::pi * r * r * (2.0 * shaft.m_throw);
+        const double V = constants::pi * r * r * (2.0 * shaft.m_throw);
 
         displacement += V;
     }
@@ -196,5 +196,5 @@ double Engine::getTotalVolumeFuelConsumed() const {
 
 double Engine::getRpm() const {
     if (m_crankshaftCount == 0) return 0;
-    return -(getCrankshaft(0)->m_body.v_theta / (2 * Constants::pi)) * 60;
+    return -(getCrankshaft(0)->m_body.v_theta / (2 * constants::pi)) * 60;
 }

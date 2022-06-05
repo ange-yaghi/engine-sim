@@ -295,12 +295,13 @@ int16_t Synthesizer::renderAudio(double timeOffset) {
     //return temp_filter_0.f(std::min(0.0, d0 * 50)) + temp_filter_1.f(std::min(0.0, d1 * 50));
     const double v = temp_filter_0.f(d0 * 50) + temp_filter_1.f(d1 * 50);
     const double amplitude = std::abs(v);
-    return v * 0.03;
+    return v * 0.05;
 
     double log_v = std::log((amplitude * 0.0001) + 1) * 15000;
     log_v = (v < 0) ? -log_v : log_v;
 
     //return log_v * 1.2;
 
-    //return (d0 + d1) * 10;
+    return sampleInput(timeOffset, 0) * 10;
+    return (d0 + d1) * 10;
 }

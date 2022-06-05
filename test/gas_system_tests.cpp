@@ -102,7 +102,8 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlow) {
     system1.start();
     system2.start();
 
-    system1.flow(maxFlowIn, &system2);
+    system1.flow(maxFlowIn, system2.kineticEnergyPerMol(), system2.mix());
+    system2.flow(-maxFlowIn, system1.kineticEnergyPerMol(), system1.mix());
 
     system1.end();
     system2.end();
@@ -118,7 +119,8 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlow) {
     system1.start();
     system2.start();
 
-    system1.flow(maxFlowOut, &system2);
+    system1.flow(maxFlowOut, system2.kineticEnergyPerMol(), system2.mix());
+    system2.flow(-maxFlowOut, system1.kineticEnergyPerMol(), system1.mix());
 
     system1.end();
     system2.end();
@@ -134,13 +136,14 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfinite) {
         units::celcius(25.0)
     );
 
-    const double P_env = units::pressure(2.0, units::atm);
-    const double T_env = units::celcius(25.0);
+    constexpr double P_env = units::pressure(2.0, units::atm);
+    constexpr double T_env = units::celcius(25.0);
 
     const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
+    const double E_k_per_mol = GasSystem::kineticEnergyPerMol(T_env, system1.degreesOfFreedom);
 
     system1.start();
-    system1.flow(maxFlow, T_env);
+    system1.flow(maxFlow, E_k_per_mol);
     system1.end();
 
     EXPECT_NEAR(system1.pressure(), P_env, 1E-6);
@@ -154,8 +157,8 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfiniteOverpressure) {
         units::celcius(2500.0)
     );
 
-    const double P_env = units::pressure(2.0, units::atm);
-    const double T_env = units::celcius(25.0);
+    constexpr double P_env = units::pressure(2.0, units::atm);
+    constexpr double T_env = units::celcius(25.0);
 
     const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
 
@@ -174,12 +177,12 @@ TEST(GasSystemTests, FlowVariableVolume) {
         units::celcius(25.0)
     );
 
-    const double P_env = units::pressure(2.0, units::atm);
-    const double T_env = units::celcius(25.0);
+    constexpr double P_env = units::pressure(2.0, units::atm);
+    constexpr double T_env = units::celcius(25.0);
 
     const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
 
-    const double dV = units::volume(1000000.0, units::cc) / 100;
+    constexpr double dV = units::volume(1000000.0, units::cc) / 100;
     for (int i = 0; i < 100; ++i) {
         system1.start();
         const double flowRate0 = system1.flow(0.01, 1/60.0, units::pressure(0.1, units::atm), units::celcius(25.0));
@@ -200,7 +203,7 @@ TEST(GasSystemTests, PowerStrokeTest) {
         units::celcius(2000.0)
     );
 
-    const double dV = units::volume(1000000.0, units::cc) / 100;
+    constexpr double dV = units::volume(1000000.0, units::cc) / 100;
     for (int i = 0; i < 100; ++i) {
         system1.start();
         const double flowRate0 = system1.flow(1.0, 1 / 60.0, units::pressure(1.0, units::atm), units::celcius(25.0));
@@ -223,8 +226,8 @@ TEST(GasSystemTests, FlowLimit) {
         units::celcius(2000.0)
     );
 
-    const double P_env = units::pressure(1.0, units::atm);
-    const double T_env = units::celcius(25.0);
+    constexpr double P_env = units::pressure(1.0, units::atm);
+    constexpr double T_env = units::celcius(25.0);
     const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
 
     system1.start();
@@ -243,7 +246,7 @@ TEST(GasSystemTests, IdealGasLaw) {
     );
 
     const double PV = system1.pressure() * system1.volume();
-    const double nRT = system1.n() * Constants::R * system1.temperature();
+    const double nRT = system1.n() * constants::R * system1.temperature();
 
     EXPECT_NEAR(PV, nRT, 1E-6);
 }
@@ -275,7 +278,7 @@ TEST(GasSystemTests, CompositionSanityCheck) {
     );
 
     const double PV = system1.pressure() * system1.volume();
-    const double nRT = system1.n() * Constants::R * system1.temperature();
+    const double nRT = system1.n() * constants::R * system1.temperature();
 
     for (int i = 0; i < 100; ++i) {
         system1.start();
@@ -293,4 +296,65 @@ TEST(GasSystemTests, CompositionSanityCheck) {
     EXPECT_NEAR(system2.mix().p_fuel, 1.0, 2E-2);
     EXPECT_NEAR(system2.mix().p_inert, 1.0, 2E-2);
     EXPECT_NEAR(system2.mix().p_o2, 1.0, 2E-2);
+}
+
+TEST(GasSystemTests, ChokedFlowTest) {
+    GasSystem system1;
+    system1.initialize(
+        units::pressure(2.5, units::atm),
+        units::volume(1.0, units::m3),
+        units::celcius(2000.0)
+    );
+
+    const double flow_k = GasSystem::flowConstant(
+        units::flow(400, units::scfm),
+        units::pressure(2.5, units::atm),
+        units::pressure(1.5, units::atm),
+        units::celcius(2000.0)
+    );
+
+    const double chokedFlow =
+        system1.flowRate(
+            flow_k,
+            system1.pressure(),
+            units::pressure(1.0, units::atm),
+            system1.temperature(),
+            units::celcius(25),
+            1.0,
+            1.0);
+    const double noncriticalFlow =
+        system1.flowRate(
+            flow_k,
+            system1.pressure(),
+            units::pressure(2.0, units::atm),
+            system1.temperature(),
+            units::celcius(25),
+            1.0,
+            1.0);
+
+    const double chokedFlowScfm = units::convert(chokedFlow, units::scfm);
+    const double noncriticalFlowScfm = units::convert(noncriticalFlow, units::scfm);
+}
+
+TEST(GasSystemTests, CfmConversions) {
+    constexpr double standardPressure = units::pressure(1.0, units::atm);
+    constexpr double standardTemp = units::celcius(25.0);
+    constexpr double airDensity =
+        units::AirMolecularMass * (standardPressure * units::volume(1.0, units::m3))
+        / (constants::R * standardTemp);
+
+    const double flow_28 = GasSystem::k_28inH2O(300);
+    
+    const double flowRate = GasSystem::flowRate(
+        flow_28,
+        units::pressure(1.0, units::atm),
+        units::pressure(1.0, units::atm) - units::pressure(41.0, units::inH2O),
+        units::celcius(25.0),
+        units::celcius(25.0),
+        airDensity,
+        airDensity
+    );
+
+    const double flowRateCfm = units::convert(flowRate, units::scfm);
+    int a = 0;
 }

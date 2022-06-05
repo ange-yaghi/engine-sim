@@ -1,6 +1,8 @@
 #ifndef ATG_ENGINE_SIM_GAS_SYSTEM_H
 #define ATG_ENGINE_SIM_GAS_SYSTEM_H
 
+#include "constants.h"
+
 class GasSystem {
     public:
         struct Mix {
@@ -33,6 +35,17 @@ class GasSystem {
         void changeEnergy(double dE);
 
         double react(double n, const Mix &mix);
+        static double flowConstant(double flowRate, double P, double pressureDrop, double T);
+        static double k_28inH2O(double flowRateScfm);
+        static double k_carb(double flowRateScfm);
+        static double flowRate(
+            double k_flow,
+            double P0,
+            double P1,
+            double T0,
+            double T1,
+            double sg0,
+            double sg1);
         double flow(double dn, double E_k_per_mol, const Mix &mix = {});
         double loseN(double dn);
         double gainN(double dn, double E_k_per_mol, const Mix &mix = {});
@@ -43,6 +56,9 @@ class GasSystem {
         double pressureEquilibriumMaxFlow(const GasSystem *b) const;
         double pressureEquilibriumMaxFlow(double P_env, double T_env) const;
 
+        inline static constexpr double kineticEnergyPerMol(double T, int degreesOfFreedom);
+
+        double approximateDensity() const;
         double n() const;
         double n(double V) const;
         double kineticEnergy() const;
@@ -62,5 +78,9 @@ class GasSystem {
     protected:
         State state, next;
 };
+
+inline constexpr double GasSystem::kineticEnergyPerMol(double T, int degreesOfFreedom) {
+    return 0.5 * T * constants::R * degreesOfFreedom;
+}
 
 #endif /* ATG_ENGINE_SIM_GAS_SYSTEM_H */

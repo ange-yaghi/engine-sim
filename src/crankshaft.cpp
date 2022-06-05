@@ -56,8 +56,8 @@ double Crankshaft::getAngle() const {
 }
 
 double Crankshaft::getCycleAngle() const {
-    const double wrapped = std::fmod(getAngle(), 4 * Constants::pi);
+    const double wrapped = std::fmod(getAngle(), 4 * constants::pi);
     return (wrapped < 0)
-        ? wrapped + 4 * Constants::pi
+        ? wrapped + 4 * constants::pi
         : wrapped;
 }

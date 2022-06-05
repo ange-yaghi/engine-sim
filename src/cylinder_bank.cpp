@@ -24,8 +24,8 @@ void CylinderBank::initialize(const Parameters &params) {
     m_deckHeight = params.DeckHeight;
     m_cylinderCount = params.CylinderCount;
 
-    m_dx = std::cos(m_angle + Constants::pi / 2);
-    m_dy = std::sin(m_angle + Constants::pi / 2);
+    m_dx = std::cos(m_angle + constants::pi / 2);
+    m_dy = std::sin(m_angle + constants::pi / 2);
 
     m_index = params.Index;
 }
@@ -40,5 +40,5 @@ void CylinderBank::getPositionAboveDeck(double h, double *x, double *y) const {
 }
 
 double CylinderBank::boreSurfaceArea() const {
-    return Constants::pi * m_bore * m_bore / 4.0;
+    return constants::pi * m_bore * m_bore / 4.0;
 }

@@ -1,8 +1,9 @@
 #include "../include/gas_system.h"
 
-#include "../include/constants.h"
+#include "../include/units.h"
 
 #include <cmath>
+#include <cassert>
 
 void GasSystem::start() {
     next = state;
@@ -17,9 +18,9 @@ void GasSystem::end() {
 }
 
 void GasSystem::initialize(double P, double V, double T, const Mix &mix) {
-    state.n_mol = P * V / (Constants::R * T);
+    state.n_mol = P * V / (constants::R * T);
     state.V = V;
-    state.E_k = T * (0.5 * degreesOfFreedom * state.n_mol * Constants::R);
+    state.E_k = T * (0.5 * degreesOfFreedom * state.n_mol * constants::R);
     state.mix = mix;
 }
 
@@ -48,7 +49,7 @@ void GasSystem::changePressure(double dP) {
 }
 
 void GasSystem::changeTemperature(double dT) {
-    next.E_k += dT * 0.5 * degreesOfFreedom * n() * Constants::R;
+    next.E_k += dT * 0.5 * degreesOfFreedom * n() * constants::R;
 }
 
 void GasSystem::changeEnergy(double dE) {
@@ -56,7 +57,7 @@ void GasSystem::changeEnergy(double dE) {
 }
 
 void GasSystem::changeTemperature(double dT, double n) {
-    next.E_k += dT * 0.5 * degreesOfFreedom * n * Constants::R;
+    next.E_k += dT * 0.5 * degreesOfFreedom * n * constants::R;
 }
 
 double GasSystem::react(double n, const Mix &mix) {
@@ -108,20 +109,120 @@ double GasSystem::react(double n, const Mix &mix) {
     return a_n_fuel;
 }
 
-/*
-double GasSystem::flow(double dn, GasSystem *target) {
-    double flow = 0;
-    if (dn >= 0) {
-        flow = loseN(dn);
-        target->gainN(dn, kineticEnergyPerMol(), state.mix);
+double GasSystem::flowConstant(
+    double flowRate,
+    double P,
+    double pressureDrop,
+    double T)
+{
+    // Calculate the specific gravity (density) of air
+    // at standard conditions
+    // PV = nRT
+    // density (per m3) = (P / RT) * mol_mass
+    constexpr double standard_temp = units::fahrenheit(70);
+    constexpr double standard_pressure = units::pressure(1.0, units::atm);
+    constexpr double reference_sg =
+        (standard_pressure * units::AirMolecularMass) / (constants::R * standard_temp);
+    const double sg =
+        (P * units::AirMolecularMass) / (constants::R * T);
+    const double norm_sg = sg / reference_sg;
+    if (norm_sg == 0) return 0;
+
+    const double P0 = P;
+    const double P1 = P - pressureDrop;
+
+    const double T_R = units::toAbsoluteFahrenheit(T);
+    const double P0_imp = units::toPsia(P0);
+    const double P1_imp = units::toPsia(P1);
+
+    // C_v = flow coefficient
+    double C_v;
+    const double Q_g = units::convert(flowRate, units::scfm);
+    if (P0 > 1.4 * P1) {
+        // Critical flow
+        C_v = Q_g * std::sqrt(norm_sg * T_R) / (816 * P0_imp);
     }
     else {
-        flow = gainN(-dn, target->kineticEnergyPerMol(), target->state.mix);
-        target->loseN(-dn);
+        C_v = (Q_g / 962) * std::sqrt((norm_sg * T_R) / (P0_imp * P0_imp - P1_imp * P1_imp));
     }
 
-    return flow;
-}*/
+    return C_v;
+}
+
+double GasSystem::k_28inH2O(double flowRateScfm) {
+    return flowConstant(
+        units::flow(flowRateScfm, units::scfm),
+        units::pressure(1.0, units::atm),
+        units::pressure(28.0, units::inH2O),
+        units::celcius(25)
+    );
+}
+
+double GasSystem::k_carb(double flowRateScfm) {
+    return flowConstant(
+        units::flow(flowRateScfm, units::scfm),
+        units::pressure(1.0, units::atm),
+        units::pressure(1.5, units::inHg),
+        units::celcius(25)
+    );
+}
+
+double GasSystem::flowRate(
+    double k_flow,
+    double P0_,
+    double P1_,
+    double T0,
+    double T1,
+    double sg0,
+    double sg1)
+{
+    // Calculate the specific gravity (density) of air
+    // at standard conditions
+    // PV = nRT
+    // density (per m3) = (P / RT) * mol_mass
+    constexpr double standard_temp = units::fahrenheit(70);
+    constexpr double standard_pressure = units::pressure(1.0, units::atm);
+    constexpr double reference_sg =
+        (standard_pressure * units::AirMolecularMass) / (constants::R * standard_temp);
+
+    double direction;
+    double T;
+    double P0, P1;
+    double sg;
+    if (P0_ > P1_) {
+        direction = 1.0;
+        T = T0;
+        P0 = P0_;
+        P1 = P1_;
+        sg = sg0;
+    }
+    else {
+        direction = -1.0;
+        T = T1;
+        P0 = P1_;
+        P1 = P0_;
+        sg = sg1;
+    }
+
+    const double norm_sg = sg / reference_sg;
+    if (norm_sg == 0) return 0;
+
+    const double T_R = units::toAbsoluteFahrenheit(T);
+    const double P0_imp = units::toPsia(P0);
+    const double P1_imp = units::toPsia(P1);
+
+    // Q_g = gas flow [SCFM]
+    double Q_g;
+    if (P0 > 1.9 * P1) {
+        // Critical flow
+        Q_g = (k_flow * 816 * P0_imp) / std::sqrt(T_R * norm_sg);
+    }
+    else {
+        Q_g = k_flow * 962 * std::sqrt((P0_imp * P0_imp - P1_imp * P1_imp) / (T_R * norm_sg));
+    }
+
+    return units::flow(Q_g, units::scfm) * direction;
+}
 
 double GasSystem::flow(double dn, double E_k_per_mol, const Mix &mix) {
     if (dn >= 0) {
@@ -135,6 +236,8 @@ double GasSystem::flow(double dn, double E_k_per_mol, const Mix &mix) {
 double GasSystem::loseN(double dn) {
     next.E_k -= kineticEnergy(dn);
     next.n_mol -= dn;
+
+    assert(next.n_mol >= 0);
 
     return dn;
 }
@@ -159,31 +262,50 @@ double GasSystem::gainN(double dn, double E_k_per_mol, const Mix &mix) {
 }
 
 double GasSystem::flow(double k_flow, double dt, GasSystem *target) {
-    const double flowRate =
-        std::fmin(
-            std::sqrt(std::abs(pressure() - target->pressure())) * k_flow * dt,
-            std::abs(pressureEquilibriumMaxFlow(target)));
-    const double flowDirection = (pressure() < target->pressure())
-        ? -1.0
-        : 1.0;
+    const double maxFlow = pressureEquilibriumMaxFlow(target);
+    double flow = dt * flowRate(
+        k_flow,
+        pressure(),
+        target->pressure(),
+        temperature(),
+        target->temperature(),
+        approximateDensity(),
+        target->approximateDensity());
 
-    const double dn = flow(flowDirection * flowRate, target->kineticEnergyPerMol(), target->mix());
-    target->flow(-dn, kineticEnergyPerMol(), mix());
+    if (std::abs(flow) > std::abs(maxFlow)) {
+        flow = maxFlow;
+    }
 
-    return dn;
+    this->flow(flow, target->kineticEnergyPerMol(), target->mix());
+    target->flow(-flow, kineticEnergyPerMol(), mix());
+
+    return flow;
 }
 
 double GasSystem::flow(double k_flow, double dt, double P_env, double T_env, const Mix &mix) {
-    const double flowRate =
-        std::fmin(
-            std::sqrt(std::abs(pressure() - P_env)) * k_flow * dt,
-            std::abs(pressureEquilibriumMaxFlow(P_env, T_env)));
-    const double flowDirection = (pressure() < P_env)
-        ? -1.0
-        : 1.0;
+    constexpr double standardPressure = units::pressure(1.0, units::atm);
+    constexpr double standardTemp = units::celcius(25.0);
+    constexpr double airDensity =
+        units::AirMolecularMass * (standardPressure * units::volume(1.0, units::m3))
+        / (constants::R * standardTemp);
 
-    const double E_k_per_mol = 0.5 * T_env * Constants::R * degreesOfFreedom;
-    return flow(flowDirection * flowRate, E_k_per_mol, mix);
+    const double maxFlow = pressureEquilibriumMaxFlow(P_env, T_env);
+    double flow = dt * flowRate(
+        k_flow,
+        pressure(),
+        P_env,
+        temperature(),
+        T_env,
+        approximateDensity(),
+        airDensity);
+
+    if (std::abs(flow) > std::abs(maxFlow)) {
+        flow = maxFlow;
+    }
+
+    this->flow(flow, kineticEnergyPerMol(T_env, degreesOfFreedom), mix);
+
+    return flow;
 }
 
 double GasSystem::pressureEquilibriumMaxFlow(const GasSystem *b) const {
@@ -215,9 +337,13 @@ double GasSystem::pressureEquilibriumMaxFlow(double P_env, double T_env) const {
         return -(P_env * (0.5 * degreesOfFreedom * volume()) - kineticEnergy()) / kineticEnergyPerMol();
     }
     else {
-        const double E_k_per_mol_env = 0.5 * T_env * Constants::R * degreesOfFreedom;
+        const double E_k_per_mol_env = 0.5 * T_env * constants::R * degreesOfFreedom;
         return -(P_env * (0.5 * degreesOfFreedom * volume()) - kineticEnergy()) / E_k_per_mol_env;
     }
+}
+
+double GasSystem::approximateDensity() const {
+    return (units::AirMolecularMass * n()) / volume();
 }
 
 double GasSystem::n() const {
@@ -244,7 +370,7 @@ double GasSystem::pressure() const {
 }
 
 double GasSystem::temperature() const {
-    return kineticEnergy() / (0.5 * degreesOfFreedom * n() * Constants::R);
+    return kineticEnergy() / (0.5 * degreesOfFreedom * n() * constants::R);
 }
 
 double GasSystem::volume() const {

@@ -39,17 +39,17 @@ double Camshaft::valveLift(int lobe) const {
 }
 
 double Camshaft::sampleLobe(double theta) const {
-    double clampedTheta = std::fmodf(theta, 2 * Constants::pi);
-    if (clampedTheta < 0) clampedTheta += 2 * Constants::pi;
-    if (clampedTheta >= Constants::pi) clampedTheta -= 2 * Constants::pi;
+    double clampedTheta = std::fmodf(theta, 2 * constants::pi);
+    if (clampedTheta < 0) clampedTheta += 2 * constants::pi;
+    if (clampedTheta >= constants::pi) clampedTheta -= 2 * constants::pi;
 
     return m_lobeProfile->sampleTriangle(clampedTheta);
 }
 
 double Camshaft::getAngle() const {
-    const double angle = std::fmodf((m_crankshaft->getAngle() + m_advance) * 0.5, 2 * Constants::pi);
+    const double angle = std::fmodf((m_crankshaft->getAngle() + m_advance) * 0.5, 2 * constants::pi);
     if (angle < 0) {
-        return angle + 2 * Constants::pi;
+        return angle + 2 * constants::pi;
     }
     else {
         return angle;
