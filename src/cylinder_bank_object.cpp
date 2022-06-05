@@ -14,8 +14,9 @@ void CylinderBankObject::generateGeometry() {
     GeometryGenerator *gen = m_app->getGeometryGenerator();
 
     const float lineWidth = (float)(m_bank->m_bore * 0.1);
-    const float dx = -(float)(m_bank->m_dy * (m_bank->m_bore / 2 + lineWidth / 2));
-    const float dy = (float)(m_bank->m_dx * (m_bank->m_bore / 2 + lineWidth / 2));
+    const float margin = lineWidth * 0.25f;
+    const float dx = -(float)(m_bank->m_dy * (margin + m_bank->m_bore / 2 + lineWidth / 2));
+    const float dy = (float)(m_bank->m_dx * (margin + m_bank->m_bore / 2 + lineWidth / 2));
     const float top_x = (float)(m_bank->m_dx * m_bank->m_deckHeight);
     const float top_y = (float)(m_bank->m_dy * m_bank->m_deckHeight);
     const float bottom_x = (float)(m_bank->m_dx * (0.4 * m_bank->m_deckHeight));
@@ -61,7 +62,7 @@ void CylinderBankObject::render(const ViewParameters *view) {
         ysMath::Mul(m_app->getBackgroundColor(), ysMath::LoadScalar(0.99f))
     );
 
-    m_app->getShaders()->SetBaseColor(col);
+    m_app->getShaders()->SetBaseColor(m_app->getPink());
     m_app->drawGenerated(m_walls, 0x10);
 }
 

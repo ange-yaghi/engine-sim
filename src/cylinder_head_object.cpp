@@ -37,10 +37,11 @@ void CylinderHeadObject::render(const ViewParameters *view) {
             ysMath::MatMult(translation, rotation),
             scale);
 
-    const ysVector col = ysMath::Add(
+    const ysVector col = m_app->getPink();  ysMath::Add(
         ysMath::Mul(ysMath::Constants::One, ysMath::LoadScalar(0.01f)),
         ysMath::Mul(m_app->getBackgroundColor(), ysMath::LoadScalar(0.99f))
     );
+    const ysVector moving = m_app->getWhite();
 
     m_app->getShaders()->SetObjectTransform(T_head);
     m_app->getShaders()->SetBaseColor(col);
@@ -49,14 +50,18 @@ void CylinderHeadObject::render(const ViewParameters *view) {
         m_app->getAssetManager()->GetModelAsset("CylinderHead"),
         0x10);
 
+    const double intakeValvePosition = (m_head->m_flipDisplay)
+        ? 0.5f
+        : -0.5f;
+
     const int layer = view->Layer0;
     const float intakeLift = (float)m_head->intakeValveLift(layer);
     const ysMatrix T_intakeValve = ysMath::MatMult(
             T_head,
-            ysMath::TranslationTransform(ysMath::LoadVector(-0.5f, -intakeLift / s, 0.0f, 0.0f)));
+            ysMath::TranslationTransform(ysMath::LoadVector(intakeValvePosition, -intakeLift / s, 0.0f, 0.0f)));
 
     m_app->getShaders()->SetObjectTransform(T_intakeValve);
-    m_app->getShaders()->SetBaseColor(col);
+    m_app->getShaders()->SetBaseColor(m_app->getBlue());
     m_app->getEngine()->DrawModel(
         m_app->getShaders()->GetRegularFlags(),
         m_app->getAssetManager()->GetModelAsset("Valve"),
@@ -65,10 +70,10 @@ void CylinderHeadObject::render(const ViewParameters *view) {
     const float exhaustLift = (float)m_head->exhaustValveLift(layer);
     const ysMatrix T_exhaustValve = ysMath::MatMult(
         T_head,
-        ysMath::TranslationTransform(ysMath::LoadVector(0.5f, -exhaustLift / s, 0.0f, 0.0f)));
+        ysMath::TranslationTransform(ysMath::LoadVector(-intakeValvePosition, -exhaustLift / s, 0.0f, 0.0f)));
 
     m_app->getShaders()->SetObjectTransform(T_exhaustValve);
-    m_app->getShaders()->SetBaseColor(col);
+    m_app->getShaders()->SetBaseColor(m_app->getYellow());
     m_app->getEngine()->DrawModel(
         m_app->getShaders()->GetRegularFlags(),
         m_app->getAssetManager()->GetModelAsset("Valve"),

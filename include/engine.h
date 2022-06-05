@@ -11,15 +11,26 @@
 #include "exhaust_system.h"
 #include "ignition_module.h"
 #include "intake.h"
+#include "units.h"
 
 class Engine : public Part {
     public:
+        struct FuelParameters {
+            double MolecularMass =
+                units::mass(100.0, units::g);
+            double EnergyDensity =
+                units::energy(48.1, units::kJ) / units::mass(1.0, units::g);
+            double Density =
+                units::mass(0.755, units::kg) / units::volume(1.0, units::L);
+        };
+
         struct Parameters {
             int CylinderBanks;
             int CylinderCount;
             int CrankshaftCount;
             int ExhaustSystemCount;
             int IntakeCount;
+            FuelParameters Fuel;
         };
 
     public:
@@ -35,6 +46,12 @@ class Engine : public Part {
         virtual double getIntakeFlowRate() const;
 
         virtual double getManifoldPressure() const;
+        virtual double getIntakeAfr() const;
+        virtual double getExhaustO2() const;
+
+        virtual void resetFuelConsumption();
+        virtual double getTotalMassFuelConsumed() const;
+        double getTotalVolumeFuelConsumed() const;
 
         int getCylinderBankCount() const { return m_cylinderBankCount; }
         int getCylinderCount() const { return m_cylinderCount; }
@@ -50,6 +67,8 @@ class Engine : public Part {
         IgnitionModule *getIgnitionModule() { return &m_ignitionModule; }
         ExhaustSystem *getExhaustSystem(int i) const { return &m_exhaustSystems[i]; }
         Intake *getIntake(int i) const { return &m_intakes[i]; }
+
+        const FuelParameters &getFuel() const { return m_fuel; }
 
         double getRpm() const;
 
@@ -73,7 +92,9 @@ class Engine : public Part {
 
         IgnitionModule m_ignitionModule;
 
-        float m_throttle;
+        FuelParameters m_fuel;
+
+        double m_throttle;
 };
 
 #endif /* ATG_ENGINE_SIM_ENGINE_H */

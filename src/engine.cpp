@@ -1,6 +1,8 @@
+#include "..\include\engine.h"
 #include "../include/engine.h"
 
 #include "../include/constants.h"
+#include "../include/units.h"
 
 #include <cmath>
 #include <assert.h>
@@ -18,8 +20,9 @@ Engine::Engine() {
     m_cylinderBankCount = 0;
     m_cylinderCount = 0;
     m_intakeCount = 0;
+    m_exhaustSystemCount = 0;
 
-    m_throttle = 0.0f;
+    m_throttle = 0.0;
 }
 
 Engine::~Engine() {
@@ -38,6 +41,8 @@ void Engine::initialize(const Parameters &params) {
     m_cylinderBankCount = params.CylinderBanks;
     m_exhaustSystemCount = params.ExhaustSystemCount;
     m_intakeCount = params.IntakeCount;
+
+    m_fuel = params.Fuel;
 
     m_crankshafts = new Crankshaft[m_crankshaftCount];
     m_cylinderBanks = new CylinderBank[m_cylinderBankCount];
@@ -86,9 +91,9 @@ void Engine::destroy() {
 }
 
 void Engine::setThrottle(double throttle) {
-    const float throttlePlateThrottle = std::cos(throttle * 3.14159 / 2);
+    const double throttlePlateThrottle = 1 - std::cos(throttle * 3.14159 / 2);
     for (int i = 0; i < m_intakeCount; ++i) {
-        m_intakes[i].m_throttle = throttle;
+        m_intakes[i].m_throttle = throttlePlateThrottle;
     }
 
     m_throttle = throttle;
@@ -107,7 +112,7 @@ double Engine::getDisplacement() const {
         const Crankshaft &shaft = *rod.m_crankshaft;
 
         const double r = bank.m_bore / 2.0;
-        const double V = Constants::pi * r * r * shaft.m_throw;
+        const double V = Constants::pi * r * r * (2.0 * shaft.m_throw);
 
         displacement += V;
     }
@@ -131,6 +136,62 @@ double Engine::getManifoldPressure() const {
     }
 
     return averagePressure / m_intakeCount;
+}
+
+double Engine::getIntakeAfr() const {
+    double totalInert = 0.0;
+    double totalOxygen = 0.0;
+    double totalFuel = 0.0;
+    for (int i = 0; i < m_intakeCount; ++i) {
+        totalInert += m_intakes[i].m_system.n_inert();
+        totalOxygen += m_intakes[i].m_system.n_o2();
+        totalFuel += m_intakes[i].m_system.n_fuel();
+    }
+
+    const double octaneMolarMass = units::mass(114.23, units::g);
+    const double oxygenMolarMass = units::mass(31.9988, units::g);
+    const double nitrogenMolarMass = units::mass(28.014, units::g);
+
+    if (totalFuel == 0) return 0;
+    else return (oxygenMolarMass * totalOxygen + nitrogenMolarMass * totalInert) / (totalFuel * octaneMolarMass);
+}
+
+double Engine::getExhaustO2() const {
+    double totalInert = 0.0;
+    double totalOxygen = 0.0;
+    double totalFuel = 0.0;
+    for (int i = 0; i < m_exhaustSystemCount; ++i) {
+        totalInert += m_exhaustSystems[i].m_system.n_inert();
+        totalOxygen += m_exhaustSystems[i].m_system.n_o2();
+        totalFuel += m_exhaustSystems[i].m_system.n_fuel();
+    }
+
+    const double octaneMolarMass = units::mass(114.23, units::g);
+    const double oxygenMolarMass = units::mass(31.9988, units::g);
+    const double nitrogenMolarMass = units::mass(28.014, units::g);
+
+    if (totalFuel == 0) return 0;
+    else return (oxygenMolarMass * totalOxygen) / (totalFuel * octaneMolarMass + nitrogenMolarMass * totalInert);
+}
+
+void Engine::resetFuelConsumption() {
+    for (int i = 0; i < m_intakeCount; ++i) {
+        m_intakes[i].m_totalFuelInjected = 0;
+    }
+}
+
+double Engine::getTotalMassFuelConsumed() const {
+    double n_fuelConsumed = 0;
+    for (int i = 0; i < m_intakeCount; ++i) {
+        n_fuelConsumed += m_intakes[i].m_totalFuelInjected;
+    }
+
+    return n_fuelConsumed * m_fuel.MolecularMass;
+}
+
+double Engine::getTotalVolumeFuelConsumed() const {
+    const double massFuelConsumed = getTotalMassFuelConsumed();
+    return massFuelConsumed / m_fuel.Density;
 }
 
 double Engine::getRpm() const {

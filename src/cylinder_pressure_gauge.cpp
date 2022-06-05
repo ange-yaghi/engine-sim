@@ -33,7 +33,7 @@ void CylinderPressureGauge::render() {
     const Bounds title = m_bounds.verticalSplit(1.0f, 0.9f);
     const Bounds body = m_bounds.verticalSplit(0.0f, 0.9f);
 
-    drawCenteredText("Cyl. Press. (PSI)", title.inset(10.0f), 24.0f);
+    drawCenteredText("Cyl. Press. [PSI]", title.inset(10.0f), 24.0f);
 
     Engine *engine = m_simulator->getEngine();
     const int banks = engine->getCylinderBankCount();
@@ -70,7 +70,7 @@ void CylinderPressureGauge::render() {
         m_gauges[i]->setLocalPosition({ 0, 0 });
         m_gauges[i]->m_min = 0;
         m_gauges[i]->m_max = 1000;
-        m_gauges[i]->m_minorStep = 10;
+        m_gauges[i]->m_minorStep = 20;
         m_gauges[i]->m_majorStep = 100;
         m_gauges[i]->m_maxMinorTick = 400;
         m_gauges[i]->m_thetaMin = Constants::pi * 1.2;
@@ -83,7 +83,7 @@ void CylinderPressureGauge::render() {
         m_gauges[i]->m_gamma = 0.5f;
         m_gauges[i]->setBandCount(2);
         m_gauges[i]->setBand({ ysMath::Constants::One, 400, 1000, 3.0f }, 0);
-        m_gauges[i]->setBand({ ysColor::srgbiToLinear(0x77CEE0), 0.0f, 14.6959f, 3.0f }, 1);
+        m_gauges[i]->setBand({ ysColor::srgbiToLinear(0x77CEE0), 0.0f, 14.6959f, 3.0f, 0.0f }, 1);
     }
 
     UiElement::render();

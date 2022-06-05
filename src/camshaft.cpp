@@ -10,7 +10,9 @@
 Camshaft::Camshaft() {
     m_crankshaft = nullptr;
     m_lobeAngles = nullptr;
+    m_lobeProfile = nullptr;
     m_lobes = 0;
+    m_advance = 0;
 }
 
 Camshaft::~Camshaft() {
@@ -24,6 +26,7 @@ void Camshaft::initialize(const Parameters &params) {
     m_lobes = params.Lobes;
     m_crankshaft = params.Crankshaft;
     m_lobeProfile = params.LobeProfile;
+    m_advance = params.Advance;
 }
 
 void Camshaft::destroy() {
@@ -44,7 +47,7 @@ double Camshaft::sampleLobe(double theta) const {
 }
 
 double Camshaft::getAngle() const {
-    const double angle = std::fmodf(m_crankshaft->getAngle() * 0.5, 2 * Constants::pi);
+    const double angle = std::fmodf((m_crankshaft->getAngle() + m_advance) * 0.5, 2 * Constants::pi);
     if (angle < 0) {
         return angle + 2 * Constants::pi;
     }

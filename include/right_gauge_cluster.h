@@ -7,8 +7,11 @@
 #include "engine_simulator.h"
 #include "gauge.h"
 #include "cylinder_temperature_gauge.h"
+#include "cylinder_pressure_gauge.h"
 #include "labeled_gauge.h"
 #include "throttle_display.h"
+#include "afr_cluster.h"
+#include "fuel_cluster.h"
 
 class RightGaugeCluster : public UiElement {
     public:
@@ -32,8 +35,10 @@ class RightGaugeCluster : public UiElement {
         LabeledGauge *m_manifoldVacuumGauge;
         LabeledGauge *m_intakeCfmGauge;
         LabeledGauge *m_volumetricEffGauge;
+        FuelCluster *m_fuelCluster;
         ThrottleDisplay *m_throttleDisplay;
-        CylinderTemperatureGauge *m_cylinderTemperatureGauge;
+        AfrCluster *m_afrCluster;
+        CylinderPressureGauge *m_cylinderTemperatureGauge;
 };
 
 #endif /* ATG_ENGINE_SIM_GAUGE_CLUSTER_H */

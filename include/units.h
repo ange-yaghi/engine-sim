@@ -34,6 +34,7 @@ namespace units {
     extern constexpr double mL = cc;
     extern constexpr double L = mL * 1000.0;
     extern constexpr double cubic_feet = foot * foot * foot;
+    extern constexpr double gal = 3.785411784 * L;
 
     // Molecular
     extern constexpr double mol = 1.0;
@@ -61,6 +62,11 @@ namespace units {
     extern constexpr double K = 1.0;
     extern constexpr double K0 = 273.15;
     extern constexpr double C = K;
+
+    // Energy
+    extern constexpr double J = 1.0;
+    extern constexpr double kJ = J * 1000;
+    extern constexpr double MJ = J * 1000000;
 
     // Angles
     extern constexpr double rad = 1.0;
@@ -123,6 +129,10 @@ namespace units {
     }
 
     inline double angle(double v, double unit) {
+        return v * unit;
+    }
+
+    inline double energy(double v, double unit) {
         return v * unit;
     }
 };

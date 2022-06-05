@@ -128,6 +128,8 @@ add_executable(engine-sim-app WIN32
     src/cylinder_temperature_gauge.cpp
     src/labeled_gauge.cpp
     src/throttle_display.cpp
+    src/afr_cluster.cpp
+    src/fuel_cluster.cpp
 
     # Include files
     include/delta.h
@@ -155,6 +157,8 @@ add_executable(engine-sim-app WIN32
     include/cylinder_temperature_gauge.h
     include/labeled_gauge.h
     include/throttle_display.h
+    include/afr_cluster.h
+    include/fuel_cluster.h
 )
 
 target_link_libraries(engine-sim-app

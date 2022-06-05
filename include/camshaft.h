@@ -9,8 +9,16 @@ class Crankshaft;
 class Camshaft : public Part {
     public:
         struct Parameters {
+            // Number of lobes
             int Lobes;
+
+            // Camshaft advance in camshaft degrees
+            double Advance = 0;
+
+            // Corresponding crankshaft
             Crankshaft *Crankshaft;
+
+            // Lobe profile
             Function *LobeProfile;
         };
 
@@ -33,6 +41,7 @@ class Camshaft : public Part {
         Crankshaft *m_crankshaft;
         Function *m_lobeProfile;
         double *m_lobeAngles;
+        double m_advance;
         int m_lobes;
 };
 

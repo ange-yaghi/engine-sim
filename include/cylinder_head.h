@@ -20,6 +20,7 @@ class CylinderHead : public Part {
             Function *IntakePortFlow;
 
             double CombustionChamberVolume;
+            bool FlipDisplay = false;
         };
 
     public:
@@ -52,6 +53,7 @@ class CylinderHead : public Part {
 
         double m_flow;
         double m_combustionChamberVolume;
+        bool m_flipDisplay;
 };
 
 #endif /* ATG_ENGINE_SIM_CYLINDER_HEAD_H */

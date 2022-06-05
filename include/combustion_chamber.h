@@ -15,12 +15,13 @@ class CombustionChamber : public atg_scs::ForceGenerator {
             double lit_n;
             double total_n;
             double percentageLit;
-            double turbulence;
-            double temperature;
+            double efficiency;
+            double flameSpeed;
 
             double lastVolume;
             double travel_x;
             double travel_y;
+            GasSystem::Mix globalMix;
         };
 
         struct FrictionModelParams {

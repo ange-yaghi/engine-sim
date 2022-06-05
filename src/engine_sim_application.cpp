@@ -197,7 +197,7 @@ void EngineSimApplication::initialize() {
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
-    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 20;
+    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 2;
     crankshaftParams.Mass = units::mass(75, units::lb);
 
     // Temporary moment of inertia approximation
@@ -257,16 +257,20 @@ void EngineSimApplication::initialize() {
     Camshaft *exhaustCamLeft = new Camshaft, *exhaustCamRight = new Camshaft;
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
-    camLift0->initialize(1, units::angle(20, units::deg));
-    camLift0->addSample(0.0, units::distance(500, units::thou));
-    camLift0->addSample(-units::angle(20, units::deg), units::distance(250, units::thou));
-    camLift0->addSample(units::angle(20, units::deg), units::distance(250, units::thou));
-    camLift0->addSample(-units::angle(40, units::deg), units::distance(50, units::thou));
-    camLift0->addSample(units::angle(40, units::deg), units::distance(50, units::thou));
+    camLift0->initialize(1, units::angle(10, units::deg));
+    camLift0->addSample(0.0, units::distance(600, units::thou));
+    camLift0->addSample(-units::angle(10, units::deg), units::distance(550, units::thou));
+    camLift0->addSample(units::angle(10, units::deg), units::distance(550, units::thou));
+    camLift0->addSample(-units::angle(20, units::deg), units::distance(500, units::thou));
+    camLift0->addSample(units::angle(20, units::deg), units::distance(500, units::thou));
+    camLift0->addSample(-units::angle(30, units::deg), units::distance(400, units::thou));
+    camLift0->addSample(units::angle(30, units::deg), units::distance(400, units::thou));
+    camLift0->addSample(-units::angle(40, units::deg), units::distance(100, units::thou));
+    camLift0->addSample(units::angle(40, units::deg), units::distance(100, units::thou));
+    camLift0->addSample(-units::angle(50, units::deg), units::distance(20, units::thou));
+    camLift0->addSample(units::angle(50, units::deg), units::distance(20, units::thou));
     camLift0->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
-    camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
-    camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Function *camLift1 = new Function;
     camLift1->initialize(1, units::angle(20, units::deg));
@@ -281,8 +285,11 @@ void EngineSimApplication::initialize() {
     camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Camshaft::Parameters camParams;
+    const double lobeSeparation = 109;
+    const double advance = 106 - lobeSeparation;
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;
+    camParams.Advance = units::angle(advance, units::deg);
 
     camParams.LobeProfile = camLift0;
     exhaustCamRight->initialize(camParams);
@@ -292,7 +299,6 @@ void EngineSimApplication::initialize() {
     intakeCamRight->initialize(camParams);
 
     // 1 8 4 3 6 5 7 2
-    const double lobeSeparation = 114;
     exhaustCamRight->setLobeCenterline(0, units::angle(360 - lobeSeparation, units::deg));
     exhaustCamRight->setLobeCenterline(1, units::angle(360 - lobeSeparation, units::deg) + 3 * units::angle(360, units::deg) / 4);
     exhaustCamRight->setLobeCenterline(2, units::angle(360 - lobeSeparation, units::deg) + 5 * units::angle(360, units::deg) / 4);
@@ -343,11 +349,13 @@ void EngineSimApplication::initialize() {
     chParams.IntakeCam = intakeCamLeft;
     chParams.ExhaustCam = exhaustCamLeft;
     chParams.Bank = m_iceEngine.getCylinderBank(0);
+    chParams.FlipDisplay = true;
     m_iceEngine.getHead(0)->initialize(chParams);
 
     chParams.IntakeCam = intakeCamRight;
     chParams.ExhaustCam = exhaustCamRight;
     chParams.Bank = m_iceEngine.getCylinderBank(1);
+    chParams.FlipDisplay = false;
     m_iceEngine.getHead(1)->initialize(chParams);
 
     Intake::Parameters inParams;

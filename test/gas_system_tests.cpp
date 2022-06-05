@@ -247,3 +247,50 @@ TEST(GasSystemTests, IdealGasLaw) {
 
     EXPECT_NEAR(PV, nRT, 1E-6);
 }
+
+TEST(GasSystemTests, CompositionSanityCheck) {
+    GasSystem::Mix a, b;
+    a.p_fuel = 1.0;
+    a.p_inert = 1.0;
+    a.p_o2 = 1.0;
+
+    b.p_fuel = 0.0;
+    b.p_inert = 0.0;
+    b.p_o2 = 0.0;
+
+    GasSystem system1;
+    system1.initialize(
+        units::pressure(100.0, units::atm),
+        units::volume(100.0, units::m3),
+        units::celcius(2000.0),
+        a
+    );
+
+    GasSystem system2;
+    system2.initialize(
+        units::pressure(1.0, units::atm),
+        units::volume(1.0, units::m3),
+        units::celcius(2000.0),
+        b
+    );
+
+    const double PV = system1.pressure() * system1.volume();
+    const double nRT = system1.n() * Constants::R * system1.temperature();
+
+    for (int i = 0; i < 100; ++i) {
+        system1.start();
+        system2.start();
+        const double flowRate0 = system1.flow(
+            1.0,
+            1 / 60.0,
+            &system2);
+        system1.end();
+        system2.end();
+
+        std::cerr << i << ", " << flowRate0 << ", " << system1.pressure() << "\n";
+    }
+
+    EXPECT_NEAR(system2.mix().p_fuel, 1.0, 2E-2);
+    EXPECT_NEAR(system2.mix().p_inert, 1.0, 2E-2);
+    EXPECT_NEAR(system2.mix().p_o2, 1.0, 2E-2);
+}

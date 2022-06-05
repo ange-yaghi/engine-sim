@@ -22,6 +22,7 @@ class LabeledGauge : public UiElement {
         std::string m_title;
 
         int m_precision;
+        bool m_spaceBeforeUnit;
         std::string m_unit;
 
         float m_margin = 10.0f;

@@ -10,6 +10,7 @@ LabeledGauge::LabeledGauge() {
     m_title = "";
     m_precision = 2;
     m_unit = "";
+    m_spaceBeforeUnit = true;
 }
 
 LabeledGauge::~LabeledGauge() {
@@ -43,8 +44,9 @@ void LabeledGauge::render() {
     const double value = m_gauge->m_value;
 
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(m_precision) << value << " " << m_unit;
-    drawCenteredText(ss.str(), gaugeBounds.verticalSplit(0.0f, 2 / 6.0f), gaugeBounds.height() / 12);
+    ss << std::fixed << std::setprecision(m_precision);
+    ss << value << (m_spaceBeforeUnit ? " " : "") << m_unit;
+    drawCenteredText(ss.str(), gaugeBounds.verticalSplit(0.0f, 2 / 8.0f), gaugeBounds.height() / 8);
 
     m_gauge->m_bounds = gaugeBounds;
     m_gauge->setLocalPosition({ 0, 0 });

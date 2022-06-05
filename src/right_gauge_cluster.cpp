@@ -4,7 +4,6 @@
 #include "../include/gauge.h"
 #include "../include/constants.h"
 #include "../include/engine_sim_application.h"
-#include "../include/right_gauge_cluster.h"
 
 #include <sstream>
 
@@ -17,6 +16,7 @@ RightGaugeCluster::RightGaugeCluster() {
     m_intakeCfmGauge = nullptr;
     m_cylinderTemperatureGauge = nullptr;
     m_throttleDisplay = nullptr;
+    m_fuelCluster = nullptr;
 }
 
 RightGaugeCluster::~RightGaugeCluster() {
@@ -31,8 +31,10 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_manifoldVacuumGauge = addElement<LabeledGauge>();
     m_intakeCfmGauge = addElement<LabeledGauge>();
     m_volumetricEffGauge = addElement<LabeledGauge>();
-    m_cylinderTemperatureGauge = addElement<CylinderTemperatureGauge>();
+    m_cylinderTemperatureGauge = addElement<CylinderPressureGauge>();
     m_throttleDisplay = addElement<ThrottleDisplay>();
+    m_afrCluster = addElement<AfrCluster>();
+    m_fuelCluster = addElement<FuelCluster>();
 
     m_cylinderTemperatureGauge->m_simulator = m_simulator;
 
@@ -107,6 +109,7 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
 
     m_volumetricEffGauge->m_title = "VOLUMETRIC EFF.";
     m_volumetricEffGauge->m_unit = "%";
+    m_volumetricEffGauge->m_spaceBeforeUnit = false;
     m_volumetricEffGauge->m_precision = 1;
     m_volumetricEffGauge->setLocalPosition({ 0, 0 });
     m_volumetricEffGauge->m_gauge->m_min = 0;
@@ -153,6 +156,8 @@ void RightGaugeCluster::destroy() {
 void RightGaugeCluster::update(float dt) {
     m_cylinderTemperatureGauge->m_simulator = m_simulator;
     m_throttleDisplay->m_simulator = m_simulator;
+    m_afrCluster->m_simulator = m_simulator;
+    m_fuelCluster->m_simulator = m_simulator;
 
     UiElement::update(dt);
 }
@@ -193,6 +198,13 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
     const Bounds throttle = left.verticalSplit(0.5f, 1.0f);
     m_throttleDisplay->m_bounds = throttle;
 
+    const Bounds fuelSection = left.verticalSplit(0.0f, 0.5f);
+    const Bounds afr = fuelSection.horizontalSplit(0.0f, 0.5f);
+    m_afrCluster->m_bounds = afr;
+
+    const Bounds fuelConsumption = fuelSection.horizontalSplit(0.5f, 1.0f);
+    m_fuelCluster->m_bounds = fuelConsumption;
+
     Engine *engine = m_simulator->getEngine();
 
     const double ambientPressure = units::pressure(1.0, units::atm);
@@ -217,5 +229,5 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
 
     const Bounds volumetricEfficiencyBounds = grid.get(right, 0, 2, 1, 1);
     m_volumetricEffGauge->m_bounds = volumetricEfficiencyBounds;
-    m_volumetricEffGauge->m_gauge->m_value = 100 * (actualAirPerSecond / theoreticalAirPerRevolution);
+    m_volumetricEffGauge->m_gauge->m_value = 100 * (actualAirPerSecond / theoreticalAirPerSecond);
 }

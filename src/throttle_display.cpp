@@ -56,7 +56,7 @@ void ThrottleDisplay::renderThrottle(const Bounds &bounds) {
     circleParams.radius = params.lineWidth / 2.0f;
     circleParams.maxEdgeLength = m_app->pixelsToUnits(5.0f);
 
-    GeometryGenerator::GeometryIndices indices;
+    GeometryGenerator::GeometryIndices main, pivot, pivotShadow;
     gen->startShape();
 
     params.x0 = origin.x + carbBore / 2.0f;
@@ -105,8 +105,28 @@ void ThrottleDisplay::renderThrottle(const Bounds &bounds) {
     circleParams.center_y = params.y1;
     gen->generateCircle2d(circleParams);
 
-    gen->endShape(&indices);
+    gen->endShape(&main);
 
-    m_app->getShaders()->SetBaseColor(ysMath::Constants::One);
-    m_app->drawGenerated(indices, 0x11, m_app->getShaders()->GetUiFlags());
+    gen->startShape();
+    circleParams.center_x = origin.x;
+    circleParams.center_y = origin.y;
+    circleParams.radius = 1.0 * size * 0.01f;
+    gen->generateCircle2d(circleParams);
+    gen->endShape(&pivot);
+
+    gen->startShape();
+    circleParams.center_x = origin.x;
+    circleParams.center_y = origin.y;
+    circleParams.radius = 2 * size * 0.01f;
+    gen->generateCircle2d(circleParams);
+    gen->endShape(&pivotShadow);
+
+    m_app->getShaders()->SetBaseColor(m_app->getWhite());
+    m_app->drawGenerated(main, 0x11, m_app->getShaders()->GetUiFlags());
+
+    m_app->getShaders()->SetBaseColor(m_app->getBackgroundColor());
+    m_app->drawGenerated(pivotShadow, 0x11, m_app->getShaders()->GetUiFlags());
+
+    m_app->getShaders()->SetBaseColor(m_app->getWhite());
+    m_app->drawGenerated(pivot, 0x11, m_app->getShaders()->GetUiFlags());
 }

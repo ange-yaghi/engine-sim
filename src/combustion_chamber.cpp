@@ -82,14 +82,26 @@ void CombustionChamber::ignite() {
         m_flameEvent.lit_n = 0;
         m_flameEvent.total_n = m_system.n();
         m_flameEvent.percentageLit = 0;
+        m_flameEvent.globalMix = m_system.mix();
         m_lit = true;
 
-        m_flameEvent.turbulence = 0.5 + 0.5 * ((double)rand() / RAND_MAX);
-        m_flameEvent.temperature =
-            (1.5 + 1.0 * ((double)rand() / RAND_MAX)) * units::celcius(2138);
+        const double fastFlameSpeed = units::distance(15, units::m);
+        const double slowFlameSpeed = units::distance(10, units::m);    
 
-        if (rand() % 10 == 0) {
-            m_flameEvent.turbulence = 100;
+        const double fuel_air_low = 0;
+        const double fuel_air_high = 4.0 / 25;
+        const double fuel_air_ratio = std::max(
+            std::fmin(m_system.mix().p_fuel / m_system.mix().p_o2, fuel_air_high),
+            fuel_air_low);
+        const double r = (double)rand() / RAND_MAX;
+        const double s = ((fuel_air_ratio - fuel_air_low) / (fuel_air_high - fuel_air_low)) * (r * 0.5 + 0.5);
+
+        m_flameEvent.efficiency = 0.7 + 0.1 * ((double)rand() / RAND_MAX);
+        m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
+
+        if (rand() % 4 == 0) {
+            m_flameEvent.efficiency = 1;
+            m_flameEvent.flameSpeed = fastFlameSpeed;
         }
     }
 }
@@ -150,10 +162,10 @@ void CombustionChamber::flow(double dt) {
         const double lastTravel_x = m_flameEvent.travel_x;
         const double lastTravel_y = m_flameEvent.travel_y * expansion;
 
-        const double turbulence = erfApproximation(m_turbulence * m_flameEvent.turbulence);
-        const double turbulentFlameSpeed = units::distance(30.0, units::m);
-        const double flameSpeed =
-            turbulence * turbulentFlameSpeed + (1 - turbulence) * units::distance(0.03, units::m);
+        //const double turbulence = erfApproximation(m_turbulence * m_flameEvent.turbulence);
+        //const double turbulentFlameSpeed = units::distance(30.0, units::m);
+        const double flameSpeed = m_flameEvent.flameSpeed;
+        //    turbulence * turbulentFlameSpeed + (1 - turbulence) * units::distance(0.03, units::m);
 
         m_flameEvent.travel_x =
             std::fmin(lastTravel_x + dt * flameSpeed, totalTravel_x);
@@ -168,19 +180,25 @@ void CombustionChamber::flow(double dt) {
                 lastTravel_x * lastTravel_x * Constants::pi * lastTravel_y;
             const double litVolume = burnedVolume - prevBurnedVolume;
             const double n = (litVolume / volume()) * m_system.n();
-            m_system.changeTemperature(m_flameEvent.temperature, n);
+            //m_system.changeTemperature(m_flameEvent.temperature, n);
+
+            const double octaneMolarMass = units::mass(114.23, units::g);
+            const double fuelBurned = m_system.react(n * m_flameEvent.efficiency, m_flameEvent.globalMix);
+            m_system.changeEnergy(
+                units::convert(octaneMolarMass, units::g) * fuelBurned * units::energy(48.1, units::kJ));
 
             m_flameEvent.lit_n += n;
             m_flameEvent.percentageLit += litVolume / volume();
 
             // temp
-            const double massAir = units::mass(30, units::g);
-            const double massFuel = units::mass(100, units::g);
-            const double afr = (1 / 14.7);
-            const double mixMass = afr * massFuel + (1 - afr) * massAir;
-            const double totalMass = mixMass * n;
-            const double totalFuelMass = afr * totalMass;
-            m_nBurntFuel += totalFuelMass;
+            //const double massAir = units::mass(30, units::g);
+            //const double massFuel = units::mass(100, units::g);
+            //const double afr = (1 / 14.7);
+            //const double mixMass = afr * massFuel + (1 - afr) * massAir;
+            //const double totalMass = mixMass * n;
+            //const double totalFuelMass = afr * totalMass;
+            
+            m_nBurntFuel += octaneMolarMass * fuelBurned;
         }
         else {
             m_lit = false;

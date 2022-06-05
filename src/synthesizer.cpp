@@ -57,28 +57,22 @@ void Synthesizer::initialize(const Parameters &p) {
 
     // temp
     ysWindowsAudioWaveFile waveFile0;
-    waveFile0.OpenFile("../assets/test_engine_10_16.wav");
+    waveFile0.OpenFile("../assets/test_engine_03_16.wav");
     waveFile0.InitializeInternalBuffer(waveFile0.GetSampleCount());
     waveFile0.FillBuffer(0);
     waveFile0.CloseFile();
 
     ysWindowsAudioWaveFile waveFile1;
-    waveFile1.OpenFile("../assets/test_engine_03_16.wav");
+    waveFile1.OpenFile("../assets/test_engine_10_16.wav");
     waveFile1.InitializeInternalBuffer(waveFile1.GetSampleCount());
     waveFile1.FillBuffer(0);
     waveFile1.CloseFile();
 
-    const unsigned int sampleCount0 = std::min((unsigned int)15000, waveFile0.GetSampleCount());
-    const unsigned int sampleCount1 = std::min((unsigned int)5000, waveFile1.GetSampleCount());
+    const unsigned int sampleCount0 = std::min((unsigned int)10000, waveFile0.GetSampleCount());
+    const unsigned int sampleCount1 = std::min((unsigned int)10000, waveFile1.GetSampleCount());
 
     temp_filter_0.initialize(sampleCount0);
     for (int i = 0; i < sampleCount0; ++i) {
-        //temp_filter_0.getImpulseResponse()[i] =
-        //    /*std::exp(-i * 0.1) **/ 0.01 * (
-        //        std::cos(20 * 3.14159 * i / 8000.0)
-        //        + std::cos(50 * 3.14159 * i / 8000.0)
-        //        + std::cos(90 * 3.14159 * i / 8000.0)
-        //        + std::cos(170 * 3.14159 * i / 8000.0));*/
         temp_filter_0.getImpulseResponse()[i] = 0.025 * ((int16_t *)waveFile0.GetBuffer())[i] / INT16_MAX;
     }
 
@@ -114,6 +108,9 @@ void Synthesizer::destroy() {
 
     m_audioBuffer = nullptr;
     m_inputChannels = nullptr;
+
+    temp_filter_0.destroy();
+    temp_filter_1.destroy();
 }
 
 int Synthesizer::readAudioOutput(int samples, int16_t *buffer) {
@@ -298,12 +295,12 @@ int16_t Synthesizer::renderAudio(double timeOffset) {
     //return temp_filter_0.f(std::min(0.0, d0 * 50)) + temp_filter_1.f(std::min(0.0, d1 * 50));
     const double v = temp_filter_0.f(d0 * 50) + temp_filter_1.f(d1 * 50);
     const double amplitude = std::abs(v);
-    return v * 0.05;
+    return v * 0.03;
 
     double log_v = std::log((amplitude * 0.0001) + 1) * 15000;
     log_v = (v < 0) ? -log_v : log_v;
 
-    return log_v * 1.2;
+    //return log_v * 1.2;
 
-    return sampleInput(timeOffset, 0) * 10;
+    //return (d0 + d1) * 10;
 }

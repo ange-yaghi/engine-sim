@@ -8,6 +8,8 @@ CylinderHead::CylinderHead() {
     m_exhaustSystems = nullptr;
     m_intakes = nullptr;
 
+    m_flipDisplay = false;
+
     m_bank = nullptr;
     m_exhaustCamshaft = nullptr;
     m_intakeCamshaft = nullptr;
@@ -33,6 +35,7 @@ void CylinderHead::initialize(const Parameters &params) {
     m_exhaustPortFlow = params.ExhaustPortFlow;
     m_intakePortFlow = params.IntakePortFlow;
     m_combustionChamberVolume = params.CombustionChamberVolume;
+    m_flipDisplay = params.FlipDisplay;
 
     memset(m_exhaustSystems, 0, sizeof(ExhaustSystem *) * params.Bank->m_cylinderCount);
     memset(m_intakes, 0, sizeof(Intake *) * params.Bank->m_cylinderCount);

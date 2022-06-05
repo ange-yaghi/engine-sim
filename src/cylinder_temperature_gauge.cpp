@@ -42,10 +42,8 @@ void CylinderTemperatureGauge::update(float dt) {
         Piston *piston = engine->getPiston(i);
         CombustionChamber *chamber = m_simulator->getCombustionChamber(i);
 
-        const double temperature = chamber->m_system.temperature();
+        const double temperature = chamber->m_system.kineticEnergy();
         double value = temperature - m_minTemperature;
-        value = value * value;
-        value = value * value;
 
         maxTemperature = std::fmax(maxTemperature, value);
         minTemperature = std::fmin(minTemperature, temperature);
@@ -73,8 +71,8 @@ void CylinderTemperatureGauge::render() {
     GeometryGenerator *generator = m_app->getGeometryGenerator();
 
     const ysVector background = m_app->getBackgroundColor();
-    const ysVector hot = ysColor::srgbiToLinear(0xFF8224);
-    const ysVector cold = mix(background, hot, 0.001f);
+    const ysVector hot = mix(background, m_app->getRed(), 0.1f);
+    const ysVector cold = mix(background, m_app->getBlue(), 0.001f);
 
     for (int i = 0; i < engine->getCylinderCount(); ++i) {
         Piston *piston = engine->getPiston(i);
@@ -90,10 +88,8 @@ void CylinderTemperatureGauge::render() {
                 0,
                 piston->m_bank->m_cylinderCount - piston->m_cylinderIndex - 1).inset(5.0f);
 
-        const double temperature = chamber->m_system.temperature();
+        const double temperature = chamber->m_system.kineticEnergy();
         double value = temperature - m_minTemperature;
-        value = value * value;
-        value = value * value;
 
         const Bounds worldBounds = getRenderBounds(b_cyl);
         const Point position = worldBounds.getPosition(Bounds::center);
