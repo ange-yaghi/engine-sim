@@ -11,6 +11,7 @@ Function::Function() {
     m_size = 0;
     m_filterWidth = 0;
     m_yMin = m_yMax = 0;
+    m_inputScale = 1.0;
 }
 
 Function::~Function() {
@@ -87,6 +88,7 @@ void Function::addSample(double x, double y) {
 }
 
 double Function::sampleTriangle(double x) const {
+    x *= m_inputScale;
     const int closest = closestSample(x);
 
     if (m_size == 0) return 0;

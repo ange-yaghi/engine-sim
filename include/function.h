@@ -10,6 +10,7 @@ class Function {
         void resize(int newCapacity);
         void destroy();
 
+        void setInputScale(double s) { m_inputScale = s; }
         void addSample(double x, double y);
 
         double sampleTriangle(double x) const;
@@ -28,6 +29,7 @@ class Function {
 
         double m_yMin;
         double m_yMax;
+        double m_inputScale;
 
         double m_filterWidth;
 

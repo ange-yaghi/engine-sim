@@ -56,6 +56,16 @@ void GasSystem::changeEnergy(double dE) {
     next.E_k += dE;
 }
 
+void GasSystem::changeMix(const Mix &mix) {
+    next.mix = mix;
+}
+
+void GasSystem::injectFuel(double n) {
+    const double n_fuel = this->n_fuel() + n;
+    const double p_fuel = n_fuel / this->n();
+    next.mix.p_fuel = p_fuel;
+}
+
 void GasSystem::changeTemperature(double dT, double n) {
     next.E_k += dT * 0.5 * degreesOfFreedom * n * constants::R;
 }

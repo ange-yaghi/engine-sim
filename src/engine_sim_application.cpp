@@ -258,6 +258,7 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
+    camLift0->setInputScale(0.9);
     camLift0->addSample(0.0, units::distance(650, units::thou));
     camLift0->addSample(-units::angle(10, units::deg), units::distance(600, units::thou));
     camLift0->addSample(units::angle(10, units::deg), units::distance(600, units::thou));
@@ -269,10 +270,10 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(40, units::deg), units::distance(400, units::thou));
     camLift0->addSample(-units::angle(50, units::deg), units::distance(250, units::thou));
     camLift0->addSample(units::angle(50, units::deg), units::distance(250, units::thou));
-    camLift0->addSample(-units::angle(60, units::deg), units::distance(150, units::thou));
-    camLift0->addSample(units::angle(60, units::deg), units::distance(150, units::thou));
-    camLift0->addSample(-units::angle(70, units::deg), units::distance(75, units::thou));
-    camLift0->addSample(units::angle(70, units::deg), units::distance(75, units::thou));
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(100, units::thou));
+    camLift0->addSample(units::angle(60, units::deg), units::distance(100, units::thou));
+    camLift0->addSample(-units::angle(70, units::deg), units::distance(25, units::thou));
+    camLift0->addSample(units::angle(70, units::deg), units::distance(25, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
@@ -289,7 +290,7 @@ void EngineSimApplication::initialize() {
     camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Camshaft::Parameters camParams;
-    const double lobeSeparation = 109;
+    const double lobeSeparation = 114;
     const double advance = 106 - lobeSeparation;
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;
@@ -452,14 +453,14 @@ void EngineSimApplication::initialize() {
     synthParams.AudioSampleRate = 44100;
     synthParams.InputBufferSize = 100000;
     synthParams.InputChannelCount = 8;
-    synthParams.InputSampleRate = 12000;
+    synthParams.InputSampleRate = 10000;
     synthParams.Latency = 0.01;
     m_synthesizer.initialize(synthParams);
     m_synthesizer.startAudioRenderingThread();
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    const int steps = 12000;
+    const int steps = 10000;
 
     double speed = 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::Control)) {
@@ -689,10 +690,10 @@ void EngineSimApplication::run() {
 
         double throttle = 0.999;
         if (m_engine.IsKeyDown(ysKey::Code::Q)) {
-            throttle = 0.98;
+            throttle = 0.95;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::W)) {
-            throttle = 0.95;
+            throttle = 0.9;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::E)) {
             throttle = 0.8;

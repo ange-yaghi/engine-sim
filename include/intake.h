@@ -15,7 +15,7 @@ class Intake : public Part {
             double inputFlowK;
 
             // Molecular air fuel ratio (defaults to ideal for octane)
-            double molecularAfr = (25.0 / 2.0) * 2.5;
+            double molecularAfr = (25.0 / 2.0);
         };
 
     public:

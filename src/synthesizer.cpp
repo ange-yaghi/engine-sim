@@ -57,13 +57,13 @@ void Synthesizer::initialize(const Parameters &p) {
 
     // temp
     ysWindowsAudioWaveFile waveFile0;
-    waveFile0.OpenFile("../assets/test_engine_03_16.wav");
+    waveFile0.OpenFile("../assets/test_engine_10_16.wav");
     waveFile0.InitializeInternalBuffer(waveFile0.GetSampleCount());
     waveFile0.FillBuffer(0);
     waveFile0.CloseFile();
 
     ysWindowsAudioWaveFile waveFile1;
-    waveFile1.OpenFile("../assets/test_engine_10_16.wav");
+    waveFile1.OpenFile("../assets/test_engine_03_16.wav");
     waveFile1.InitializeInternalBuffer(waveFile1.GetSampleCount());
     waveFile1.FillBuffer(0);
     waveFile1.CloseFile();
@@ -225,6 +225,9 @@ double Synthesizer::sampleInput(double timeOffset, int channel) const {
     const double s = index - index0;
 
     const double *data = m_inputChannels[channel].Data;
+    const double v0 = data[index0];
+    const double v1 = data[index1];
+
     return (1 - s) * data[index0] + s * data[index1];
 }
 
@@ -291,17 +294,30 @@ int16_t Synthesizer::renderAudio(double timeOffset) {
     const double d1 = sampleInput(timeOffset, 1) * 10 - temp_prev[1];
     temp_prev[1] = sampleInput(timeOffset, 1) * 10;
 
+    const double r = (double)rand() / RAND_MAX;
+
     //return 50 * (d0 + d1);
     //return temp_filter_0.f(std::min(0.0, d0 * 50)) + temp_filter_1.f(std::min(0.0, d1 * 50));
+
+    //double v0 = 0.0, v1 = 0.0;
+    //if ((rand() % 100000) == 0) {
+    //    v0 = INT16_MAX * 0.5;
+    //}
+    //if ((rand() % 10000) == 0) {
+     //   v1 = INT16_MAX * 0.5;
+    //}
+
     const double v = temp_filter_0.f(d0 * 50) + temp_filter_1.f(d1 * 50);
+    //const double v = temp_filter_0.f(v0) + temp_filter_1.f(v1);
     const double amplitude = std::abs(v);
-    return v * 0.05;
+    //return v;
+    return v * 0.08;
 
     double log_v = std::log((amplitude * 0.0001) + 1) * 15000;
     log_v = (v < 0) ? -log_v : log_v;
 
-    //return log_v * 1.2;
+    //return log_v * 0.5;
 
     return sampleInput(timeOffset, 0) * 10;
-    return (d0 + d1) * 10;
+    //return (d0 + d1) * 10;
 }

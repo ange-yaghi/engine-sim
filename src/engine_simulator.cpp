@@ -197,7 +197,7 @@ void EngineSimulator::placeAndInitialize() {
 
     for (int i = 0; i < cylinderCount; ++i) {
         m_combustionChambers[i].initialize(
-            units::pressure(1, units::atm) + units::pressure(5.0, units::psi),
+            units::pressure(1, units::atm),
             units::celcius(25));
     }
 

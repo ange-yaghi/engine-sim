@@ -33,6 +33,8 @@ class GasSystem {
         void changeTemperature(double dT);
         void changeTemperature(double dT, double n);
         void changeEnergy(double dE);
+        void changeMix(const Mix &mix);
+        void injectFuel(double n);
 
         double react(double n, const Mix &mix);
         static double flowConstant(double flowRate, double P, double pressureDrop, double T);

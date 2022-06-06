@@ -112,5 +112,8 @@ double CrankshaftLoad::calculateFrictionTorque(double normalForce, double v_thet
     const double F_3 = F_coul * std::tanh(v / v_coul);
     const double F_4 = units::force(20, units::N) * v * (5 + 8);
 
-    return (F_0 * F_2 + F_3 + F_4) *units::distance(1.0, units::inch);
+    constexpr double constant_torque = units::force(10, units::lbf) * units::distance(1.0, units::foot);
+    constexpr double view = units::convert(constant_torque, units::ft_lb);
+
+    return (F_0 * F_2 + F_3 + F_4) * units::distance(1.0, units::inch) + constant_torque;
 }

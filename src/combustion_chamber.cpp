@@ -212,6 +212,19 @@ void CombustionChamber::end() {
     m_system.end();
 }
 
+double CombustionChamber::lastEventAfr() const {
+    const double totalFuel = m_flameEvent.globalMix.p_fuel * m_flameEvent.total_n;
+    const double totalOxygen = m_flameEvent.globalMix.p_o2 * m_flameEvent.total_n;
+    const double totalInert = m_flameEvent.globalMix.p_inert * m_flameEvent.total_n;
+
+    constexpr double octaneMolarMass = units::mass(114.23, units::g);
+    constexpr double oxygenMolarMass = units::mass(31.9988, units::g);
+    constexpr double nitrogenMolarMass = units::mass(28.014, units::g);
+
+    if (totalFuel == 0) return 0;
+    else return (oxygenMolarMass * totalOxygen) / (totalFuel * octaneMolarMass);
+}
+
 double CombustionChamber::calculateFrictionForce(double v_s) const {
     const double cylinderWallForce = std::sqrt(
         m_piston->m_cylinderConstraint->F_x[0][0] * m_piston->m_cylinderConstraint->F_x[0][0]

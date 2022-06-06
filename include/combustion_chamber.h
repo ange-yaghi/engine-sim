@@ -51,6 +51,8 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         void flow(double dt);
         void end();
 
+        double lastEventAfr() const;
+
         double getLastIterationExhaustFlow() const { return m_exhaustFlow; }
 
         void resetLastTimestepExhaustFlow() { m_lastTimestepTotalExhaustFlow = 0; }
