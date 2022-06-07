@@ -25,8 +25,10 @@ class Crankshaft : public Part {
         void setRodJournalAngle(int i, double angle);
         void getRodJournalPositionLocal(int i, double *x, double *y);
 
+        void resetAngle();
+
         double getAngle() const;
-        double getCycleAngle() const;
+        double getCycleAngle();
 
         double *m_rodJournalAngles;
         int m_rodJournalCount;

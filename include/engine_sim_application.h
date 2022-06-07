@@ -15,6 +15,7 @@
 #include "right_gauge_cluster.h"
 #include "cylinder_temperature_gauge.h"
 #include "synthesizer.h"
+#include "oscilloscope_cluster.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -112,9 +113,9 @@ class EngineSimApplication {
         double m_torque;
 
         UiManager m_uiManager;
-        Oscilloscope *m_oscilloscope;
         EngineView *m_engineView;
         RightGaugeCluster *m_rightGaugeCluster;
+        OscilloscopeCluster *m_oscCluster;
         CylinderTemperatureGauge *m_temperatureGauge;
         Synthesizer m_synthesizer;
 

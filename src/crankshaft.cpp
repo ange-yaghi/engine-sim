@@ -45,6 +45,10 @@ void Crankshaft::getRodJournalPositionLocal(int i, double *x, double *y) {
     *y = std::sin(theta) * m_throw;
 }
 
+void Crankshaft::resetAngle() {
+    m_body.theta = std::fmod(m_body.theta, 4 * constants::pi);
+}
+
 void Crankshaft::setRodJournalAngle(int i, double angle) {
     assert(i < m_rodJournalCount && i >= 0);
 
@@ -55,7 +59,7 @@ double Crankshaft::getAngle() const {
     return -(m_body.theta - m_tdc);
 }
 
-double Crankshaft::getCycleAngle() const {
+double Crankshaft::getCycleAngle() {
     const double wrapped = std::fmod(getAngle(), 4 * constants::pi);
     return (wrapped < 0)
         ? wrapped + 4 * constants::pi

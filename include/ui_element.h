@@ -80,7 +80,7 @@ class UiElement {
         void resetShader();
 
         void drawFrame(
-                Bounds &bounds,
+                const Bounds &bounds,
                 float thickness,
                 const ysVector &frameColor,
                 const ysVector &fillColor,

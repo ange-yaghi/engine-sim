@@ -62,6 +62,7 @@ add_library(engine-sim STATIC
     src/intake.cpp
     src/feedback_comb_filter.cpp
     src/synthesizer.cpp
+    src/leveling_filter.cpp
 
     # Include files
     include/delta.h
@@ -92,6 +93,7 @@ add_library(engine-sim STATIC
     include/intake.h
     include/feedback_comb_filter.h
     include/synthesizer.h
+    include/leveling_filter.h
 )
 
 target_link_libraries(engine-sim
@@ -130,6 +132,7 @@ add_executable(engine-sim-app WIN32
     src/throttle_display.cpp
     src/afr_cluster.cpp
     src/fuel_cluster.cpp
+    src/oscilloscope_cluster.cpp
 
     # Include files
     include/delta.h
@@ -159,6 +162,7 @@ add_executable(engine-sim-app WIN32
     include/throttle_display.h
     include/afr_cluster.h
     include/fuel_cluster.h
+    include/oscilloscope_cluster.h
 )
 
 target_link_libraries(engine-sim-app

@@ -2,6 +2,7 @@
 #define ATG_ENGINE_SIM_ENGINE_SYNTHESIZER_H
 
 #include "convolution_filter.h"
+#include "leveling_filter.h"
 
 #include <cinttypes>
 #include <thread>
@@ -59,6 +60,7 @@ class Synthesizer {
         int getInputWriteOffset() const { return m_inputWriteOffset; }
 
     protected:
+        LevelingFilter m_levelingFilter;
         InputChannel *m_inputChannels;
         int m_inputChannelCount;
         int m_inputBufferSize;

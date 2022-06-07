@@ -18,8 +18,11 @@ class Oscilloscope : public UiElement {
 
         virtual void update(float dt);
         virtual void render();
+        void render(const Bounds &bounds);
 
-        Point dataPointToRenderPosition(const DataPoint &p) const;
+        Point dataPointToRenderPosition(
+            const DataPoint &p,
+            const Bounds &bounds) const;
 
         void addDataPoint(double x, double y);
 
@@ -34,6 +37,8 @@ class Oscilloscope : public UiElement {
 
         double m_lineWidth;
         bool m_drawReverse;
+
+        ysVector i_color;
 
     protected:
         DataPoint *m_points;

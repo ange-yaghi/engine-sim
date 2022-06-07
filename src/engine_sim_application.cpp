@@ -55,6 +55,7 @@ EngineSimApplication::EngineSimApplication() {
     m_engineView = nullptr;
     m_rightGaugeCluster = nullptr;
     m_temperatureGauge = nullptr;
+    m_oscCluster = nullptr;
 
     m_oscillatorDataLeft = "../assets/oscillator_data_left.csv";
     m_oscillatorDataRight = "../assets/oscillator_data_right.csv";
@@ -197,7 +198,7 @@ void EngineSimApplication::initialize() {
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
-    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 2;
+    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 2 * 20;
     crankshaftParams.Mass = units::mass(75, units::lb);
 
     // Temporary moment of inertia approximation
@@ -258,8 +259,10 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
-    camLift0->setInputScale(0.9);
+    camLift0->setInputScale(1.0);
+    camLift0->setOutputScale(1.0);
     camLift0->addSample(0.0, units::distance(650, units::thou));
+
     camLift0->addSample(-units::angle(10, units::deg), units::distance(600, units::thou));
     camLift0->addSample(units::angle(10, units::deg), units::distance(600, units::thou));
     camLift0->addSample(-units::angle(20, units::deg), units::distance(550, units::thou));
@@ -276,6 +279,22 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(70, units::deg), units::distance(25, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
+    /*camLift0->addSample(-units::angle(10, units::deg), units::distance(600, units::thou));
+    camLift0->addSample(units::angle(10, units::deg), units::distance(600, units::thou));
+    camLift0->addSample(-units::angle(20, units::deg), units::distance(550, units::thou));
+    camLift0->addSample(units::angle(20, units::deg), units::distance(550, units::thou));
+    camLift0->addSample(-units::angle(30, units::deg), units::distance(500, units::thou));
+    camLift0->addSample(units::angle(30, units::deg), units::distance(500, units::thou));
+    camLift0->addSample(-units::angle(40, units::deg), units::distance(400, units::thou));
+    camLift0->addSample(units::angle(40, units::deg), units::distance(400, units::thou));
+    camLift0->addSample(-units::angle(50, units::deg), units::distance(150, units::thou));
+    camLift0->addSample(units::angle(50, units::deg), units::distance(150, units::thou));
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(50, units::thou));
+    camLift0->addSample(units::angle(60, units::deg), units::distance(50, units::thou));
+    camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));*/
 
     Function *camLift1 = new Function;
     camLift1->initialize(1, units::angle(20, units::deg));
@@ -360,7 +379,7 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getHead(1)->initialize(chParams);
 
     Intake::Parameters inParams;
-    inParams.inputFlowK = GasSystem::k_carb(750.0);
+    inParams.inputFlowK = GasSystem::k_carb(950.0);
     inParams.volume = units::volume(5000.0, units::cc);
     m_iceEngine.getIntake(0)->initialize(inParams);
 
@@ -414,21 +433,10 @@ void EngineSimApplication::initialize() {
     m_rightGaugeCluster = m_uiManager.getRoot()->addElement<RightGaugeCluster>();
     m_rightGaugeCluster->m_simulator = &m_simulator;
 
-    //m_temperatureGauge = m_uiManager.getRoot()->addElement<CylinderTemperatureGauge>();
-    //m_temperatureGauge->m_simulator = &m_simulator;
+    m_oscCluster = m_uiManager.getRoot()->addElement<OscilloscopeCluster>();
+    m_oscCluster->m_simulator = &m_simulator;
 
-    m_oscilloscope = m_uiManager.getRoot()->addElement<Oscilloscope>();
-    m_oscilloscope->setBufferSize(44100 / 30);
-    m_oscilloscope->m_bounds = Bounds(200.0f, 200.0f, { 0.0f, 0.0f });
-    m_oscilloscope->setLocalPosition({ 50.0f, 900.0f });
-    m_oscilloscope->m_xMin = 0.0f;
-    m_oscilloscope->m_xMax = 44100 / 8;
-    m_oscilloscope->m_yMin = -1.0; // -units::pressure(1.0, units::psi);
-    m_oscilloscope->m_yMax = 1.0; // units::pressure(1.0, units::psi);
-    m_oscilloscope->m_lineWidth = 1.0f;
-    m_oscilloscope->m_drawReverse = true;
-
-    m_audioBuffer.initialize(44100, 44100 * 5);
+    m_audioBuffer.initialize(44100, 44100);
     m_audioBuffer.m_writePointer = 44100 * 0.1;
 
     ysAudioParameters params;
@@ -436,7 +444,7 @@ void EngineSimApplication::initialize() {
     params.m_channelCount = 1;
     params.m_sampleRate = 44100;
     m_outputAudioBuffer =
-        m_engine.GetAudioDevice()->CreateBuffer(&params, 44100 * 5);
+        m_engine.GetAudioDevice()->CreateBuffer(&params, 44100);
 
     m_audioSource = m_engine.GetAudioDevice()->CreateSource(m_outputAudioBuffer);
     m_audioSource->SetMode(ysAudioSource::Mode::Loop);
@@ -449,18 +457,18 @@ void EngineSimApplication::initialize() {
     m_audioImpulseResponse.getImpulseResponse()[8] = 1;
 
     Synthesizer::Parameters synthParams;
-    synthParams.AudioBufferSize = 44100 * 5;
+    synthParams.AudioBufferSize = 44100;
     synthParams.AudioSampleRate = 44100;
-    synthParams.InputBufferSize = 100000;
+    synthParams.InputBufferSize = 2048;
     synthParams.InputChannelCount = 8;
-    synthParams.InputSampleRate = 10000;
+    synthParams.InputSampleRate = 9000;
     synthParams.Latency = 0.01;
     m_synthesizer.initialize(synthParams);
     m_synthesizer.startAudioRenderingThread();
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    const int steps = 10000;
+    const int steps = 9000;
 
     double speed = 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::Control)) {
@@ -499,22 +507,29 @@ void EngineSimApplication::process(float frame_dt) {
     int i = 0;
     while (m_simulator.simulateStep(dt * speed)) {
         double data[8];
+        double totalFlow = 0;
         data[0] = data[1] = 0;
 
         // 1 8 4 3 6 5 7 2
         for (int i = 0; i < 8; ++i) {
             const double exhaustFlow = m_simulator.getCombustionChamber(i)->getLastTimestepExhaustFlow();
             if (i % 2 == 0) { //i == 1 || i == 4 || i == 6 || i == 7) {
-                data[0] += 50000 * exhaustFlow / (dt * speed);
+                data[0] += 50000 * exhaustFlow / (timestep * speed);
             }
             else {
-                data[1] += 50000 * exhaustFlow / (dt * speed);
+                data[1] += 50000 * exhaustFlow / (timestep * speed);
             }
+
+            totalFlow += exhaustFlow;
         }
+
+        m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
+            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+            totalFlow / (timestep * speed));
 
         m_synthesizer.writeInput(data);
 
-        if (i % 128 == 0) {
+        if (i++ % 16 == 0) {
             m_synthesizer.endInputBlock();
         }
     }
@@ -546,15 +561,15 @@ void EngineSimApplication::process(float frame_dt) {
 
     for (int i = 0; i < readSamples; ++i) {
         const int16_t sample = samples[i];
-        if (oscSampleOffset % 2 == 0) {
-            m_oscilloscope->addDataPoint(
+        if (oscSampleOffset % 4 == 0) {
+            m_oscCluster->getAudioWaveformOscilloscope()->addDataPoint(
                 oscSampleOffset,
                 sample / (float)(INT16_MAX));
         }
 
         m_audioBuffer.writeSample(sample, m_audioBuffer.m_writePointer, i);
 
-        oscSampleOffset = (oscSampleOffset + 1) % (44100 / 8);
+        oscSampleOffset = (oscSampleOffset + 1) % (44100 / 10);
     }
 
     delete[] samples;
@@ -843,6 +858,7 @@ void EngineSimApplication::renderScene() {
     m_engineView->setLocalPosition({ 0, 0 });
 
     m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 2);
+    m_oscCluster->m_bounds = grid.get(windowBounds, 1, 1);
     //m_temperatureGauge->m_bounds = grid.get(windowBounds, 0, 1, 4, 11);
 
     m_geometryGenerator.reset();

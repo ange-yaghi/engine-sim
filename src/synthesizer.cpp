@@ -57,13 +57,13 @@ void Synthesizer::initialize(const Parameters &p) {
 
     // temp
     ysWindowsAudioWaveFile waveFile0;
-    waveFile0.OpenFile("../assets/test_engine_10_16.wav");
+    waveFile0.OpenFile("../assets/test_engine_14_eq_adjusted_16.wav");
     waveFile0.InitializeInternalBuffer(waveFile0.GetSampleCount());
     waveFile0.FillBuffer(0);
     waveFile0.CloseFile();
 
     ysWindowsAudioWaveFile waveFile1;
-    waveFile1.OpenFile("../assets/test_engine_03_16.wav");
+    waveFile1.OpenFile("../assets/test_engine_15_eq_adjusted_16.wav");
     waveFile1.InitializeInternalBuffer(waveFile1.GetSampleCount());
     waveFile1.FillBuffer(0);
     waveFile1.CloseFile();
@@ -73,13 +73,17 @@ void Synthesizer::initialize(const Parameters &p) {
 
     temp_filter_0.initialize(sampleCount0);
     for (int i = 0; i < sampleCount0; ++i) {
-        temp_filter_0.getImpulseResponse()[i] = 0.025 * ((int16_t *)waveFile0.GetBuffer())[i] / INT16_MAX;
+        temp_filter_0.getImpulseResponse()[i] = 2 * 0.025 * ((int16_t *)waveFile0.GetBuffer())[i] / INT16_MAX;
     }
 
     temp_filter_1.initialize(sampleCount1);
     for (int i = 0; i < sampleCount1; ++i) {
-        temp_filter_1.getImpulseResponse()[i] = 0.025 * ((int16_t *)waveFile1.GetBuffer())[i] / INT16_MAX;
+        temp_filter_1.getImpulseResponse()[i] = 2 * 0.025 * ((int16_t *)waveFile1.GetBuffer())[i] / INT16_MAX;
     }
+
+    m_levelingFilter.p_target = 40000;
+    m_levelingFilter.p_maxLevel = 10.0;
+    m_levelingFilter.p_minLevel = 0.0001;
 }
 
 void Synthesizer::startAudioRenderingThread() {
@@ -228,7 +232,14 @@ double Synthesizer::sampleInput(double timeOffset, int channel) const {
     const double v0 = data[index0];
     const double v1 = data[index1];
 
-    return (1 - s) * data[index0] + s * data[index1];
+    const double r = 0.25 * ((double)rand() / RAND_MAX) - 0.125;
+    const double s_aug = std::fmax(std::fmin(s + r, 1.0), 0.0);
+
+    if (std::abs(data[index1] - data[index0]) > 10000) {
+        return data[index0];
+    }
+
+    return (1 - s_aug) * data[index0] + s_aug * data[index1];
 }
 
 bool Synthesizer::timeOffsetGreaterZero(double timeOffset) const {
@@ -311,12 +322,22 @@ int16_t Synthesizer::renderAudio(double timeOffset) {
     //const double v = temp_filter_0.f(v0) + temp_filter_1.f(v1);
     const double amplitude = std::abs(v);
     //return v;
-    return v * 0.08;
+    double v0 = m_levelingFilter.f(v * 0.08 * 12);
+    
+    int r_int = std::lround(v0);
+    if (r_int > INT16_MAX) {
+        r_int = INT16_MAX;
+    }
+    else if (r_int < INT16_MIN) {
+        r_int = INT16_MIN;
+    }
+
+    return (int16_t)r_int;
 
     double log_v = std::log((amplitude * 0.0001) + 1) * 15000;
-    log_v = (v < 0) ? -log_v : log_v;
+    log_v = (v0 < 0) ? -log_v : log_v;
 
-    //return log_v * 0.5;
+    return log_v * 0.5;
 
     return sampleInput(timeOffset, 0) * 10;
     //return (d0 + d1) * 10;

@@ -12,6 +12,7 @@ Function::Function() {
     m_filterWidth = 0;
     m_yMin = m_yMax = 0;
     m_inputScale = 1.0;
+    m_outputScale = 1.0;
 }
 
 Function::~Function() {
@@ -92,8 +93,8 @@ double Function::sampleTriangle(double x) const {
     const int closest = closestSample(x);
 
     if (m_size == 0) return 0;
-    else if (x >= m_x[m_size - 1]) return m_y[m_size - 1];
-    else if (x <= m_x[0]) return m_y[0];
+    else if (x >= m_x[m_size - 1]) return m_y[m_size - 1] * m_outputScale;
+    else if (x <= m_x[0]) return m_y[0] * m_outputScale;
 
     double sum = 0;
     double totalWeight = 0;
@@ -116,7 +117,7 @@ double Function::sampleTriangle(double x) const {
     }
 
     return (totalWeight != 0)
-        ? sum / totalWeight
+        ? sum * m_outputScale / totalWeight
         : 0;
 }
 

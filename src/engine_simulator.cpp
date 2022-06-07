@@ -229,6 +229,10 @@ bool EngineSimulator::simulateStep(double dt) {
 
     m_system->process(dt_sub, 1);
 
+    for (int i = 0; i < m_engine->getCrankshaftCount(); ++i) {
+        m_engine->getCrankshaft(i)->resetAngle();
+    }
+
     IgnitionModule *im = m_engine->getIgnitionModule();
     im->update(dt_sub);
 

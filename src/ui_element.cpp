@@ -162,7 +162,7 @@ void UiElement::resetShader() {
 }
 
 void UiElement::drawFrame(
-        Bounds &bounds,
+        const Bounds &bounds,
         float thickness,
         const ysVector &frameColor,
         const ysVector &fillColor,
