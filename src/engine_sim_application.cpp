@@ -146,6 +146,7 @@ void EngineSimApplication::initialize() {
     pistonParams.Displacement = 0;
     pistonParams.WristPinPosition = 0;
     pistonParams.Mass = units::mass(880, units::g);
+    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
 
     pistonParams.CylinderIndex = 0;
     pistonParams.Bank = m_iceEngine.getCylinderBank(1);
@@ -198,7 +199,7 @@ void EngineSimApplication::initialize() {
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
-    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 2 * 20;
+    crankshaftParams.FlywheelMass = units::mass(29, units::lb);
     crankshaftParams.Mass = units::mass(75, units::lb);
 
     // Temporary moment of inertia approximation
@@ -420,7 +421,23 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getIgnitionModule()->setFiringOrder(7 - 1, (6 / 8.0) * cycle);
     m_iceEngine.getIgnitionModule()->setFiringOrder(2 - 1, (7 / 8.0) * cycle);
 
-    m_simulator.synthesize(&m_iceEngine, EngineSimulator::SystemType::NsvOptimized);
+    Fuel::Parameters fParams;
+    Fuel *fuel = new Fuel;
+    fuel->initialize(fParams);
+
+    CombustionChamber::Parameters ccParams;
+    ccParams.CrankcasePressure = units::pressure(1.0, units::atm);
+    ccParams.Fuel = fuel;
+    ccParams.StartingPressure = units::pressure(1.0, units::atm);
+    ccParams.StartingTemperature = units::celcius(25.0);
+
+    for (int i = 0; i < 8; ++i) {
+        ccParams.Piston = m_iceEngine.getPiston(i);
+        ccParams.Head = m_iceEngine.getHead(ccParams.Piston->m_bank->m_index);
+        m_iceEngine.getChamber(i)->initialize(ccParams);
+    }
+
+    m_simulator.synthesize(&m_iceEngine, Simulator::SystemType::NsvOptimized);
     createObjects(&m_iceEngine, &m_simulator);
 
     m_simulator.placeAndInitialize();
@@ -431,7 +448,7 @@ void EngineSimApplication::initialize() {
 
     m_engineView = m_uiManager.getRoot()->addElement<EngineView>();
     m_rightGaugeCluster = m_uiManager.getRoot()->addElement<RightGaugeCluster>();
-    m_rightGaugeCluster->m_simulator = &m_simulator;
+    m_rightGaugeCluster->m_engine = &m_iceEngine;
 
     m_oscCluster = m_uiManager.getRoot()->addElement<OscilloscopeCluster>();
     m_oscCluster->m_simulator = &m_simulator;
@@ -461,14 +478,14 @@ void EngineSimApplication::initialize() {
     synthParams.AudioSampleRate = 44100;
     synthParams.InputBufferSize = 2048;
     synthParams.InputChannelCount = 8;
-    synthParams.InputSampleRate = 9000;
+    synthParams.InputSampleRate = 10025;
     synthParams.Latency = 0.01;
     m_synthesizer.initialize(synthParams);
     m_synthesizer.startAudioRenderingThread();
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    const int steps = 9000;
+    const int steps = 10025;
 
     double speed = 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::Control)) {
@@ -479,19 +496,19 @@ void EngineSimApplication::process(float frame_dt) {
     //const double dt = rt_dt * speed;
     const double rt_dt = frame_dt;
     const double timestep = 1.0 / steps;
-    m_simulator.m_steps = std::round(rt_dt / timestep);
+    m_simulator.i_steps = std::round(rt_dt / timestep);
 
     if (m_synthesizer.getInputWriteOffset() < 1000) {
-        ++m_simulator.m_steps;
+        ++m_simulator.i_steps;
     }
     else if (m_synthesizer.getInputWriteOffset() > 1000) {
-        m_simulator.m_steps -= (m_synthesizer.getInputWriteOffset() - 1000);
-        if (m_simulator.m_steps < 0) {
-            m_simulator.m_steps = 0;
+        m_simulator.i_steps -= (m_synthesizer.getInputWriteOffset() - 1000);
+        if (m_simulator.i_steps < 0) {
+            m_simulator.i_steps = 0;
         }
     }
 
-    const double dt = m_simulator.m_steps * timestep;
+    const double dt = m_simulator.i_steps * timestep;
 
     m_audioSyncedTimeDelta = rt_dt;
     m_averageAudioSyncedTimeDelta =
@@ -512,7 +529,8 @@ void EngineSimApplication::process(float frame_dt) {
 
         // 1 8 4 3 6 5 7 2
         for (int i = 0; i < 8; ++i) {
-            const double exhaustFlow = m_simulator.getCombustionChamber(i)->getLastTimestepExhaustFlow();
+            const double exhaustFlow =
+                m_iceEngine.getChamber(i)->getLastTimestepExhaustFlow();
             if (i % 2 == 0) { //i == 1 || i == 4 || i == 6 || i == 7) {
                 data[0] += 50000 * exhaustFlow / (timestep * speed);
             }
@@ -705,7 +723,7 @@ void EngineSimApplication::run() {
 
         double throttle = 0.999;
         if (m_engine.IsKeyDown(ysKey::Code::Q)) {
-            throttle = 0.95;
+            throttle = 0.99;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::W)) {
             throttle = 0.9;
@@ -724,6 +742,21 @@ void EngineSimApplication::run() {
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_dyno.setEnabled(!m_dyno.isEnabled());
+        }
+
+        static int gear = 0;
+        if (m_engine.ProcessKeyDown(ysKey::Code::Up) && gear < 3) {
+            m_simulator.setGear(++gear);
+        }
+        else if (m_engine.ProcessKeyDown(ysKey::Code::Down) && gear > 0) {
+            m_simulator.setGear(--gear);
+        }
+
+        if (m_engine.IsKeyDown(ysKey::Code::Shift)) {
+            m_simulator.setClutch(0.0);
+        }
+        else {
+            m_simulator.setClutch(1.0);
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::V) &&
@@ -797,7 +830,7 @@ void EngineSimApplication::drawGenerated(
         layer);
 }
 
-void EngineSimApplication::createObjects(Engine *engine, EngineSimulator *simulator) {
+void EngineSimApplication::createObjects(Engine *engine, Simulator *simulator) {
     for (int i = 0; i < engine->getCylinderCount(); ++i) {
         ConnectingRodObject *rodObject = new ConnectingRodObject;
         rodObject->initialize(this);
@@ -811,7 +844,7 @@ void EngineSimApplication::createObjects(Engine *engine, EngineSimulator *simula
 
         CombustionChamberObject *ccObject = new CombustionChamberObject;
         ccObject->initialize(this);
-        ccObject->m_chamber = simulator->getCombustionChamber(i);
+        ccObject->m_chamber = m_iceEngine.getChamber(i);
         m_objects.push_back(ccObject);
     }
 

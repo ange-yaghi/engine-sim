@@ -4,13 +4,23 @@
 #include "scs.h"
 
 #include "piston.h"
-#include "cylinder_bank.h"
 #include "gas_system.h"
 #include "cylinder_head.h"
 #include "units.h"
+#include "fuel.h"
 
 class CombustionChamber : public atg_scs::ForceGenerator {
     public:
+        struct Parameters {
+            Piston *Piston;
+            CylinderHead *Head;
+            Fuel *Fuel;
+
+            double StartingPressure;
+            double StartingTemperature;
+            double CrankcasePressure;
+        };
+
         struct FlameEvent {
             double lit_n;
             double total_n;
@@ -35,15 +45,14 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         CombustionChamber();
         virtual ~CombustionChamber();
 
-        void initialize(double p0, double t0);
+        void initialize(const Parameters &params);
         virtual void apply(atg_scs::SystemState *system);
+
+        CylinderHead *getCylinderHead() const { return m_head; }
+        Piston *getPiston() const { return m_piston; }
+
         double getFrictionForce() const;
-
-        Piston *m_piston;
-        CylinderBank *m_bank;
-        CylinderHead *m_head;
-
-        double volume() const;
+        double getVolume() const;
 
         void ignite();
         void start();
@@ -57,9 +66,6 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         void resetLastTimestepExhaustFlow() { m_lastTimestepTotalExhaustFlow = 0; }
         double getLastTimestepExhaustFlow() const { return m_lastTimestepTotalExhaustFlow; }
-
-        double m_blowbyK;
-        double m_crankcasePressure;
 
         Function *m_totalPropagationToTurbulence;
         Function *m_turbulentFlameSpeed;
@@ -81,6 +87,13 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         double m_lastTimestepTotalExhaustFlow;
         double m_exhaustFlow;
+
+        double m_crankcasePressure;
+
+        Piston *m_piston;
+        CylinderHead *m_head;
+
+        Fuel *m_fuel;
 };
 
 #endif /* ATG_ENGINE_SIM_COMBUSTION_CHAMBER_H */

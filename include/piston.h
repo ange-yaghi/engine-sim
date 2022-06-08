@@ -12,6 +12,7 @@ class Piston : public Part {
             CylinderBank *Bank;
             int CylinderIndex;
 
+            double BlowbyFlowCoefficient;
             double CompressionHeight;
             double WristPinPosition;
             double Displacement;
@@ -36,6 +37,7 @@ class Piston : public Part {
         double m_displacement;
         double m_wristPinLocation;
         double m_mass;
+        double m_blowby_k;
 };
 
 #endif /* ATG_ENGINE_SIM_PISTON_H */

@@ -1,4 +1,3 @@
-#include "..\include\engine.h"
 #include "../include/engine.h"
 
 #include "../include/constants.h"
@@ -15,6 +14,7 @@ Engine::Engine() {
     m_connectingRods = nullptr;
     m_exhaustSystems = nullptr;
     m_intakes = nullptr;
+    m_combustionChambers = nullptr;
 
     m_crankshaftCount = 0;
     m_cylinderBankCount = 0;
@@ -33,6 +33,7 @@ Engine::~Engine() {
     assert(m_heads == nullptr);
     assert(m_exhaustSystems == nullptr);
     assert(m_intakes == nullptr);
+    assert(m_combustionChambers == nullptr);
 }
 
 void Engine::initialize(const Parameters &params) {
@@ -51,6 +52,7 @@ void Engine::initialize(const Parameters &params) {
     m_connectingRods = new ConnectingRod[m_cylinderCount];
     m_exhaustSystems = new ExhaustSystem[m_exhaustSystemCount];
     m_intakes = new Intake[m_intakeCount];
+    m_combustionChambers = new CombustionChamber[m_cylinderCount];
 }
 
 void Engine::destroy() {
@@ -80,6 +82,7 @@ void Engine::destroy() {
     delete[] m_connectingRods;
     delete[] m_exhaustSystems;
     delete[] m_intakes;
+    delete[] m_combustionChambers;
 
     m_crankshafts = nullptr;
     m_cylinderBanks = nullptr;
@@ -88,6 +91,7 @@ void Engine::destroy() {
     m_heads = nullptr;
     m_exhaustSystems = nullptr;
     m_intakes = nullptr;
+    m_combustionChambers = nullptr;
 }
 
 void Engine::setThrottle(double throttle) {
@@ -153,7 +157,11 @@ double Engine::getIntakeAfr() const {
     constexpr double nitrogenMolarMass = units::mass(28.014, units::g);
 
     if (totalFuel == 0) return 0;
-    else return (oxygenMolarMass * totalOxygen + nitrogenMolarMass * totalInert) / (totalFuel * octaneMolarMass);
+    else {
+        return
+            (oxygenMolarMass * totalOxygen + nitrogenMolarMass * totalInert)
+            / (totalFuel * octaneMolarMass);
+    }
 }
 
 double Engine::getExhaustO2() const {
@@ -171,7 +179,11 @@ double Engine::getExhaustO2() const {
     constexpr double nitrogenMolarMass = units::mass(28.014, units::g);
 
     if (totalFuel == 0) return 0;
-    else return (oxygenMolarMass * totalOxygen) / (totalFuel * octaneMolarMass + nitrogenMolarMass * totalInert);
+    else {
+        return
+            (oxygenMolarMass * totalOxygen)
+            / (totalFuel * octaneMolarMass + nitrogenMolarMass * totalInert);
+    }
 }
 
 void Engine::resetFuelConsumption() {
@@ -196,5 +208,5 @@ double Engine::getTotalVolumeFuelConsumed() const {
 
 double Engine::getRpm() const {
     if (m_crankshaftCount == 0) return 0;
-    return -(getCrankshaft(0)->m_body.v_theta / (2 * constants::pi)) * 60;
+    return -(getCrankshaft(0)->m_body.v_theta / (2 * constants::pi)) * units::minute;
 }

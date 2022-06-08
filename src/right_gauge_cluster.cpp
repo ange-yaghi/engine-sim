@@ -8,7 +8,7 @@
 #include <sstream>
 
 RightGaugeCluster::RightGaugeCluster() {
-    m_simulator = nullptr;
+    m_engine = nullptr;
     m_tachometer = nullptr;
     m_speedometer = nullptr;
     m_manifoldVacuumGauge = nullptr;
@@ -36,7 +36,7 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_afrCluster = addElement<AfrCluster>();
     m_fuelCluster = addElement<FuelCluster>();
 
-    m_cylinderTemperatureGauge->m_simulator = m_simulator;
+    m_cylinderTemperatureGauge->m_engine = m_engine;
 
     const float shortenAngle = (float)units::angle(1.0, units::deg);
 
@@ -154,10 +154,10 @@ void RightGaugeCluster::destroy() {
 }
 
 void RightGaugeCluster::update(float dt) {
-    m_cylinderTemperatureGauge->m_simulator = m_simulator;
-    m_throttleDisplay->m_simulator = m_simulator;
-    m_afrCluster->m_simulator = m_simulator;
-    m_fuelCluster->m_simulator = m_simulator;
+    m_cylinderTemperatureGauge->m_engine = m_engine;
+    m_throttleDisplay->m_engine = m_engine;
+    m_afrCluster->m_engine = m_engine;
+    m_fuelCluster->m_engine = m_engine;
 
     UiElement::update(dt);
 }
@@ -178,11 +178,9 @@ void RightGaugeCluster::renderTachSpeedCluster(const Bounds &bounds) {
     const Bounds left = bounds.horizontalSplit(0.0f, 0.5f);
     const Bounds right = bounds.horizontalSplit(0.5f, 1.0f);
 
-    Engine *engine = m_simulator->getEngine();
-
     const Bounds tach = left.verticalSplit(0.5f, 1.0f);
     m_tachometer->m_bounds = tach;
-    m_tachometer->m_gauge->m_value = engine->getRpm();
+    m_tachometer->m_gauge->m_value = m_engine->getRpm();
 
     const Bounds speed = left.verticalSplit(0.0f, 0.5f);
     m_speedometer->m_bounds = speed;
@@ -205,8 +203,6 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
     const Bounds fuelConsumption = fuelSection.horizontalSplit(0.5f, 1.0f);
     m_fuelCluster->m_bounds = fuelConsumption;
 
-    Engine *engine = m_simulator->getEngine();
-
     const double ambientPressure = units::pressure(1.0, units::atm);
     const double ambientTemperature = units::celcius(25.0);
 
@@ -214,14 +210,14 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
     const Bounds manifoldVacuum = grid.get(right, 0, 0, 1, 1);
     m_manifoldVacuumGauge->m_bounds = manifoldVacuum;
     m_manifoldVacuumGauge->m_gauge->m_value =
-        units::convert(engine->getManifoldPressure() - ambientPressure, units::inHg);
+        units::convert(m_engine->getManifoldPressure() - ambientPressure, units::inHg);
 
-    // PV = nRT
-    const double rpm = engine->getRpm();
-    const double theoreticalAirPerRevolution = (ambientPressure * engine->getDisplacement())
+    const double rpm = m_engine->getRpm();
+    const double theoreticalAirPerRevolution =
+        (ambientPressure * m_engine->getDisplacement())
         / (constants::R * ambientTemperature);
     const double theoreticalAirPerSecond = theoreticalAirPerRevolution * rpm / 60.0;
-    const double actualAirPerSecond = engine->getIntakeFlowRate();
+    const double actualAirPerSecond = m_engine->getIntakeFlowRate();
 
     const Bounds cfmBounds = grid.get(right, 0, 1, 1, 1);
     m_intakeCfmGauge->m_bounds = cfmBounds;

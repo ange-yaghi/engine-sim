@@ -99,7 +99,6 @@ void OscilloscopeCluster::signal(UiElement *element, Event event) {
 
 void OscilloscopeCluster::update(float dt) {
     Engine *engine = m_simulator->getEngine();
-
     const double torque =
         units::convert(m_simulator->getCrankshaftLoad(0)->getDynoTorque(), units::ft_lb);
     const double hp = torque * engine->getRpm() / 5252.0;

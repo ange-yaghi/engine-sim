@@ -3,10 +3,6 @@
 
 #include "ui_element.h"
 
-#include "engine.h"
-#include "engine_simulator.h"
-#include "gauge.h"
-
 class UiButton : public UiElement {
     public:
         UiButton();

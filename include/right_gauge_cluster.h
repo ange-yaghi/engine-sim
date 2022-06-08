@@ -4,7 +4,7 @@
 #include "ui_element.h"
 
 #include "engine.h"
-#include "engine_simulator.h"
+#include "simulator.h"
 #include "gauge.h"
 #include "cylinder_temperature_gauge.h"
 #include "cylinder_pressure_gauge.h"
@@ -24,7 +24,7 @@ class RightGaugeCluster : public UiElement {
         virtual void update(float dt);
         virtual void render();
 
-        EngineSimulator *m_simulator;
+        Engine *m_engine;
 
     protected:
         void renderTachSpeedCluster(const Bounds &bounds);

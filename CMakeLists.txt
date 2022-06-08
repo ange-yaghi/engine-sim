@@ -43,7 +43,7 @@ add_library(engine-sim STATIC
     src/piston.cpp
     src/part.cpp
     src/engine.cpp
-    src/engine_simulator.cpp
+    src/simulator.cpp
     src/combustion_chamber.cpp
     src/crankshaft_friction.cpp
     src/gas_system.cpp
@@ -63,6 +63,8 @@ add_library(engine-sim STATIC
     src/feedback_comb_filter.cpp
     src/synthesizer.cpp
     src/leveling_filter.cpp
+    src/vehicle_load.cpp
+    src/fuel.cpp
 
     # Include files
     include/delta.h
@@ -73,7 +75,7 @@ add_library(engine-sim STATIC
     include/piston.h
     include/part.h
     include/engine.h
-    include/engine_simulator.h
+    include/simulator.h
     include/combustion_chamber.h
     include/crankshaft_friction.h
     include/units.h
@@ -94,6 +96,8 @@ add_library(engine-sim STATIC
     include/feedback_comb_filter.h
     include/synthesizer.h
     include/leveling_filter.h
+    include/vehicle_load.h
+    include/fuel.h
 )
 
 target_link_libraries(engine-sim

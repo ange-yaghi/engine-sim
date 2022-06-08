@@ -4,7 +4,7 @@
 #include "../include/engine_sim_application.h"
 
 ThrottleDisplay::ThrottleDisplay() {
-    m_simulator = nullptr;
+    m_engine = nullptr;
 }
 
 ThrottleDisplay::~ThrottleDisplay() {
@@ -87,7 +87,7 @@ void ThrottleDisplay::renderThrottle(const Bounds &bounds) {
 
     // Draw throttle plate
     const float throttleAngle =
-        m_simulator->getEngine()->getThrottle() * ysMath::Constants::PI / 2;
+        m_engine->getThrottle() * ysMath::Constants::PI / 2;
     const float cos_theta = std::cos(throttleAngle);
     const float sin_theta = std::sin(throttleAngle);
 

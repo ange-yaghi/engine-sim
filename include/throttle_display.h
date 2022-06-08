@@ -4,7 +4,6 @@
 #include "ui_element.h"
 
 #include "engine.h"
-#include "engine_simulator.h"
 #include "geometry_generator.h"
 
 class ThrottleDisplay : public UiElement {
@@ -18,7 +17,7 @@ class ThrottleDisplay : public UiElement {
         virtual void update(float dt);
         virtual void render();
 
-        EngineSimulator *m_simulator;
+        Engine *m_engine;
 
     protected:
         virtual void renderThrottle(const Bounds &bounds);

@@ -4,7 +4,6 @@
 #include "ui_element.h"
 
 #include "engine.h"
-#include "engine_simulator.h"
 #include "gauge.h"
 
 class CylinderTemperatureGauge : public UiElement {
@@ -18,7 +17,7 @@ class CylinderTemperatureGauge : public UiElement {
         virtual void update(float dt);
         virtual void render();
 
-        EngineSimulator *m_simulator;
+        Engine *m_engine;
         double m_maxTemperature;
         double m_minTemperature;
 };

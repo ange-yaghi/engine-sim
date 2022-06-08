@@ -3,8 +3,8 @@
 
 #include "ui_element.h"
 
+#include "simulator.h"
 #include "oscilloscope.h"
-#include "engine_simulator.h"
 
 class OscilloscopeCluster : public UiElement {
     public:
@@ -18,7 +18,7 @@ class OscilloscopeCluster : public UiElement {
         virtual void update(float dt);
         virtual void render();
 
-        EngineSimulator *m_simulator;
+        Simulator *m_simulator;
 
         Oscilloscope *getExhaustFlowOscilloscope() { return m_exhaustFlowScope; }
         Oscilloscope *getAudioWaveformOscilloscope() { return m_audioWaveformScope; }

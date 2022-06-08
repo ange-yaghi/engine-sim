@@ -3,9 +3,6 @@
 
 #include "ui_element.h"
 
-#include "engine.h"
-#include "engine_simulator.h"
-
 #include <string>
 
 class Gauge : public UiElement {

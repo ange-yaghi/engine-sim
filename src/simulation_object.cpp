@@ -3,7 +3,7 @@
 #include "../include/engine_sim_application.h"
 
 SimulationObject::SimulationObject() {
-    /* void */
+    m_app = nullptr;
 }
 
 SimulationObject::~SimulationObject() {

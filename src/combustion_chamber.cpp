@@ -6,15 +6,14 @@
 #include "../include/connecting_rod.h"
 #include "../include/utilities.h"
 #include "../include/exhaust_system.h"
+#include "../include/cylinder_bank.h"
 
 #include <cmath>
 
 CombustionChamber::CombustionChamber() {
     m_crankcasePressure = 0.0;
-    m_bank = nullptr;
     m_piston = nullptr;
     m_head = nullptr;
-    m_blowbyK = 3E-4;
     m_lit = false;
     m_peakTemperature = 0;
 
@@ -27,56 +26,38 @@ CombustionChamber::CombustionChamber() {
     m_exhaustFlow = 0;
     m_exhaustFlowRate = 0;
     m_intakeFlowRate = 0;
+
+    m_fuel = nullptr;
 }
 
 CombustionChamber::~CombustionChamber() {
     /* void */
 }
 
-void CombustionChamber::initialize(double p0, double t0) {
-    m_crankcasePressure = p0;
-    m_system.initialize(p0, volume(), t0);
-
-    m_totalPropagationToTurbulence = new Function;
-    m_totalPropagationToTurbulence->initialize(1, 0.1);
-    m_totalPropagationToTurbulence->addSample(0.0, 0.8);
-    m_totalPropagationToTurbulence->addSample(0.1, 0.95);
-    m_totalPropagationToTurbulence->addSample(0.2, 1.0);
-    m_totalPropagationToTurbulence->addSample(0.3, 1.0);
-    m_totalPropagationToTurbulence->addSample(0.4, 1.0);
-    m_totalPropagationToTurbulence->addSample(0.5, 1.0);
-    m_totalPropagationToTurbulence->addSample(0.6, 1.0);
-    m_totalPropagationToTurbulence->addSample(0.7, 1.0);
-    m_totalPropagationToTurbulence->addSample(0.8, 1.0);
-    m_totalPropagationToTurbulence->addSample(0.9, 0.95);
-    m_totalPropagationToTurbulence->addSample(1.0, 0.8);
-
-    m_turbulentFlameSpeed = new Function;
-    m_turbulentFlameSpeed->initialize(1, units::rpm(1000));
-    m_turbulentFlameSpeed->addSample(units::rpm(1000), 12.0);
-    m_turbulentFlameSpeed->addSample(units::rpm(2000), 12.0);
-    m_turbulentFlameSpeed->addSample(units::rpm(3000), 12.0);
-    m_turbulentFlameSpeed->addSample(units::rpm(4000), 12.0);
-    m_turbulentFlameSpeed->addSample(units::rpm(5000), 12.0);
-    m_turbulentFlameSpeed->addSample(units::rpm(6000), 12.0);
-    m_turbulentFlameSpeed->addSample(units::rpm(7000), 12.0);
+void CombustionChamber::initialize(const Parameters &params) {
+    m_piston = params.Piston;
+    m_head = params.Head;
+    m_fuel = params.Fuel;
+    m_crankcasePressure = params.CrankcasePressure;
 }
 
-double CombustionChamber::volume() const {
+double CombustionChamber::getVolume() const {
     const double combustionPortVolume = m_head->m_combustionChamberVolume;
+    const CylinderBank *bank = m_head->m_bank;
 
-    const double area = m_bank->boreSurfaceArea();
+    const double area = bank->boreSurfaceArea();
     const double s =
-        m_piston->relativeX() * m_bank->m_dx + m_piston->relativeY() * m_bank->m_dy;
+        m_piston->relativeX() * bank->m_dx
+        + m_piston->relativeY() * bank->m_dy;
     const double displacement =
-        area * (m_bank->m_deckHeight - s - m_piston->m_compressionHeight);
+        area * (bank->m_deckHeight - s - m_piston->m_compressionHeight);
 
     return displacement + combustionPortVolume;
 }
 
 void CombustionChamber::ignite() {
     if (!m_lit) {
-        m_flameEvent.lastVolume = volume();
+        m_flameEvent.lastVolume = getVolume();
         m_flameEvent.travel_x = 0;
         m_flameEvent.travel_y = 0;
         m_flameEvent.lit_n = 0;
@@ -85,8 +66,8 @@ void CombustionChamber::ignite() {
         m_flameEvent.globalMix = m_system.mix();
         m_lit = true;
 
-        const double fastFlameSpeed = units::distance(15, units::m);
-        const double slowFlameSpeed = units::distance(10, units::m);    
+        constexpr double fastFlameSpeed = units::distance(15, units::m);
+        constexpr double slowFlameSpeed = units::distance(10, units::m);
 
         const double fuel_air_low = 0;
         const double fuel_air_high = 4.0 / 25;
@@ -112,7 +93,7 @@ void CombustionChamber::start() {
 
 void CombustionChamber::update(double dt) {
     m_system.start();
-    m_system.setVolume(volume());
+    m_system.setVolume(getVolume());
     m_system.end();
 
     m_intakeFlowRate = m_head->intakeFlowRate(m_piston->m_cylinderIndex);
@@ -124,7 +105,7 @@ void CombustionChamber::flow(double dt) {
         m_peakTemperature = m_system.temperature();
     }
 
-    m_system.flow(m_blowbyK, dt, m_crankcasePressure, units::celcius(25.0));
+    m_system.flow(m_piston->m_blowby_k, dt, m_crankcasePressure, units::celcius(25.0));
 
     const double start_n = m_system.n();
 
@@ -156,16 +137,14 @@ void CombustionChamber::flow(double dt) {
     }
 
     if (m_lit) {
-        const double totalTravel_x = m_bank->m_bore / 2;
-        const double totalTravel_y = volume() / m_bank->boreSurfaceArea();
-        const double expansion = volume() / m_flameEvent.lastVolume;
+        CylinderBank *bank = m_head->m_bank;
+        const double volume = getVolume();
+        const double totalTravel_x = bank->m_bore / 2;
+        const double totalTravel_y = volume / bank->boreSurfaceArea();
+        const double expansion = volume / m_flameEvent.lastVolume;
         const double lastTravel_x = m_flameEvent.travel_x;
         const double lastTravel_y = m_flameEvent.travel_y * expansion;
-
-        //const double turbulence = erfApproximation(m_turbulence * m_flameEvent.turbulence);
-        //const double turbulentFlameSpeed = units::distance(30.0, units::m);
         const double flameSpeed = m_flameEvent.flameSpeed;
-        //    turbulence * turbulentFlameSpeed + (1 - turbulence) * units::distance(0.03, units::m);
 
         m_flameEvent.travel_x =
             std::fmin(lastTravel_x + dt * flameSpeed, totalTravel_x);
@@ -179,32 +158,24 @@ void CombustionChamber::flow(double dt) {
             const double prevBurnedVolume =
                 lastTravel_x * lastTravel_x * constants::pi * lastTravel_y;
             const double litVolume = burnedVolume - prevBurnedVolume;
-            const double n = (litVolume / volume()) * m_system.n();
-            //m_system.changeTemperature(m_flameEvent.temperature, n);
+            const double n = (litVolume / volume) * m_system.n();
 
-            const double octaneMolarMass = units::mass(114.23, units::g);
-            const double fuelBurned = m_system.react(n * m_flameEvent.efficiency, m_flameEvent.globalMix);
+            const double fuelBurned =
+                m_system.react(n * m_flameEvent.efficiency, m_flameEvent.globalMix);
+            const double massFuelBurned = fuelBurned * m_fuel->getMolecularMass();
             m_system.changeEnergy(
-                units::convert(octaneMolarMass, units::g) * fuelBurned * units::energy(48.1, units::kJ));
+                massFuelBurned * m_fuel->getEnergyDensity());
 
             m_flameEvent.lit_n += n;
-            m_flameEvent.percentageLit += litVolume / volume();
+            m_flameEvent.percentageLit += litVolume / volume;
 
-            // temp
-            //const double massAir = units::mass(30, units::g);
-            //const double massFuel = units::mass(100, units::g);
-            //const double afr = (1 / 14.7);
-            //const double mixMass = afr * massFuel + (1 - afr) * massAir;
-            //const double totalMass = mixMass * n;
-            //const double totalFuelMass = afr * totalMass;
-            
-            m_nBurntFuel += octaneMolarMass * fuelBurned;
+            m_nBurntFuel += massFuelBurned;
         }
         else {
             m_lit = false;
         }
 
-        m_flameEvent.lastVolume = volume();
+        m_flameEvent.lastVolume = volume;
     }
 }
 
@@ -222,7 +193,11 @@ double CombustionChamber::lastEventAfr() const {
     constexpr double nitrogenMolarMass = units::mass(28.014, units::g);
 
     if (totalFuel == 0) return 0;
-    else return (oxygenMolarMass * totalOxygen) / (totalFuel * octaneMolarMass);
+    else {
+        return
+            (oxygenMolarMass * totalOxygen)
+            / (totalFuel * octaneMolarMass + totalInert * nitrogenMolarMass);
+    }
 }
 
 double CombustionChamber::calculateFrictionForce(double v_s) const {
@@ -246,12 +221,13 @@ double CombustionChamber::calculateFrictionForce(double v_s) const {
 }
 
 void CombustionChamber::apply(atg_scs::SystemState *system) {
-    const double area = (m_bank->m_bore * m_bank->m_bore / 4.0) * constants::pi;
+    CylinderBank *bank = m_head->m_bank;
+    const double area = (bank->m_bore * bank->m_bore / 4.0) * constants::pi;
     const double v_x = system->v_x[m_piston->m_body.index];
     const double v_y = system->v_y[m_piston->m_body.index];
 
     const double v_s =
-        v_x * m_bank->m_dx + v_y * m_bank->m_dy;
+        v_x * bank->m_dx + v_y * bank->m_dy;
 
     const double pressureDifferential = m_system.pressure() - m_crankcasePressure;
     const double force = -area * pressureDifferential;
@@ -268,17 +244,18 @@ void CombustionChamber::apply(atg_scs::SystemState *system) {
     system->applyForce(
         0.0,
         0.0,
-        (force + F_fric) * m_bank->m_dx,
-        (force + F_fric) * m_bank->m_dy,
+        (force + F_fric) * bank->m_dx,
+        (force + F_fric) * bank->m_dy,
         m_piston->m_body.index);
 }
 
 double CombustionChamber::getFrictionForce() const {
+    CylinderBank *bank = m_head->m_bank;
     const double v_x = m_piston->m_body.v_x;
     const double v_y = m_piston->m_body.v_y;
 
     const double v_s =
-        v_x * m_bank->m_dx + v_y * m_bank->m_dy;
+        v_x * bank->m_dx + v_y * bank->m_dy;
 
     return calculateFrictionForce(v_s);
 }

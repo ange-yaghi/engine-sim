@@ -2,7 +2,7 @@
 #define ATG_ENGINE_SIM_ENGINE_SIM_APPLICATION_H
 
 #include "geometry_generator.h"
-#include "engine_simulator.h"
+#include "simulator.h"
 #include "engine.h"
 #include "simulation_object.h"
 #include "ui_manager.h"
@@ -51,7 +51,7 @@ class EngineSimApplication {
         Shaders *getShaders() { return &m_shaders; }
         dbasic::TextRenderer *getTextRenderer() { return &m_textRenderer; }
 
-        void createObjects(Engine *engine, EngineSimulator *simulator);
+        void createObjects(Engine *engine, Simulator *simulator);
         dbasic::DeltaEngine *getEngine() { return &m_engine; }
 
         float pixelsToUnits(float pixels) const;
@@ -107,7 +107,7 @@ class EngineSimApplication {
 
         std::vector<SimulationObject *> m_objects;
         Engine m_iceEngine;
-        EngineSimulator m_simulator;
+        Simulator m_simulator;
         Dynamometer m_dyno;
         double m_dynoSpeed;
         double m_torque;

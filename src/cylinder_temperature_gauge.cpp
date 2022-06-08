@@ -11,7 +11,7 @@
 #undef min
 
 CylinderTemperatureGauge::CylinderTemperatureGauge() {
-    m_simulator = nullptr;
+    m_engine = nullptr;
     m_maxTemperature = 2000.0;
     m_minTemperature = 200.0;
 }
@@ -33,14 +33,12 @@ void CylinderTemperatureGauge::update(float dt) {
 
     const double smoothingFactor = std::min(1.0, dt / 1.0);
 
-    Engine *engine = m_simulator->getEngine();
-
     double maxTemperature = m_maxTemperature;
     double minTemperature = m_minTemperature;
 
-    for (int i = 0; i < engine->getCylinderCount(); ++i) {
-        Piston *piston = engine->getPiston(i);
-        CombustionChamber *chamber = m_simulator->getCombustionChamber(i);
+    for (int i = 0; i < m_engine->getCylinderCount(); ++i) {
+        Piston *piston = m_engine->getPiston(i);
+        CombustionChamber *chamber = m_engine->getChamber(i);
 
         const double temperature = chamber->m_system.kineticEnergy();
         double value = temperature - m_minTemperature;
@@ -61,8 +59,7 @@ void CylinderTemperatureGauge::render() {
 
     drawCenteredText("Cyl. Temp.", title.inset(10.0f), 24.0f);
 
-    Engine *engine = m_simulator->getEngine();
-    const int banks = engine->getCylinderBankCount();
+    const int banks = m_engine->getCylinderBankCount();
 
     Grid grid;
     grid.h_cells = banks;
@@ -74,9 +71,9 @@ void CylinderTemperatureGauge::render() {
     const ysVector hot = mix(background, m_app->getRed(), 0.1f);
     const ysVector cold = mix(background, m_app->getBlue(), 0.001f);
 
-    for (int i = 0; i < engine->getCylinderCount(); ++i) {
-        Piston *piston = engine->getPiston(i);
-        CombustionChamber *chamber = m_simulator->getCombustionChamber(i);
+    for (int i = 0; i < m_engine->getCylinderCount(); ++i) {
+        Piston *piston = m_engine->getPiston(i);
+        CombustionChamber *chamber = m_engine->getChamber(i);
         const int bankIndex = piston->m_bank->m_index;
 
         const Bounds &b = grid.get(body, bankIndex, 0);

@@ -12,6 +12,7 @@ Piston::Piston() {
     m_displacement = 0.0;
     m_wristPinLocation = 0.0;
     m_mass = 0.0;
+    m_blowby_k = 0.0;
 }
 
 Piston::~Piston() {
@@ -26,6 +27,7 @@ void Piston::initialize(const Parameters &params) {
     m_displacement = params.Displacement;
     m_wristPinLocation = params.WristPinPosition;
     m_mass = params.Mass;
+    m_blowby_k = params.BlowbyFlowCoefficient;
 }
 
 void Piston::destroy() {

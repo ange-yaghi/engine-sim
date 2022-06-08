@@ -8,7 +8,7 @@
 #include <sstream>
 
 AfrCluster::AfrCluster() {
-    m_simulator = nullptr;
+    m_engine = nullptr;
     m_intakeAfrGauge = nullptr;
     m_exhaustAfrGauge = nullptr;
 }
@@ -69,16 +69,14 @@ void AfrCluster::update(float dt) {
 }
 
 void AfrCluster::render() {
-    Engine *engine = m_simulator->getEngine();
-
     const Bounds top = m_bounds.verticalSplit(0.5f, 1.0f);
     const Bounds bottom = m_bounds.verticalSplit(0.0f, 0.5f);
 
     m_intakeAfrGauge->m_bounds = top;
-    m_intakeAfrGauge->m_gauge->m_value = engine->getIntakeAfr();
+    m_intakeAfrGauge->m_gauge->m_value = m_engine->getIntakeAfr();
 
     m_exhaustAfrGauge->m_bounds = bottom;
-    m_exhaustAfrGauge->m_gauge->m_value = engine->getExhaustO2() * 100;
+    m_exhaustAfrGauge->m_gauge->m_value = m_engine->getExhaustO2() * 100;
 
     UiElement::render();
 }

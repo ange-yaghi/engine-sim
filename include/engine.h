@@ -11,6 +11,7 @@
 #include "exhaust_system.h"
 #include "ignition_module.h"
 #include "intake.h"
+#include "combustion_chamber.h"
 #include "units.h"
 
 class Engine : public Part {
@@ -48,6 +49,7 @@ class Engine : public Part {
         virtual double getManifoldPressure() const;
         virtual double getIntakeAfr() const;
         virtual double getExhaustO2() const;
+        virtual double getRpm() const;
 
         virtual void resetFuelConsumption();
         virtual double getTotalMassFuelConsumed() const;
@@ -67,10 +69,9 @@ class Engine : public Part {
         IgnitionModule *getIgnitionModule() { return &m_ignitionModule; }
         ExhaustSystem *getExhaustSystem(int i) const { return &m_exhaustSystems[i]; }
         Intake *getIntake(int i) const { return &m_intakes[i]; }
+        CombustionChamber *getChamber(int i) const { return &m_combustionChambers[i]; }
 
         const FuelParameters &getFuel() const { return m_fuel; }
-
-        double getRpm() const;
 
     protected:
         Crankshaft *m_crankshafts;
@@ -82,6 +83,7 @@ class Engine : public Part {
 
         Piston *m_pistons;
         ConnectingRod *m_connectingRods;
+        CombustionChamber *m_combustionChambers;
         int m_cylinderCount;
 
         ExhaustSystem *m_exhaustSystems;

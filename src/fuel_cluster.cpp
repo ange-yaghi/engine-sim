@@ -4,7 +4,7 @@
 #include <iomanip>
 
 FuelCluster::FuelCluster() {
-    m_simulator = nullptr;
+    m_engine = nullptr;
 }
 
 FuelCluster::~FuelCluster() {
@@ -24,8 +24,6 @@ void FuelCluster::update(float dt) {
 }
 
 void FuelCluster::render() {
-    Engine *engine = m_simulator->getEngine();
-
     const Bounds bounds = m_bounds.inset(10.0f);
     const Bounds title = bounds.verticalSplit(1.0f, 0.9f);
     const Bounds bodyBounds = bounds.verticalSplit(0.0f, 0.9f);
@@ -38,7 +36,7 @@ void FuelCluster::render() {
 
     std::stringstream ss;
     ss << std::setprecision(3) << std::fixed;
-    ss << units::convert(engine->getTotalVolumeFuelConsumed(), units::L);
+    ss << units::convert(m_engine->getTotalVolumeFuelConsumed(), units::L);
     ss << " L";
 
     const Bounds totalFuelLiters = grid.get(bodyBounds, 0, 0);
@@ -46,7 +44,7 @@ void FuelCluster::render() {
 
     ss = std::stringstream();
     ss << std::setprecision(3) << std::fixed;
-    ss << units::convert(engine->getTotalVolumeFuelConsumed(), units::gal);
+    ss << units::convert(m_engine->getTotalVolumeFuelConsumed(), units::gal);
     ss << " gal";
 
     const Bounds totalFuelGallons = grid.get(bodyBounds, 0, 1);
@@ -54,7 +52,7 @@ void FuelCluster::render() {
 
     ss = std::stringstream();
     ss << std::setprecision(2) << std::fixed;
-    ss << "$" << 4.761 * units::convert(engine->getTotalVolumeFuelConsumed(), units::gal);
+    ss << "$" << 4.761 * units::convert(m_engine->getTotalVolumeFuelConsumed(), units::gal);
     ss << " USD";
 
     const Bounds costUSD = grid.get(bodyBounds, 0, 2);

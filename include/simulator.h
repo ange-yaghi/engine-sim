@@ -1,5 +1,5 @@
-#ifndef ATG_ENGINE_SIM_ENGINE_SIMULATOR_H
-#define ATG_ENGINE_SIM_ENGINE_SIMULATOR_H
+#ifndef ATG_ENGINE_SIM_SIMULATOR_H
+#define ATG_ENGINE_SIM_SIMULATOR_H
 
 #include "engine.h"
 #include "combustion_chamber.h"
@@ -9,7 +9,7 @@
 
 #include <chrono>
 
-class EngineSimulator {
+class Simulator {
     public:
         enum class SystemType {
             NsvOptimized,
@@ -17,8 +17,8 @@ class EngineSimulator {
         };
 
     public:
-        EngineSimulator();
-        ~EngineSimulator();
+        Simulator();
+        ~Simulator();
 
         void synthesize(Engine *engine, SystemType systemType);
         void placeAndInitialize();
@@ -29,14 +29,16 @@ class EngineSimulator {
 
         int getCurrentIteration() const { return m_currentIteration; }
 
-        int m_steps;
+        int i_steps;
 
         double getAverageProcessingTime() const { return m_physicsProcessingTime; }
 
         Engine *getEngine() const { return m_engine; }
-        CombustionChamber *getCombustionChamber(int i);
         CrankshaftLoad *getCrankshaftLoad(int i);
         atg_scs::RigidBodySystem *getSystem() { return m_system; }
+
+        void setGear(int gear);
+        void setClutch(double pressure);
 
     protected:
         atg_scs::RigidBodySystem *m_system;
@@ -44,8 +46,9 @@ class EngineSimulator {
         atg_scs::FixedPositionConstraint *m_crankConstraints;
         atg_scs::LineConstraint *m_cylinderWallConstraints;
         atg_scs::LinkConstraint *m_linkConstraints;
+        atg_scs::ClutchConstraint m_clutchConstraint;
+        atg_scs::RigidBody m_vehicleMass;
 
-        CombustionChamber *m_combustionChambers;
         CrankshaftLoad *m_crankshaftLoads;
 
         std::chrono::steady_clock::time_point m_simulationStart;
@@ -57,4 +60,4 @@ class EngineSimulator {
         double m_physicsProcessingTime;
 };
 
-#endif /* ATG_ENGINE_SIM_ENGINE_SIMULATOR_H */
+#endif /* ATG_ENGINE_SIM_SIMULATOR_H */

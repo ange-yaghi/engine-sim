@@ -8,7 +8,7 @@
 #include <sstream>
 
 CylinderPressureGauge::CylinderPressureGauge() {
-    m_simulator = nullptr;
+    m_engine = nullptr;
 }
 
 CylinderPressureGauge::~CylinderPressureGauge() {
@@ -35,20 +35,19 @@ void CylinderPressureGauge::render() {
 
     drawCenteredText("Cyl. Press. [PSI]", title.inset(10.0f), 24.0f);
 
-    Engine *engine = m_simulator->getEngine();
-    const int banks = engine->getCylinderBankCount();
+    const int banks = m_engine->getCylinderBankCount();
 
     Grid grid;
     grid.h_cells = banks;
     grid.v_cells = 1;
 
-    while (m_gauges.size() < engine->getCylinderCount()) {
+    while (m_gauges.size() < m_engine->getCylinderCount()) {
         m_gauges.push_back(addElement<Gauge>());
     }
 
-    for (int i = 0; i < engine->getCylinderCount(); ++i) {
-        Piston *piston = engine->getPiston(i);
-        CombustionChamber *chamber = m_simulator->getCombustionChamber(i);
+    for (int i = 0; i < m_engine->getCylinderCount(); ++i) {
+        Piston *piston = m_engine->getPiston(i);
+        CombustionChamber *chamber = m_engine->getChamber(i);
         const int bankIndex = piston->m_bank->m_index;
 
         const Bounds &b = grid.get(body, bankIndex, 0);
