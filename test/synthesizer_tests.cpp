@@ -13,7 +13,6 @@ void setupStandardSynthesizer(Synthesizer &synth) {
     params.InputBufferSize = 1024;
     params.InputChannelCount = 8;
     params.InputSampleRate = 32;
-    params.Latency = 0.5;
 
     synth.initialize(params);
 }
@@ -25,7 +24,6 @@ void setupSynchronizedSynthesizer(Synthesizer &synth) {
     params.InputBufferSize = 1024;
     params.InputChannelCount = 8;
     params.InputSampleRate = 32;
-    params.Latency = 0.5;
 
     synth.initialize(params);
 }

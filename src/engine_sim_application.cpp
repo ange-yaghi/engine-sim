@@ -478,14 +478,13 @@ void EngineSimApplication::initialize() {
     synthParams.AudioSampleRate = 44100;
     synthParams.InputBufferSize = 2048;
     synthParams.InputChannelCount = 8;
-    synthParams.InputSampleRate = 10025;
-    synthParams.Latency = 0.01;
+    synthParams.InputSampleRate = 11025;
     m_synthesizer.initialize(synthParams);
     m_synthesizer.startAudioRenderingThread();
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    const int steps = 10025;
+    const int steps = 11025;
 
     double speed = 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::Control)) {
@@ -557,7 +556,7 @@ void EngineSimApplication::process(float frame_dt) {
     const SampleOffset currentAudioPosition = m_audioSource->GetCurrentPosition();
     const SampleOffset safeWritePosition = m_audioSource->GetCurrentWritePosition();
     const SampleOffset writePosition = m_audioBuffer.m_writePointer;
-    //SampleOffset maxWrite = m_audioBuffer.offsetDelta(safeWritePosition, currentAudioPosition);
+
     SampleOffset targetWritePosition =
         m_audioBuffer.getBufferIndex(currentAudioPosition, 44100 * 0.1);
     SampleOffset maxWrite = m_audioBuffer.offsetDelta(writePosition, targetWritePosition);
@@ -708,8 +707,9 @@ void EngineSimApplication::run() {
 
         updateScreenSizeStability();
 
-        if (m_engine.ProcessKeyDown(ysKey::Code::Space) &&
-            m_engine.GetGameWindow()->IsActive()) {
+        if (m_engine.ProcessKeyDown(ysKey::Code::Space)
+            && m_engine.GetGameWindow()->IsActive())
+        {
             m_paused = !m_paused;
         }
 
@@ -774,7 +774,7 @@ void EngineSimApplication::run() {
         }
 
         if (!m_paused || m_engine.ProcessKeyDown(ysKey::Code::Right)) {
-            process(1 / 60.0f);
+            process(m_engine.GetFrameLength());
         }
 
         m_uiManager.update(1 / 60.0f);

@@ -18,7 +18,6 @@ class Synthesizer {
             int AudioBufferSize;
             double InputSampleRate;
             double AudioSampleRate;
-            double Latency;
         };
 
         struct InputChannel {
@@ -75,7 +74,6 @@ class Synthesizer {
 
         double m_inputSampleRate;
         double m_audioSampleRate;
-        double m_latency;
 
         std::thread *m_thread;
         std::atomic<bool> m_run;
