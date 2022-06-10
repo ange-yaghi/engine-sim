@@ -13,6 +13,7 @@
 #include "../include/exhaust_system.h"
 #include "../include/feedback_comb_filter.h"
 
+#include <chrono>
 #include <stdlib.h>
 #include <sstream>
 
@@ -56,6 +57,7 @@ EngineSimApplication::EngineSimApplication() {
     m_rightGaugeCluster = nullptr;
     m_temperatureGauge = nullptr;
     m_oscCluster = nullptr;
+    m_performanceCluster = nullptr;
 
     m_oscillatorDataLeft = "../assets/oscillator_data_left.csv";
     m_oscillatorDataRight = "../assets/oscillator_data_right.csv";
@@ -453,6 +455,8 @@ void EngineSimApplication::initialize() {
     m_oscCluster = m_uiManager.getRoot()->addElement<OscilloscopeCluster>();
     m_oscCluster->m_simulator = &m_simulator;
 
+    m_performanceCluster = m_uiManager.getRoot()->addElement<PerformanceCluster>();
+
     m_audioBuffer.initialize(44100, 44100);
     m_audioBuffer.m_writePointer = 44100 * 0.1;
 
@@ -520,6 +524,8 @@ void EngineSimApplication::process(float frame_dt) {
         (float)units::rpm(9000));
     //m_dynoSpeed = units::rpm(500);
 
+    auto proc_t0 = std::chrono::steady_clock::now();
+
     int i = 0;
     while (m_simulator.simulateStep(dt * speed)) {
         double data[8];
@@ -550,6 +556,11 @@ void EngineSimApplication::process(float frame_dt) {
             m_synthesizer.endInputBlock();
         }
     }
+
+    auto proc_t1 = std::chrono::steady_clock::now();
+
+    auto duration = proc_t1 - proc_t0;
+    m_performanceCluster->addTimePerTimestepSample((duration.count() / 1000.0) / m_simulator.i_steps);
 
     m_synthesizer.endInputBlock();
 
@@ -887,11 +898,15 @@ void EngineSimApplication::renderScene() {
     Grid grid;
     grid.v_cells = 2;
     grid.h_cells = 3;
+    Grid grid3x3;
+    grid3x3.v_cells = 3;
+    grid3x3.h_cells = 3;
     m_engineView->m_bounds = grid.get(windowBounds, 1, 0, 1, 1);
     m_engineView->setLocalPosition({ 0, 0 });
 
     m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 2);
     m_oscCluster->m_bounds = grid.get(windowBounds, 1, 1);
+    m_performanceCluster->m_bounds = grid3x3.get(windowBounds, 0, 1);
     //m_temperatureGauge->m_bounds = grid.get(windowBounds, 0, 1, 4, 11);
 
     m_geometryGenerator.reset();

@@ -137,6 +137,7 @@ add_executable(engine-sim-app WIN32
     src/afr_cluster.cpp
     src/fuel_cluster.cpp
     src/oscilloscope_cluster.cpp
+    src/performance_cluster.cpp
 
     # Include files
     include/delta.h
@@ -167,6 +168,7 @@ add_executable(engine-sim-app WIN32
     include/afr_cluster.h
     include/fuel_cluster.h
     include/oscilloscope_cluster.h
+    include/performance_cluster.h
 )
 
 target_link_libraries(engine-sim-app

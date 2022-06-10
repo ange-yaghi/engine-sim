@@ -16,6 +16,7 @@
 #include "cylinder_temperature_gauge.h"
 #include "synthesizer.h"
 #include "oscilloscope_cluster.h"
+#include "performance_cluster.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -117,6 +118,7 @@ class EngineSimApplication {
         RightGaugeCluster *m_rightGaugeCluster;
         OscilloscopeCluster *m_oscCluster;
         CylinderTemperatureGauge *m_temperatureGauge;
+        PerformanceCluster *m_performanceCluster;
         Synthesizer m_synthesizer;
 
         bool m_paused;
