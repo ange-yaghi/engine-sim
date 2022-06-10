@@ -352,6 +352,7 @@ double GasSystem::pressureEquilibriumMaxFlow(double P_env, double T_env) const {
     }
 }
 
+/*
 double GasSystem::approximateDensity() const {
     return (units::AirMolecularMass * n()) / volume();
 }
@@ -398,3 +399,4 @@ double GasSystem::n_fuel() const {
 double GasSystem::n_o2() const {
     return state.mix.p_o2 * n();
 }
+*/

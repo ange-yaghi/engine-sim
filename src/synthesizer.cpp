@@ -79,7 +79,7 @@ void Synthesizer::initialize(const Parameters &p) {
         temp_filter_1.getImpulseResponse()[i] = 2 * 0.025 * ((int16_t *)waveFile1.GetBuffer())[i] / INT16_MAX;
     }
 
-    m_levelingFilter.p_target = 30000;
+    m_levelingFilter.p_target = 40000;
     m_levelingFilter.p_maxLevel = 10.0;
     m_levelingFilter.p_minLevel = 0.0001;
 }
@@ -231,7 +231,7 @@ double Synthesizer::sampleInput(double timeOffset, int channel) const {
     const double v1 = data[index1];
 
     const double r = 0.25 * ((double)rand() / RAND_MAX) - 0.125;
-    const double s_aug = s;// std::fmax(std::fmin(s + r, 1.0), 0.0);
+    const double s_aug = std::fmax(std::fmin(s + r, 1.0), 0.0);
 
     if (std::abs(data[index1] - data[index0]) > 10000) {
         //return data[index0];
@@ -316,12 +316,12 @@ int16_t Synthesizer::renderAudio(double timeOffset) {
      //   v1 = INT16_MAX * 0.5;
     //}
 
-    //const double v = temp_filter_0.f(d0 * 50) + temp_filter_1.f(d1 * 50);
+    const double v = temp_filter_0.f(d0 * 50) + temp_filter_1.f(d1 * 50);
     //const double v = temp_filter_0.f(v0) + temp_filter_1.f(v1);
     //const double v = temp_filter_0.f(temp_prev[0] * r) + temp_filter_1.f(temp_prev[1] * r);
-    const double v =
-        temp_filter_0.f(0.1 * temp_prev[0] * r)
-        + temp_filter_1.f(0.1 * temp_prev[1] * r);
+    //const double v =
+    //    temp_filter_0.f(0.1 * temp_prev[0] * r)
+    //    + temp_filter_1.f(0.1 * temp_prev[1] * r);
     //const double v = temp_filter_0.f(temp_prev[0]) + temp_filter_1.f(temp_prev[1]);
     //const double v = temp_prev[0] + temp_prev[1];
     //const double v = d0 + d1;

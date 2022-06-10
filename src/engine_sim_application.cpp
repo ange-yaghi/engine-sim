@@ -560,7 +560,10 @@ void EngineSimApplication::process(float frame_dt) {
     auto proc_t1 = std::chrono::steady_clock::now();
 
     auto duration = proc_t1 - proc_t0;
-    m_performanceCluster->addTimePerTimestepSample((duration.count() / 1000.0) / m_simulator.i_steps);
+    if (m_simulator.i_steps > 0) {
+        m_performanceCluster->addTimePerTimestepSample(
+            (duration.count() / 1000.0) / m_simulator.i_steps);
+    }
 
     m_synthesizer.endInputBlock();
 
