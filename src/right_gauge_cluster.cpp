@@ -9,6 +9,7 @@
 
 RightGaugeCluster::RightGaugeCluster() {
     m_engine = nullptr;
+    m_afrCluster = nullptr;
     m_tachometer = nullptr;
     m_speedometer = nullptr;
     m_manifoldVacuumGauge = nullptr;

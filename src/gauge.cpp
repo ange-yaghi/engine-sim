@@ -53,10 +53,10 @@ void Gauge::update(float dt) {
         m_needleKs * (needle_s - m_needlePosition)
         - m_needleKd * m_needleVelocity;
 
-    m_needlePosition += m_needleVelocity * dt;
     m_needleVelocity = std::fminf(
             m_needleMaxVelocity,
             std::fmaxf(m_needleVelocity + F * dt, -m_needleMaxVelocity));
+    m_needlePosition += m_needleVelocity * dt;
 }
 
 void Gauge::render() {

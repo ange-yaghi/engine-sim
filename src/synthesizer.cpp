@@ -1,3 +1,4 @@
+#include "..\include\synthesizer.h"
 #include "../include/synthesizer.h"
 
 #include "../include/delta.h"
@@ -61,7 +62,7 @@ void Synthesizer::initialize(const Parameters &p) {
     waveFile0.CloseFile();
 
     ysWindowsAudioWaveFile waveFile1;
-    waveFile1.OpenFile("../assets/test_engine_16.wav"); // ../assets/test_engine_16.wav
+    waveFile1.OpenFile("../assets/test_engine_15_eq_adjusted_16.wav"); // ../assets/test_engine_16.wav
     waveFile1.InitializeInternalBuffer(waveFile1.GetSampleCount());
     waveFile1.FillBuffer(0);
     waveFile1.CloseFile();
@@ -150,8 +151,6 @@ void Synthesizer::waitProcessed() {
 }
 
 void Synthesizer::writeInput(const double *data) {
-    assert(m_inputWriteOffset < m_inputBufferSize);
-
     if (m_inputWriteOffset >= m_inputBufferSize) return;
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
@@ -252,6 +251,11 @@ bool Synthesizer::timeOffsetInBounds(double timeOffset, int safetyBoundary) cons
     const int index1 = (int)std::ceil(index);
 
     return index1 <= safetyBoundary;
+}
+
+void Synthesizer::setInputSampleRate(double sampleRate) {
+    std::lock_guard<std::mutex> lock(m_lock0);
+    m_inputSampleRate = sampleRate;
 }
 
 void Synthesizer::trim(int audioSamples) {

@@ -52,6 +52,9 @@ class Synthesizer {
         bool timeOffsetGreaterZero(double timeOffset) const;
         bool timeOffsetInBounds(double timeOffset, int safetyBoundary) const;
 
+        void setInputSampleRate(double sampleRate);
+        double getInputSampleRate() const { return m_inputSampleRate; }
+
         void trim(int audioSamples);
         void trimInput(double startTimeOffset, bool move=true);
         int16_t renderAudio(double timeOffset);

@@ -45,13 +45,9 @@ EngineSimApplication::EngineSimApplication() {
     m_displayHeight = (float)units::distance(2.0, units::foot);
     m_outputAudioBuffer = nullptr;
     m_audioSource = nullptr;
-    m_lastAudioSample = 0;
 
     m_torque = 0;
     m_dynoSpeed = 0;
-
-    m_averageAudioSyncedTimeDelta = 0;
-    m_audioSyncedTimeDelta = 0;
 
     m_engineView = nullptr;
     m_rightGaugeCluster = nullptr;
@@ -59,11 +55,7 @@ EngineSimApplication::EngineSimApplication() {
     m_oscCluster = nullptr;
     m_performanceCluster = nullptr;
 
-    m_oscillatorDataLeft = "../assets/oscillator_data_left.csv";
-    m_oscillatorDataRight = "../assets/oscillator_data_right.csv";
-    m_oscillatorsLeft = m_oscillatorsRight = nullptr;
-    m_oscillatorCountLeft = m_oscillatorCountRight = 0;
-    updateOscillatorData();
+    m_oscillatorSampleOffset = 0;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -100,6 +92,8 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     settings.WindowPositionX = 0;
     settings.WindowPositionY = 0;
     settings.WindowStyle = ysWindow::WindowStyle::Windowed;
+    settings.WindowWidth = 1920;
+    settings.WindowHeight = 1081;
 
     m_engine.CreateGameWindow(settings);
 
@@ -206,7 +200,7 @@ void EngineSimApplication::initialize() {
 
     // Temporary moment of inertia approximation
     const double crank_r = crankshaftParams.CrankThrow;
-    const double flywheel_r = units::distance(14.0, units::inch) / 2.0;
+    constexpr double flywheel_r = units::distance(14.0, units::inch) / 2.0;
     const double I_crank = (1 / 2.0) * crankshaftParams.Mass * crank_r * crank_r;
     const double I_flywheel =
         (1 / 2.0) * crankshaftParams.FlywheelMass * flywheel_r * flywheel_r;
@@ -413,7 +407,7 @@ void EngineSimApplication::initialize() {
     imParams.CylinderCount = 8;
     imParams.TimingCurve = timingCurve;
     m_iceEngine.getIgnitionModule()->initialize(imParams);
-    const double cycle = units::angle(2 * 360.0, units::deg);
+    constexpr double cycle = units::angle(2 * 360.0, units::deg);
     m_iceEngine.getIgnitionModule()->setFiringOrder(1 - 1, (0 / 8.0) * cycle);
     m_iceEngine.getIgnitionModule()->setFiringOrder(8 - 1, (1 / 8.0) * cycle);
     m_iceEngine.getIgnitionModule()->setFiringOrder(4 - 1, (2 / 8.0) * cycle);
@@ -439,10 +433,9 @@ void EngineSimApplication::initialize() {
         m_iceEngine.getChamber(i)->initialize(ccParams);
     }
 
-    m_simulator.synthesize(&m_iceEngine, Simulator::SystemType::NsvOptimized);
-    createObjects(&m_iceEngine, &m_simulator);
-
-    m_simulator.placeAndInitialize();
+    m_simulator.initialize(&m_iceEngine, Simulator::SystemType::NsvOptimized);
+    m_simulator.startAudioRenderingThread();
+    createObjects(&m_iceEngine);
 
     m_dyno.initialize(m_simulator.getCrankshaftLoad(0));
 
@@ -471,101 +464,35 @@ void EngineSimApplication::initialize() {
     m_audioSource->SetMode(ysAudioSource::Mode::Loop);
     m_audioSource->SetPan(0.0f);
     m_audioSource->SetVolume(1.0f);
-
-    m_audioImpulseResponse.initialize(16);
-    m_audioImpulseResponse.getImpulseResponse()[0] = 1;
-    m_audioImpulseResponse.getImpulseResponse()[4] = 0.5;
-    m_audioImpulseResponse.getImpulseResponse()[8] = 1;
-
-    Synthesizer::Parameters synthParams;
-    synthParams.AudioBufferSize = 44100;
-    synthParams.AudioSampleRate = 44100;
-    synthParams.InputBufferSize = 2048;
-    synthParams.InputChannelCount = 8;
-    synthParams.InputSampleRate = 11025;
-    m_synthesizer.initialize(synthParams);
-    m_synthesizer.startAudioRenderingThread();
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    const int steps = 11025;
-
     double speed = 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::Control)) {
         speed = 1 / 100.0;
     }
 
-    //const double rt_dt = frame_dt; // m_audioBuffer.offsetToTime(sampleDelta);
-    //const double dt = rt_dt * speed;
-    const double rt_dt = frame_dt;
-    const double timestep = 1.0 / steps;
-    m_simulator.i_steps = std::round(rt_dt / timestep);
-
-    if (m_synthesizer.getInputWriteOffset() < 1000) {
-        ++m_simulator.i_steps;
-    }
-    else if (m_synthesizer.getInputWriteOffset() > 1000) {
-        m_simulator.i_steps -= (m_synthesizer.getInputWriteOffset() - 1000);
-        if (m_simulator.i_steps < 0) {
-            m_simulator.i_steps = 0;
-        }
-    }
-
-    const double dt = m_simulator.i_steps * timestep;
-
-    m_audioSyncedTimeDelta = rt_dt;
-    m_averageAudioSyncedTimeDelta =
-        m_audioSyncedTimeDelta * 0.01 + m_averageAudioSyncedTimeDelta * 0.99;
-
-    m_simulator.start();
-
-    m_dynoSpeed = std::fmodf(
-        (float)(m_dynoSpeed + units::rpm(300) * dt),
-        (float)units::rpm(9000));
-    //m_dynoSpeed = units::rpm(500);
+    m_simulator.setSpeed(speed);
 
     auto proc_t0 = std::chrono::steady_clock::now();
 
-    int i = 0;
-    while (m_simulator.simulateStep(dt * speed)) {
-        double data[8];
-        double totalFlow = 0;
-        data[0] = data[1] = 0;
-
-        // 1 8 4 3 6 5 7 2
-        for (int i = 0; i < 8; ++i) {
-            const double exhaustFlow =
-                m_iceEngine.getChamber(i)->getLastTimestepExhaustFlow();
-            if (i % 2 == 0) { //i == 1 || i == 4 || i == 6 || i == 7) {
-                data[0] += 50000 * exhaustFlow / (timestep * speed);
-            }
-            else {
-                data[1] += 50000 * exhaustFlow / (timestep * speed);
-            }
-
-            totalFlow += exhaustFlow;
-        }
-
+    m_simulator.startFrame(frame_dt);
+    const int iterationCount = m_simulator.getFrameIterationCount();
+    while (m_simulator.simulateStep()) {
+        const double totalFlow = m_simulator.getTotalExhaustFlow();
         m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            totalFlow / (timestep * speed));
-
-        m_synthesizer.writeInput(data);
-
-        if (i++ % 16 == 0) {
-            m_synthesizer.endInputBlock();
-        }
+            totalFlow / (m_simulator.getTimestep() * speed));
     }
+
+    m_simulator.endFrame();
 
     auto proc_t1 = std::chrono::steady_clock::now();
-
     auto duration = proc_t1 - proc_t0;
-    if (m_simulator.i_steps > 0) {
+    if (iterationCount > 0) {
         m_performanceCluster->addTimePerTimestepSample(
-            (duration.count() / 1000.0) / m_simulator.i_steps);
+            (duration.count() / 1000.0) / iterationCount);
     }
-
-    m_synthesizer.endInputBlock();
 
     const SampleOffset currentAudioPosition = m_audioSource->GetCurrentPosition();
     const SampleOffset safeWritePosition = m_audioSource->GetCurrentWritePosition();
@@ -578,29 +505,24 @@ void EngineSimApplication::process(float frame_dt) {
     SampleOffset currentLead = m_audioBuffer.offsetDelta(currentAudioPosition, writePosition);
     SampleOffset newLead = m_audioBuffer.offsetDelta(currentAudioPosition, targetWritePosition);
 
-#undef min
     if (currentLead > newLead) {
         maxWrite = 0;
     }
 
-    //maxWrite = 44100 / 60.0;
-
-    static int oscSampleOffset = 0;
-
     int16_t *samples = new int16_t[maxWrite];
-    const int readSamples = m_synthesizer.readAudioOutput(maxWrite, samples);
+    const int readSamples = m_simulator.readAudioOutput(maxWrite, samples);
 
-    for (int i = 0; i < readSamples; ++i) {
+    for (int i = 0; i < readSamples && i < maxWrite; ++i) {
         const int16_t sample = samples[i];
-        if (oscSampleOffset % 4 == 0) {
+        if (m_oscillatorSampleOffset % 4 == 0) {
             m_oscCluster->getAudioWaveformOscilloscope()->addDataPoint(
-                oscSampleOffset,
+                m_oscillatorSampleOffset,
                 sample / (float)(INT16_MAX));
         }
 
         m_audioBuffer.writeSample(sample, m_audioBuffer.m_writePointer, i);
 
-        oscSampleOffset = (oscSampleOffset + 1) % (44100 / 10);
+        m_oscillatorSampleOffset = (m_oscillatorSampleOffset + 1) % (44100 / 10);
     }
 
     delete[] samples;
@@ -639,7 +561,7 @@ void EngineSimApplication::render() {
 
     std::stringstream ss;
     //ss << units::convert(m_iceEngine.getIntake(0)->m_system.pressure(), units::psi) << "\n";
-    ss << m_synthesizer.getInputWriteOffset() << "\n";
+    ss << m_simulator.getSynthesizerInputLatency() << "\n";
     ss << m_audioBuffer.offsetDelta(m_audioSource->GetCurrentPosition(), m_audioBuffer.m_writePointer) << "\n";
     ss << m_engine.GetAverageFramerate() << "\n";
     m_textRenderer.RenderText(
@@ -662,54 +584,6 @@ float EngineSimApplication::unitsToPixels(float units) const {
     return units * f;
 }
 
-void EngineSimApplication::updateOscillatorData() {
-    if (m_oscillatorsLeft != nullptr) delete[] m_oscillatorsLeft;
-    if (m_oscillatorsRight != nullptr) delete[] m_oscillatorsRight;
-
-    atg_csv::CsvData csvData;
-    csvData.initialize(4);
-    atg_csv::CsvData::ErrorCode err = csvData.loadCsv(m_oscillatorDataLeft.c_str());
-    if (err != atg_csv::CsvData::ErrorCode::Success) {
-        m_oscillatorCountLeft = 0;
-        m_oscillatorsLeft = nullptr;
-
-        return;
-    }
-
-    m_oscillatorsLeft = new Oscillator[(size_t)csvData.m_rows - 1];
-    m_oscillatorCountLeft = csvData.m_rows - 1;
-
-    for (int i = 1; i < csvData.m_rows; ++i) {
-        Oscillator &osc = m_oscillatorsLeft[(size_t)i - 1];
-        osc.freq = strtod(csvData.readEntry(i, 0), nullptr);
-        osc.k_d = strtod(csvData.readEntry(i, 1), nullptr);
-        osc.s = strtod(csvData.readEntry(i, 2), nullptr);
-    }
-
-    csvData.destroy();
-
-    // Right bank
-    err = csvData.loadCsv(m_oscillatorDataRight.c_str());
-    if (err != atg_csv::CsvData::ErrorCode::Success) {
-        m_oscillatorCountRight = 0;
-        m_oscillatorsRight = nullptr;
-
-        return;
-    }
-
-    m_oscillatorsRight = new Oscillator[(size_t)csvData.m_rows - 1];
-    m_oscillatorCountRight = csvData.m_rows - 1;
-
-    for (int i = 1; i < csvData.m_rows; ++i) {
-        Oscillator &osc = m_oscillatorsRight[(size_t)i - 1];
-        osc.freq = strtod(csvData.readEntry(i, 0), nullptr);
-        osc.k_d = strtod(csvData.readEntry(i, 1), nullptr);
-        osc.s = strtod(csvData.readEntry(i, 2), nullptr);
-    }
-
-    csvData.destroy();
-}
-
 void EngineSimApplication::run() {
     while (true) {
         if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
@@ -729,10 +603,6 @@ void EngineSimApplication::run() {
 
         if (m_engine.ProcessKeyDown(ysKey::Code::F)) {
             m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
-        }
-
-        if (m_engine.ProcessKeyDown(ysKey::Code::R)) {
-            updateOscillatorData();
         }
 
         double throttle = 0.999;
@@ -791,7 +661,7 @@ void EngineSimApplication::run() {
             process(m_engine.GetFrameLength());
         }
 
-        m_uiManager.update(1 / 60.0f);
+        m_uiManager.update(m_engine.GetFrameLength());
 
         renderScene();
 
@@ -806,8 +676,7 @@ void EngineSimApplication::run() {
         stopRecording();
     }
 
-    m_synthesizer.endAudioRenderingThread();
-    m_synthesizer.destroy();
+    m_simulator.endAudioRenderingThread();
 }
 
 void EngineSimApplication::destroy() {
@@ -818,6 +687,8 @@ void EngineSimApplication::destroy() {
 
     m_assetManager.Destroy();
     m_engine.Destroy();
+
+    m_simulator.destroy();
 }
 
 void EngineSimApplication::drawGenerated(
@@ -844,7 +715,7 @@ void EngineSimApplication::drawGenerated(
         layer);
 }
 
-void EngineSimApplication::createObjects(Engine *engine, Simulator *simulator) {
+void EngineSimApplication::createObjects(Engine *engine) {
     for (int i = 0; i < engine->getCylinderCount(); ++i) {
         ConnectingRodObject *rodObject = new ConnectingRodObject;
         rodObject->initialize(this);
@@ -910,7 +781,6 @@ void EngineSimApplication::renderScene() {
     m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 2);
     m_oscCluster->m_bounds = grid.get(windowBounds, 1, 1);
     m_performanceCluster->m_bounds = grid3x3.get(windowBounds, 0, 1);
-    //m_temperatureGauge->m_bounds = grid.get(windowBounds, 0, 1, 4, 11);
 
     m_geometryGenerator.reset();
 
@@ -982,7 +852,7 @@ void EngineSimApplication::stopRecording() {
 
 void EngineSimApplication::recordFrame() {
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
-    atg_dtv::Frame *frame = m_encoder.newFrame(true);
+    atg_dtv::Frame *frame = m_encoder.newFrame(false);
     if (frame != nullptr && m_encoder.getError() == atg_dtv::Encoder::Error::None) {
         m_engine.GetDevice()->ReadRenderTarget(m_engine.GetScreenRenderTarget(), frame->m_rgb);
     }

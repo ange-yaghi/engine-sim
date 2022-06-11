@@ -52,7 +52,7 @@ class EngineSimApplication {
         Shaders *getShaders() { return &m_shaders; }
         dbasic::TextRenderer *getTextRenderer() { return &m_textRenderer; }
 
-        void createObjects(Engine *engine, Simulator *simulator);
+        void createObjects(Engine *engine);
         dbasic::DeltaEngine *getEngine() { return &m_engine; }
 
         float pixelsToUnits(float pixels) const;
@@ -69,18 +69,6 @@ class EngineSimApplication {
         ysVector getBlue() const { return m_blue; }
 
         dbasic::AssetManager *getAssetManager() { return &m_assetManager; }
-
-    protected:
-        Oscillator *m_oscillatorsLeft;
-        int m_oscillatorCountLeft;
-
-        Oscillator *m_oscillatorsRight;
-        int m_oscillatorCountRight;
-
-        std::string m_oscillatorDataLeft;
-        std::string m_oscillatorDataRight;
-
-        void updateOscillatorData();
 
     protected:
         void renderScene();
@@ -119,7 +107,6 @@ class EngineSimApplication {
         OscilloscopeCluster *m_oscCluster;
         CylinderTemperatureGauge *m_temperatureGauge;
         PerformanceCluster *m_performanceCluster;
-        Synthesizer m_synthesizer;
 
         bool m_paused;
 
@@ -152,10 +139,8 @@ class EngineSimApplication {
         ysAudioBuffer *m_outputAudioBuffer;
         AudioBuffer m_audioBuffer;
         ysAudioSource *m_audioSource;
-        int m_lastAudioSample;
-        double m_audioSyncedTimeDelta;
-        double m_averageAudioSyncedTimeDelta;
-        ConvolutionFilter m_audioImpulseResponse;
+
+        int m_oscillatorSampleOffset;
 
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
         atg_dtv::Encoder m_encoder;

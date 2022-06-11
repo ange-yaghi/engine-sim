@@ -12,6 +12,9 @@ Simulator::Simulator() {
     m_engine = nullptr;
     i_steps = 1;
     m_currentIteration = 0;
+    m_speed = 1.0;
+    m_targetSynthesizerLatency = 0.1;
+    m_simulationFrequency = 11025;
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
@@ -20,6 +23,7 @@ Simulator::Simulator() {
     m_system = nullptr;
 
     m_physicsProcessingTime = 0.0;
+    m_exhaustFlowStagingBuffer = nullptr;
 }
 
 Simulator::~Simulator() {
@@ -30,8 +34,12 @@ Simulator::~Simulator() {
     assert(m_system == nullptr);
 }
 
-void Simulator::synthesize(Engine *engine, SystemType systemType) {
+void Simulator::initialize(Engine *engine, SystemType systemType) {
     static constexpr double pi = 3.14159265359;
+
+    atg_scs::ConjugateGradientSleSolver *cgs = new atg_scs::ConjugateGradientSleSolver;
+    cgs->setMaxError(1E-1);
+    cgs->setMinError(1E-1);
 
     if (systemType == SystemType::NsvOptimized) {
         atg_scs::OptimizedNsvRigidBodySystem *system =
@@ -168,6 +176,9 @@ void Simulator::synthesize(Engine *engine, SystemType systemType) {
         m_system->addConstraint(&m_cylinderWallConstraints[i]);
         m_system->addForceGenerator(engine->getChamber(i));
     }
+
+    placeAndInitialize();
+    initializeSynthesizer();
 }
 
 void Simulator::placeAndInitialize() {
@@ -217,12 +228,39 @@ void Simulator::placeAndInitialize() {
     m_engine->getIgnitionModule()->reset();
 }
 
-void Simulator::start() {
+void Simulator::startFrame(double dt) {
     m_simulationStart = std::chrono::steady_clock::now();
     m_currentIteration = 0;
+    m_synthesizer.setInputSampleRate(m_simulationFrequency * m_speed);
+
+    const double timestep = getTimestep();
+    i_steps = (int)std::round((dt * m_speed) / timestep);
+
+    const int targetLatency = (int)std::ceil(m_targetSynthesizerLatency * m_simulationFrequency);
+    if (m_synthesizer.getInputWriteOffset() < targetLatency) {
+        ++i_steps;
+    }
+    else if (m_synthesizer.getInputWriteOffset() > targetLatency) {
+        i_steps -= (m_synthesizer.getInputWriteOffset() - targetLatency);
+        if (i_steps < 0) {
+            i_steps = 0;
+        }
+    }
+
+    for (int i = 0; i < m_engine->getIntakeCount(); ++i) {
+        m_engine->getIntake(i)->m_flowRate = 0;
+    }
 }
 
-bool Simulator::simulateStep(double dt) {
+void Simulator::startAudioRenderingThread() {
+    m_synthesizer.startAudioRenderingThread();
+}
+
+void Simulator::endAudioRenderingThread() {
+    m_synthesizer.endAudioRenderingThread();
+}
+
+bool Simulator::simulateStep() {
     if (m_currentIteration >= i_steps) {
         auto s1 = std::chrono::steady_clock::now();
 
@@ -232,22 +270,16 @@ bool Simulator::simulateStep(double dt) {
 
         return false;
     }
-    else if (m_currentIteration == 0) {
-        for (int j = 0; j < m_engine->getIntakeCount(); ++j) {
-            m_engine->getIntake(j)->m_flowRate = 0;
-        }
-    }
 
-    const double dt_sub = dt / i_steps;
-
-    m_system->process(dt_sub, 1);
+    const double timestep = 1.0 / m_simulationFrequency;
+    m_system->process(timestep, 1);
 
     for (int i = 0; i < m_engine->getCrankshaftCount(); ++i) {
         m_engine->getCrankshaft(i)->resetAngle();
     }
 
     IgnitionModule *im = m_engine->getIgnitionModule();
-    im->update(dt_sub);
+    im->update(timestep);
 
     const int cylinderCount = m_engine->getCylinderCount();
     for (int i = 0; i < cylinderCount; ++i) {
@@ -255,7 +287,7 @@ bool Simulator::simulateStep(double dt) {
             m_engine->getChamber(i)->ignite();
         }
 
-        m_engine->getChamber(i)->update(dt_sub);
+        m_engine->getChamber(i)->update(timestep);
     }
 
     for (int i = 0; i < cylinderCount; ++i) {
@@ -266,20 +298,20 @@ bool Simulator::simulateStep(double dt) {
     for (int i = 0; i < iterations; ++i) {
         for (int j = 0; j < m_engine->getExhaustSystemCount(); ++j) {
             m_engine->getExhaustSystem(j)->start();
-            m_engine->getExhaustSystem(j)->process(dt_sub / iterations);
+            m_engine->getExhaustSystem(j)->process(timestep / iterations);
         }
 
         for (int j = 0; j < m_engine->getIntakeCount(); ++j) {
             m_engine->getIntake(j)->start();
-            m_engine->getIntake(j)->process(dt_sub / iterations);
+            m_engine->getIntake(j)->process(timestep / iterations);
 
             m_engine->getIntake(j)->m_flowRate +=
-                -m_engine->getIntake(j)->m_flow / dt;
+                -m_engine->getIntake(j)->m_flow;
         }
 
         for (int j = 0; j < cylinderCount; ++j) {
             m_engine->getChamber(j)->start();
-            m_engine->getChamber(j)->flow(dt_sub / iterations);
+            m_engine->getChamber(j)->flow(timestep / iterations);
             m_engine->getChamber(j)->end();
         }
 
@@ -294,9 +326,37 @@ bool Simulator::simulateStep(double dt) {
 
     im->resetIgnitionEvents();
 
+    writeToSynthesizer();
+    if (m_currentIteration % 16 == 0) {
+        m_synthesizer.endInputBlock();
+    }
+
     ++m_currentIteration;
 
     return true;
+}
+
+double Simulator::getTotalExhaustFlow() const {
+    double totalFlow = 0.0;
+    for (int i = 0; i < m_engine->getCylinderCount(); ++i) {
+        totalFlow += m_engine->getChamber(i)->getLastTimestepExhaustFlow();
+    }
+
+    return totalFlow;
+}
+
+int Simulator::readAudioOutput(int samples, int16_t *target) {
+    return m_synthesizer.readAudioOutput(samples, target);
+}
+
+void Simulator::endFrame() {
+    const double frameTimestep = i_steps * getTimestep();
+    const int cylinderCount = m_engine->getCylinderCount();
+    for (int i = 0; i < m_engine->getIntakeCount(); ++i) {
+        m_engine->getIntake(i)->m_flowRate /= frameTimestep;
+    }
+
+    m_synthesizer.endInputBlock();
 }
 
 void Simulator::destroy() {
@@ -313,6 +373,8 @@ void Simulator::destroy() {
     m_system = nullptr;
 
     m_engine = nullptr;
+
+    m_synthesizer.destroy();
 }
 
 CrankshaftLoad *Simulator::getCrankshaftLoad(int i) {
@@ -348,4 +410,38 @@ void Simulator::setGear(int gear) {
 void Simulator::setClutch(double pressure) {
     m_clutchConstraint.m_maxTorque = pressure * 1000;
     m_clutchConstraint.m_minTorque = -pressure * 1000;
+}
+
+void Simulator::initializeSynthesizer() {
+    Synthesizer::Parameters synthParams;
+    synthParams.AudioBufferSize = 44100;
+    synthParams.AudioSampleRate = 44100;
+    synthParams.InputBufferSize = 2048 * 2 * 2 * 2;
+    synthParams.InputChannelCount = m_engine->getExhaustSystemCount();
+    synthParams.InputSampleRate = (double)m_simulationFrequency;
+    m_synthesizer.initialize(synthParams);
+
+    m_exhaustFlowStagingBuffer = new double[m_engine->getExhaustSystemCount()];
+}
+
+void Simulator::writeToSynthesizer() {
+    const int exhaustSystemCount = m_engine->getExhaustSystemCount();
+    for (int i = 0; i < exhaustSystemCount; ++i) {
+        m_exhaustFlowStagingBuffer[i] = 0;
+    }
+
+    const double timestep = getTimestep();
+    const int cylinderCount = m_engine->getCylinderCount();
+    for (int i = 0; i < cylinderCount; ++i) {
+        Piston *piston = m_engine->getPiston(i);
+        CylinderBank *bank = piston->m_bank;
+        CylinderHead *head = m_engine->getHead(bank->m_index);
+
+        const double exhaustFlow =
+            m_engine->getChamber(i)->getLastTimestepExhaustFlow();
+        ExhaustSystem *exhaustSystem = head->m_exhaustSystems[piston->m_cylinderIndex];
+        m_exhaustFlowStagingBuffer[exhaustSystem->m_index] += 50000 * exhaustFlow / timestep;
+    }
+
+    m_synthesizer.writeInput(m_exhaustFlowStagingBuffer);
 }
