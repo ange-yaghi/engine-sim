@@ -1,12 +1,17 @@
 #ifndef ATG_ENGINE_SIM_FUNCTION_H
 #define ATG_ENGINE_SIM_FUNCTION_H
 
+#include "gaussian_filter.h"
+
 class Function {
+    protected:
+        static GaussianFilter *DefaultGaussianFilter;
+
     public:
         Function();
         virtual ~Function();
 
-        void initialize(int size, double filterWidth);
+        void initialize(int size, double filterRadius, GaussianFilter *filter = nullptr);
         void resize(int newCapacity);
         void destroy();
 
@@ -33,10 +38,12 @@ class Function {
         double m_inputScale;
         double m_outputScale;
 
-        double m_filterWidth;
+        double m_filterRadius;
 
         int m_capacity;
         int m_size;
+
+        GaussianFilter *m_gaussianFilter;
 };
 
 #endif /* ATG_ENGINE_SIM_FUNCTION_H */

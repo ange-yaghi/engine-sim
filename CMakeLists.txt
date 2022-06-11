@@ -65,6 +65,7 @@ add_library(engine-sim STATIC
     src/leveling_filter.cpp
     src/vehicle_load.cpp
     src/fuel.cpp
+    src/gaussian_filter.cpp
 
     # Include files
     include/delta.h
@@ -98,6 +99,7 @@ add_library(engine-sim STATIC
     include/leveling_filter.h
     include/vehicle_load.h
     include/fuel.h
+    include/gaussian_filter.h
 )
 
 target_link_libraries(engine-sim

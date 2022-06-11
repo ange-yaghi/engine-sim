@@ -231,7 +231,7 @@ TEST(GasSystemTests, FlowLimit) {
     const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
 
     system1.start();
-    system1.flow(15.0, 1 / 60.0, P_env, T_env);
+    system1.flow(15.0, 10.0, P_env, T_env);
     system1.end();
 
     EXPECT_NEAR(system1.pressure(), P_env, 1E-6);
@@ -280,7 +280,7 @@ TEST(GasSystemTests, CompositionSanityCheck) {
     const double PV = system1.pressure() * system1.volume();
     const double nRT = system1.n() * constants::R * system1.temperature();
 
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 200; ++i) {
         system1.start();
         system2.start();
         const double flowRate0 = system1.flow(

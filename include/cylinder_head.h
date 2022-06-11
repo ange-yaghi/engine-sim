@@ -51,7 +51,6 @@ class CylinderHead : public Part {
         Function *m_exhaustPortFlow;
         Function *m_intakePortFlow;
 
-        double m_flow;
         double m_combustionChamberVolume;
         bool m_flipDisplay;
 };
