@@ -43,6 +43,7 @@ void CrankshaftLoad::calculate(Output *output, atg_scs::SystemState *state) {
 }
 
 void CrankshaftLoad::limit(atg_scs::Matrix *lambda, atg_scs::SystemState *state) {
+    /*
     const int index = state->indexMap[m_index];
     const int bcIndex = state->indexMap[m_bearingConstraint->m_index];
     const double normalForce = std::sqrt(
@@ -52,6 +53,11 @@ void CrankshaftLoad::limit(atg_scs::Matrix *lambda, atg_scs::SystemState *state)
     const double frictionTorque = calculateFrictionTorque(normalForce, state->v_theta[m_crankshaft->m_body.index]);
     double minTorque = -frictionTorque;
     double maxTorque = frictionTorque;
+    */
+
+    const int index = state->indexMap[m_index];
+    double minTorque = 0;
+    double maxTorque = 0;
 
     if (m_enableDyno) {
         minTorque = m_minDynoTorque;

@@ -77,7 +77,7 @@ void Synthesizer::initialize(const Parameters &p) {
 
     temp_filter_1.initialize(sampleCount1);
     for (int i = 0; i < sampleCount1; ++i) {
-        temp_filter_1.getImpulseResponse()[i] = 2 * 0.025 * ((int16_t *)waveFile1.GetBuffer())[i] / INT16_MAX;
+        temp_filter_1.getImpulseResponse()[i] = 0.1 * 2 * 0.025 * ((int16_t *)waveFile1.GetBuffer())[i] / INT16_MAX;
     }
 
     m_levelingFilter.p_target = 40000;
@@ -229,7 +229,7 @@ double Synthesizer::sampleInput(double timeOffset, int channel) const {
     const double v0 = data[index0];
     const double v1 = data[index1];
 
-    const double r = 0.25 * ((double)rand() / RAND_MAX) - 0.125;
+    const double r = 0.5 * 0.5 * (((double)rand() / RAND_MAX) - 0.5);
     const double s_aug = std::fmax(std::fmin(s + r, 1.0), 0.0);
 
     if (std::abs(data[index1] - data[index0]) > 10000) {
@@ -254,8 +254,18 @@ bool Synthesizer::timeOffsetInBounds(double timeOffset, int safetyBoundary) cons
 }
 
 void Synthesizer::setInputSampleRate(double sampleRate) {
-    std::lock_guard<std::mutex> lock(m_lock0);
-    m_inputSampleRate = sampleRate;
+    if (sampleRate != m_inputSampleRate) {
+        std::lock_guard<std::mutex> lock(m_lock0);
+        m_inputSampleRate = sampleRate;
+
+        m_inputWriteOffset = 0;
+        m_inputSafetyBoundary = -1;
+        m_audioSampleToTimeOffset = 0.0;
+        m_audioBufferWriteOffset = 0;
+
+        const double offset = audioSampleToTimeOffset(m_audioBufferWriteOffset);
+        m_audioSampleToTimeOffset = -offset;
+    }
 }
 
 void Synthesizer::trim(int audioSamples) {
@@ -307,7 +317,11 @@ int16_t Synthesizer::renderAudio(double timeOffset) {
     const double d1 = sampleInput(timeOffset, 1) * 10 - temp_prev[1];
     temp_prev[1] = sampleInput(timeOffset, 1) * 10;
 
-    const double r = 1 + 0.25 * (double)rand() / RAND_MAX;
+    const double r = 2.0 * ((double)rand() / RAND_MAX - 0.5);
+    const double mix = 0.2;
+
+    static double r_filtered = 0.0;
+    r_filtered = 0.5 * r_filtered + 0.5 * r;
 
     //return 50 * (d0 + d1);
     //return temp_filter_0.f(std::min(0.0, d0 * 50)) + temp_filter_1.f(std::min(0.0, d1 * 50));
@@ -320,7 +334,9 @@ int16_t Synthesizer::renderAudio(double timeOffset) {
      //   v1 = INT16_MAX * 0.5;
     //}
 
-    const double v = temp_filter_0.f(d0 * 50) + temp_filter_1.f(d1 * 50);
+    const double v =
+        temp_filter_0.f(d0 * 50 + temp_prev[0] * r_filtered * mix)
+        + temp_filter_1.f(d1 * 50 + temp_prev[1] * r_filtered * mix);
     //const double v = temp_filter_0.f(v0) + temp_filter_1.f(v1);
     //const double v = temp_filter_0.f(temp_prev[0] * r) + temp_filter_1.f(temp_prev[1] * r);
     //const double v =

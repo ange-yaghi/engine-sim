@@ -333,12 +333,16 @@ double GasSystem::pressureEquilibriumMaxFlow(const GasSystem *b) const {
     // pressure_b = Q_b * (E_b - dn * D_b)
 
     if (pressure() > b->pressure()) {
-        return  (b->volume() * kineticEnergy() - volume() * b->kineticEnergy()) /
+        const double maxFlow =
+                (b->volume() * kineticEnergy() - volume() * b->kineticEnergy()) /
                 (b->volume() * kineticEnergyPerMol() + volume() * kineticEnergyPerMol());
+        return std::fmax(0.0, std::fmin(maxFlow, n()));
     }
     else {
-        return  (b->volume() * kineticEnergy() - volume() * b->kineticEnergy()) /
+        const double maxFlow =
+                (b->volume() * kineticEnergy() - volume() * b->kineticEnergy()) /
                 (b->volume() * b->kineticEnergyPerMol() + volume() * b->kineticEnergyPerMol());
+        return std::fmin(0.0, std::fmax(maxFlow, -b->n()));
     }
 }
 

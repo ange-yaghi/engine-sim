@@ -48,7 +48,8 @@ void Gauge::destroy() {
 }
 
 void Gauge::update(float dt) {
-    const float needle_s = std::powf((m_value - m_min) / std::abs(m_max - m_min), m_gamma);
+    const float value = std::fmax(m_min, std::fmin(m_max, m_value));
+    const float needle_s = std::powf((value - m_min) / std::abs(m_max - m_min), m_gamma);
     const float F =
         m_needleKs * (needle_s - m_needlePosition)
         - m_needleKd * m_needleVelocity;
@@ -57,6 +58,7 @@ void Gauge::update(float dt) {
             m_needleMaxVelocity,
             std::fmaxf(m_needleVelocity + F * dt, -m_needleMaxVelocity));
     m_needlePosition += m_needleVelocity * dt;
+    m_needlePosition = std::fmax(0.0f, std::fmin(1.0f, m_needlePosition));
 }
 
 void Gauge::render() {

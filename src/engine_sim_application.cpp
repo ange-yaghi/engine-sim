@@ -195,7 +195,7 @@ void EngineSimApplication::initialize() {
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
-    crankshaftParams.FlywheelMass = units::mass(29, units::lb);
+    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 2;
     crankshaftParams.Mass = units::mass(75, units::lb);
 
     // Temporary moment of inertia approximation
@@ -449,6 +449,7 @@ void EngineSimApplication::initialize() {
     m_oscCluster->m_simulator = &m_simulator;
 
     m_performanceCluster = m_uiManager.getRoot()->addElement<PerformanceCluster>();
+    m_performanceCluster->setSimulator(&m_simulator);
 
     m_audioBuffer.initialize(44100, 44100);
     m_audioBuffer.m_writePointer = 44100 * 0.1;
@@ -474,9 +475,9 @@ void EngineSimApplication::process(float frame_dt) {
 
     m_simulator.setSpeed(speed);
 
-    auto proc_t0 = std::chrono::steady_clock::now();
-
     m_simulator.startFrame(frame_dt);
+
+    auto proc_t0 = std::chrono::steady_clock::now();
     const int iterationCount = m_simulator.getFrameIterationCount();
     while (m_simulator.simulateStep()) {
         const double totalFlow = m_simulator.getTotalExhaustFlow();
@@ -485,13 +486,14 @@ void EngineSimApplication::process(float frame_dt) {
             totalFlow / (m_simulator.getTimestep() * speed));
     }
 
+    auto proc_t1 = std::chrono::steady_clock::now();
+
     m_simulator.endFrame();
 
-    auto proc_t1 = std::chrono::steady_clock::now();
     auto duration = proc_t1 - proc_t0;
     if (iterationCount > 0) {
         m_performanceCluster->addTimePerTimestepSample(
-            (duration.count() / 1000.0) / iterationCount);
+            (duration.count() / 1E9) / iterationCount);
     }
 
     const SampleOffset currentAudioPosition = m_audioSource->GetCurrentPosition();
@@ -543,6 +545,11 @@ void EngineSimApplication::process(float frame_dt) {
         m_audioSource->UnlockBufferSegments(data0, size0, data1, size1);
         m_audioBuffer.commitBlock(readSamples);
     }
+
+    m_performanceCluster->addAudioLatencySample(
+        m_audioBuffer.offsetDelta(m_audioSource->GetCurrentPosition(), m_audioBuffer.m_writePointer) / (44100 * 0.1));
+    m_performanceCluster->addInputBufferUsageSample(
+        (double)m_simulator.getSynthesizerInputLatency() / m_simulator.getSynthesizerInputLatencyTarget());
 }
 
 void EngineSimApplication::render() {
@@ -559,18 +566,6 @@ void EngineSimApplication::render() {
         m_torque * 0.95
         + 0.05 * units::convert(m_simulator.getCrankshaftLoad(0)->getDynoTorque(), units::ft_lb);
 
-    std::stringstream ss;
-    //ss << units::convert(m_iceEngine.getIntake(0)->m_system.pressure(), units::psi) << "\n";
-    ss << m_simulator.getSynthesizerInputLatency() << "\n";
-    ss << m_audioBuffer.offsetDelta(m_audioSource->GetCurrentPosition(), m_audioBuffer.m_writePointer) << "\n";
-    ss << m_engine.GetAverageFramerate() << "\n";
-    m_textRenderer.RenderText(
-        ss.str(),
-        50 - m_engine.GetScreenWidth() / 2.0,
-        50 + 64 + 64 - m_engine.GetScreenHeight() / 2.0,
-        64
-    );
-
     m_uiManager.render();
 }
 
@@ -585,6 +580,7 @@ float EngineSimApplication::unitsToPixels(float units) const {
 }
 
 void EngineSimApplication::run() {
+    double throttle = 0.999;
     while (true) {
         if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
             break;
@@ -605,24 +601,26 @@ void EngineSimApplication::run() {
             m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
         }
 
-        double throttle = 0.999;
+        double newThrottle = 0.999;
         if (m_engine.IsKeyDown(ysKey::Code::Q)) {
-            throttle = 0.99;
+            newThrottle = 0.99;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::W)) {
-            throttle = 0.9;
+            newThrottle = 0.9;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::E)) {
-            throttle = 0.8;
+            newThrottle = 0.8;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::R)) {
-            throttle = 0.0;
+            newThrottle = 0.0;
         }
+
+        throttle = newThrottle * 0.5 + 0.5 * throttle;
 
         m_iceEngine.setThrottle(throttle);
 
         m_dyno.setSpeed(m_dynoSpeed);
-        //m_dyno.setSpeed(units::rpm(500.0));
+        m_dyno.setSpeed(units::rpm(500.0));
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_dyno.setEnabled(!m_dyno.isEnabled());

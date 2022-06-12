@@ -76,7 +76,5 @@ TEST(FunctionTests, FunctionGaussianTest) {
         std::cerr << v << "\n";
     }
 
-    EXPECT_NEAR(0.0, 1.0, 0.0);
-
     f.destroy();
 }

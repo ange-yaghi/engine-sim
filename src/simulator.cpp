@@ -1,3 +1,4 @@
+#include "..\include\simulator.h"
 #include "../include/simulator.h"
 
 #include "../include/constants.h"
@@ -14,7 +15,7 @@ Simulator::Simulator() {
     m_currentIteration = 0;
     m_speed = 1.0;
     m_targetSynthesizerLatency = 0.1;
-    m_simulationFrequency = 11025;
+    m_simulationFrequency = 15000;
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
@@ -38,14 +39,15 @@ void Simulator::initialize(Engine *engine, SystemType systemType) {
     static constexpr double pi = 3.14159265359;
 
     atg_scs::ConjugateGradientSleSolver *cgs = new atg_scs::ConjugateGradientSleSolver;
-    cgs->setMaxError(1E-1);
-    cgs->setMinError(1E-1);
+    cgs->setMaxError(1E-2);
+    cgs->setMinError(1E-2);
 
     if (systemType == SystemType::NsvOptimized) {
         atg_scs::OptimizedNsvRigidBodySystem *system =
             new atg_scs::OptimizedNsvRigidBodySystem;
         system->initialize(
-            new atg_scs::GaussianEliminationSleSolver);
+            new atg_scs::GaussSeidelSleSolver);
+        //system->initialize(cgs);
         m_system = system;
     }
     else {
@@ -89,10 +91,6 @@ void Simulator::initialize(Engine *engine, SystemType systemType) {
 
         m_system->addRigidBody(&engine->getCrankshaft(i)->m_body);
         m_system->addConstraint(&m_crankConstraints[i]);
-
-        m_crankshaftLoads[i].setCrankshaft(engine->getCrankshaft(i));
-        m_crankshaftLoads[i].m_bearingConstraint = &m_crankConstraints[i];
-        //m_system->addConstraint(&m_crankshaftLoads[i]);
     }
 
     //VehicleLoad *load = new VehicleLoad;
@@ -116,8 +114,14 @@ void Simulator::initialize(Engine *engine, SystemType systemType) {
     //load->initialize(m_engine->getCrankshaft(0), &m_vehicleMass);
 
     //m_system->addForceGenerator(load);
+
     m_system->addConstraint(&m_clutchConstraint);
     m_system->addRigidBody(&m_vehicleMass);
+
+    m_crankshaftLoads[0].setCrankshaft(engine->getCrankshaft(0));
+    //m_crankshaftLoads[0].m_bodies[0] = &m_vehicleMass;
+    m_crankshaftLoads[0].m_bearingConstraint = &m_crankConstraints[0];
+    //m_system->addConstraint(&m_crankshaftLoads[0]);
 
     for (int i = 0; i < cylinderCount; ++i) {
         Piston *piston = engine->getPiston(i);
@@ -236,7 +240,7 @@ void Simulator::startFrame(double dt) {
     const double timestep = getTimestep();
     i_steps = (int)std::round((dt * m_speed) / timestep);
 
-    const int targetLatency = (int)std::ceil(m_targetSynthesizerLatency * m_simulationFrequency);
+    const int targetLatency = getSynthesizerInputLatencyTarget();
     if (m_synthesizer.getInputWriteOffset() < targetLatency) {
         ++i_steps;
     }
@@ -258,6 +262,10 @@ void Simulator::startAudioRenderingThread() {
 
 void Simulator::endAudioRenderingThread() {
     m_synthesizer.endAudioRenderingThread();
+}
+
+int Simulator::getSynthesizerInputLatencyTarget() const {
+    return (int)std::ceil(m_targetSynthesizerLatency * m_simulationFrequency * m_speed);
 }
 
 bool Simulator::simulateStep() {
@@ -327,7 +335,7 @@ bool Simulator::simulateStep() {
     im->resetIgnitionEvents();
 
     writeToSynthesizer();
-    if (m_currentIteration % 16 == 0) {
+    if (m_currentIteration % 8 == 0 && m_currentIteration > 0) {
         m_synthesizer.endInputBlock();
     }
 
@@ -392,7 +400,7 @@ void Simulator::setGear(int gear) {
     };
 
     const double m_car = 1597;
-    const double gear_ratio = gearRatios[gear] / 2;
+    const double gear_ratio = gearRatios[gear];
     const double diff_ratio = 4.10;
     constexpr double tire_radius = units::distance(10, units::inch);
     const double f = tire_radius / (diff_ratio * gear_ratio);

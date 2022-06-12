@@ -30,10 +30,14 @@ class Simulator {
         void endFrame();
         void destroy();
 
+        void setDynoEnable(bool enable) { m_crankshaftLoads[0].m_enableDyno = enable; }
+        bool getDynoEnable() const { return m_crankshaftLoads[0].m_enableDyno; }
+
         void startAudioRenderingThread();
         void endAudioRenderingThread();
 
         int getSynthesizerInputLatency() const { return m_synthesizer.getInputWriteOffset(); }
+        int getSynthesizerInputLatencyTarget() const;
 
         int getCurrentIteration() const { return m_currentIteration; }
 

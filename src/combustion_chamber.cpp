@@ -78,14 +78,14 @@ void CombustionChamber::ignite() {
         const double s = ((fuel_air_ratio - fuel_air_low) / (fuel_air_high - fuel_air_low)) * (r * 0.5 + 0.5);
 
         m_flameEvent.efficiency = 0.5 * (0.7 + 0.3 * ((double)rand() / RAND_MAX));
-        m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
+        //m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
 
         //m_flameEvent.efficiency = 1.0;
-        //m_flameEvent.flameSpeed = fastFlameSpeed;
+        m_flameEvent.flameSpeed = fastFlameSpeed;
 
         if (rand() % 4 == 0) {
-            m_flameEvent.efficiency = 1;
-            m_flameEvent.flameSpeed = fastFlameSpeed;
+            //m_flameEvent.efficiency = 1;
+            //m_flameEvent.flameSpeed = fastFlameSpeed;
         }
     }
 }
