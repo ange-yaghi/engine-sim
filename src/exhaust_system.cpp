@@ -36,7 +36,7 @@ void ExhaustSystem::process(double dt) {
     m_flow = m_system.flow(
         m_flowK,
         dt,
-        units::pressure(0.9, units::atm),
+        units::pressure(1.0, units::atm),
         units::celcius(25),
         airMix);
 }

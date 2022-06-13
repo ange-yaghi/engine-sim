@@ -271,7 +271,13 @@ double GasSystem::gainN(double dn, double E_k_per_mol, const Mix &mix) {
     return -dn;
 }
 
-double GasSystem::flow(double k_flow, double dt, GasSystem *target) {
+double GasSystem::flow(
+    double k_flow,
+    double dt,
+    GasSystem *target,
+    double minFlowLimit,
+    double maxFlowLimit)
+{
     const double maxFlow = pressureEquilibriumMaxFlow(target);
     double flow = dt * flowRate(
         k_flow,
@@ -285,6 +291,8 @@ double GasSystem::flow(double k_flow, double dt, GasSystem *target) {
     if (std::abs(flow) > std::abs(maxFlow)) {
         flow = maxFlow;
     }
+
+    flow = std::fmin(maxFlowLimit, std::fmax(minFlowLimit, flow));
 
     this->flow(flow, target->kineticEnergyPerMol(), target->mix());
     target->flow(-flow, kineticEnergyPerMol(), mix());

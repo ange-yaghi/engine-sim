@@ -37,6 +37,16 @@ void CrankshaftLoad::calculate(Output *output, atg_scs::SystemState *state) {
 
     output->C[0] = 0;
 
+    double minTorque = 0;
+    double maxTorque = 0;
+
+    if (m_enableDyno) {
+        minTorque = m_minDynoTorque;
+        maxTorque = m_maxDynoTorque;
+    }
+
+    output->limits[0][0] = minTorque;
+    output->limits[0][1] = maxTorque;
     output->v_bias[0] = (m_enableDyno)
         ? m_dynoSpeed
         : 0;

@@ -121,7 +121,7 @@ void Simulator::initialize(Engine *engine, SystemType systemType) {
     m_crankshaftLoads[0].setCrankshaft(engine->getCrankshaft(0));
     //m_crankshaftLoads[0].m_bodies[0] = &m_vehicleMass;
     m_crankshaftLoads[0].m_bearingConstraint = &m_crankConstraints[0];
-    //m_system->addConstraint(&m_crankshaftLoads[0]);
+    m_system->addConstraint(&m_crankshaftLoads[0]);
 
     for (int i = 0; i < cylinderCount; ++i) {
         Piston *piston = engine->getPiston(i);
@@ -390,18 +390,20 @@ CrankshaftLoad *Simulator::getCrankshaftLoad(int i) {
 }
 
 void Simulator::setGear(int gear) {
-    if (gear < 0 || gear >= 4) return;
+    if (gear < 0 || gear >= 6) return;
 
     const double gearRatios[] = {
-        2.0,
-        1.5,
-        1.25,
-        1.0
+        2.97,
+        2.07,
+        1.43,
+        1.00,
+        0.84,
+        0.56
     };
 
-    const double m_car = 1597;
+    const double m_car = units::mass(1597, units::kg);
     const double gear_ratio = gearRatios[gear];
-    const double diff_ratio = 4.10;
+    const double diff_ratio = 3.42;
     constexpr double tire_radius = units::distance(10, units::inch);
     const double f = tire_radius / (diff_ratio * gear_ratio);
 

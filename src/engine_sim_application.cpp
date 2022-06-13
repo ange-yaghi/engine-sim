@@ -195,7 +195,7 @@ void EngineSimApplication::initialize() {
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
-    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 2;
+    crankshaftParams.FlywheelMass = units::mass(29, units::lb);
     crankshaftParams.Mass = units::mass(75, units::lb);
 
     // Temporary moment of inertia approximation
@@ -256,7 +256,7 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
-    camLift0->setInputScale(1.0);
+    camLift0->setInputScale(1.15);
     camLift0->setOutputScale(1.0);
     camLift0->addSample(0.0, units::distance(650, units::thou));
 
@@ -376,7 +376,7 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getHead(1)->initialize(chParams);
 
     Intake::Parameters inParams;
-    inParams.inputFlowK = GasSystem::k_carb(950.0);
+    inParams.inputFlowK = GasSystem::k_carb(750.0);
     inParams.volume = units::volume(5000.0, units::cc);
     m_iceEngine.getIntake(0)->initialize(inParams);
 
@@ -481,9 +481,12 @@ void EngineSimApplication::process(float frame_dt) {
     const int iterationCount = m_simulator.getFrameIterationCount();
     while (m_simulator.simulateStep()) {
         const double totalFlow = m_simulator.getTotalExhaustFlow();
+        //m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
+        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+        //    totalFlow / (m_simulator.getTimestep()));
         m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            totalFlow / (m_simulator.getTimestep() * speed));
+            m_simulator.getEngine()->getChamber(1)->m_system.pressure());
     }
 
     auto proc_t1 = std::chrono::steady_clock::now();
@@ -620,14 +623,15 @@ void EngineSimApplication::run() {
         m_iceEngine.setThrottle(throttle);
 
         m_dyno.setSpeed(m_dynoSpeed);
-        m_dyno.setSpeed(units::rpm(500.0));
+        m_dynoSpeed = std::fmod(m_dynoSpeed + 20.5 * m_engine.GetFrameLength(), units::rpm(7000.0));
+        //m_dyno.setSpeed(units::rpm(500.0));
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_dyno.setEnabled(!m_dyno.isEnabled());
         }
 
         static int gear = 0;
-        if (m_engine.ProcessKeyDown(ysKey::Code::Up) && gear < 3) {
+        if (m_engine.ProcessKeyDown(ysKey::Code::Up) && gear < 5) {
             m_simulator.setGear(++gear);
         }
         else if (m_engine.ProcessKeyDown(ysKey::Code::Down) && gear > 0) {

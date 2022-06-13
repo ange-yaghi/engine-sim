@@ -4,6 +4,8 @@
 #include "constants.h"
 #include "units.h"
 
+#include <cfloat>
+
 class GasSystem {
     public:
         struct Mix {
@@ -53,7 +55,7 @@ class GasSystem {
         double loseN(double dn);
         double gainN(double dn, double E_k_per_mol, const Mix &mix = {});
 
-        double flow(double k_flow, double dt, GasSystem *target);
+        double flow(double k_flow, double dt, GasSystem *target, double minFlow=-DBL_MAX, double maxFlow=DBL_MAX);
         double flow(double k_flow, double dt, double P_env, double T_env, const Mix &mix = {});
 
         double pressureEquilibriumMaxFlow(const GasSystem *b) const;

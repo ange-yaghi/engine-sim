@@ -56,8 +56,8 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_exhaustFlowScope->setBufferSize(2048);
     m_exhaustFlowScope->m_xMin = 0.0f;
     m_exhaustFlowScope->m_xMax = constants::pi * 4;
-    m_exhaustFlowScope->m_yMin = -units::flow(400.0, units::scfm);
-    m_exhaustFlowScope->m_yMax = units::flow(1000.0, units::scfm);
+    m_exhaustFlowScope->m_yMin = 0.0; -units::flow(400.0, units::scfm);
+    m_exhaustFlowScope->m_yMax = units::pressure(100, units::psi); units::flow(1000.0, units::scfm);
     m_exhaustFlowScope->m_lineWidth = 1.0f;
     m_exhaustFlowScope->m_drawReverse = false;
     m_exhaustFlowScope->i_color = m_app->getOrange();

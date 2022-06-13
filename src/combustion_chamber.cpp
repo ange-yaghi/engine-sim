@@ -77,7 +77,7 @@ void CombustionChamber::ignite() {
         const double r = (double)rand() / RAND_MAX;
         const double s = ((fuel_air_ratio - fuel_air_low) / (fuel_air_high - fuel_air_low)) * (r * 0.5 + 0.5);
 
-        m_flameEvent.efficiency = 0.5 * (0.7 + 0.3 * ((double)rand() / RAND_MAX));
+        m_flameEvent.efficiency = 0.75 * (0.7 + 0.3 * ((double)rand() / RAND_MAX));
         //m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
 
         //m_flameEvent.efficiency = 1.0;
@@ -115,12 +115,16 @@ void CombustionChamber::flow(double dt) {
     const double intakeFlow = m_system.flow(
             m_intakeFlowRate,
             dt,
-            &m_head->m_intakes[m_piston->m_cylinderIndex]->m_system);
+            &m_head->m_intakes[m_piston->m_cylinderIndex]->m_system,
+            -DBL_MAX,
+            DBL_MAX);
 
     const double exhaustFlow = m_system.flow(
             m_exhaustFlowRate,
             dt,
-            &m_head->m_exhaustSystems[m_piston->m_cylinderIndex]->m_system);
+            &m_head->m_exhaustSystems[m_piston->m_cylinderIndex]->m_system,
+            -DBL_MAX,
+            DBL_MAX);
 
     m_exhaustFlow = exhaustFlow;
     m_lastTimestepTotalExhaustFlow += exhaustFlow;
