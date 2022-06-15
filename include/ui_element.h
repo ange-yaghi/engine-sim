@@ -88,11 +88,13 @@ class UiElement {
         void drawText(
                 const std::string &s,
                 const Bounds &bounds,
-                float height);
+                float height,
+                const Point &ref = Bounds::tl);
         void drawCenteredText(
                 const std::string &s,
                 const Bounds &bounds,
-                float height);
+                float height,
+                const Point &ref = Bounds::tm);
 
     protected:
         std::vector<UiElement *> m_children;

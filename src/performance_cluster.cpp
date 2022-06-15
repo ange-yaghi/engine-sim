@@ -181,7 +181,7 @@ void PerformanceCluster::update(float dt) {
     UiElement::update(dt);
 
     m_filteredSimulationFrequency =
-        0.9 * m_filteredSimulationFrequency + 0.1 * m_simulator->getSimulationFrequency() * m_simulator->getSpeed();
+        0.9 * m_filteredSimulationFrequency + 0.1 * m_simulator->getSimulationFrequency() * m_simulator->getSimulationSpeed();
 }
 
 void PerformanceCluster::render() {
@@ -198,7 +198,7 @@ void PerformanceCluster::render() {
     m_fpsGauge->m_gauge->m_value = m_app->getEngine()->GetAverageFramerate();
 
     m_simSpeedGauge->m_bounds = grid.get(m_bounds, 2, 0);
-    m_simSpeedGauge->m_gauge->m_value = 1 / m_simulator->getSpeed();
+    m_simSpeedGauge->m_gauge->m_value = 1 / m_simulator->getSimulationSpeed();
 
     m_audioLagGauge->m_bounds = grid.get(m_bounds, 0, 1);
     m_audioLagGauge->m_gauge->m_value = m_audioLatency * 100;

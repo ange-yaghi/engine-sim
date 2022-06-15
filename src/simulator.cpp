@@ -13,9 +13,9 @@ Simulator::Simulator() {
     m_engine = nullptr;
     i_steps = 1;
     m_currentIteration = 0;
-    m_speed = 1.0;
+    m_simulationSpeed = 1.0;
     m_targetSynthesizerLatency = 0.1;
-    m_simulationFrequency = 15000;
+    m_simulationFrequency = 13000;
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
@@ -25,6 +25,8 @@ Simulator::Simulator() {
 
     m_physicsProcessingTime = 0.0;
     m_exhaustFlowStagingBuffer = nullptr;
+
+    m_travelledDistance = 0.0;
 }
 
 Simulator::~Simulator() {
@@ -185,6 +187,13 @@ void Simulator::initialize(Engine *engine, SystemType systemType) {
     initializeSynthesizer();
 }
 
+double Simulator::getVehicleSpeed() const {
+    const double E_r = 0.5 * m_vehicleMass.I * m_vehicleMass.v_theta * m_vehicleMass.v_theta;
+    const double vehicleSpeed = std::sqrt(2 * E_r / m_vehicleMass.m);
+
+    return vehicleSpeed;
+}
+
 void Simulator::placeAndInitialize() {
     const int cylinderCount = m_engine->getCylinderCount();
     for (int i = 0; i < cylinderCount; ++i) {
@@ -235,10 +244,10 @@ void Simulator::placeAndInitialize() {
 void Simulator::startFrame(double dt) {
     m_simulationStart = std::chrono::steady_clock::now();
     m_currentIteration = 0;
-    m_synthesizer.setInputSampleRate(m_simulationFrequency * m_speed);
+    m_synthesizer.setInputSampleRate(m_simulationFrequency * m_simulationSpeed);
 
     const double timestep = getTimestep();
-    i_steps = (int)std::round((dt * m_speed) / timestep);
+    i_steps = (int)std::round((dt * m_simulationSpeed) / timestep);
 
     const int targetLatency = getSynthesizerInputLatencyTarget();
     if (m_synthesizer.getInputWriteOffset() < targetLatency) {
@@ -265,7 +274,7 @@ void Simulator::endAudioRenderingThread() {
 }
 
 int Simulator::getSynthesizerInputLatencyTarget() const {
-    return (int)std::ceil(m_targetSynthesizerLatency * m_simulationFrequency * m_speed);
+    return (int)std::ceil(m_targetSynthesizerLatency * m_simulationFrequency * m_simulationSpeed);
 }
 
 bool Simulator::simulateStep() {
@@ -281,6 +290,8 @@ bool Simulator::simulateStep() {
 
     const double timestep = 1.0 / m_simulationFrequency;
     m_system->process(timestep, 1);
+
+    m_travelledDistance += getVehicleSpeed() * timestep;
 
     for (int i = 0; i < m_engine->getCrankshaftCount(); ++i) {
         m_engine->getCrankshaft(i)->resetAngle();
@@ -413,13 +424,13 @@ void Simulator::setGear(int gear) {
 
     m_vehicleMass.I = new_I;
     m_vehicleMass.p_x = m_vehicleMass.p_y = 0;
-    m_vehicleMass.m = 1000;
+    m_vehicleMass.m = m_car;
     m_vehicleMass.v_theta = new_v_theta;
 }
 
 void Simulator::setClutch(double pressure) {
-    m_clutchConstraint.m_maxTorque = pressure * 1000;
-    m_clutchConstraint.m_minTorque = -pressure * 1000;
+    m_clutchConstraint.m_maxTorque = pressure * units::torque(1000.0, units::ft_lb);
+    m_clutchConstraint.m_minTorque = -pressure * units::torque(1000.0, units::ft_lb);
 }
 
 void Simulator::initializeSynthesizer() {

@@ -6,8 +6,7 @@
 #include "engine.h"
 #include "simulator.h"
 #include "gauge.h"
-#include "cylinder_temperature_gauge.h"
-#include "cylinder_pressure_gauge.h"
+#include "firing_order_display.h"
 #include "labeled_gauge.h"
 #include "throttle_display.h"
 #include "afr_cluster.h"
@@ -25,6 +24,7 @@ class RightGaugeCluster : public UiElement {
         virtual void render();
 
         Engine *m_engine;
+        Simulator *m_simulator;
 
     protected:
         void renderTachSpeedCluster(const Bounds &bounds);
@@ -38,7 +38,7 @@ class RightGaugeCluster : public UiElement {
         FuelCluster *m_fuelCluster;
         ThrottleDisplay *m_throttleDisplay;
         AfrCluster *m_afrCluster;
-        CylinderPressureGauge *m_cylinderTemperatureGauge;
+        FiringOrderDisplay *m_combusionChamberStatus;
 };
 
 #endif /* ATG_ENGINE_SIM_GAUGE_CLUSTER_H */

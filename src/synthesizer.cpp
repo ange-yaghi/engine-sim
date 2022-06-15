@@ -81,7 +81,7 @@ void Synthesizer::initialize(const Parameters &p) {
     }
 
     m_levelingFilter.p_target = 40000;
-    m_levelingFilter.p_maxLevel = 10.0;
+    m_levelingFilter.p_maxLevel = 0.1;// 10.0;
     m_levelingFilter.p_minLevel = 0.0001;
 }
 
@@ -344,7 +344,7 @@ int16_t Synthesizer::renderAudio(double timeOffset) {
     //    + temp_filter_1.f(0.1 * temp_prev[1] * r);
     //const double v = temp_filter_0.f(temp_prev[0]) + temp_filter_1.f(temp_prev[1]);
     //const double v = temp_prev[0] + temp_prev[1];
-    //const double v = d0 + d1;
+    //const double v = 50 * (temp_prev[0] + temp_prev[1]);
     const double amplitude = std::abs(v);
     //return v;
     double v0 = m_levelingFilter.f(v * 0.08 * 12);

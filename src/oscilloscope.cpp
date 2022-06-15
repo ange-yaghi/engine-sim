@@ -2,6 +2,7 @@
 
 #include "../include/geometry_generator.h"
 #include "../include/engine_sim_application.h"
+#include "../include/ui_utilities.h"
 
 Oscilloscope::Oscilloscope() {
     m_xMin = m_xMax = 0;
@@ -15,6 +16,7 @@ Oscilloscope::Oscilloscope() {
     m_pointCount = 0;
     m_drawReverse = true;
     m_checkMouse = true;
+    m_drawZero = true;
 
     i_color = ysMath::Constants::One;
 }
@@ -53,8 +55,6 @@ void Oscilloscope::render() {
 }
 
 void Oscilloscope::render(const Bounds &bounds) {
-    if (m_pointCount <= 0) return;
-
     for (int i = 0; i < m_pointCount; ++i) {
         const int index = (m_writeIndex - m_pointCount + i + m_bufferSize) % m_bufferSize;
         m_renderBuffer[index] = dataPointToRenderPosition(m_points[index], bounds);
@@ -68,7 +68,6 @@ void Oscilloscope::render(const Bounds &bounds) {
 
     GeometryGenerator::GeometryIndices lines;
     GeometryGenerator::PathParameters params;
-
     params.p0 = m_renderBuffer + start;
     params.p1 = m_renderBuffer;
     params.n0 = n0;
@@ -77,7 +76,7 @@ void Oscilloscope::render(const Bounds &bounds) {
     m_app->getGeometryGenerator()->startShape();
 
     params.i = 0;
-    params.width = pixelsToUnits(0.5f);
+    params.width = pixelsToUnits(0.5f) * m_lineWidth;
     if (!m_app->getGeometryGenerator()->startPath(params)) {
         return;
     }
@@ -94,7 +93,7 @@ void Oscilloscope::render(const Bounds &bounds) {
         const float s = (float)(i) / (n0 + n1);
         const Point p_i = p[index];
         params.i = i;
-        params.width = std::fmaxf(
+        params.width = m_lineWidth * std::fmaxf(
             pixelsToUnits(1.0f) * s,
             pixelsToUnits(0.5f));
 
@@ -117,6 +116,26 @@ void Oscilloscope::render(const Bounds &bounds) {
     m_app->getGeometryGenerator()->endShape(&lines);
 
     resetShader();
+
+    if (m_drawZero) {
+        GeometryGenerator::GeometryIndices zeroLine;
+        const Point zeroA = dataPointToRenderPosition({ (float)m_xMin, 0.0f }, bounds);
+        const Point zeroB = dataPointToRenderPosition({ (float)m_xMax, 0.0f }, bounds);
+
+        GeometryGenerator::Line2dParameters params;
+        params.x0 = zeroA.x;
+        params.x1 = zeroB.x;
+        params.y0 = zeroA.y;
+        params.y1 = zeroB.y;
+        params.lineWidth = pixelsToUnits(0.5f);
+
+        m_app->getGeometryGenerator()->startShape();
+        m_app->getGeometryGenerator()->generateLine2d(params);
+        m_app->getGeometryGenerator()->endShape(&zeroLine);
+
+        m_app->getShaders()->SetBaseColor(mix(m_app->getWhite(), m_app->getBackgroundColor(), 0.99f));
+        m_app->drawGenerated(zeroLine, 0x11, m_app->getShaders()->GetUiFlags());
+    }
 
     m_app->getShaders()->SetBaseColor(i_color);
     m_app->drawGenerated(lines, 0x11, m_app->getShaders()->GetUiFlags());

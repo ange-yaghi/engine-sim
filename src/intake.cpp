@@ -36,7 +36,7 @@ void Intake::process(double dt) {
     const double ideal_afr = m_molecularAfr * 4;
     const double current_afr = (m_system.mix().p_o2 + m_system.mix().p_inert) / m_system.mix().p_fuel;
 
-    const double p_air = m_molecularAfr / (1 + m_molecularAfr);
+    const double p_air = ideal_afr / (1 + ideal_afr);
     GasSystem::Mix fuelAirMix;
     fuelAirMix.p_fuel = 1 - p_air;
     fuelAirMix.p_inert = p_air * 0.75;
@@ -57,8 +57,10 @@ void Intake::process(double dt) {
     }
 
     if (m_flow < 0) {
-        m_totalFuelInjected += -fuelAirMix.p_fuel * m_flow + injectedFuel;
+        m_totalFuelInjected += -fuelAirMix.p_fuel * m_flow;
     }
+
+    m_totalFuelInjected += injectedFuel;
 }
 
 void Intake::end() {

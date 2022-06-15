@@ -59,8 +59,8 @@ double Crankshaft::getAngle() const {
     return -(m_body.theta - m_tdc);
 }
 
-double Crankshaft::getCycleAngle() {
-    const double wrapped = std::fmod(getAngle(), 4 * constants::pi);
+double Crankshaft::getCycleAngle(double offset) {
+    const double wrapped = std::fmod(getAngle() + offset, 4 * constants::pi);
     return (wrapped < 0)
         ? wrapped + 4 * constants::pi
         : wrapped;

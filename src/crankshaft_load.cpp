@@ -44,38 +44,16 @@ void CrankshaftLoad::calculate(Output *output, atg_scs::SystemState *state) {
         minTorque = m_minDynoTorque;
         maxTorque = m_maxDynoTorque;
     }
+    else {
+        //minTorque = -units::torque(50, units::ft_lb);
+        //maxTorque = units::torque(50, units::ft_lb);
+    }
 
     output->limits[0][0] = minTorque;
     output->limits[0][1] = maxTorque;
     output->v_bias[0] = (m_enableDyno)
         ? m_dynoSpeed
         : 0;
-}
-
-void CrankshaftLoad::limit(atg_scs::Matrix *lambda, atg_scs::SystemState *state) {
-    /*
-    const int index = state->indexMap[m_index];
-    const int bcIndex = state->indexMap[m_bearingConstraint->m_index];
-    const double normalForce = std::sqrt(
-        lambda->get(0, bcIndex) * lambda->get(0, bcIndex)
-        + lambda->get(0, bcIndex + 1) * lambda->get(0, bcIndex + 1));
-
-    const double frictionTorque = calculateFrictionTorque(normalForce, state->v_theta[m_crankshaft->m_body.index]);
-    double minTorque = -frictionTorque;
-    double maxTorque = frictionTorque;
-    */
-
-    const int index = state->indexMap[m_index];
-    double minTorque = 0;
-    double maxTorque = 0;
-
-    if (m_enableDyno) {
-        minTorque = m_minDynoTorque;
-        maxTorque = m_maxDynoTorque;
-    }
-
-    const double calculatedTorque = lambda->get(0, index);
-    lambda->set(0, index, std::fmin(maxTorque, std::fmax(minTorque, calculatedTorque)));
 }
 
 double CrankshaftLoad::getDynoTorque() const {

@@ -37,6 +37,7 @@ class Oscilloscope : public UiElement {
 
         double m_lineWidth;
         bool m_drawReverse;
+        bool m_drawZero;
 
         ysVector i_color;
 

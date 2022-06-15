@@ -195,7 +195,7 @@ void EngineSimApplication::initialize() {
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
-    crankshaftParams.FlywheelMass = units::mass(29, units::lb);
+    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 2;
     crankshaftParams.Mass = units::mass(75, units::lb);
 
     // Temporary moment of inertia approximation
@@ -256,12 +256,12 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
-    camLift0->setInputScale(1.15);
+    camLift0->setInputScale(1.15); // 1.15
     camLift0->setOutputScale(1.0);
-    camLift0->addSample(0.0, units::distance(650, units::thou));
+    camLift0->addSample(0.0, units::distance(565, units::thou));
 
-    camLift0->addSample(-units::angle(10, units::deg), units::distance(600, units::thou));
-    camLift0->addSample(units::angle(10, units::deg), units::distance(600, units::thou));
+    camLift0->addSample(-units::angle(10, units::deg), units::distance(560, units::thou));
+    camLift0->addSample(units::angle(10, units::deg), units::distance(560, units::thou));
     camLift0->addSample(-units::angle(20, units::deg), units::distance(550, units::thou));
     camLift0->addSample(units::angle(20, units::deg), units::distance(550, units::thou));
     camLift0->addSample(-units::angle(30, units::deg), units::distance(500, units::thou));
@@ -444,6 +444,7 @@ void EngineSimApplication::initialize() {
     m_engineView = m_uiManager.getRoot()->addElement<EngineView>();
     m_rightGaugeCluster = m_uiManager.getRoot()->addElement<RightGaugeCluster>();
     m_rightGaugeCluster->m_engine = &m_iceEngine;
+    m_rightGaugeCluster->m_simulator = &m_simulator;
 
     m_oscCluster = m_uiManager.getRoot()->addElement<OscilloscopeCluster>();
     m_oscCluster->m_simulator = &m_simulator;
@@ -473,7 +474,7 @@ void EngineSimApplication::process(float frame_dt) {
         speed = 1 / 100.0;
     }
 
-    m_simulator.setSpeed(speed);
+    m_simulator.setSimulationSpeed(speed);
 
     m_simulator.startFrame(frame_dt);
 
@@ -481,12 +482,20 @@ void EngineSimApplication::process(float frame_dt) {
     const int iterationCount = m_simulator.getFrameIterationCount();
     while (m_simulator.simulateStep()) {
         const double totalFlow = m_simulator.getTotalExhaustFlow();
-        //m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
-        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-        //    totalFlow / (m_simulator.getTimestep()));
         m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getEngine()->getChamber(1)->m_system.pressure());
+            totalFlow / (m_simulator.getTimestep()));
+        m_oscCluster->getCylinderPressureScope()->addDataPoint(
+            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
+            m_simulator.getEngine()->getChamber(0)->m_system.pressure());
+        m_oscCluster->getExhaustValveLiftOscilloscope()->addDataPoint(
+            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator.getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(
+                m_simulator.getEngine()->getChamber(0)->getPiston()->m_cylinderIndex));
+        m_oscCluster->getIntakeValveLiftOscilloscope()->addDataPoint(
+            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator.getEngine()->getChamber(0)->getCylinderHead()->intakeValveLift(
+                m_simulator.getEngine()->getChamber(0)->getPiston()->m_cylinderIndex));
     }
 
     auto proc_t1 = std::chrono::steady_clock::now();

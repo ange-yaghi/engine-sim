@@ -209,23 +209,26 @@ void UiElement::drawFrame(
 void UiElement::drawText(
         const std::string &s,
         const Bounds &bounds,
-        float height)
+        float height,
+        const Point &ref)
 {
     const Bounds renderBounds = unitsToPixels(getRenderBounds(bounds));
+    const Point origin = renderBounds.getPosition(ref);
 
     m_app->getTextRenderer()->RenderText(
-            s, renderBounds.left(), renderBounds.center_v() - height / 2, height);
+            s, origin.x, origin.y - height / 4, height);
 }
 
 void UiElement::drawCenteredText(
         const std::string &s,
         const Bounds &bounds,
-        float height)
+        float height,
+        const Point &ref)
 {
     const Bounds renderBounds = unitsToPixels(getRenderBounds(bounds));
-    const Point center = renderBounds.getPosition(Bounds::center);
+    const Point origin = renderBounds.getPosition(ref);
 
     const float width = m_app->getTextRenderer()->CalculateWidth(s, height);
     m_app->getTextRenderer()->RenderText(
-            s, center.x - width / 2, center.y - height / 4, height);
+            s, origin.x - width / 2, origin.y - height / 4, height);
 }

@@ -12,7 +12,6 @@ class CrankshaftLoad : public atg_scs::Constraint {
 
         void setCrankshaft(Crankshaft *crankshaft);
         virtual void calculate(Output *output, atg_scs::SystemState *state);
-        virtual void limit(atg_scs::Matrix *lambda, atg_scs::SystemState *state);
 
         double getDynoTorque() const;
         double getAppliedFrictionTorque() const;

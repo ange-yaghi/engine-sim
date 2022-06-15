@@ -31,7 +31,7 @@ void CylinderTemperatureGauge::destroy() {
 void CylinderTemperatureGauge::update(float dt) {
     UiElement::update(dt);
 
-    const double smoothingFactor = std::min(1.0, dt / 1.0);
+    const double decay = dt / (0.0001 + dt);
 
     double maxTemperature = m_maxTemperature;
     double minTemperature = m_minTemperature;
@@ -40,15 +40,15 @@ void CylinderTemperatureGauge::update(float dt) {
         Piston *piston = m_engine->getPiston(i);
         CombustionChamber *chamber = m_engine->getChamber(i);
 
-        const double temperature = chamber->m_system.kineticEnergy();
+        const double temperature = chamber->m_system.temperature();
         double value = temperature - m_minTemperature;
 
-        maxTemperature = std::fmax(maxTemperature, value);
-        minTemperature = std::fmin(minTemperature, temperature);
+        m_maxTemperature = std::fmax(m_maxTemperature, value);
+        m_minTemperature = std::fmin(m_minTemperature, temperature);
     }
 
-    m_maxTemperature = (1 - smoothingFactor) * m_maxTemperature + smoothingFactor * maxTemperature;
-    m_minTemperature = (1 - smoothingFactor) * m_minTemperature + smoothingFactor * minTemperature;
+    m_maxTemperature *= decay;
+    m_minTemperature *= decay;
 }
 
 void CylinderTemperatureGauge::render() {
@@ -85,7 +85,7 @@ void CylinderTemperatureGauge::render() {
                 0,
                 piston->m_bank->m_cylinderCount - piston->m_cylinderIndex - 1).inset(5.0f);
 
-        const double temperature = chamber->m_system.kineticEnergy();
+        const double temperature = chamber->m_system.temperature();
         double value = temperature - m_minTemperature;
 
         const Bounds worldBounds = getRenderBounds(b_cyl);

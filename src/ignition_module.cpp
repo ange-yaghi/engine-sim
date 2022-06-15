@@ -59,7 +59,7 @@ void IgnitionModule::update(double dt) {
         }
 
         if (adjustedAngle >= r0 && adjustedAngle < r1) {
-            m_plugs[i].IgnitionEvent = true;
+            //m_plugs[i].IgnitionEvent = true;
         }
     }
 

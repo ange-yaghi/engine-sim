@@ -54,6 +54,9 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double getFrictionForce() const;
         double getVolume() const;
 
+        bool isLit() const { return m_lit; }
+        bool popLitLastFrame();
+
         void ignite();
         void start();
         void update(double dt);
@@ -89,6 +92,8 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double m_exhaustFlow;
 
         double m_crankcasePressure;
+
+        bool m_litLastFrame;
 
         Piston *m_piston;
         CylinderHead *m_head;

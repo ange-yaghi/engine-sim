@@ -19,10 +19,13 @@ namespace units {
     extern constexpr double m = 1.0;
     extern constexpr double cm = m / 100.0;
     extern constexpr double mm = m / 1000.0;
+    extern constexpr double km = m * 1000.0;
 
     extern constexpr double inch = cm * 2.54;
     extern constexpr double foot = inch * 12.0;
     extern constexpr double thou = inch / 1000.0;
+
+    extern constexpr double mile = m * 1609.344;
 
     // Time
     extern constexpr double sec = 1.0;

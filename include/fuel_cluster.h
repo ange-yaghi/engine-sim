@@ -4,6 +4,7 @@
 #include "ui_element.h"
 
 #include "engine.h"
+#include "simulator.h"
 
 class FuelCluster : public UiElement {
     public:
@@ -17,6 +18,7 @@ class FuelCluster : public UiElement {
         virtual void render();
 
         Engine *m_engine;
+        Simulator *m_simulator;
 };
 
 #endif /* ATG_ENGINE_SIM_FUEL_CLUSTER_H */

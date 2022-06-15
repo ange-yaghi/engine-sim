@@ -28,7 +28,7 @@ class Crankshaft : public Part {
         void resetAngle();
 
         double getAngle() const;
-        double getCycleAngle();
+        double getCycleAngle(double offset = 0.0);
 
         double *m_rodJournalAngles;
         int m_rodJournalCount;

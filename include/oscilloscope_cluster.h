@@ -22,6 +22,10 @@ class OscilloscopeCluster : public UiElement {
 
         Oscilloscope *getExhaustFlowOscilloscope() { return m_exhaustFlowScope; }
         Oscilloscope *getAudioWaveformOscilloscope() { return m_audioWaveformScope; }
+        Oscilloscope *getIntakeValveLiftOscilloscope() { return m_intakeValveLiftScope; }
+        Oscilloscope *getExhaustValveLiftOscilloscope() { return m_exhaustValveLiftScope; }
+        Oscilloscope *getCylinderPressureScope() { return m_cylinderPressureScope; }
+        Oscilloscope *getSparkAdvanceScope() { return m_sparkAdvanceScope; }
 
     protected:
         void renderScope(
@@ -35,6 +39,10 @@ class OscilloscopeCluster : public UiElement {
             *m_hpScope,
             *m_exhaustFlowScope,
             *m_audioWaveformScope,
+            *m_exhaustValveLiftScope,
+            *m_intakeValveLiftScope,
+            *m_cylinderPressureScope,
+            *m_sparkAdvanceScope,
             *m_currentFocusScope0,
             *m_currentFocusScope1;
         float m_updatePeriod;

@@ -9,13 +9,15 @@
 
 RightGaugeCluster::RightGaugeCluster() {
     m_engine = nullptr;
+    m_simulator = nullptr;
+
     m_afrCluster = nullptr;
     m_tachometer = nullptr;
     m_speedometer = nullptr;
     m_manifoldVacuumGauge = nullptr;
     m_volumetricEffGauge = nullptr;
     m_intakeCfmGauge = nullptr;
-    m_cylinderTemperatureGauge = nullptr;
+    m_combusionChamberStatus = nullptr;
     m_throttleDisplay = nullptr;
     m_fuelCluster = nullptr;
 }
@@ -32,12 +34,12 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_manifoldVacuumGauge = addElement<LabeledGauge>();
     m_intakeCfmGauge = addElement<LabeledGauge>();
     m_volumetricEffGauge = addElement<LabeledGauge>();
-    m_cylinderTemperatureGauge = addElement<CylinderPressureGauge>();
+    m_combusionChamberStatus = addElement<FiringOrderDisplay>();
     m_throttleDisplay = addElement<ThrottleDisplay>();
     m_afrCluster = addElement<AfrCluster>();
     m_fuelCluster = addElement<FuelCluster>();
 
-    m_cylinderTemperatureGauge->m_engine = m_engine;
+    m_combusionChamberStatus->m_engine = m_engine;
 
     const float shortenAngle = (float)units::angle(1.0, units::deg);
 
@@ -155,10 +157,11 @@ void RightGaugeCluster::destroy() {
 }
 
 void RightGaugeCluster::update(float dt) {
-    m_cylinderTemperatureGauge->m_engine = m_engine;
+    m_combusionChamberStatus->m_engine = m_engine;
     m_throttleDisplay->m_engine = m_engine;
     m_afrCluster->m_engine = m_engine;
     m_fuelCluster->m_engine = m_engine;
+    m_fuelCluster->m_simulator = m_simulator;
 
     UiElement::update(dt);
 }
@@ -185,9 +188,9 @@ void RightGaugeCluster::renderTachSpeedCluster(const Bounds &bounds) {
 
     const Bounds speed = left.verticalSplit(0.0f, 0.5f);
     m_speedometer->m_bounds = speed;
-    m_speedometer->m_gauge->m_value = 0;
+    m_speedometer->m_gauge->m_value = units::convert(m_simulator->getVehicleSpeed(), units::mile / units::hour);
 
-    m_cylinderTemperatureGauge->m_bounds = right;
+    m_combusionChamberStatus->m_bounds = right;
 }
 
 void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {

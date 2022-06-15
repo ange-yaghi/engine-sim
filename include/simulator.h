@@ -60,8 +60,12 @@ class Simulator {
         void setTargetSynthesizerLatency(double latency) { m_targetSynthesizerLatency = latency; }
         double getTargetSynthesizerLatency() const { return m_targetSynthesizerLatency; }
 
-        void setSpeed(double speed) { m_speed = speed; }
-        double getSpeed() const { return m_speed; }
+        void setSimulationSpeed(double simSpeed) { m_simulationSpeed = simSpeed; }
+        double getSimulationSpeed() const { return m_simulationSpeed; }
+
+        double getTravelledDistance() const { return m_travelledDistance; }
+
+        double getVehicleSpeed() const;
 
     protected:
         void placeAndInitialize();
@@ -92,8 +96,10 @@ class Simulator {
 
         int m_simulationFrequency;
         double m_targetSynthesizerLatency;
-        double m_speed;
+        double m_simulationSpeed;
         double *m_exhaustFlowStagingBuffer;
+
+        double m_travelledDistance;
 };
 
 #endif /* ATG_ENGINE_SIM_SIMULATOR_H */

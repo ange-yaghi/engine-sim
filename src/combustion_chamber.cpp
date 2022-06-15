@@ -55,6 +55,13 @@ double CombustionChamber::getVolume() const {
     return displacement + combustionPortVolume;
 }
 
+bool CombustionChamber::popLitLastFrame() {
+    const bool lit = m_litLastFrame;
+    m_litLastFrame = false;
+
+    return lit;
+}
+
 void CombustionChamber::ignite() {
     if (!m_lit) {
         m_flameEvent.lastVolume = getVolume();
@@ -65,6 +72,7 @@ void CombustionChamber::ignite() {
         m_flameEvent.percentageLit = 0;
         m_flameEvent.globalMix = m_system.mix();
         m_lit = true;
+        m_litLastFrame = true;
 
         constexpr double fastFlameSpeed = units::distance(15, units::m);
         constexpr double slowFlameSpeed = units::distance(10, units::m);
