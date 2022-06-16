@@ -16,7 +16,7 @@ void CrankshaftObject::generateGeometry() {
 }
 
 void CrankshaftObject::render(const ViewParameters *view) {
-    const int journalCount = m_crankshaft->m_rodJournalCount;
+    const int journalCount = m_crankshaft->getRodJournalCount();
 
     for (int i = 0; i < journalCount; ++i) {
         const int layer = i;
@@ -27,10 +27,10 @@ void CrankshaftObject::render(const ViewParameters *view) {
         resetShader();
         setTransform(
             &m_crankshaft->m_body,
-            m_crankshaft->m_throw,
+            m_crankshaft->getThrow(),
             0.0f,
             0.0f,
-            m_crankshaft->m_rodJournalAngles[i]);
+            m_crankshaft->getRodJournalAngle(i));
 
         m_app->getShaders()->SetBaseColor(col);
         m_app->getEngine()->DrawModel(

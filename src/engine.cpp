@@ -21,6 +21,8 @@ Engine::Engine() {
     m_cylinderCount = 0;
     m_intakeCount = 0;
     m_exhaustSystemCount = 0;
+    m_starterSpeed = 0;
+    m_starterTorque = 0;
 
     m_throttle = 0.0;
 }
@@ -42,6 +44,8 @@ void Engine::initialize(const Parameters &params) {
     m_cylinderBankCount = params.CylinderBanks;
     m_exhaustSystemCount = params.ExhaustSystemCount;
     m_intakeCount = params.IntakeCount;
+    m_starterTorque = params.StarterTorque;
+    m_starterSpeed = params.StarterSpeed;
 
     m_fuel = params.Fuel;
 
@@ -98,10 +102,13 @@ void Engine::destroy() {
     m_combustionChambers = nullptr;
 }
 
+Crankshaft *Engine::getOutputCrankshaft() const {
+    return &m_crankshafts[0];
+}
+
 void Engine::setThrottle(double throttle) {
-    const double throttlePlateThrottle = 1 - std::cos(throttle * 3.14159 / 2);
     for (int i = 0; i < m_intakeCount; ++i) {
-        m_intakes[i].m_throttle = throttlePlateThrottle;
+        m_intakes[i].m_throttle = throttle;
     }
 
     m_throttle = throttle;
@@ -111,16 +118,20 @@ double Engine::getThrottle() const {
     return m_throttle;
 }
 
+double Engine::getThrottlePlateAngle() const {
+    return (1 - m_intakes[0].getThrottlePlatePosition()) * (constants::pi / 2);
+}
+
 double Engine::getDisplacement() const {
     double displacement = 0;
     for (int i = 0; i < m_cylinderCount; ++i) {
         const Piston &piston = m_pistons[i];
-        const CylinderBank &bank = *piston.m_bank;
-        const ConnectingRod &rod = *piston.m_rod;
-        const Crankshaft &shaft = *rod.m_crankshaft;
+        const CylinderBank &bank = *piston.getCylinderBank();
+        const ConnectingRod &rod = *piston.getRod();
+        const Crankshaft &shaft = *rod.getCrankshaft();
 
-        const double r = bank.m_bore / 2.0;
-        const double V = constants::pi * r * r * (2.0 * shaft.m_throw);
+        const double r = bank.getBore() / 2.0;
+        const double V = constants::pi * r * r * (2.0 * shaft.getThrow());
 
         displacement += V;
     }

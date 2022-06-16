@@ -16,9 +16,9 @@ void ConnectingRodObject::generateGeometry() {
 
     GeometryGenerator::Line2dParameters params;
     params.x0 = params.x1 = 0;
-    params.y0 = (float)(m_connectingRod->getBigEndLocal() + m_connectingRod->m_crankshaft->m_throw * 0.6);
+    params.y0 = (float)(m_connectingRod->getBigEndLocal() + m_connectingRod->getCrankshaft()->getThrow() * 0.6);
     params.y1 = (float)m_connectingRod->getLittleEndLocal();
-    params.lineWidth = (float)(m_connectingRod->m_crankshaft->m_throw * 0.5);
+    params.lineWidth = (float)(m_connectingRod->getCrankshaft()->getThrow() * 0.5);
 
     gen->startShape();
     gen->generateLine2d(params);
@@ -26,10 +26,10 @@ void ConnectingRodObject::generateGeometry() {
 }
 
 void ConnectingRodObject::render(const ViewParameters *view) {
-    const int layer = m_connectingRod->m_journal;
+    const int layer = m_connectingRod->getJournal();
     if (layer > view->Layer1 || layer < view->Layer0) return;
 
-    ysVector col = m_connectingRod->m_piston->m_bank->m_index % 2 == 0
+    ysVector col = m_connectingRod->getPiston()->getCylinderBank()->getIndex() % 2 == 0
         ? ysColor::srgbiToLinear(0xEEEEEE)
         : ysColor::srgbiToLinear(0xDDDDDD);
     col = tintByLayer(col, layer);
@@ -37,7 +37,7 @@ void ConnectingRodObject::render(const ViewParameters *view) {
     resetShader();
     setTransform(
         &m_connectingRod->m_body,
-        m_connectingRod->m_crankshaft->m_throw,
+        m_connectingRod->getCrankshaft()->getThrow(),
         0.0f,
         m_connectingRod->getBigEndLocal());
 

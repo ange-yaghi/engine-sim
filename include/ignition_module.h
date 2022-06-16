@@ -5,6 +5,7 @@
 
 #include "crankshaft.h"
 #include "function.h"
+#include "units.h"
 
 class IgnitionModule : public Part {
     public:
@@ -12,6 +13,7 @@ class IgnitionModule : public Part {
             int CylinderCount;
             Crankshaft *Crankshaft;
             Function *TimingCurve;
+            double RevLimit = units::rpm(6000.0);
         };
 
         struct SparkPlug {
@@ -35,6 +37,8 @@ class IgnitionModule : public Part {
 
         double getTimingAdvance();
 
+        bool m_enabled;
+
     protected:
         SparkPlug *getPlug(int i);
 
@@ -44,6 +48,8 @@ class IgnitionModule : public Part {
         int m_cylinderCount;
 
         double m_lastCrankshaftAngle;
+        double m_revLimit;
+        double m_revLimiterDecay;
 };
 
 #endif /* ATG_ENGINE_SIM_IGNITION_MODULE_H */

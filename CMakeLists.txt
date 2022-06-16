@@ -36,7 +36,6 @@ set_property(TARGET gtest_main PROPERTY FOLDER "gtest")
 
 add_library(engine-sim STATIC
     # Source files
-    src/main.cpp
     src/crankshaft.cpp
     src/cylinder_bank.cpp
     src/connecting_rod.cpp
@@ -45,16 +44,13 @@ add_library(engine-sim STATIC
     src/engine.cpp
     src/simulator.cpp
     src/combustion_chamber.cpp
-    src/crankshaft_friction.cpp
     src/gas_system.cpp
     src/function.cpp
     src/camshaft.cpp
     src/cylinder_head.cpp
     src/dynamometer.cpp
-    src/engine_load.cpp
     src/ignition_module.cpp
     src/utilities.cpp
-    src/crankshaft_load.cpp
     src/audio_buffer.cpp
     src/filter.cpp
     src/convolution_filter.cpp
@@ -63,13 +59,13 @@ add_library(engine-sim STATIC
     src/feedback_comb_filter.cpp
     src/synthesizer.cpp
     src/leveling_filter.cpp
-    src/vehicle_load.cpp
     src/fuel.cpp
     src/gaussian_filter.cpp
+    src/starter_motor.cpp
+    src/transmission.cpp
+    src/vehicle.cpp
 
     # Include files
-    include/delta.h
-    include/dtv.h
     include/crankshaft.h
     include/cylinder_bank.h
     include/connecting_rod.h
@@ -78,17 +74,14 @@ add_library(engine-sim STATIC
     include/engine.h
     include/simulator.h
     include/combustion_chamber.h
-    include/crankshaft_friction.h
     include/units.h
     include/gas_system.h
     include/function.h
     include/camshaft.h
     include/cylinder_head.h
     include/dynamometer.h
-    include/engine_load.h
     include/ignition_module.h
     include/utilities.h
-    include/crankshaft_load.h
     include/audio_buffer.h
     include/filter.h
     include/convolution_filter.h
@@ -97,9 +90,11 @@ add_library(engine-sim STATIC
     include/feedback_comb_filter.h
     include/synthesizer.h
     include/leveling_filter.h
-    include/vehicle_load.h
     include/fuel.h
     include/gaussian_filter.h
+    include/starter_motor.h
+    include/transmission.h
+    include/vehicle.h
 )
 
 target_link_libraries(engine-sim

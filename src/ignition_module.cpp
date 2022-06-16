@@ -12,6 +12,9 @@ IgnitionModule::IgnitionModule() {
     m_timingCurve = nullptr;
     m_cylinderCount = 0;
     m_lastCrankshaftAngle = 0.0;
+    m_enabled = false;
+    m_revLimiterDecay = 0.0;
+    m_revLimit = 0;
 }
 
 IgnitionModule::~IgnitionModule() {
@@ -28,6 +31,7 @@ void IgnitionModule::initialize(const Parameters &params) {
     m_plugs = new SparkPlug[m_cylinderCount];
     m_crankshaft = params.Crankshaft;
     m_timingCurve = params.TimingCurve;
+    m_revLimit = params.RevLimit;
 }
 
 void IgnitionModule::setFiringOrder(int cylinderIndex, double angle) {
@@ -42,25 +46,33 @@ void IgnitionModule::reset() {
 }
 
 void IgnitionModule::update(double dt) {
-    if (m_crankshaft->m_body.v_theta >= 0) return;
-
     const double cycleAngle = m_crankshaft->getCycleAngle();
-    const double fourPi = 4 * constants::pi;
-    const double advance = getTimingAdvance();
 
-    for (int i = 0; i < m_cylinderCount; ++i) {
-        double adjustedAngle = positiveMod(m_plugs[i].Angle - advance, fourPi);
-        const double r0 = m_lastCrankshaftAngle;
-        double r1 = cycleAngle;
+    if (m_crankshaft->m_body.v_theta < 0 && m_enabled && m_revLimiterDecay < 0.5) {
+        const double fourPi = 4 * constants::pi;
+        const double advance = getTimingAdvance();
 
-        if (cycleAngle < r0) {
-            r1 += fourPi;
-            adjustedAngle += fourPi;
+        for (int i = 0; i < m_cylinderCount; ++i) {
+            double adjustedAngle = positiveMod(m_plugs[i].Angle - advance, fourPi);
+            const double r0 = m_lastCrankshaftAngle;
+            double r1 = cycleAngle;
+
+            if (cycleAngle < r0) {
+                r1 += fourPi;
+                adjustedAngle += fourPi;
+            }
+
+            if (adjustedAngle >= r0 && adjustedAngle < r1) {
+                m_plugs[i].IgnitionEvent = true;
+            }
         }
+    }
 
-        if (adjustedAngle >= r0 && adjustedAngle < r1) {
-            //m_plugs[i].IgnitionEvent = true;
-        }
+    const double alpha = dt / (0.00000006 + dt);
+    m_revLimiterDecay = alpha * m_revLimiterDecay;
+
+    if (std::fabs(m_crankshaft->m_body.v_theta) > m_revLimit) {
+        m_revLimiterDecay = 1.0;
     }
 
     m_lastCrankshaftAngle = cycleAngle;

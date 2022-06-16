@@ -19,14 +19,15 @@ void CylinderHeadObject::generateGeometry() {
 void CylinderHeadObject::render(const ViewParameters *view) {
     resetShader();
 
-    const double s = m_head->m_bank->m_bore / 2.0;
+    CylinderBank *bank = m_head->getCylinderBank();
+    const double s = bank->getBore() / 2.0;
     const double boreSurfaceArea =
-        constants::pi * m_head->m_bank->m_bore * m_head->m_bank->m_bore / 4.0;
-    const double chamberHeight = m_head->m_combustionChamberVolume / boreSurfaceArea;
+        constants::pi * bank->getBore() * bank->getBore() / 4.0;
+    const double chamberHeight = m_head->getCombustionChamberVolume() / boreSurfaceArea;
 
-    const double theta = m_head->m_bank->m_angle;
+    const double theta = bank->getAngle();
     double x, y;
-    m_head->m_bank->getPositionAboveDeck(chamberHeight, &x, &y);
+    bank->getPositionAboveDeck(chamberHeight, &x, &y);
 
     const ysMatrix scale = ysMath::ScaleTransform(ysMath::LoadScalar(s));
     const ysMatrix rotation = ysMath::RotationTransform(
@@ -50,7 +51,7 @@ void CylinderHeadObject::render(const ViewParameters *view) {
         m_app->getAssetManager()->GetModelAsset("CylinderHead"),
         0x10);
 
-    const double intakeValvePosition = (m_head->m_flipDisplay)
+    const double intakeValvePosition = (m_head->getFlipDisplay())
         ? 0.5f
         : -0.5f;
 

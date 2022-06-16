@@ -28,6 +28,15 @@ class ConnectingRod : public Part {
         double getBigEndLocal() const;
         double getLittleEndLocal() const;
 
+        inline double getCenterOfMass() const { return m_centerOfMass; }
+        inline double getLength() const { return m_length; }
+        inline double getMass() const { return m_m; }
+        inline double getMomentOfInertia() const { return m_I; }
+        inline int getJournal() const { return m_journal; }
+        inline Crankshaft *getCrankshaft() const { return m_crankshaft; }
+        inline Piston *getPiston() const { return m_piston; }
+
+    protected:
         double m_centerOfMass;
         double m_length;
         double m_m;

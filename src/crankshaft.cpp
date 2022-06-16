@@ -14,6 +14,7 @@ Crankshaft::Crankshaft() {
     m_flywheelMass = 0.0;
     m_p_x = m_p_y = 0.0;
     m_tdc = 0.0;
+    m_frictionTorque = 0.0;
 }
 
 Crankshaft::~Crankshaft() {
@@ -30,6 +31,7 @@ void Crankshaft::initialize(Parameters &params) {
     m_p_x = params.Pos_x;
     m_p_y = params.Pos_y;
     m_tdc = params.TDC;
+    m_frictionTorque = params.FrictionTorque;
 }
 
 void Crankshaft::destroy() {

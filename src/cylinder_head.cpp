@@ -25,8 +25,8 @@ CylinderHead::~CylinderHead() {
 }
 
 void CylinderHead::initialize(const Parameters &params) {
-    m_exhaustSystems = new ExhaustSystem *[params.Bank->m_cylinderCount];
-    m_intakes = new Intake *[params.Bank->m_cylinderCount];
+    m_exhaustSystems = new ExhaustSystem *[params.Bank->getCylinderCount()];
+    m_intakes = new Intake *[params.Bank->getCylinderCount()];
 
     m_bank = params.Bank;
     m_exhaustCamshaft = params.ExhaustCam;
@@ -36,8 +36,8 @@ void CylinderHead::initialize(const Parameters &params) {
     m_combustionChamberVolume = params.CombustionChamberVolume;
     m_flipDisplay = params.FlipDisplay;
 
-    memset(m_exhaustSystems, 0, sizeof(ExhaustSystem *) * params.Bank->m_cylinderCount);
-    memset(m_intakes, 0, sizeof(Intake *) * params.Bank->m_cylinderCount);
+    memset(m_exhaustSystems, 0, sizeof(ExhaustSystem *) * params.Bank->getCylinderCount());
+    memset(m_intakes, 0, sizeof(Intake *) * params.Bank->getCylinderCount());
 }
 
 void CylinderHead::destroy() {
@@ -67,7 +67,7 @@ double CylinderHead::exhaustValveLift(int cylinder) const {
 }
 
 void CylinderHead::setAllExhaustSystems(ExhaustSystem *system) {
-    for (int i = 0; i < m_bank->m_cylinderCount; ++i) {
+    for (int i = 0; i < m_bank->getCylinderCount(); ++i) {
         m_exhaustSystems[i] = system;
     }
 }
@@ -77,7 +77,7 @@ void CylinderHead::setExhaustSystem(int i, ExhaustSystem *system) {
 }
 
 void CylinderHead::setAllIntakes(Intake *intake) {
-    for (int i = 0; i < m_bank->m_cylinderCount; ++i) {
+    for (int i = 0; i < m_bank->getCylinderCount(); ++i) {
         m_intakes[i] = intake;
     }
 }

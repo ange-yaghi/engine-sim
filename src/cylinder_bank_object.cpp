@@ -13,14 +13,14 @@ CylinderBankObject::~CylinderBankObject() {
 void CylinderBankObject::generateGeometry() {
     GeometryGenerator *gen = m_app->getGeometryGenerator();
 
-    const float lineWidth = (float)(m_bank->m_bore * 0.1);
+    const float lineWidth = (float)(m_bank->getBore() * 0.1);
     const float margin = lineWidth * 0.25f;
-    const float dx = -(float)(m_bank->m_dy * (margin + m_bank->m_bore / 2 + lineWidth / 2));
-    const float dy = (float)(m_bank->m_dx * (margin + m_bank->m_bore / 2 + lineWidth / 2));
-    const float top_x = (float)(m_bank->m_dx * m_bank->m_deckHeight);
-    const float top_y = (float)(m_bank->m_dy * m_bank->m_deckHeight);
-    const float bottom_x = (float)(m_bank->m_dx * (0.4 * m_bank->m_deckHeight));
-    const float bottom_y = (float)(m_bank->m_dy * (0.4 * m_bank->m_deckHeight));
+    const float dx = -(float)(m_bank->getDy() * (margin + m_bank->getBore() / 2 + lineWidth / 2));
+    const float dy = (float)(m_bank->getDx() * (margin + m_bank->getBore() / 2 + lineWidth / 2));
+    const float top_x = (float)(m_bank->getDx() * m_bank->getDeckHeight());
+    const float top_y = (float)(m_bank->getDy() * m_bank->getDeckHeight());
+    const float bottom_x = (float)(m_bank->getDx() * (0.4 * m_bank->getDeckHeight()));
+    const float bottom_y = (float)(m_bank->getDy() * (0.4 * m_bank->getDeckHeight()));
 
     GeometryGenerator::Line2dParameters params;
     params.lineWidth = lineWidth;

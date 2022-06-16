@@ -2,9 +2,12 @@
 #define ATG_ENGINE_SIM_SIMULATOR_H
 
 #include "engine.h"
+#include "transmission.h"
 #include "combustion_chamber.h"
-#include "crankshaft_load.h"
+#include "vehicle.h"
 #include "synthesizer.h"
+#include "dynamometer.h"
+#include "starter_motor.h"
 
 #include "scs.h"
 
@@ -17,11 +20,18 @@ class Simulator {
             Generic
         };
 
+        struct Parameters {
+            SystemType SystemType;
+            Engine *Engine;
+            Transmission *Transmission;
+            Vehicle *Vehicle;
+        };
+
     public:
         Simulator();
         ~Simulator();
 
-        void initialize(Engine *engine, SystemType systemType);
+        void initialize(const Parameters &params);
         void startFrame(double dt);
         bool simulateStep();
         double getTotalExhaustFlow() const;
@@ -29,9 +39,6 @@ class Simulator {
         int getFrameIterationCount() const { return i_steps; }
         void endFrame();
         void destroy();
-
-        void setDynoEnable(bool enable) { m_crankshaftLoads[0].m_enableDyno = enable; }
-        bool getDynoEnable() const { return m_crankshaftLoads[0].m_enableDyno; }
 
         void startAudioRenderingThread();
         void endAudioRenderingThread();
@@ -46,11 +53,9 @@ class Simulator {
         double getAverageProcessingTime() const { return m_physicsProcessingTime; }
 
         Engine *getEngine() const { return m_engine; }
-        CrankshaftLoad *getCrankshaftLoad(int i);
+        Transmission *getTransmission() const { return m_transmission; }
+        Vehicle *getVehicle() const { return m_vehicle; }
         atg_scs::RigidBodySystem *getSystem() { return m_system; }
-
-        void setGear(int gear);
-        void setClutch(double pressure);
 
         void setSimulationFrequency(int frequency) { m_simulationFrequency = frequency; }
         int getSimulationFrequency() const { return m_simulationFrequency; }
@@ -63,15 +68,15 @@ class Simulator {
         void setSimulationSpeed(double simSpeed) { m_simulationSpeed = simSpeed; }
         double getSimulationSpeed() const { return m_simulationSpeed; }
 
-        double getTravelledDistance() const { return m_travelledDistance; }
-
-        double getVehicleSpeed() const;
+        Dynamometer m_dyno;
+        StarterMotor m_starterMotor;
 
     protected:
         void placeAndInitialize();
         void initializeSynthesizer();
         
     protected:
+        void updateFilteredEngineSpeed(double dt);
         void writeToSynthesizer();
 
     protected:
@@ -79,18 +84,18 @@ class Simulator {
         Synthesizer m_synthesizer;
 
         atg_scs::FixedPositionConstraint *m_crankConstraints;
+        atg_scs::RotationFrictionConstraint *m_crankshaftFrictionConstraints;
         atg_scs::LineConstraint *m_cylinderWallConstraints;
         atg_scs::LinkConstraint *m_linkConstraints;
-        atg_scs::ClutchConstraint m_clutchConstraint;
         atg_scs::RigidBody m_vehicleMass;
-
-        CrankshaftLoad *m_crankshaftLoads;
 
         std::chrono::steady_clock::time_point m_simulationStart;
         std::chrono::steady_clock::time_point m_simulationEnd;
         int m_currentIteration;
 
         Engine *m_engine;
+        Transmission *m_transmission;
+        Vehicle *m_vehicle;
 
         double m_physicsProcessingTime;
 
@@ -98,8 +103,7 @@ class Simulator {
         double m_targetSynthesizerLatency;
         double m_simulationSpeed;
         double *m_exhaustFlowStagingBuffer;
-
-        double m_travelledDistance;
+        double m_filteredEngineSpeed;
 };
 
 #endif /* ATG_ENGINE_SIM_SIMULATOR_H */

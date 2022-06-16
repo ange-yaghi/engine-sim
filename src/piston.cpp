@@ -3,6 +3,8 @@
 #include "../include/connecting_rod.h"
 #include "../include/crankshaft.h"
 
+#include <cmath>
+
 Piston::Piston() {
     m_rod = nullptr;
     m_bank = nullptr;
@@ -35,9 +37,15 @@ void Piston::destroy() {
 }
 
 double Piston::relativeX() const {
-    return m_body.p_x - m_rod->m_crankshaft->m_p_x;
+    return m_body.p_x - m_rod->getCrankshaft()->getPosX();
 }
 
 double Piston::relativeY() const {
-    return m_body.p_y - m_rod->m_crankshaft->m_p_y;
+    return m_body.p_y - m_rod->getCrankshaft()->getPosY();
+}
+
+double Piston::calculateCylinderWallForce() const {
+    return std::sqrt(
+        m_cylinderConstraint->F_x[0][0] * m_cylinderConstraint->F_x[0][0]
+        + m_cylinderConstraint->F_y[0][0] * m_cylinderConstraint->F_y[0][0]);
 }

@@ -9,13 +9,22 @@ class Intake : public Part {
     public:
         struct Parameters {
             // Plenum volume
-            double volume;
+            double Volume;
 
             // Input flow constant
-            double inputFlowK;
+            double InputFlowK;
+
+            // Idle-circuit flow constant
+            double IdleFlowK;
 
             // Molecular air fuel ratio (defaults to ideal for octane)
-            double molecularAfr = (25.0 / 2.0);
+            double MolecularAfr = (25.0 / 2.0);
+
+            // Throttle plate position at idle
+            double IdleThrottlePlatePosition = 0.975;
+
+            // Gamma value to skew throttle positions
+            double FlowAttenuationGamma = 2.0;
         };
 
     public:
@@ -29,6 +38,8 @@ class Intake : public Part {
         void process(double dt);
         void end();
 
+        inline double getThrottlePlatePosition() const { return m_idleThrottlePlatePosition * m_throttle; }
+
         GasSystem m_system;
         double m_throttle;
 
@@ -38,7 +49,10 @@ class Intake : public Part {
 
     protected:
         double m_inputFlowK;
+        double m_idleFlowK;
         double m_molecularAfr;
+        double m_idleThrottlePlatePosition;
+        double m_flowAttenuationGamma;
 };
 
 #endif /* ATG_ENGINE_SIM_INTAKE_H */

@@ -16,16 +16,16 @@ void PistonObject::generateGeometry() {
 
     GeometryGenerator::Circle2dParameters circleParams;
     circleParams.center_x = 0.0f;
-    circleParams.center_y = m_piston->m_wristPinLocation;
+    circleParams.center_y = m_piston->getWristPinLocation();
     circleParams.maxEdgeLength = m_app->pixelsToUnits(5.0f);
-    circleParams.radius = (m_piston->m_bank->m_bore / 10) * 0.75f;
+    circleParams.radius = (m_piston->getCylinderBank()->getBore() / 10) * 0.75f;
     gen->startShape();
     gen->generateCircle2d(circleParams);
     gen->endShape(&m_wristPinHole);
 }
 
 void PistonObject::render(const ViewParameters *view) {
-    const int layer = m_piston->m_rod->m_journal;
+    const int layer = m_piston->getRod()->getJournal();
     if (layer > view->Layer1 || layer < view->Layer0) return;
 
     ysVector col = tintByLayer(m_app->getWhite(), layer - view->Layer0);
@@ -34,9 +34,9 @@ void PistonObject::render(const ViewParameters *view) {
     resetShader();
     setTransform(
         &m_piston->m_body,
-        m_piston->m_bank->m_bore / 2,
+        m_piston->getCylinderBank()->getBore() / 2,
         0.0f,
-        -m_piston->m_compressionHeight - m_piston->m_wristPinLocation);
+        -m_piston->getCompressionHeight() - m_piston->getWristPinLocation());
 
     m_app->getShaders()->SetBaseColor(col);
     m_app->getEngine()->DrawModel(

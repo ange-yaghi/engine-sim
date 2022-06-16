@@ -31,6 +31,10 @@ class Engine : public Part {
             int CrankshaftCount;
             int ExhaustSystemCount;
             int IntakeCount;
+
+            double StarterTorque = units::torque(90.0, units::ft_lb);
+            double StarterSpeed = units::rpm(200);
+
             FuelParameters Fuel;
         };
 
@@ -41,8 +45,10 @@ class Engine : public Part {
         void initialize(const Parameters &params);
         virtual void destroy();
 
+        virtual Crankshaft *getOutputCrankshaft() const;
         virtual void setThrottle(double throttle);
         virtual double getThrottle() const;
+        virtual double getThrottlePlateAngle() const;
         virtual double getDisplacement() const;
         virtual double getIntakeFlowRate() const;
 
@@ -54,6 +60,9 @@ class Engine : public Part {
         virtual void resetFuelConsumption();
         virtual double getTotalMassFuelConsumed() const;
         double getTotalVolumeFuelConsumed() const;
+
+        inline double getStarterTorque() const { return m_starterTorque; }
+        inline double getStarterSpeed() const { return m_starterSpeed; }
 
         int getCylinderBankCount() const { return m_cylinderBankCount; }
         int getCylinderCount() const { return m_cylinderCount; }
@@ -85,6 +94,9 @@ class Engine : public Part {
         ConnectingRod *m_connectingRods;
         CombustionChamber *m_combustionChambers;
         int m_cylinderCount;
+
+        double m_starterTorque;
+        double m_starterSpeed;
 
         ExhaustSystem *m_exhaustSystems;
         int m_exhaustSystemCount;

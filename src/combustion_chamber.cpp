@@ -15,12 +15,12 @@ CombustionChamber::CombustionChamber() {
     m_piston = nullptr;
     m_head = nullptr;
     m_lit = false;
+    m_litLastFrame = false;
     m_peakTemperature = 0;
 
     m_totalPropagationToTurbulence = nullptr;
     m_turbulentFlameSpeed = nullptr;
     m_nBurntFuel = 0;
-    m_turbulence = 0;
 
     m_lastTimestepTotalExhaustFlow = 0;
     m_exhaustFlow = 0;
@@ -42,15 +42,15 @@ void CombustionChamber::initialize(const Parameters &params) {
 }
 
 double CombustionChamber::getVolume() const {
-    const double combustionPortVolume = m_head->m_combustionChamberVolume;
-    const CylinderBank *bank = m_head->m_bank;
+    const double combustionPortVolume = m_head->getCombustionChamberVolume();
+    const CylinderBank *bank = m_head->getCylinderBank();
 
     const double area = bank->boreSurfaceArea();
     const double s =
-        m_piston->relativeX() * bank->m_dx
-        + m_piston->relativeY() * bank->m_dy;
+        m_piston->relativeX() * bank->getDx()
+        + m_piston->relativeY() * bank->getDy();
     const double displacement =
-        area * (bank->m_deckHeight - s - m_piston->m_compressionHeight);
+        area * (bank->getDeckHeight() - s - m_piston->getCompressionHeight());
 
     return displacement + combustionPortVolume;
 }
@@ -107,8 +107,8 @@ void CombustionChamber::update(double dt) {
     m_system.setVolume(getVolume());
     m_system.end();
 
-    m_intakeFlowRate = m_head->intakeFlowRate(m_piston->m_cylinderIndex);
-    m_exhaustFlowRate = m_head->exhaustFlowRate(m_piston->m_cylinderIndex);
+    m_intakeFlowRate = m_head->intakeFlowRate(m_piston->getCylinderIndex());
+    m_exhaustFlowRate = m_head->exhaustFlowRate(m_piston->getCylinderIndex());
 }
 
 void CombustionChamber::flow(double dt) {
@@ -116,45 +116,31 @@ void CombustionChamber::flow(double dt) {
         m_peakTemperature = m_system.temperature();
     }
 
-    m_system.flow(m_piston->m_blowby_k, dt, m_crankcasePressure, units::celcius(25.0));
+    m_system.flow(m_piston->getBlowbyK(), dt, m_crankcasePressure, units::celcius(25.0));
 
     const double start_n = m_system.n();
 
     const double intakeFlow = m_system.flow(
             m_intakeFlowRate,
             dt,
-            &m_head->m_intakes[m_piston->m_cylinderIndex]->m_system,
+            &m_head->getIntake(m_piston->getCylinderIndex())->m_system,
             -DBL_MAX,
             DBL_MAX);
 
     const double exhaustFlow = m_system.flow(
             m_exhaustFlowRate,
             dt,
-            &m_head->m_exhaustSystems[m_piston->m_cylinderIndex]->m_system,
+            &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system,
             -DBL_MAX,
             DBL_MAX);
 
     m_exhaustFlow = exhaustFlow;
     m_lastTimestepTotalExhaustFlow += exhaustFlow;
-    const double netFlow = exhaustFlow + intakeFlow;
-
-    if (netFlow <= 0) {
-        m_turbulence += -0.5 * netFlow * 12 * 3;
-    }
-    else {
-        if (start_n > 0) {
-            m_turbulence -= 2 * m_turbulence * (netFlow / start_n);
-
-            if (m_turbulence < 0) {
-                m_turbulence = 0;
-            }
-        }
-    }
 
     if (m_lit) {
-        CylinderBank *bank = m_head->m_bank;
+        CylinderBank *bank = m_head->getCylinderBank();
         const double volume = getVolume();
-        const double totalTravel_x = bank->m_bore / 2;
+        const double totalTravel_x = bank->getBore() / 2;
         const double totalTravel_y = volume / bank->boreSurfaceArea();
         const double expansion = volume / m_flameEvent.lastVolume;
         const double lastTravel_x = m_flameEvent.travel_x;
@@ -216,9 +202,7 @@ double CombustionChamber::lastEventAfr() const {
 }
 
 double CombustionChamber::calculateFrictionForce(double v_s) const {
-    const double cylinderWallForce = std::sqrt(
-        m_piston->m_cylinderConstraint->F_x[0][0] * m_piston->m_cylinderConstraint->F_x[0][0]
-        + m_piston->m_cylinderConstraint->F_y[0][0] * m_piston->m_cylinderConstraint->F_y[0][0]);
+    const double cylinderWallForce = m_piston->calculateCylinderWallForce();
 
     const double F_coul = m_frictionModel.frictionCoeff * cylinderWallForce;
     const double v_st = m_frictionModel.breakawayFrictionVelocity * constants::root_2;
@@ -236,13 +220,13 @@ double CombustionChamber::calculateFrictionForce(double v_s) const {
 }
 
 void CombustionChamber::apply(atg_scs::SystemState *system) {
-    CylinderBank *bank = m_head->m_bank;
-    const double area = (bank->m_bore * bank->m_bore / 4.0) * constants::pi;
+    CylinderBank *bank = m_head->getCylinderBank();
+    const double area = (bank->getBore() * bank->getBore() / 4.0) * constants::pi;
     const double v_x = system->v_x[m_piston->m_body.index];
     const double v_y = system->v_y[m_piston->m_body.index];
 
     const double v_s =
-        v_x * bank->m_dx + v_y * bank->m_dy;
+        v_x * bank->getDx() + v_y * bank->getDy();
 
     const double pressureDifferential = m_system.pressure() - m_crankcasePressure;
     const double force = -area * pressureDifferential;
@@ -251,7 +235,11 @@ void CombustionChamber::apply(atg_scs::SystemState *system) {
         assert(false);
     }
 
-    const double F = calculateFrictionForce(v_s);
+    constexpr double limit = 1E-3;
+    const double abs_v_s = std::fmin(std::abs(v_s), limit);
+    const double attenuation = abs_v_s / limit;
+
+    const double F = calculateFrictionForce(v_s) * attenuation;
     const double F_fric = (v_s > 0)
         ? -F
         : F;
@@ -259,18 +247,18 @@ void CombustionChamber::apply(atg_scs::SystemState *system) {
     system->applyForce(
         0.0,
         0.0,
-        (force + F_fric) * bank->m_dx,
-        (force + F_fric) * bank->m_dy,
+        (force + F_fric) * bank->getDx(),
+        (force + F_fric) * bank->getDy(),
         m_piston->m_body.index);
 }
 
 double CombustionChamber::getFrictionForce() const {
-    CylinderBank *bank = m_head->m_bank;
+    CylinderBank *bank = m_head->getCylinderBank();
     const double v_x = m_piston->m_body.v_x;
     const double v_y = m_piston->m_body.v_y;
 
     const double v_s =
-        v_x * bank->m_dx + v_y * bank->m_dy;
+        v_x * bank->getDx() + v_y * bank->getDy();
 
     return calculateFrictionForce(v_s);
 }

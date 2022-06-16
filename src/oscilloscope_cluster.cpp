@@ -44,7 +44,7 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_torqueScope->setBufferSize(100);
     m_torqueScope->m_xMin = 0.0f;
     m_torqueScope->m_xMax = 9000.0f;
-    m_torqueScope->m_yMin = -1000.0;
+    m_torqueScope->m_yMin = -100.0;
     m_torqueScope->m_yMax = 1000.0;
     m_torqueScope->m_lineWidth = 2.0f;
     m_torqueScope->m_drawReverse = false;
@@ -54,7 +54,7 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_hpScope->setBufferSize(100);
     m_hpScope->m_xMin = 0.0f;
     m_hpScope->m_xMax = 9000.0f;
-    m_hpScope->m_yMin = -1000.0f;
+    m_hpScope->m_yMin = -100.0f;
     m_hpScope->m_yMax = 1000.0f;
     m_hpScope->m_lineWidth = 2.0f;
     m_hpScope->m_drawReverse = false;
@@ -158,14 +158,15 @@ void OscilloscopeCluster::signal(UiElement *element, Event event) {
 
 void OscilloscopeCluster::update(float dt) {
     Engine *engine = m_simulator->getEngine();
+
     const double torque =
-        units::convert(m_simulator->getCrankshaftLoad(0)->getDynoTorque(), units::ft_lb);
+        units::convert(m_simulator->m_dyno.getTorque(), units::ft_lb);
     const double hp = torque * engine->getRpm() / 5252.0;
 
-    m_torque = m_torque * 0.99 + 0.01 * torque;
-    m_hp = m_hp * 0.99 + 0.01 * hp;
+    m_torque = m_torque * 0.95 + 0.05 * torque;
+    m_hp = m_hp * 0.95 + 0.05 * hp;
 
-    if (m_updateTimer <= 0 && m_simulator->getCrankshaftLoad(0)->m_enableDyno) {
+    if (m_updateTimer <= 0 && m_simulator->m_dyno.m_enabled) {
         m_updateTimer = m_updatePeriod;
         
         m_torqueScope->addDataPoint(engine->getRpm(), m_torque);

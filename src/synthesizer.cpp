@@ -81,7 +81,7 @@ void Synthesizer::initialize(const Parameters &p) {
     }
 
     m_levelingFilter.p_target = 40000;
-    m_levelingFilter.p_maxLevel = 0.1;// 10.0;
+    m_levelingFilter.p_maxLevel = 1.0;
     m_levelingFilter.p_minLevel = 0.0001;
 }
 

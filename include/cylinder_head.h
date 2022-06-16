@@ -35,12 +35,19 @@ class CylinderHead : public Part {
         double intakeValveLift(int cylinder) const;
         double exhaustValveLift(int cylinder) const;
 
+        inline ExhaustSystem *getExhaustSystem(int cylinderIndex) const { return m_exhaustSystems[cylinderIndex]; }
         void setAllExhaustSystems(ExhaustSystem *system);
         void setExhaustSystem(int i, ExhaustSystem *system);
 
+        inline Intake *getIntake(int cylinderIndex) const { return m_intakes[cylinderIndex]; }
         void setAllIntakes(Intake *intake);
         void setIntake(int i, Intake *intake);
 
+        inline bool getFlipDisplay() const { return m_flipDisplay; }
+        inline double getCombustionChamberVolume() const { return m_combustionChamberVolume; }
+        inline CylinderBank *getCylinderBank() const { return m_bank; }
+
+    protected:
         ExhaustSystem **m_exhaustSystems;
         Intake **m_intakes;
 

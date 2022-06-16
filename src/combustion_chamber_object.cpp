@@ -15,12 +15,12 @@ CombustionChamberObject::~CombustionChamberObject() {
 void CombustionChamberObject::generateGeometry() {
     GeometryGenerator *gen = m_app->getGeometryGenerator();
     CylinderHead *head = m_chamber->getCylinderHead();
-    CylinderBank *bank = head->m_bank;
+    CylinderBank *bank = head->getCylinderBank();
 
     const float lineWidth = (float)m_chamber->m_flameEvent.travel_x * 2;
     double flameTop_x, flameTop_y;
     double flameBottom_x, flameBottom_y;
-    double chamberHeight = head->m_combustionChamberVolume / bank->boreSurfaceArea();
+    double chamberHeight = head->getCombustionChamberVolume() / bank->boreSurfaceArea();
 
     bank->getPositionAboveDeck(chamberHeight, &flameTop_x, &flameTop_y);
     bank->getPositionAboveDeck(chamberHeight - m_chamber->m_flameEvent.travel_y, &flameBottom_x, &flameBottom_y);
@@ -42,7 +42,7 @@ void CombustionChamberObject::generateGeometry() {
 void CombustionChamberObject::render(const ViewParameters *view) {
     resetShader();
 
-    if (m_chamber->getPiston()->m_cylinderIndex == view->Layer0) {
+    if (m_chamber->getPiston()->getCylinderIndex() == view->Layer0) {
         if (m_chamber->m_lit) {
             m_app->getShaders()->SetBaseColor(ysMath::Mul(m_app->getOrange(), ysMath::LoadVector(1.0f, 1.0f, 1.0f, 0.5f)));
             m_app->drawGenerated(m_indices, 0x10);

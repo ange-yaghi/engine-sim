@@ -74,16 +74,17 @@ void CylinderTemperatureGauge::render() {
     for (int i = 0; i < m_engine->getCylinderCount(); ++i) {
         Piston *piston = m_engine->getPiston(i);
         CombustionChamber *chamber = m_engine->getChamber(i);
-        const int bankIndex = piston->m_bank->m_index;
+        CylinderBank *bank = piston->getCylinderBank();
+        const int bankIndex = bank->getIndex();
 
         const Bounds &b = grid.get(body, bankIndex, 0);
 
-        Grid bankGrid = { 1, piston->m_bank->m_cylinderCount };
+        Grid bankGrid = { 1, bank->getCylinderCount() };
         const Bounds &b_cyl =
             bankGrid.get(
                 b,
                 0,
-                piston->m_bank->m_cylinderCount - piston->m_cylinderIndex - 1).inset(5.0f);
+                bank->getCylinderCount() - piston->getCylinderIndex() - 1).inset(5.0f);
 
         const double temperature = chamber->m_system.temperature();
         double value = temperature - m_minTemperature;

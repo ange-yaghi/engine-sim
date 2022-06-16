@@ -197,6 +197,7 @@ void EngineSimApplication::initialize() {
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
     crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 2;
     crankshaftParams.Mass = units::mass(75, units::lb);
+    crankshaftParams.FrictionTorque = units::torque(10.0, units::ft_lb);
 
     // Temporary moment of inertia approximation
     const double crank_r = crankshaftParams.CrankThrow;
@@ -256,7 +257,7 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
-    camLift0->setInputScale(1.15); // 1.15
+    camLift0->setInputScale(1.15);
     camLift0->setOutputScale(1.0);
     camLift0->addSample(0.0, units::distance(565, units::thou));
 
@@ -376,8 +377,9 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getHead(1)->initialize(chParams);
 
     Intake::Parameters inParams;
-    inParams.inputFlowK = GasSystem::k_carb(750.0);
-    inParams.volume = units::volume(5000.0, units::cc);
+    inParams.InputFlowK = GasSystem::k_carb(750.0);
+    inParams.Volume = units::volume(5000.0, units::cc);
+    inParams.IdleFlowK = 0.0004;
     m_iceEngine.getIntake(0)->initialize(inParams);
 
     ExhaustSystem::Parameters esParams;
@@ -429,15 +431,33 @@ void EngineSimApplication::initialize() {
 
     for (int i = 0; i < 8; ++i) {
         ccParams.Piston = m_iceEngine.getPiston(i);
-        ccParams.Head = m_iceEngine.getHead(ccParams.Piston->m_bank->m_index);
+        ccParams.Head = m_iceEngine.getHead(ccParams.Piston->getCylinderBank()->getIndex());
         m_iceEngine.getChamber(i)->initialize(ccParams);
     }
 
-    m_simulator.initialize(&m_iceEngine, Simulator::SystemType::NsvOptimized);
+    Vehicle::Parameters vehParams;
+    vehParams.Mass = units::mass(1597, units::kg);
+    vehParams.DiffRatio = 3.42;
+    vehParams.TireRadius = units::distance(10, units::inch);
+    Vehicle *vehicle = new Vehicle;
+    vehicle->initialize(vehParams);
+
+    const double gearRatios[] = { 2.97, 2.07, 1.43, 1.00, 0.84, 0.56 };
+    Transmission::Parameters tParams;
+    tParams.GearCount = 6;
+    tParams.GearRatios = gearRatios;
+    tParams.MaxClutchTorque = units::torque(1000.0, units::ft_lb);
+    Transmission *transmission = new Transmission;
+    transmission->initialize(tParams);
+
+    Simulator::Parameters simulatorParams;
+    simulatorParams.Engine = &m_iceEngine;
+    simulatorParams.SystemType = Simulator::SystemType::NsvOptimized;
+    simulatorParams.Transmission = transmission;
+    simulatorParams.Vehicle = vehicle;
+    m_simulator.initialize(simulatorParams);
     m_simulator.startAudioRenderingThread();
     createObjects(&m_iceEngine);
-
-    m_dyno.initialize(m_simulator.getCrankshaftLoad(0));
 
     m_uiManager.initialize(this);
 
@@ -491,11 +511,11 @@ void EngineSimApplication::process(float frame_dt) {
         m_oscCluster->getExhaustValveLiftOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
             m_simulator.getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(
-                m_simulator.getEngine()->getChamber(0)->getPiston()->m_cylinderIndex));
+                m_simulator.getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
         m_oscCluster->getIntakeValveLiftOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
             m_simulator.getEngine()->getChamber(0)->getCylinderHead()->intakeValveLift(
-                m_simulator.getEngine()->getChamber(0)->getPiston()->m_cylinderIndex));
+                m_simulator.getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
     }
 
     auto proc_t1 = std::chrono::steady_clock::now();
@@ -574,10 +594,6 @@ void EngineSimApplication::render() {
         object->render(&view);
     }
 
-    m_torque =
-        m_torque * 0.95
-        + 0.05 * units::convert(m_simulator.getCrankshaftLoad(0)->getDynoTorque(), units::ft_lb);
-
     m_uiManager.render();
 }
 
@@ -592,7 +608,7 @@ float EngineSimApplication::unitsToPixels(float units) const {
 }
 
 void EngineSimApplication::run() {
-    double throttle = 0.999;
+    double throttle = 1.0;
     while (true) {
         if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
             break;
@@ -613,7 +629,7 @@ void EngineSimApplication::run() {
             m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
         }
 
-        double newThrottle = 0.999;
+        double newThrottle = 1.0;
         if (m_engine.IsKeyDown(ysKey::Code::Q)) {
             newThrottle = 0.99;
         }
@@ -631,27 +647,37 @@ void EngineSimApplication::run() {
 
         m_iceEngine.setThrottle(throttle);
 
-        m_dyno.setSpeed(m_dynoSpeed);
         m_dynoSpeed = std::fmod(m_dynoSpeed + 20.5 * m_engine.GetFrameLength(), units::rpm(7000.0));
-        //m_dyno.setSpeed(units::rpm(500.0));
+        m_simulator.m_dyno.m_rotationSpeed = m_dynoSpeed;
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
-            m_dyno.setEnabled(!m_dyno.isEnabled());
+            m_simulator.m_dyno.m_enabled = !m_simulator.m_dyno.m_enabled;
         }
 
-        static int gear = 0;
-        if (m_engine.ProcessKeyDown(ysKey::Code::Up) && gear < 5) {
-            m_simulator.setGear(++gear);
+        if (m_engine.IsKeyDown(ysKey::Code::S)) {
+            m_simulator.m_starterMotor.m_enabled = true;
         }
-        else if (m_engine.ProcessKeyDown(ysKey::Code::Down) && gear > 0) {
-            m_simulator.setGear(--gear);
+        else {
+            m_simulator.m_starterMotor.m_enabled = false;
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::A)) {
+            m_simulator.getEngine()->getIgnitionModule()->m_enabled =
+                !m_simulator.getEngine()->getIgnitionModule()->m_enabled;
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::Up)) {
+            m_simulator.getTransmission()->changeGear(m_simulator.getTransmission()->getGear() + 1);
+        }
+        else if (m_engine.ProcessKeyDown(ysKey::Code::Down)) {
+            m_simulator.getTransmission()->changeGear(m_simulator.getTransmission()->getGear() - 1);
         }
 
         if (m_engine.IsKeyDown(ysKey::Code::Shift)) {
-            m_simulator.setClutch(0.0);
+            m_simulator.getTransmission()->setClutchPressure(0.0);
         }
         else {
-            m_simulator.setClutch(1.0);
+            m_simulator.getTransmission()->setClutchPressure(1.0);
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::V) &&

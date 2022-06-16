@@ -23,14 +23,6 @@
 
 #include <vector>
 
-struct Oscillator {
-    double freq = 100.0;
-    double disp = 0.0;
-    double vel = 0.0;
-    double k_d = 0.0;
-    double s = 1.0;
-};
-
 class EngineSimApplication {
     public:
         EngineSimApplication();
@@ -97,7 +89,6 @@ class EngineSimApplication {
         std::vector<SimulationObject *> m_objects;
         Engine m_iceEngine;
         Simulator m_simulator;
-        Dynamometer m_dyno;
         double m_dynoSpeed;
         double m_torque;
 

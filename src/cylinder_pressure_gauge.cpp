@@ -48,16 +48,16 @@ void CylinderPressureGauge::render() {
     for (int i = 0; i < m_engine->getCylinderCount(); ++i) {
         Piston *piston = m_engine->getPiston(i);
         CombustionChamber *chamber = m_engine->getChamber(i);
-        const int bankIndex = piston->m_bank->m_index;
+        const int bankIndex = piston->getCylinderBank()->getIndex();
 
         const Bounds &b = grid.get(body, bankIndex, 0);
 
-        Grid bankGrid = { 1, piston->m_bank->m_cylinderCount };
+        Grid bankGrid = { 1, piston->getCylinderBank()->getCylinderCount() };
         const Bounds &b_cyl =
             bankGrid.get(
                 b,
                 0,
-                piston->m_bank->m_cylinderCount - piston->m_cylinderIndex - 1).inset(5.0f);
+                piston->getCylinderBank()->getCylinderCount() - piston->getCylinderIndex() - 1).inset(5.0f);
 
         const double value = units::convert(chamber->m_system.pressure(), units::psi);
 

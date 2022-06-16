@@ -24,11 +24,23 @@ class Piston : public Part {
         virtual ~Piston();
 
         void initialize(const Parameters &params);
+        inline void setCylinderConstraint(atg_scs::LineConstraint *constraint);
         virtual void destroy();
 
         double relativeX() const;
         double relativeY() const;
 
+        double calculateCylinderWallForce() const;
+        inline ConnectingRod *getRod() const { return m_rod; }
+        inline CylinderBank *getCylinderBank() const { return m_bank; }
+        inline int getCylinderIndex() const { return m_cylinderIndex; }
+        inline double getCompressionHeight() const { return m_compressionHeight; }
+        inline double getDisplacement() const { return m_displacement; }
+        inline double getWristPinLocation() const { return m_wristPinLocation; }
+        inline double getMass() const { return m_mass; }
+        inline double getBlowbyK() const { return m_blowby_k; }
+
+    protected:
         ConnectingRod *m_rod;
         CylinderBank *m_bank;
         atg_scs::LineConstraint *m_cylinderConstraint;
@@ -39,5 +51,9 @@ class Piston : public Part {
         double m_mass;
         double m_blowby_k;
 };
+
+void Piston::setCylinderConstraint(atg_scs::LineConstraint *constraint) {
+    m_cylinderConstraint = constraint;
+}
 
 #endif /* ATG_ENGINE_SIM_PISTON_H */

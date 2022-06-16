@@ -1,25 +1,24 @@
 #ifndef ATG_ENGINE_SIM_DYNAMOMETER_H
 #define ATG_ENGINE_SIM_DYNAMOMETER_H
 
-#include "crankshaft_load.h"
+#include "scs.h"
 
-class Dynamometer {
+#include "crankshaft.h"
+
+class Dynamometer : public atg_scs::Constraint {
     public:
         Dynamometer();
-        ~Dynamometer();
+        virtual ~Dynamometer();
 
-        void initialize(CrankshaftLoad *constraint);
+        void connectCrankshaft(Crankshaft *crankshaft);
+        virtual void calculate(Output *output, atg_scs::SystemState *state);
+        double getTorque() const;
 
-        double readTorque() const;
-
-        void setEnabled(bool enabled);
-        bool isEnabled() const { return m_constraint->m_enableDyno; }
-
-        void setSpeed(double speed) { m_constraint->m_dynoSpeed = speed; }
-        double getSpeed() const { return m_constraint->m_dynoSpeed; }
-
-    protected:
-        CrankshaftLoad *m_constraint;
+        double m_rotationSpeed;
+        double m_ks;
+        double m_kd;
+        double m_maxTorque;
+        bool m_enabled;
 };
 
 #endif /* ATG_ENGINE_SIM_DYNAMOMETER_H */

@@ -188,7 +188,8 @@ void RightGaugeCluster::renderTachSpeedCluster(const Bounds &bounds) {
 
     const Bounds speed = left.verticalSplit(0.0f, 0.5f);
     m_speedometer->m_bounds = speed;
-    m_speedometer->m_gauge->m_value = units::convert(m_simulator->getVehicleSpeed(), units::mile / units::hour);
+    m_speedometer->m_gauge->m_value =
+        units::convert(m_simulator->getVehicle()->getSpeed(), units::mile / units::hour);
 
     m_combusionChamberStatus->m_bounds = right;
 }
@@ -222,6 +223,9 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
         / (constants::R * ambientTemperature);
     const double theoreticalAirPerSecond = theoreticalAirPerRevolution * rpm / 60.0;
     const double actualAirPerSecond = m_engine->getIntakeFlowRate();
+    const double volumetricEfficiency = (std::abs(rpm) < 1E-3)
+        ? 0
+        : (actualAirPerSecond / theoreticalAirPerSecond);
 
     const Bounds cfmBounds = grid.get(right, 0, 1, 1, 1);
     m_intakeCfmGauge->m_bounds = cfmBounds;
@@ -229,5 +233,5 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
 
     const Bounds volumetricEfficiencyBounds = grid.get(right, 0, 2, 1, 1);
     m_volumetricEffGauge->m_bounds = volumetricEfficiencyBounds;
-    m_volumetricEffGauge->m_gauge->m_value = 100 * (actualAirPerSecond / theoreticalAirPerSecond);
+    m_volumetricEffGauge->m_gauge->m_value = 100 * volumetricEfficiency;
 }
