@@ -3,6 +3,8 @@
 
 #include "convolution_filter.h"
 #include "leveling_filter.h"
+#include "derivative_filter.h"
+#include "low_pass_filter.h"
 
 #include <cinttypes>
 #include <thread>
@@ -12,16 +14,38 @@
 
 class Synthesizer {
     public:
+        struct AudioParameters {
+            double Volume = 1.0;
+            double Convolution = 1.0;
+            double dF_F_mix = 0.00990099;
+            double InputSampleNoise = 0.125;
+            double InputSampleNoiseFrequencyCutoff = 80000.0;
+            double AirNoise = 1.0;
+            double AirNoiseFrequencyCutoff = 1000.0;
+            double LevelerTarget = 40000;
+            double LevelerMaxGain = 0.9;
+            double LevelerMinGain = 0.001;
+        };
+
         struct Parameters {
             int InputChannelCount;
             int InputBufferSize;
             int AudioBufferSize;
             double InputSampleRate;
             double AudioSampleRate;
+            AudioParameters InitialAudioParameters;
         };
 
         struct InputChannel {
             double *Data;
+        };
+
+        struct ProcessingFilters {
+            ConvolutionFilter Convolution;
+            DerivativeFilter Derivative;
+            LowPassFilter AirNoiseLowPass;
+            LowPassFilter SampleNoiseLowPass;
+            LowPassFilter InputDcFilter;
         };
 
     public:
@@ -61,9 +85,14 @@ class Synthesizer {
 
         int getInputWriteOffset() const { return m_inputWriteOffset; }
 
+        double getLevelerGain();
+        AudioParameters getAudioParameters();
+        void setAudioParameters(const AudioParameters &params);
+
     protected:
         LevelingFilter m_levelingFilter;
         InputChannel *m_inputChannels;
+        AudioParameters m_audioParameters;
         int m_inputChannelCount;
         int m_inputBufferSize;
         int m_inputWriteOffset;
@@ -85,9 +114,7 @@ class Synthesizer {
         std::mutex m_lock0;
         std::condition_variable m_cv0;
 
-        ConvolutionFilter temp_filter_0;
-        ConvolutionFilter temp_filter_1;
-        double temp_prev[2] = { 0, 0 };
+        ProcessingFilters *m_filters;
 };
 
 #endif /* ATG_ENGINE_SIM_ENGINE_SYNTHESIZER_H */

@@ -17,6 +17,7 @@
 #include "synthesizer.h"
 #include "oscilloscope_cluster.h"
 #include "performance_cluster.h"
+#include "load_simulation_cluster.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -98,6 +99,7 @@ class EngineSimApplication {
         OscilloscopeCluster *m_oscCluster;
         CylinderTemperatureGauge *m_temperatureGauge;
         PerformanceCluster *m_performanceCluster;
+        LoadSimulationCluster *m_loadSimulationCluster;
 
         bool m_paused;
 

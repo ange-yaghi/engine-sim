@@ -220,6 +220,14 @@ void Simulator::placeAndInitialize() {
         piston->m_body.theta = bank->getAngle() + constants::pi;
     }
 
+    for (int i = 0; i < cylinderCount; ++i) {
+        m_engine->getChamber(i)->m_system.initialize(
+            units::pressure(1.0, units::atm),
+            m_engine->getChamber(i)->getVolume(),
+            units::celcius(25.0)
+        );
+    }
+
     m_engine->getIgnitionModule()->reset();
 }
 
@@ -242,8 +250,10 @@ void Simulator::startFrame(double dt) {
         }
     }
 
-    for (int i = 0; i < m_engine->getIntakeCount(); ++i) {
-        m_engine->getIntake(i)->m_flowRate = 0;
+    if (i_steps > 0) {
+        for (int i = 0; i < m_engine->getIntakeCount(); ++i) {
+            m_engine->getIntake(i)->m_flowRate = 0;
+        }
     }
 }
 
@@ -256,7 +266,9 @@ void Simulator::endAudioRenderingThread() {
 }
 
 int Simulator::getSynthesizerInputLatencyTarget() const {
-    return (int)std::ceil(m_targetSynthesizerLatency * m_simulationFrequency * m_simulationSpeed);
+    return std::max(
+        10,
+        (int)std::ceil(m_targetSynthesizerLatency * m_simulationFrequency * m_simulationSpeed));
 }
 
 bool Simulator::simulateStep() {

@@ -54,6 +54,7 @@ EngineSimApplication::EngineSimApplication() {
     m_temperatureGauge = nullptr;
     m_oscCluster = nullptr;
     m_performanceCluster = nullptr;
+    m_loadSimulationCluster = nullptr;
 
     m_oscillatorSampleOffset = 0;
 }
@@ -142,42 +143,49 @@ void EngineSimApplication::initialize() {
     pistonParams.Displacement = 0;
     pistonParams.WristPinPosition = 0;
     pistonParams.Mass = units::mass(880, units::g);
-    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
 
     pistonParams.CylinderIndex = 0;
     pistonParams.Bank = m_iceEngine.getCylinderBank(1);
     pistonParams.Rod = m_iceEngine.getConnectingRod(0);
+    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.2);
     m_iceEngine.getPiston(0)->initialize(pistonParams);
 
     pistonParams.Bank = m_iceEngine.getCylinderBank(0);
     pistonParams.Rod = m_iceEngine.getConnectingRod(1);
+    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
     m_iceEngine.getPiston(1)->initialize(pistonParams);
 
     pistonParams.CylinderIndex = 1;
     pistonParams.Bank = m_iceEngine.getCylinderBank(1);
     pistonParams.Rod = m_iceEngine.getConnectingRod(2);
+    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
     m_iceEngine.getPiston(2)->initialize(pistonParams);
 
     pistonParams.Bank = m_iceEngine.getCylinderBank(0);
     pistonParams.Rod = m_iceEngine.getConnectingRod(3);
+    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
     m_iceEngine.getPiston(3)->initialize(pistonParams);
 
     pistonParams.CylinderIndex = 2;
     pistonParams.Bank = m_iceEngine.getCylinderBank(1);
     pistonParams.Rod = m_iceEngine.getConnectingRod(4);
+    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
     m_iceEngine.getPiston(4)->initialize(pistonParams);
 
     pistonParams.Bank = m_iceEngine.getCylinderBank(0);
     pistonParams.Rod = m_iceEngine.getConnectingRod(5);
+    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.2);
     m_iceEngine.getPiston(5)->initialize(pistonParams);
 
     pistonParams.CylinderIndex = 3;
     pistonParams.Bank = m_iceEngine.getCylinderBank(1);
     pistonParams.Rod = m_iceEngine.getConnectingRod(6);
+    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
     m_iceEngine.getPiston(6)->initialize(pistonParams);
 
     pistonParams.Bank = m_iceEngine.getCylinderBank(0);
     pistonParams.Rod = m_iceEngine.getConnectingRod(7);
+    pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.3);
     m_iceEngine.getPiston(7)->initialize(pistonParams);
 
     CylinderBank::Parameters cbParams;
@@ -257,7 +265,7 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
-    camLift0->setInputScale(1.15);
+    camLift0->setInputScale(1.15); //1.15
     camLift0->setOutputScale(1.0);
     camLift0->addSample(0.0, units::distance(565, units::thou));
 
@@ -308,7 +316,7 @@ void EngineSimApplication::initialize() {
 
     Camshaft::Parameters camParams;
     const double lobeSeparation = 114;
-    const double advance = 106 - lobeSeparation;
+    const double advance = lobeSeparation - 106;
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;
     camParams.Advance = units::angle(advance, units::deg);
@@ -472,6 +480,9 @@ void EngineSimApplication::initialize() {
     m_performanceCluster = m_uiManager.getRoot()->addElement<PerformanceCluster>();
     m_performanceCluster->setSimulator(&m_simulator);
 
+    m_loadSimulationCluster = m_uiManager.getRoot()->addElement<LoadSimulationCluster>();
+    m_loadSimulationCluster->setSimulator(&m_simulator);
+
     m_audioBuffer.initialize(44100, 44100);
     m_audioBuffer.m_writePointer = 44100 * 0.1;
 
@@ -490,8 +501,20 @@ void EngineSimApplication::initialize() {
 
 void EngineSimApplication::process(float frame_dt) {
     double speed = 1.0;
-    if (m_engine.IsKeyDown(ysKey::Code::Control)) {
+    if (m_engine.IsKeyDown(ysKey::Code::N1)) {
+        speed = 1 / 10.0;
+    }
+    else if (m_engine.IsKeyDown(ysKey::Code::N2)) {
+        speed = 1 / 50.0;
+    }
+    else if (m_engine.IsKeyDown(ysKey::Code::N3)) {
         speed = 1 / 100.0;
+    }
+    else if (m_engine.IsKeyDown(ysKey::Code::N4)) {
+        speed = 1 / 150.0;
+    }
+    else if (m_engine.IsKeyDown(ysKey::Code::N5)) {
+        speed = 1 / 200.0;
     }
 
     m_simulator.setSimulationSpeed(speed);
@@ -609,7 +632,19 @@ float EngineSimApplication::unitsToPixels(float units) const {
 
 void EngineSimApplication::run() {
     double throttle = 1.0;
+    double targetThrottle = 1.0;
+
+    double clutchPressure = 1.0;
+    int lastMouseWheel = 0;
+
     while (true) {
+        const float dt = m_engine.GetFrameLength();
+        const bool fineControlMode = m_engine.IsKeyDown(ysKey::Code::Space);
+
+        const int mouseWheel = m_engine.GetMouseWheel();
+        const int mouseWheelDelta = mouseWheel - lastMouseWheel;
+        lastMouseWheel = mouseWheel;
+
         if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
             break;
         }
@@ -622,28 +657,31 @@ void EngineSimApplication::run() {
         if (m_engine.ProcessKeyDown(ysKey::Code::Space)
             && m_engine.GetGameWindow()->IsActive())
         {
-            m_paused = !m_paused;
+            //m_paused = !m_paused;
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::F)) {
             m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
         }
 
-        double newThrottle = 1.0;
+        targetThrottle = fineControlMode ? targetThrottle : 1.0;
         if (m_engine.IsKeyDown(ysKey::Code::Q)) {
-            newThrottle = 0.99;
+            targetThrottle = 0.99;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::W)) {
-            newThrottle = 0.9;
+            targetThrottle = 0.9;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::E)) {
-            newThrottle = 0.8;
+            targetThrottle = 0.8;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::R)) {
-            newThrottle = 0.0;
+            targetThrottle = 0.0;
+        }
+        else if (fineControlMode) {
+            targetThrottle = std::fmax(0.0, std::fmin(1.0, targetThrottle - mouseWheelDelta * 0.0001));
         }
 
-        throttle = newThrottle * 0.5 + 0.5 * throttle;
+        throttle = targetThrottle * 0.5 + 0.5 * throttle;
 
         m_iceEngine.setThrottle(throttle);
 
@@ -673,12 +711,19 @@ void EngineSimApplication::run() {
             m_simulator.getTransmission()->changeGear(m_simulator.getTransmission()->getGear() - 1);
         }
 
+        double newClutchPressure = 1.0;
         if (m_engine.IsKeyDown(ysKey::Code::Shift)) {
-            m_simulator.getTransmission()->setClutchPressure(0.0);
+            newClutchPressure = 0.0;
         }
-        else {
-            m_simulator.getTransmission()->setClutchPressure(1.0);
+
+        double clutchRC = 0.001;
+        if (m_engine.IsKeyDown(ysKey::Code::Space)) {
+            clutchRC = 1.0;
         }
+
+        const double clutch_s = dt / (dt + clutchRC);
+        clutchPressure = clutchPressure * (1 - clutch_s) + newClutchPressure * clutch_s;
+        m_simulator.getTransmission()->setClutchPressure(clutchPressure);
 
         if (m_engine.ProcessKeyDown(ysKey::Code::V) &&
             m_engine.GetGameWindow()->IsActive()) {
@@ -818,6 +863,7 @@ void EngineSimApplication::renderScene() {
     m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 2);
     m_oscCluster->m_bounds = grid.get(windowBounds, 1, 1);
     m_performanceCluster->m_bounds = grid3x3.get(windowBounds, 0, 1);
+    m_loadSimulationCluster->m_bounds = grid3x3.get(windowBounds, 0, 2);
 
     m_geometryGenerator.reset();
 

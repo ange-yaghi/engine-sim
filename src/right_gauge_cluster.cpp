@@ -41,9 +41,9 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
 
     m_combusionChamberStatus->m_engine = m_engine;
 
-    const float shortenAngle = (float)units::angle(1.0, units::deg);
+    constexpr float shortenAngle = (float)units::angle(1.0, units::deg);
 
-    m_tachometer->m_title = "TACHOMETER";
+    m_tachometer->m_title = "ENGINE SPEED";
     m_tachometer->m_unit = "rpm";
     m_tachometer->m_precision = 0;
     m_tachometer->setLocalPosition({ 0, 0 });
@@ -51,7 +51,7 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_tachometer->m_gauge->m_max = 7000;
     m_tachometer->m_gauge->m_minorStep = 100;
     m_tachometer->m_gauge->m_majorStep = 1000;
-    m_tachometer->m_gauge->m_maxMinorTick = 7000;
+    m_tachometer->m_gauge->m_maxMinorTick = INT_MAX;
     m_tachometer->m_gauge->m_thetaMin = constants::pi * 1.2;
     m_tachometer->m_gauge->m_thetaMax = -0.2 * constants::pi;
     m_tachometer->m_gauge->m_needleWidth = 4.0;
@@ -66,7 +66,7 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_tachometer->m_gauge->setBand(
         { m_app->getRed(), 5500, 7000, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 2);
 
-    m_speedometer->m_title = "SPEEDOMETER";
+    m_speedometer->m_title = "VEHICLE SPEED";
     m_speedometer->m_unit = "MPH";
     m_speedometer->m_precision = 0;
     m_speedometer->setLocalPosition({ 0, 0 });
@@ -185,6 +185,19 @@ void RightGaugeCluster::renderTachSpeedCluster(const Bounds &bounds) {
     const Bounds tach = left.verticalSplit(0.5f, 1.0f);
     m_tachometer->m_bounds = tach;
     m_tachometer->m_gauge->m_value = m_engine->getRpm();
+
+    constexpr float shortenAngle = (float)units::angle(1.0, units::deg);
+    const float maxRpm = (float)std::ceil(units::toRpm(m_engine->getRedline() * 1.25) / 1000.0) * 1000.0f;
+    const float redline = (float)std::ceil(units::toRpm(m_engine->getRedline()) / 500.0) * 500.0f;
+    const float redlineWarning = (float)std::floor(units::toRpm(m_engine->getRedline() * 0.9) / 500.0) * 500.0f;
+    m_tachometer->m_gauge->m_max = maxRpm;
+    m_tachometer->m_gauge->setBandCount(3);
+    m_tachometer->m_gauge->setBand(
+        { m_app->getWhite(), 400, 1000, 3.0f, 6.0f }, 0);
+    m_tachometer->m_gauge->setBand(
+        { m_app->getOrange(), redlineWarning, redline, 3.0f, 6.0f, -shortenAngle, shortenAngle }, 1);
+    m_tachometer->m_gauge->setBand(
+        { m_app->getRed(), redline, maxRpm, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 2);
 
     const Bounds speed = left.verticalSplit(0.0f, 0.5f);
     m_speedometer->m_bounds = speed;

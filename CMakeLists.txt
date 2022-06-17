@@ -64,6 +64,8 @@ add_library(engine-sim STATIC
     src/starter_motor.cpp
     src/transmission.cpp
     src/vehicle.cpp
+    src/derivative_filter.cpp
+    src/low_pass_filter.cpp
 
     # Include files
     include/crankshaft.h
@@ -95,6 +97,8 @@ add_library(engine-sim STATIC
     include/starter_motor.h
     include/transmission.h
     include/vehicle.h
+    include/derivative_filter.h
+    include/low_pass_filter.h
 )
 
 target_link_libraries(engine-sim
@@ -136,6 +140,7 @@ add_executable(engine-sim-app WIN32
     src/oscilloscope_cluster.cpp
     src/performance_cluster.cpp
     src/firing_order_display.cpp
+    src/load_simulation_cluster.cpp
 
     # Include files
     include/delta.h
@@ -168,6 +173,7 @@ add_executable(engine-sim-app WIN32
     include/oscilloscope_cluster.h
     include/performance_cluster.h
     include/firing_order_display.h
+    include/load_simulation_cluster.h
 )
 
 target_link_libraries(engine-sim-app

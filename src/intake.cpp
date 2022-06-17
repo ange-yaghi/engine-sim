@@ -13,6 +13,7 @@ Intake::Intake() {
     m_flowRate = 0;
     m_totalFuelInjected = 0;
     m_molecularAfr = 0;
+    m_flowAttenuationGamma = 1.0;
 }
 
 Intake::~Intake() {

@@ -80,7 +80,7 @@ void FuelCluster::render() {
 
     ss = std::stringstream();
     ss << std::setprecision(2) << std::fixed;
-    ss << lp100km << " L/100 KM";
+    ss << ((lp100km > 100.0) ? 100.0 : lp100km) << " L/100 KM";
 
     const Bounds lp100kmBounds = grid.get(bodyBounds, 0, 7);
     drawText(ss.str(), lp100kmBounds, 12.0f, Bounds::lm);

@@ -23,6 +23,7 @@ Engine::Engine() {
     m_exhaustSystemCount = 0;
     m_starterSpeed = 0;
     m_starterTorque = 0;
+    m_redline = 0;
 
     m_throttle = 0.0;
 }
@@ -46,6 +47,7 @@ void Engine::initialize(const Parameters &params) {
     m_intakeCount = params.IntakeCount;
     m_starterTorque = params.StarterTorque;
     m_starterSpeed = params.StarterSpeed;
+    m_redline = params.Redline;
 
     m_fuel = params.Fuel;
 

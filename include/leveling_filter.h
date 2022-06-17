@@ -9,6 +9,7 @@ class LevelingFilter : public Filter {
         virtual ~LevelingFilter();
 
         virtual double f(double sample);
+        double getAttenuation() const { return m_attenuation; }
 
     protected:
         double m_peak;

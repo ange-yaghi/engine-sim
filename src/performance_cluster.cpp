@@ -90,7 +90,7 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_simSpeedGauge->m_precision = 1;
     m_simSpeedGauge->setLocalPosition({ 0, 0 });
     m_simSpeedGauge->m_gauge->m_min = 0;
-    m_simSpeedGauge->m_gauge->m_max = 1000;
+    m_simSpeedGauge->m_gauge->m_max = 200;
     m_simSpeedGauge->m_gauge->m_minorStep = 10;
     m_simSpeedGauge->m_gauge->m_majorStep = 50;
     m_simSpeedGauge->m_gauge->m_maxMinorTick = 1000;

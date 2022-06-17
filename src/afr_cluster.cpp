@@ -23,7 +23,7 @@ void AfrCluster::initialize(EngineSimApplication *app) {
     m_intakeAfrGauge = addElement<LabeledGauge>();
     m_exhaustAfrGauge = addElement<LabeledGauge>();
 
-    const float shortenAngle = (float)units::angle(1.0, units::deg);
+    constexpr float shortenAngle = (float)units::angle(1.0, units::deg);
 
     m_intakeAfrGauge->m_title = "IN. AFR";
     m_intakeAfrGauge->m_unit = "";

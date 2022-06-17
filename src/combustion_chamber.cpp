@@ -91,7 +91,7 @@ void CombustionChamber::ignite() {
         //m_flameEvent.efficiency = 1.0;
         m_flameEvent.flameSpeed = fastFlameSpeed;
 
-        if (rand() % 4 == 0) {
+        if (rand() % 16 == 0) {
             //m_flameEvent.efficiency = 1;
             //m_flameEvent.flameSpeed = fastFlameSpeed;
         }

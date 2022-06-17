@@ -34,6 +34,7 @@ class Engine : public Part {
 
             double StarterTorque = units::torque(90.0, units::ft_lb);
             double StarterSpeed = units::rpm(200);
+            double Redline = units::rpm(6500);
 
             FuelParameters Fuel;
         };
@@ -63,6 +64,7 @@ class Engine : public Part {
 
         inline double getStarterTorque() const { return m_starterTorque; }
         inline double getStarterSpeed() const { return m_starterSpeed; }
+        inline double getRedline() const { return m_redline; }
 
         int getCylinderBankCount() const { return m_cylinderBankCount; }
         int getCylinderCount() const { return m_cylinderCount; }
@@ -97,6 +99,7 @@ class Engine : public Part {
 
         double m_starterTorque;
         double m_starterSpeed;
+        double m_redline;
 
         ExhaustSystem *m_exhaustSystems;
         int m_exhaustSystemCount;
