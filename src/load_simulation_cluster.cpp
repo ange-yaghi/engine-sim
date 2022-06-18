@@ -147,7 +147,7 @@ void LoadSimulationCluster::render() {
 
     constexpr float shortenAngle = (float)units::angle(1.0, units::deg);
     const double redline = units::toRpm(m_simulator->getEngine()->getRedline());
-    const double maxRpm = std::ceil(redline / 1000.0) * 1000.0;
+    const double maxRpm = std::floor(redline / 500.0) * 500.0;
     m_dynoSpeedGauge->m_gauge->m_max = (int)(maxRpm);
     m_dynoSpeedGauge->m_gauge->setBandCount(1);
     m_dynoSpeedGauge->m_gauge->setBand(

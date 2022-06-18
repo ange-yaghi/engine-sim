@@ -224,7 +224,7 @@ double GasSystem::flowRate(
     // Q_g = gas flow [SCFM]
     double Q_g;
     if (P0 > 1.9 * P1) {
-        // Critical flow
+        // Critical flow (choked flow)
         Q_g = (k_flow * 816 * P0_imp) / std::sqrt(T_R * norm_sg);
     }
     else {

@@ -315,8 +315,8 @@ void EngineSimApplication::initialize() {
     camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Camshaft::Parameters camParams;
-    const double lobeSeparation = 114;
-    const double advance = lobeSeparation - 106;
+    const double lobeSeparation = 114;// 114;
+    const double advance = -(lobeSeparation - 106);
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;
     camParams.Advance = units::angle(advance, units::deg);
@@ -416,6 +416,7 @@ void EngineSimApplication::initialize() {
     imParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     imParams.CylinderCount = 8;
     imParams.TimingCurve = timingCurve;
+    imParams.RevLimit = units::rpm(7000.0);
     m_iceEngine.getIgnitionModule()->initialize(imParams);
     constexpr double cycle = units::angle(2 * 360.0, units::deg);
     m_iceEngine.getIgnitionModule()->setFiringOrder(1 - 1, (0 / 8.0) * cycle);
