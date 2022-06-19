@@ -16,7 +16,7 @@ Simulator::Simulator() {
     m_currentIteration = 0;
     m_simulationSpeed = 1.0;
     m_targetSynthesizerLatency = 0.1;
-    m_simulationFrequency = 13000;
+    m_simulationFrequency = 9000;//9000;//13000
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
@@ -28,6 +28,7 @@ Simulator::Simulator() {
     m_exhaustFlowStagingBuffer = nullptr;
 
     m_filteredEngineSpeed = 0.0;
+    m_dynoTorque = 0.0;
 }
 
 Simulator::~Simulator() {
@@ -284,6 +285,8 @@ bool Simulator::simulateStep() {
 
     const double timestep = 1.0 / m_simulationFrequency;
     m_system->process(timestep, 1);
+
+    m_dynoTorque = 0.99 * m_dynoTorque + 0.01 * m_dyno.getTorque();
 
     m_vehicle->update(timestep);
     m_transmission->update(timestep);

@@ -23,7 +23,7 @@ class GasSystem {
         };
 
     public:
-        void initialize(double P, double V, double T, const Mix &mix = {});
+        void initialize(double P, double V, double T, const Mix &mix = {}, int degreesOfFreedom = 5);
 
         void start();
         void end();
@@ -40,7 +40,7 @@ class GasSystem {
         void injectFuel(double n);
 
         double react(double n, const Mix &mix);
-        static double flowConstant(double flowRate, double P, double pressureDrop, double T);
+        static double flowConstant(double flowRate, double P, double pressureDrop, double T, double hcr);
         static double k_28inH2O(double flowRateScfm);
         static double k_carb(double flowRateScfm);
         static double flowRate(
@@ -49,8 +49,7 @@ class GasSystem {
             double P1,
             double T0,
             double T1,
-            double sg0,
-            double sg1);
+            double hcr);
         double flow(double dn, double E_k_per_mol, const Mix &mix = {});
         double loseN(double dn);
         double gainN(double dn, double E_k_per_mol, const Mix &mix = {});
@@ -62,8 +61,10 @@ class GasSystem {
         double pressureEquilibriumMaxFlow(double P_env, double T_env) const;
 
         inline static constexpr double kineticEnergyPerMol(double T, int degreesOfFreedom);
+        inline static constexpr double heatCapacityRatio(int degreesOfFreedom);
 
         inline double approximateDensity() const;
+        inline int degreesOfFreedom() const { return m_degreesOfFreedom; }
         inline double n() const;
         inline double n(double V) const;
         inline double kineticEnergy() const;
@@ -75,17 +76,23 @@ class GasSystem {
         inline double n_fuel() const;
         inline double n_inert() const;
         inline double n_o2() const;
-        inline Mix mix() const { return state.mix; }
-
-        int degreesOfFreedom = 5;
-        double specificGravity = 1.0;
+        inline double heatCapacityRatio() const;
+        inline Mix mix() const { return m_state.mix; }
 
     protected:
-        State state, next;
+        State m_state, m_next;
+        int m_degreesOfFreedom = 5;
+
+        double m_chokedFlowLimit;
+        double m_chokedFlowFactorCached;
 };
 
 inline constexpr double GasSystem::kineticEnergyPerMol(double T, int degreesOfFreedom) {
     return 0.5 * T * constants::R * degreesOfFreedom;
+}
+
+inline constexpr double GasSystem::heatCapacityRatio(int degreesOfFreedom) {
+    return 1.0 + (2.0 / degreesOfFreedom);
 }
 
 inline double GasSystem::approximateDensity() const {
@@ -93,7 +100,7 @@ inline double GasSystem::approximateDensity() const {
 }
 
 inline double GasSystem::n() const {
-    return state.n_mol;
+    return m_state.n_mol;
 }
 
 inline double GasSystem::n(double V) const {
@@ -101,7 +108,7 @@ inline double GasSystem::n(double V) const {
 }
 
 inline double GasSystem::kineticEnergy() const {
-    return state.E_k;
+    return m_state.E_k;
 }
 
 inline double GasSystem::kineticEnergy(double n) const {
@@ -111,28 +118,32 @@ inline double GasSystem::kineticEnergy(double n) const {
 inline double GasSystem::pressure() const {
     const double volume = this->volume();
     return (volume != 0)
-        ? kineticEnergy() / (0.5 * degreesOfFreedom * volume)
+        ? kineticEnergy() / (0.5 * m_degreesOfFreedom * volume)
         : 0;
 }
 
 inline double GasSystem::temperature() const {
-    return kineticEnergy() / (0.5 * degreesOfFreedom * n() * constants::R);
+    return kineticEnergy() / (0.5 * m_degreesOfFreedom * n() * constants::R);
 }
 
 inline double GasSystem::volume() const {
-    return state.V;
+    return m_state.V;
 }
 
 inline double GasSystem::n_fuel() const {
-    return state.mix.p_fuel * n();
+    return m_state.mix.p_fuel * n();
 }
 
 inline double GasSystem::n_inert() const {
-    return state.mix.p_inert * n();
+    return m_state.mix.p_inert * n();
 }
 
 inline double GasSystem::n_o2() const {
-    return state.mix.p_o2 * n();
+    return m_state.mix.p_o2 * n();
+}
+
+inline double GasSystem::heatCapacityRatio() const {
+    return heatCapacityRatio(m_degreesOfFreedom);
 }
 
 #endif /* ATG_ENGINE_SIM_GAS_SYSTEM_H */

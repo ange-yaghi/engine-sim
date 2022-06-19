@@ -160,7 +160,7 @@ void OscilloscopeCluster::update(float dt) {
     Engine *engine = m_simulator->getEngine();
 
     const double torque =
-        units::convert(m_simulator->m_dyno.getTorque(), units::ft_lb);
+        units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb);
     const double hp = torque * engine->getRpm() / 5252.0;
 
     m_torque = m_torque * 0.95 + 0.05 * torque;

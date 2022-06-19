@@ -15,7 +15,7 @@ Synthesizer::Synthesizer() {
     m_inputChannelCount = 0;
     m_inputBufferSize = 0;
     m_inputWriteOffset = 0;
-    m_inputSafetyBoundary = 0;
+    m_inputSafetyBoundary = -1;
 
     m_audioBuffer = nullptr;
     m_audioBufferSize = 0;
@@ -35,7 +35,6 @@ Synthesizer::~Synthesizer()
     assert(m_inputChannels == nullptr);
     assert(m_audioBuffer == nullptr);
     assert(m_thread == nullptr);
-    assert(m_previous == nullptr);
     assert(m_filters == nullptr);
 }
 

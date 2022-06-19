@@ -68,6 +68,8 @@ class Simulator {
         void setSimulationSpeed(double simSpeed) { m_simulationSpeed = simSpeed; }
         double getSimulationSpeed() const { return m_simulationSpeed; }
 
+        double getFilteredDynoTorque() const { return m_dynoTorque; }
+
         Dynamometer m_dyno;
         StarterMotor m_starterMotor;
 
@@ -104,6 +106,7 @@ class Simulator {
         double m_simulationSpeed;
         double *m_exhaustFlowStagingBuffer;
         double m_filteredEngineSpeed;
+        double m_dynoTorque;
 };
 
 #endif /* ATG_ENGINE_SIM_SIMULATOR_H */

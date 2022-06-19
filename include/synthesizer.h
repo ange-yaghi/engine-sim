@@ -17,14 +17,14 @@ class Synthesizer {
         struct AudioParameters {
             double Volume = 1.0;
             double Convolution = 1.0;
-            double dF_F_mix = 0.00990099;
-            double InputSampleNoise = 0.125;
+            double dF_F_mix = 0.01; //0.00990099
+            double InputSampleNoise = 0.5; //0.125
             double InputSampleNoiseFrequencyCutoff = 80000.0;
             double AirNoise = 1.0;
-            double AirNoiseFrequencyCutoff = 1000.0;
+            double AirNoiseFrequencyCutoff = 10000.0;
             double LevelerTarget = 40000;
-            double LevelerMaxGain = 0.9;
-            double LevelerMinGain = 0.001;
+            double LevelerMaxGain = 1.9;
+            double LevelerMinGain = 0.00001;
         };
 
         struct Parameters {

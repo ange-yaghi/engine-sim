@@ -136,6 +136,7 @@ void EngineSimApplication::initialize() {
     engineParams.CrankshaftCount = 1;
     engineParams.ExhaustSystemCount = 2;
     engineParams.IntakeCount = 1;
+    engineParams.StarterTorque = units::torque(100, units::ft_lb);
     m_iceEngine.initialize(engineParams);
 
     Piston::Parameters pistonParams;
@@ -265,10 +266,10 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
-    camLift0->setInputScale(1.15); //1.15
+    camLift0->setInputScale(1.15);//1.15
     camLift0->setOutputScale(1.0);
+    /*
     camLift0->addSample(0.0, units::distance(565, units::thou));
-
     camLift0->addSample(-units::angle(10, units::deg), units::distance(560, units::thou));
     camLift0->addSample(units::angle(10, units::deg), units::distance(560, units::thou));
     camLift0->addSample(-units::angle(20, units::deg), units::distance(550, units::thou));
@@ -283,6 +284,24 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(60, units::deg), units::distance(100, units::thou));
     camLift0->addSample(-units::angle(70, units::deg), units::distance(25, units::thou));
     camLift0->addSample(units::angle(70, units::deg), units::distance(25, units::thou));
+    camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));*/
+    
+    camLift0->addSample(0.0, units::distance(578, units::thou));
+    camLift0->addSample(-units::angle(10, units::deg), units::distance(550, units::thou));
+    camLift0->addSample(units::angle(10, units::deg), units::distance(550, units::thou));
+    camLift0->addSample(-units::angle(20, units::deg), units::distance(500, units::thou));
+    camLift0->addSample(units::angle(20, units::deg), units::distance(500, units::thou));
+    camLift0->addSample(-units::angle(30, units::deg), units::distance(440, units::thou));
+    camLift0->addSample(units::angle(30, units::deg), units::distance(440, units::thou));
+    camLift0->addSample(-units::angle(40, units::deg), units::distance(350, units::thou));
+    camLift0->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
+    camLift0->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
+    camLift0->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));
+    camLift0->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
+    camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
     /*camLift0->addSample(-units::angle(10, units::deg), units::distance(600, units::thou));
@@ -315,8 +334,8 @@ void EngineSimApplication::initialize() {
     camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Camshaft::Parameters camParams;
-    const double lobeSeparation = 114;// 114;
-    const double advance = -(lobeSeparation - 106);
+    const double lobeSeparation = 110;// 114;
+    const double advance = (lobeSeparation - 106);
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;
     camParams.Advance = units::angle(advance, units::deg);
@@ -387,7 +406,8 @@ void EngineSimApplication::initialize() {
     Intake::Parameters inParams;
     inParams.InputFlowK = GasSystem::k_carb(750.0);
     inParams.Volume = units::volume(5000.0, units::cc);
-    inParams.IdleFlowK = 0.0004;
+    inParams.IdleFlowK = 0.000002;
+    inParams.IdleThrottlePlatePosition = 0.967;
     m_iceEngine.getIntake(0)->initialize(inParams);
 
     ExhaustSystem::Parameters esParams;
@@ -428,15 +448,61 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getIgnitionModule()->setFiringOrder(7 - 1, (6 / 8.0) * cycle);
     m_iceEngine.getIgnitionModule()->setFiringOrder(2 - 1, (7 / 8.0) * cycle);
 
+    Function *turbulenceToFlameSpeedRatio = new Function;
+    Function *equivalenceRatioToLaminarFlameSpeed = new Function;
+
+    equivalenceRatioToLaminarFlameSpeed->initialize(12, 0.1);
+    equivalenceRatioToLaminarFlameSpeed->addSample(0.8, units::distance(22, units::cm) / units::sec);
+    equivalenceRatioToLaminarFlameSpeed->addSample(0.9, units::distance(27, units::cm) / units::sec);
+    equivalenceRatioToLaminarFlameSpeed->addSample(1.0, units::distance(32, units::cm) / units::sec);
+    equivalenceRatioToLaminarFlameSpeed->addSample(1.1, units::distance(35, units::cm) / units::sec);
+    equivalenceRatioToLaminarFlameSpeed->addSample(1.2, units::distance(33, units::cm) / units::sec);
+    equivalenceRatioToLaminarFlameSpeed->addSample(1.3, units::distance(30, units::cm) / units::sec);
+    equivalenceRatioToLaminarFlameSpeed->addSample(1.4, units::distance(25, units::cm) / units::sec);
+
+    const double lin_s = 1.0;
+    const double a = 0.0;
+    const double b = 1.0;
+
+    turbulenceToFlameSpeedRatio->initialize(10, 10.0);
+    /*
+    for (int i = 0; i < 1000; ++i) {
+        const double x = i - 1.0;
+        turbulenceToFlameSpeedRatio->addSample(
+            (double)i,
+            (i == 0)
+                ? 1.0
+                : (1 - lin_s) * a * x * x + lin_s * b * x + 1);
+    }*/
+    turbulenceToFlameSpeedRatio->addSample(0.0, 1.0);
+    turbulenceToFlameSpeedRatio->addSample(5.0, 1.5 * 5.0);
+    turbulenceToFlameSpeedRatio->addSample(10.0, 1.5 * 10.0);
+    turbulenceToFlameSpeedRatio->addSample(15.0, 1.5 * 15.0);
+    turbulenceToFlameSpeedRatio->addSample(20.0, 1.5 * 20.0);
+    turbulenceToFlameSpeedRatio->addSample(25.0, 1.5 * 25.0);
+    turbulenceToFlameSpeedRatio->addSample(30.0, 1.5 * 30.0);
+    turbulenceToFlameSpeedRatio->addSample(35.0, 1.5 * 35.0);
+    turbulenceToFlameSpeedRatio->addSample(40.0, 1.5 * 40.0);
+    turbulenceToFlameSpeedRatio->addSample(45.0, 1.5 * 45.0);
+
     Fuel::Parameters fParams;
+    fParams.TurbulenceToFlameSpeedRatio = turbulenceToFlameSpeedRatio;
     Fuel *fuel = new Fuel;
     fuel->initialize(fParams);
+
+    Function *meanPistonSpeedToTurbulence = new Function;
+    meanPistonSpeedToTurbulence->initialize(30, 1);
+    for (int i = 0; i < 30; ++i) {
+        const double s = (double)i;
+        meanPistonSpeedToTurbulence->addSample(s, s * 1.0);
+    }
 
     CombustionChamber::Parameters ccParams;
     ccParams.CrankcasePressure = units::pressure(1.0, units::atm);
     ccParams.Fuel = fuel;
     ccParams.StartingPressure = units::pressure(1.0, units::atm);
     ccParams.StartingTemperature = units::celcius(25.0);
+    ccParams.MeanPistonSpeedToTurbulence = meanPistonSpeedToTurbulence;
 
     for (int i = 0; i < 8; ++i) {
         ccParams.Piston = m_iceEngine.getPiston(i);

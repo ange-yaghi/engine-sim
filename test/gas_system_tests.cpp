@@ -140,7 +140,7 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfinite) {
     constexpr double T_env = units::celcius(25.0);
 
     const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
-    const double E_k_per_mol = GasSystem::kineticEnergyPerMol(T_env, system1.degreesOfFreedom);
+    const double E_k_per_mol = GasSystem::kineticEnergyPerMol(T_env, system1.degreesOfFreedom());
 
     system1.start();
     system1.flow(maxFlow, E_k_per_mol);
@@ -310,7 +310,8 @@ TEST(GasSystemTests, ChokedFlowTest) {
         units::flow(400, units::scfm),
         units::pressure(2.5, units::atm),
         units::pressure(1.5, units::atm),
-        units::celcius(2000.0)
+        units::celcius(2000.0),
+        GasSystem::heatCapacityRatio(5)
     );
 
     const double chokedFlow =
@@ -320,8 +321,7 @@ TEST(GasSystemTests, ChokedFlowTest) {
             units::pressure(1.0, units::atm),
             system1.temperature(),
             units::celcius(25),
-            1.0,
-            1.0);
+            GasSystem::heatCapacityRatio(5));
     const double noncriticalFlow =
         system1.flowRate(
             flow_k,
@@ -329,8 +329,7 @@ TEST(GasSystemTests, ChokedFlowTest) {
             units::pressure(2.0, units::atm),
             system1.temperature(),
             units::celcius(25),
-            1.0,
-            1.0);
+            GasSystem::heatCapacityRatio(5));
 
     const double chokedFlowScfm = units::convert(chokedFlow, units::scfm);
     const double noncriticalFlowScfm = units::convert(noncriticalFlow, units::scfm);
@@ -351,10 +350,29 @@ TEST(GasSystemTests, CfmConversions) {
         units::pressure(1.0, units::atm) - units::pressure(41.0, units::inH2O),
         units::celcius(25.0),
         units::celcius(25.0),
-        airDensity,
-        airDensity
+        GasSystem::heatCapacityRatio(5)
     );
 
     const double flowRateCfm = units::convert(flowRate, units::scfm);
-    int a = 0;
+}
+
+TEST(GasSystemTests, FlowRateConstant) {
+    const double flow_k = GasSystem::flowConstant(
+        units::flow(400, units::scfm),
+        units::pressure(2.5, units::atm),
+        units::pressure(0.5, units::atm),
+        units::celcius(2000.0),
+        GasSystem::heatCapacityRatio(5)
+    );
+
+    const double flowRate =
+        GasSystem::flowRate(
+            flow_k,
+            units::pressure(2.5, units::atm),
+            units::pressure(2.5 - 0.5, units::atm),
+            units::celcius(2000.0),
+            units::celcius(25),
+            GasSystem::heatCapacityRatio(5));
+
+    EXPECT_NEAR(flowRate, units::flow(400, units::scfm), 1E-6);
 }

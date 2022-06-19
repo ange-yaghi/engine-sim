@@ -9,12 +9,14 @@
 #include "units.h"
 #include "fuel.h"
 
+class Engine;
 class CombustionChamber : public atg_scs::ForceGenerator {
     public:
         struct Parameters {
             Piston *Piston;
             CylinderHead *Head;
             Fuel *Fuel;
+            Function *MeanPistonSpeedToTurbulence;
 
             double StartingPressure;
             double StartingTemperature;
@@ -46,6 +48,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         virtual ~CombustionChamber();
 
         void initialize(const Parameters &params);
+        void setEngine(Engine *engine) { m_engine = engine; }
         virtual void apply(atg_scs::SystemState *system);
 
         CylinderHead *getCylinderHead() const { return m_head; }
@@ -53,6 +56,9 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         double getFrictionForce() const;
         double getVolume() const;
+        double pistonSpeed() const;
+        double calculateMeanPistonSpeed() const;
+        double calculateFiringPressure() const;
 
         bool isLit() const { return m_lit; }
         bool popLitLastFrame();
@@ -70,8 +76,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         void resetLastTimestepExhaustFlow() { m_lastTimestepTotalExhaustFlow = 0; }
         double getLastTimestepExhaustFlow() const { return m_lastTimestepTotalExhaustFlow; }
 
-        Function *m_totalPropagationToTurbulence;
-        Function *m_turbulentFlameSpeed;
+        Function *m_meanPistonSpeedToTurbulence;
         GasSystem m_system;
         FlameEvent m_flameEvent;
         bool m_lit;
@@ -83,6 +88,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
     protected:
         double calculateFrictionForce(double v) const;
+        void updateCycleStates();
 
         double m_intakeFlowRate;
         double m_exhaustFlowRate;
@@ -92,10 +98,15 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         double m_crankcasePressure;
 
+        double *m_pressure;
+        double *m_pistonSpeed;
+        static constexpr int StateSamples = 256;
+
         bool m_litLastFrame;
 
         Piston *m_piston;
         CylinderHead *m_head;
+        Engine *m_engine;
 
         Fuel *m_fuel;
 };

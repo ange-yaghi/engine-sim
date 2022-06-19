@@ -146,6 +146,10 @@ namespace units {
         return T_C * C + K0;
     }
 
+    inline constexpr double kelvin(double T) {
+        return T * K;
+    }
+
     inline constexpr double fahrenheit(double T_F) {
         return F * (T_F - F0);
     }

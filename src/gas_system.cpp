@@ -6,31 +6,32 @@
 #include <cassert>
 
 void GasSystem::start() {
-    next = state;
+    m_next = m_state;
 }
 
 void GasSystem::end() {
-    state = next;
+    m_state = m_next;
 
-    state.E_k = std::fmax(state.E_k, 0.0);
-    state.n_mol = std::fmax(state.n_mol, 0.0);
-    state.V = std::fmax(state.V, 0.0);
+    m_state.E_k = std::fmax(m_state.E_k, 0.0);
+    m_state.n_mol = std::fmax(m_state.n_mol, 0.0);
+    m_state.V = std::fmax(m_state.V, 0.0);
 }
 
-void GasSystem::initialize(double P, double V, double T, const Mix &mix) {
-    state.n_mol = P * V / (constants::R * T);
-    state.V = V;
-    state.E_k = T * (0.5 * degreesOfFreedom * state.n_mol * constants::R);
-    state.mix = mix;
+void GasSystem::initialize(double P, double V, double T, const Mix &mix, int degreesOfFreedom) {
+    m_degreesOfFreedom = degreesOfFreedom;
+    m_state.n_mol = P * V / (constants::R * T);
+    m_state.V = V;
+    m_state.E_k = T * (0.5 * degreesOfFreedom * m_state.n_mol * constants::R);
+    m_state.mix = mix;
 }
 
 void GasSystem::setVolume(double V) {
-    return changeVolume(V - next.V);
+    return changeVolume(V - m_next.V);
 }
 
 void GasSystem::setN(double n) {
-    next.n_mol = n;
-    next.E_k = kineticEnergy(n);
+    m_next.n_mol = n;
+    m_next.E_k = kineticEnergy(n);
 }
 
 void GasSystem::changeVolume(double dV) {
@@ -40,34 +41,34 @@ void GasSystem::changeVolume(double dV) {
     const double dL = -dV / surfaceArea;
     const double W = dL * pressure() * surfaceArea;
 
-    next.V += dV;
-    next.E_k += W;
+    m_next.V += dV;
+    m_next.E_k += W;
 }
 
 void GasSystem::changePressure(double dP) {
-    next.E_k += dP * volume() * degreesOfFreedom * 0.5;
+    m_next.E_k += dP * volume() * m_degreesOfFreedom * 0.5;
 }
 
 void GasSystem::changeTemperature(double dT) {
-    next.E_k += dT * 0.5 * degreesOfFreedom * n() * constants::R;
+    m_next.E_k += dT * 0.5 * m_degreesOfFreedom * n() * constants::R;
 }
 
 void GasSystem::changeEnergy(double dE) {
-    next.E_k += dE;
+    m_next.E_k += dE;
 }
 
 void GasSystem::changeMix(const Mix &mix) {
-    next.mix = mix;
+    m_next.mix = mix;
 }
 
 void GasSystem::injectFuel(double n) {
     const double n_fuel = this->n_fuel() + n;
     const double p_fuel = n_fuel / this->n();
-    next.mix.p_fuel = p_fuel;
+    m_next.mix.p_fuel = p_fuel;
 }
 
 void GasSystem::changeTemperature(double dT, double n) {
-    next.E_k += dT * 0.5 * degreesOfFreedom * n * constants::R;
+    m_next.E_k += dT * 0.5 * m_degreesOfFreedom * n * constants::R;
 }
 
 double GasSystem::react(double n, const Mix &mix) {
@@ -99,7 +100,7 @@ double GasSystem::react(double n, const Mix &mix) {
     const double products_n = output_input_ratio * reactants_n;
     const double dn = products_n - reactants_n;
 
-    next.n_mol += dn;
+    m_next.n_mol += dn;
 
     // Adjust mix
     const double new_system_n_fuel = system_n_fuel - a_n_fuel;
@@ -108,55 +109,48 @@ double GasSystem::react(double n, const Mix &mix) {
     const double new_system_n = system_n + dn;
 
     if (new_system_n != 0) {
-        next.mix.p_fuel = new_system_n_fuel / new_system_n;
-        next.mix.p_inert = new_system_n_inert / new_system_n;
-        next.mix.p_o2 = new_system_n_o2 / new_system_n;
+        m_next.mix.p_fuel = new_system_n_fuel / new_system_n;
+        m_next.mix.p_inert = new_system_n_inert / new_system_n;
+        m_next.mix.p_o2 = new_system_n_o2 / new_system_n;
     }
     else {
-        next.mix.p_fuel = next.mix.p_inert = next.mix.p_o2 = 0;
+        m_next.mix.p_fuel = m_next.mix.p_inert = m_next.mix.p_o2 = 0;
     }
 
     return a_n_fuel;
 }
 
 double GasSystem::flowConstant(
-    double flowRate,
+    double targetFlowRate,
     double P,
     double pressureDrop,
-    double T)
+    double T,
+    double hcr)
 {
-    // Calculate the specific gravity (density) of air
-    // at standard conditions
-    // PV = nRT
-    // density (per m3) = (P / RT) * mol_mass
-    constexpr double standard_temp = units::fahrenheit(70);
-    constexpr double standard_pressure = units::pressure(1.0, units::atm);
-    constexpr double reference_sg =
-        (standard_pressure * units::AirMolecularMass) / (constants::R * standard_temp);
-    const double sg =
-        (P * units::AirMolecularMass) / (constants::R * T);
-    const double norm_sg = sg / reference_sg;
-    if (norm_sg == 0) return 0;
+    const double T_0 = T;
+    const double p_0 = P, p_T = P - pressureDrop; // p_0 = upstream pressure
 
-    const double P0 = P;
-    const double P1 = P - pressureDrop;
+    const double chokedFlowLimit =
+        std::pow((2.0 / (hcr + 1)), hcr / (hcr - 1));
+    const double p_ratio = p_T / p_0;
 
-    const double T_R = units::toAbsoluteFahrenheit(T);
-    const double P0_imp = units::toPsia(P0);
-    const double P1_imp = units::toPsia(P1);
-
-    // C_v = flow coefficient
-    double C_v;
-    const double Q_g = units::convert(flowRate, units::scfm);
-    if (P0 > 1.4 * P1) {
-        // Critical flow
-        C_v = Q_g * std::sqrt(norm_sg * T_R) / (816 * P0_imp);
+    double flowRate = 0;
+    if (p_ratio <= chokedFlowLimit) {
+        // Choked flow
+        flowRate = std::sqrt(hcr);
+        flowRate *= std::pow(2 / (hcr + 1), (hcr + 1) / (2 * (hcr - 1)));
     }
     else {
-        C_v = (Q_g / 962) * std::sqrt((norm_sg * T_R) / (P0_imp * P0_imp - P1_imp * P1_imp));
+        flowRate = (2 * hcr) / (hcr - 1);
+        flowRate *= (1 - std::pow(p_ratio, (hcr - 1) / hcr));
+        flowRate = std::sqrt(flowRate);
+        flowRate *= std::pow(p_ratio, 1 / hcr);
     }
 
-    return C_v;
+    flowRate *= std::pow(p_ratio, 1 / hcr) * p_0;
+    flowRate /= std::sqrt(constants::R * T_0);
+
+    return targetFlowRate / flowRate;
 }
 
 double GasSystem::k_28inH2O(double flowRateScfm) {
@@ -164,7 +158,8 @@ double GasSystem::k_28inH2O(double flowRateScfm) {
         units::flow(flowRateScfm, units::scfm),
         units::pressure(1.0, units::atm),
         units::pressure(28.0, units::inH2O),
-        units::celcius(25)
+        units::celcius(25),
+        heatCapacityRatio(5)
     );
 }
 
@@ -173,65 +168,56 @@ double GasSystem::k_carb(double flowRateScfm) {
         units::flow(flowRateScfm, units::scfm),
         units::pressure(1.0, units::atm),
         units::pressure(1.5, units::inHg),
-        units::celcius(25)
+        units::celcius(25),
+        heatCapacityRatio(5)
     );
 }
 
 double GasSystem::flowRate(
     double k_flow,
-    double P0_,
-    double P1_,
+    double P0,
+    double P1,
     double T0,
     double T1,
-    double sg0,
-    double sg1)
+    double hcr)
 {
-    // Calculate the specific gravity (density) of air
-    // at standard conditions
-    // PV = nRT
-    // density (per m3) = (P / RT) * mol_mass
-    constexpr double standard_temp = units::fahrenheit(70);
-    constexpr double standard_pressure = units::pressure(1.0, units::atm);
-    constexpr double reference_sg =
-        (standard_pressure * units::AirMolecularMass) / (constants::R * standard_temp);
-
     double direction;
-    double T;
-    double P0, P1;
-    double sg;
-    if (P0_ > P1_) {
+    double T_0;
+    double p_0, p_T; // p_0 = upstream pressure
+    if (P0 > P1) {
         direction = 1.0;
-        T = T0;
-        P0 = P0_;
-        P1 = P1_;
-        sg = sg0;
+        T_0 = T0;
+        p_0 = P0;
+        p_T = P1;
     }
     else {
         direction = -1.0;
-        T = T1;
-        P0 = P1_;
-        P1 = P0_;
-        sg = sg1;
+        T_0 = T1;
+        p_0 = P1;
+        p_T = P0;
     }
 
-    const double norm_sg = sg / reference_sg;
-    if (norm_sg == 0) return 0;
+    const double chokedFlowLimit =
+        std::pow((2.0 / (hcr + 1)), hcr / (hcr - 1));
+    const double p_ratio = p_T / p_0;
 
-    const double T_R = units::toAbsoluteFahrenheit(T);
-    const double P0_imp = units::toPsia(P0);
-    const double P1_imp = units::toPsia(P1);
-
-    // Q_g = gas flow [SCFM]
-    double Q_g;
-    if (P0 > 1.9 * P1) {
-        // Critical flow (choked flow)
-        Q_g = (k_flow * 816 * P0_imp) / std::sqrt(T_R * norm_sg);
+    double flowRate = 0;
+    if (p_ratio <= chokedFlowLimit) {
+        // Choked flow
+        flowRate = std::sqrt(hcr);
+        flowRate *= std::pow(2 / (hcr + 1), (hcr + 1) / (2 * (hcr - 1)));
     }
     else {
-        Q_g = k_flow * 962 * std::sqrt((P0_imp * P0_imp - P1_imp * P1_imp) / (T_R * norm_sg));
+        flowRate = (2 * hcr) / (hcr - 1);
+        flowRate *= (1 - std::pow(p_ratio, (hcr - 1) / hcr));
+        flowRate = std::sqrt(std::fmax(flowRate, 0.0));
+        flowRate *= std::pow(p_ratio, 1 / hcr);
     }
 
-    return units::flow(Q_g, units::scfm) * direction;
+    flowRate *= direction * p_0 * k_flow;
+    flowRate /= std::sqrt(constants::R * T_0);
+
+    return flowRate;
 }
 
 double GasSystem::flow(double dn, double E_k_per_mol, const Mix &mix) {
@@ -244,28 +230,30 @@ double GasSystem::flow(double dn, double E_k_per_mol, const Mix &mix) {
 }
 
 double GasSystem::loseN(double dn) {
-    next.E_k -= kineticEnergy(dn);
-    next.n_mol -= dn;
+    m_next.E_k -= kineticEnergy(dn);
+    m_next.n_mol -= dn;
 
-    assert(next.n_mol >= 0);
+    if (m_next.n_mol < 0) {
+        m_next.n_mol = 0;
+    }
 
     return dn;
 }
 
 double GasSystem::gainN(double dn, double E_k_per_mol, const Mix &mix) {
-    const double next_n = next.n_mol + dn;
-    const double current_n = next.n_mol;
+    const double next_n = m_next.n_mol + dn;
+    const double current_n = m_next.n_mol;
 
-    next.E_k += dn * E_k_per_mol;
-    next.n_mol = next_n;
+    m_next.E_k += dn * E_k_per_mol;
+    m_next.n_mol = next_n;
 
     if (next_n != 0) {
-        next.mix.p_fuel = (next.mix.p_fuel * current_n + dn * mix.p_fuel) / next_n;
-        next.mix.p_inert = (next.mix.p_inert * current_n + dn * mix.p_inert) / next_n;
-        next.mix.p_o2 = (next.mix.p_o2 * current_n + dn * mix.p_o2) / next_n;
+        m_next.mix.p_fuel = (m_next.mix.p_fuel * current_n + dn * mix.p_fuel) / next_n;
+        m_next.mix.p_inert = (m_next.mix.p_inert * current_n + dn * mix.p_inert) / next_n;
+        m_next.mix.p_o2 = (m_next.mix.p_o2 * current_n + dn * mix.p_o2) / next_n;
     }
     else {
-        next.mix.p_fuel = next.mix.p_inert = next.mix.p_o2 = 0;
+        m_next.mix.p_fuel = m_next.mix.p_inert = m_next.mix.p_o2 = 0;
     }
 
     return -dn;
@@ -285,8 +273,7 @@ double GasSystem::flow(
         target->pressure(),
         temperature(),
         target->temperature(),
-        approximateDensity(),
-        target->approximateDensity());
+        heatCapacityRatio());
 
     if (std::abs(flow) > std::abs(maxFlow)) {
         flow = maxFlow;
@@ -314,14 +301,13 @@ double GasSystem::flow(double k_flow, double dt, double P_env, double T_env, con
         P_env,
         temperature(),
         T_env,
-        approximateDensity(),
-        airDensity);
+        heatCapacityRatio());
 
     if (std::abs(flow) > std::abs(maxFlow)) {
         flow = maxFlow;
     }
 
-    this->flow(flow, kineticEnergyPerMol(T_env, degreesOfFreedom), mix);
+    this->flow(flow, kineticEnergyPerMol(T_env, m_degreesOfFreedom), mix);
 
     return flow;
 }
@@ -356,59 +342,10 @@ double GasSystem::pressureEquilibriumMaxFlow(const GasSystem *b) const {
 
 double GasSystem::pressureEquilibriumMaxFlow(double P_env, double T_env) const {
     if (pressure() > P_env) {
-        return -(P_env * (0.5 * degreesOfFreedom * volume()) - kineticEnergy()) / kineticEnergyPerMol();
+        return -(P_env * (0.5 * m_degreesOfFreedom * volume()) - kineticEnergy()) / kineticEnergyPerMol();
     }
     else {
-        const double E_k_per_mol_env = 0.5 * T_env * constants::R * degreesOfFreedom;
-        return -(P_env * (0.5 * degreesOfFreedom * volume()) - kineticEnergy()) / E_k_per_mol_env;
+        const double E_k_per_mol_env = 0.5 * T_env * constants::R * m_degreesOfFreedom;
+        return -(P_env * (0.5 * m_degreesOfFreedom * volume()) - kineticEnergy()) / E_k_per_mol_env;
     }
 }
-
-/*
-double GasSystem::approximateDensity() const {
-    return (units::AirMolecularMass * n()) / volume();
-}
-
-double GasSystem::n() const {
-    return state.n_mol;
-}
-
-double GasSystem::n(double V) const {
-    return (V / volume()) * n();
-}
-
-double GasSystem::kineticEnergy() const {
-    return state.E_k;
-}
-
-double GasSystem::kineticEnergy(double n) const {
-    return (kineticEnergy() / this->n()) * n;
-}
-
-double GasSystem::pressure() const {
-    const double volume = this->volume();
-    return (volume != 0)
-        ? kineticEnergy() / (0.5 * degreesOfFreedom * volume)
-        : 0;
-}
-
-double GasSystem::temperature() const {
-    return kineticEnergy() / (0.5 * degreesOfFreedom * n() * constants::R);
-}
-
-double GasSystem::volume() const {
-    return state.V;
-}
-
-double GasSystem::n_inert() const {
-    return state.mix.p_inert * n();
-}
-
-double GasSystem::n_fuel() const {
-    return state.mix.p_fuel * n();
-}
-
-double GasSystem::n_o2() const {
-    return state.mix.p_o2 * n();
-}
-*/

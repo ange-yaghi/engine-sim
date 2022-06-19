@@ -230,7 +230,7 @@ void LoadSimulationCluster::updateHpAndTorque(float dt) {
     constexpr double RC = 1.0;
     const double alpha = dt / (dt + RC);
 
-    const double torque = units::convert(m_simulator->m_dyno.getTorque(), units::ft_lb);
+    const double torque = units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb);
     const double hp = torque * m_simulator->getEngine()->getRpm() / 5252.0;
 
     m_filteredTorque = (1 - alpha) * m_filteredTorque + alpha * torque;
