@@ -298,8 +298,8 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
     camLift0->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift0->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));
-    camLift0->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));//75
+    camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -334,7 +334,7 @@ void EngineSimApplication::initialize() {
     camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Camshaft::Parameters camParams;
-    const double lobeSeparation = 110;// 114;
+    const double lobeSeparation = 106;// 114;
     const double advance = (lobeSeparation - 106);
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;
@@ -389,7 +389,7 @@ void EngineSimApplication::initialize() {
     CylinderHead::Parameters chParams;
     chParams.IntakePortFlow = flow;
     chParams.ExhaustPortFlow = exhaustFlow;
-    chParams.CombustionChamberVolume = units::volume(118.0, units::cc);
+    chParams.CombustionChamberVolume = units::volume(118.0-50, units::cc);
 
     chParams.IntakeCam = intakeCamLeft;
     chParams.ExhaustCam = exhaustCamLeft;
@@ -494,7 +494,7 @@ void EngineSimApplication::initialize() {
     meanPistonSpeedToTurbulence->initialize(30, 1);
     for (int i = 0; i < 30; ++i) {
         const double s = (double)i;
-        meanPistonSpeedToTurbulence->addSample(s, s * 1.0);
+        meanPistonSpeedToTurbulence->addSample(s, s * 0.5);
     }
 
     CombustionChamber::Parameters ccParams;
@@ -752,12 +752,28 @@ void EngineSimApplication::run() {
 
         m_iceEngine.setThrottle(throttle);
 
-        m_dynoSpeed = std::fmod(m_dynoSpeed + 20.5 * m_engine.GetFrameLength(), units::rpm(7000.0));
-        m_simulator.m_dyno.m_rotationSpeed = m_dynoSpeed;
-
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_simulator.m_dyno.m_enabled = !m_simulator.m_dyno.m_enabled;
         }
+
+        if (m_simulator.m_dyno.m_enabled) {
+            if (m_simulator.getFilteredDynoTorque() > units::torque(50.0, units::ft_lb)) {
+                m_dynoSpeed += units::rpm(500) * dt;
+            }
+            else {
+                m_dynoSpeed *= (1 / (1 + dt));
+            }
+
+            if ((m_dynoSpeed + units::rpm(1000)) > m_iceEngine.getRedline()) {
+                m_simulator.m_dyno.m_enabled = false;
+                m_dynoSpeed = units::rpm(0);
+            }
+        }
+        else {
+            m_dynoSpeed = units::rpm(0);
+        }
+
+        m_simulator.m_dyno.m_rotationSpeed = m_dynoSpeed + units::rpm(1000);
 
         if (m_engine.IsKeyDown(ysKey::Code::S)) {
             m_simulator.m_starterMotor.m_enabled = true;

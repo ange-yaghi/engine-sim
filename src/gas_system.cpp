@@ -291,12 +291,6 @@ double GasSystem::flow(
 }
 
 double GasSystem::flow(double k_flow, double dt, double P_env, double T_env, const Mix &mix) {
-    constexpr double standardPressure = units::pressure(1.0, units::atm);
-    constexpr double standardTemp = units::celcius(25.0);
-    constexpr double airDensity =
-        units::AirMolecularMass * (standardPressure * units::volume(1.0, units::m3))
-        / (constants::R * standardTemp);
-
     const double maxFlow = pressureEquilibriumMaxFlow(P_env, T_env);
     double flow = dt * flowRate(
         k_flow,
