@@ -23,6 +23,10 @@ void GasSystem::initialize(double P, double V, double T, const Mix &mix, int deg
     m_state.V = V;
     m_state.E_k = T * (0.5 * degreesOfFreedom * m_state.n_mol * constants::R);
     m_state.mix = mix;
+
+    const double hcr = heatCapacityRatio();
+    m_chokedFlowLimit = chokedFlowLimit(degreesOfFreedom);
+    m_chokedFlowFactorCached = chokedFlowRate(degreesOfFreedom);
 }
 
 void GasSystem::setVolume(double V) {
@@ -147,8 +151,7 @@ double GasSystem::flowConstant(
         flowRate *= std::pow(p_ratio, 1 / hcr);
     }
 
-    flowRate *= std::pow(p_ratio, 1 / hcr) * p_0;
-    flowRate /= std::sqrt(constants::R * T_0);
+    flowRate *= p_0 / std::sqrt(constants::R * T_0);
 
     return targetFlowRate / flowRate;
 }
@@ -179,7 +182,9 @@ double GasSystem::flowRate(
     double P1,
     double T0,
     double T1,
-    double hcr)
+    double hcr,
+    double chokedFlowLimit,
+    double chokedFlowRateCached)
 {
     double direction;
     double T_0;
@@ -197,15 +202,11 @@ double GasSystem::flowRate(
         p_T = P0;
     }
 
-    const double chokedFlowLimit =
-        std::pow((2.0 / (hcr + 1)), hcr / (hcr - 1));
     const double p_ratio = p_T / p_0;
-
     double flowRate = 0;
     if (p_ratio <= chokedFlowLimit) {
         // Choked flow
-        flowRate = std::sqrt(hcr);
-        flowRate *= std::pow(2 / (hcr + 1), (hcr + 1) / (2 * (hcr - 1)));
+        flowRate = chokedFlowRateCached;
     }
     else {
         flowRate = (2 * hcr) / (hcr - 1);
@@ -214,10 +215,10 @@ double GasSystem::flowRate(
         flowRate *= std::pow(p_ratio, 1 / hcr);
     }
 
-    flowRate *= direction * p_0 * k_flow;
+    flowRate *= direction * p_0;
     flowRate /= std::sqrt(constants::R * T_0);
 
-    return flowRate;
+    return flowRate * k_flow;
 }
 
 double GasSystem::flow(double dn, double E_k_per_mol, const Mix &mix) {
@@ -273,7 +274,9 @@ double GasSystem::flow(
         target->pressure(),
         temperature(),
         target->temperature(),
-        heatCapacityRatio());
+        heatCapacityRatio(),
+        m_chokedFlowLimit,
+        m_chokedFlowFactorCached);
 
     if (std::abs(flow) > std::abs(maxFlow)) {
         flow = maxFlow;
@@ -301,7 +304,9 @@ double GasSystem::flow(double k_flow, double dt, double P_env, double T_env, con
         P_env,
         temperature(),
         T_env,
-        heatCapacityRatio());
+        heatCapacityRatio(),
+        m_chokedFlowLimit,
+        m_chokedFlowFactorCached);
 
     if (std::abs(flow) > std::abs(maxFlow)) {
         flow = maxFlow;

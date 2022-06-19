@@ -16,7 +16,7 @@ Simulator::Simulator() {
     m_currentIteration = 0;
     m_simulationSpeed = 1.0;
     m_targetSynthesizerLatency = 0.1;
-    m_simulationFrequency = 9000;//9000;//13000
+    m_simulationFrequency = 11000;//9000;//13000
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;

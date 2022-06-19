@@ -5,6 +5,7 @@
 #include "units.h"
 
 #include <cfloat>
+#include <cmath>
 
 class GasSystem {
     public:
@@ -49,7 +50,9 @@ class GasSystem {
             double P1,
             double T0,
             double T1,
-            double hcr);
+            double hcr,
+            double chokedFlowLimit,
+            double chokedFlowRateCached);
         double flow(double dn, double E_k_per_mol, const Mix &mix = {});
         double loseN(double dn);
         double gainN(double dn, double E_k_per_mol, const Mix &mix = {});
@@ -62,6 +65,8 @@ class GasSystem {
 
         inline static constexpr double kineticEnergyPerMol(double T, int degreesOfFreedom);
         inline static constexpr double heatCapacityRatio(int degreesOfFreedom);
+        inline static double chokedFlowLimit(int degreesOfFreedom);
+        inline static double chokedFlowRate(int degreesOfFreedom);
 
         inline double approximateDensity() const;
         inline int degreesOfFreedom() const { return m_degreesOfFreedom; }
@@ -93,6 +98,19 @@ inline constexpr double GasSystem::kineticEnergyPerMol(double T, int degreesOfFr
 
 inline constexpr double GasSystem::heatCapacityRatio(int degreesOfFreedom) {
     return 1.0 + (2.0 / degreesOfFreedom);
+}
+
+inline double GasSystem::chokedFlowLimit(int degreesOfFreedom) {
+    const double hcr = heatCapacityRatio(degreesOfFreedom);
+    return std::pow((2.0 / (hcr + 1)), hcr / (hcr - 1));
+}
+
+inline double GasSystem::chokedFlowRate(int degreesOfFreedom) {
+    const double hcr = heatCapacityRatio(degreesOfFreedom);
+    double flowRate =
+        std::sqrt(hcr) * std::pow(2 / (hcr + 1), (hcr + 1) / (2 * (hcr - 1)));
+
+    return flowRate;
 }
 
 inline double GasSystem::approximateDensity() const {

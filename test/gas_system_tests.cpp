@@ -321,7 +321,9 @@ TEST(GasSystemTests, ChokedFlowTest) {
             units::pressure(1.0, units::atm),
             system1.temperature(),
             units::celcius(25),
-            GasSystem::heatCapacityRatio(5));
+            GasSystem::heatCapacityRatio(5),
+            GasSystem::chokedFlowLimit(5),
+            GasSystem::chokedFlowRate(5));
     const double noncriticalFlow =
         system1.flowRate(
             flow_k,
@@ -329,7 +331,9 @@ TEST(GasSystemTests, ChokedFlowTest) {
             units::pressure(2.0, units::atm),
             system1.temperature(),
             units::celcius(25),
-            GasSystem::heatCapacityRatio(5));
+            GasSystem::heatCapacityRatio(5),
+            GasSystem::chokedFlowLimit(5),
+            GasSystem::chokedFlowRate(5));
 
     const double chokedFlowScfm = units::convert(chokedFlow, units::scfm);
     const double noncriticalFlowScfm = units::convert(noncriticalFlow, units::scfm);
@@ -350,8 +354,9 @@ TEST(GasSystemTests, CfmConversions) {
         units::pressure(1.0, units::atm) - units::pressure(41.0, units::inH2O),
         units::celcius(25.0),
         units::celcius(25.0),
-        GasSystem::heatCapacityRatio(5)
-    );
+        GasSystem::heatCapacityRatio(5),
+        GasSystem::chokedFlowLimit(5),
+        GasSystem::chokedFlowRate(5));
 
     const double flowRateCfm = units::convert(flowRate, units::scfm);
 }
@@ -372,7 +377,9 @@ TEST(GasSystemTests, FlowRateConstant) {
             units::pressure(2.5 - 0.5, units::atm),
             units::celcius(2000.0),
             units::celcius(25),
-            GasSystem::heatCapacityRatio(5));
+            GasSystem::heatCapacityRatio(5),
+            GasSystem::chokedFlowLimit(5),
+            GasSystem::chokedFlowRate(5));
 
     EXPECT_NEAR(flowRate, units::flow(400, units::scfm), 1E-6);
 }
