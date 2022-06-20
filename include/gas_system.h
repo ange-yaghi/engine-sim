@@ -83,6 +83,8 @@ class GasSystem {
         inline double n_o2() const;
         inline double heatCapacityRatio() const;
         inline Mix mix() const { return m_state.mix; }
+        inline double cachedChokedFlowLimit() const { return m_chokedFlowLimit; }
+        inline double cachedChokedFlowRate() const { return m_chokedFlowFactorCached; }
 
     protected:
         State m_state, m_next;

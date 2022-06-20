@@ -86,6 +86,13 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double m_peakTemperature;
         double m_nBurntFuel;
 
+        // temp
+        double doExhaustFlow(double dt);
+        double doIntakeFlow(double dt);
+
+        double m_intakeVelocity;
+        double m_exhaustVelocity;
+
     protected:
         double calculateFrictionForce(double v) const;
         void updateCycleStates();

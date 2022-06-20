@@ -357,7 +357,7 @@ bool Simulator::simulateStep() {
 
 double Simulator::getTotalExhaustFlow() const {
     double totalFlow = 0.0;
-    for (int i = 0; i < m_engine->getCylinderCount(); ++i) {
+    for (int i = 0; i < 1; ++i) { // m_engine->getCylinderCount(); ++i) {
         totalFlow += m_engine->getChamber(i)->getLastTimestepExhaustFlow();
     }
 

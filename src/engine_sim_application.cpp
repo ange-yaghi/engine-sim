@@ -286,7 +286,15 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(70, units::deg), units::distance(25, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));*/
-    
+
+    // 345     275
+    // 272,     223
+    // 277,     231
+    // 361,     294
+    // 377,     316
+    // 381,     374
+    // 
+
     camLift0->addSample(0.0, units::distance(578, units::thou));
     camLift0->addSample(-units::angle(10, units::deg), units::distance(550, units::thou));
     camLift0->addSample(units::angle(10, units::deg), units::distance(550, units::thou));
@@ -298,8 +306,8 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
     camLift0->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift0->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));//75
-    camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));
+    camLift0->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
     camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -334,7 +342,7 @@ void EngineSimApplication::initialize() {
     camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Camshaft::Parameters camParams;
-    const double lobeSeparation = 106;// 114;
+    const double lobeSeparation = 110;// 114;
     const double advance = (lobeSeparation - 106);
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;
@@ -389,7 +397,7 @@ void EngineSimApplication::initialize() {
     CylinderHead::Parameters chParams;
     chParams.IntakePortFlow = flow;
     chParams.ExhaustPortFlow = exhaustFlow;
-    chParams.CombustionChamberVolume = units::volume(118.0-50, units::cc);
+    chParams.CombustionChamberVolume = units::volume(118.0, units::cc);
 
     chParams.IntakeCam = intakeCamLeft;
     chParams.ExhaustCam = exhaustCamLeft;
@@ -597,7 +605,7 @@ void EngineSimApplication::process(float frame_dt) {
             totalFlow / (m_simulator.getTimestep()));
         m_oscCluster->getCylinderPressureScope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-            m_simulator.getEngine()->getChamber(0)->m_system.pressure());
+            m_simulator.getEngine()->getChamber(0)->m_intakeVelocity * 2000);
         m_oscCluster->getExhaustValveLiftOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
             m_simulator.getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(

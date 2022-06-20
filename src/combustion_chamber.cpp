@@ -28,6 +28,10 @@ CombustionChamber::CombustionChamber() {
     m_intakeFlowRate = 0;
 
     m_fuel = nullptr;
+
+    // temp
+    m_intakeVelocity = 0;
+    m_exhaustVelocity = 0;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -107,10 +111,6 @@ void CombustionChamber::ignite() {
         if (equivalenceRatio < 0.5) return;
         else if (equivalenceRatio > 1.9) return;
 
-        // temp
-        //equivalenceRatio = std::fmin(7.5, std::fmax(20.5, equivalenceRatio));
-        //equivalenceRatio = 15.125;
-
         m_flameEvent.lastVolume = getVolume();
         m_flameEvent.travel_x = 0;
         m_flameEvent.travel_y = 0;
@@ -121,16 +121,7 @@ void CombustionChamber::ignite() {
         m_lit = true;
         m_litLastFrame = true;
 
-        constexpr double fastFlameSpeed = units::distance(15, units::m);
-        constexpr double slowFlameSpeed = units::distance(10, units::m);
-
-        const double fuel_air_low = 0;
-        const double fuel_air_high = 4.0 / 25;
-        const double r = (double)rand() / RAND_MAX;
-        const double s = ((equivalenceRatio - fuel_air_low) / (fuel_air_high - fuel_air_low)) * (r * 0.5 + 0.5);
-
         m_flameEvent.efficiency = 0.75 * (0.7 + 0.3 * ((double)rand() / RAND_MAX));
-        //m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
 
         const double turbulence = m_meanPistonSpeedToTurbulence->sampleTriangle(
             calculateMeanPistonSpeed());
@@ -142,13 +133,6 @@ void CombustionChamber::ignite() {
             m_system.pressure(),
             calculateFiringPressure(),
             units::pressure(160, units::psi));
-        //m_flameEvent.efficiency = 1.0;
-        //m_flameEvent.flameSpeed = fastFlameSpeed;
-
-        if (rand() % 16 == 0) {
-            //m_flameEvent.efficiency = 1;
-            //m_flameEvent.flameSpeed = fastFlameSpeed;
-        }
     }
 }
 
@@ -176,10 +160,12 @@ void CombustionChamber::flow(double dt) {
 
     const double start_n = m_system.n();
 
+    /*
+    Intake *intake = m_head->getIntake(m_piston->getCylinderIndex());
     const double intakeFlow = m_system.flow(
             m_intakeFlowRate,
             dt,
-            &m_head->getIntake(m_piston->getCylinderIndex())->m_system,
+            &intake->m_system,
             -DBL_MAX,
             DBL_MAX);
 
@@ -188,14 +174,16 @@ void CombustionChamber::flow(double dt) {
             dt,
             &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system,
             -DBL_MAX,
-            DBL_MAX);
+            DBL_MAX);*/
+
+    const double exhaustFlow = doExhaustFlow(dt);
+    const double intakeFlow = doIntakeFlow(dt);
+    m_exhaustFlow = exhaustFlow;
+    m_lastTimestepTotalExhaustFlow += m_exhaustFlow;
 
     if (std::abs(intakeFlow) > 1E-9 && m_lit) {
         m_lit = false;
     }
-
-    m_exhaustFlow = exhaustFlow;
-    m_lastTimestepTotalExhaustFlow += exhaustFlow;
 
     if (m_lit) {
         CylinderBank *bank = m_head->getCylinderBank();
@@ -259,6 +247,152 @@ double CombustionChamber::lastEventAfr() const {
             (oxygenMolarMass * totalOxygen + totalInert * nitrogenMolarMass)
             / (totalFuel * octaneMolarMass);
     }
+}
+
+double CombustionChamber::doExhaustFlow(double dt) {
+    // temp
+    ExhaustSystem *exhaust = m_head->getExhaustSystem(m_piston->getCylinderIndex());
+    double P_0 = m_system.pressure(), P_1 = exhaust->m_system.pressure();
+    double exhaustFlow = 0;
+    if (m_exhaustVelocity < 0) {
+        P_1 += exhaust->m_system.approximateDensity() * m_exhaustVelocity * m_exhaustVelocity;
+    }
+    else {
+        P_0 += m_system.approximateDensity() * m_exhaustVelocity * m_exhaustVelocity;
+    }
+
+    exhaustFlow = dt * GasSystem::flowRate(
+        m_exhaustFlowRate,
+        P_0,
+        P_1,
+        m_system.temperature(),
+        exhaust->m_system.temperature(),
+        m_system.heatCapacityRatio(),
+        m_system.cachedChokedFlowLimit(),
+        m_system.cachedChokedFlowRate()
+    );
+
+    if (exhaustFlow < 0) {
+        const double maxFlowRate = m_system.pressureEquilibriumMaxFlow(
+            P_1,
+            exhaust->m_system.temperature()
+        );
+
+        exhaustFlow = std::fmax(-exhaust->m_system.n(), exhaustFlow);
+        //exhaustFlow = std::fmax(maxFlowRate, exhaustFlow);
+    }
+    else {
+        const double maxFlowRate = exhaust->m_system.pressureEquilibriumMaxFlow(
+            P_0,
+            m_system.temperature()
+        );
+
+        exhaustFlow = std::fmin(m_system.n(), exhaustFlow);
+        //exhaustFlow = std::fmin(-maxFlowRate, exhaustFlow);
+    }
+
+    m_system.flow(
+        exhaustFlow,
+        exhaust->m_system.kineticEnergyPerMol(),
+        exhaust->m_system.mix());
+    exhaust->m_system.flow(
+        -exhaustFlow,
+        m_system.kineticEnergyPerMol(),
+        m_system.mix());
+
+    // PV = nRT
+    constexpr double exhaustRunnerArea =
+        constants::pi * units::distance(0.9, units::inch) * units::distance(0.9, units::inch);
+    const double exhaustVolume =
+        exhaustFlow * constants::R * exhaust->m_system.temperature()
+        / exhaust->m_system.pressure();
+    double newExhaustVelocity = (exhaustVolume / exhaustRunnerArea) / dt;
+
+    constexpr double c = units::distance(343, units::m) / units::sec;
+    newExhaustVelocity = std::fmax(-c, std::fmin(newExhaustVelocity, c));
+
+    const double f_c = 6000;
+    const double RC = 1 / (2 * constants::pi * f_c);
+    const double alpha = dt / (RC + dt);
+    m_exhaustVelocity = (1 - alpha) * m_exhaustVelocity + alpha * newExhaustVelocity;
+    //m_intakeVelocity = newIntakeVelocity;
+
+    // end temp
+
+    return exhaustFlow;
+}
+
+double CombustionChamber::doIntakeFlow(double dt) {
+    // temp
+    Intake *intake = m_head->getIntake(m_piston->getCylinderIndex());
+    double P_0 = m_system.pressure(), P_1 = intake->m_system.pressure();
+    double intakeFlow = 0;
+    if (m_intakeVelocity < 0) {
+        P_1 += intake->m_system.approximateDensity() * m_intakeVelocity * m_intakeVelocity;
+    }
+    else {
+        P_0 += m_system.approximateDensity() * m_intakeVelocity * m_intakeVelocity;
+    }
+
+    intakeFlow = dt * GasSystem::flowRate(
+        m_intakeFlowRate,
+        P_0,
+        P_1,
+        m_system.temperature(),
+        intake->m_system.temperature(),
+        m_system.heatCapacityRatio(),
+        m_system.cachedChokedFlowLimit(),
+        m_system.cachedChokedFlowRate()
+    );
+
+    if (intakeFlow < 0) {
+        const double maxFlowRate = m_system.pressureEquilibriumMaxFlow(
+            P_1,
+            intake->m_system.temperature()
+        );
+
+        intakeFlow = std::fmax(-intake->m_system.n(), intakeFlow);
+        intakeFlow = std::fmax(maxFlowRate, intakeFlow);
+    }
+    else {
+        const double maxFlowRate = intake->m_system.pressureEquilibriumMaxFlow(
+            P_0,
+            m_system.temperature()
+        );
+
+        intakeFlow = std::fmin(m_system.n(), intakeFlow);
+        intakeFlow = std::fmin(-maxFlowRate, intakeFlow);
+    }
+
+    m_system.flow(
+        intakeFlow,
+        intake->m_system.kineticEnergyPerMol(),
+        intake->m_system.mix());
+    intake->m_system.flow(
+        -intakeFlow,
+        m_system.kineticEnergyPerMol(),
+        m_system.mix());
+
+    // PV = nRT
+    constexpr double intakeRunnerArea =
+        constants::pi * units::distance(0.9, units::inch) * units::distance(0.9, units::inch);
+    const double intakeVolume =
+        intakeFlow * constants::R * intake->m_system.temperature()
+        / intake->m_system.pressure();
+    double newIntakeVelocity = (intakeVolume / intakeRunnerArea) / dt;
+
+    constexpr double c = units::distance(343, units::m) / units::sec;
+    newIntakeVelocity = std::fmax(-c, std::fmin(newIntakeVelocity, c));
+
+    const double f_c = 600;
+    const double RC = 1 / (2 * constants::pi * f_c);
+    const double alpha = dt / (RC + dt);
+    m_intakeVelocity = (1 - alpha) * m_intakeVelocity + alpha * newIntakeVelocity;
+    //m_intakeVelocity = newIntakeVelocity;
+
+    //end temp
+
+    return intakeFlow;
 }
 
 double CombustionChamber::calculateFrictionForce(double v_s) const {
