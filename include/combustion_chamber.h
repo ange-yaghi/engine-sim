@@ -104,10 +104,12 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         bool m_litLastFrame;
 
+        GasSystem m_exhaustRunner;
+        double m_exhaustMomentum;
+
         Piston *m_piston;
         CylinderHead *m_head;
         Engine *m_engine;
-
         Fuel *m_fuel;
 };
 

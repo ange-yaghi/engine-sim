@@ -298,8 +298,8 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
     camLift0->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift0->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));//75
-    camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));//75
+    camLift0->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
     camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -389,7 +389,7 @@ void EngineSimApplication::initialize() {
     CylinderHead::Parameters chParams;
     chParams.IntakePortFlow = flow;
     chParams.ExhaustPortFlow = exhaustFlow;
-    chParams.CombustionChamberVolume = units::volume(118.0-50, units::cc);
+    chParams.CombustionChamberVolume = units::volume(118.0, units::cc);
 
     chParams.IntakeCam = intakeCamLeft;
     chParams.ExhaustCam = exhaustCamLeft;

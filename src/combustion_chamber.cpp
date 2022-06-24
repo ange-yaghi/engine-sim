@@ -15,6 +15,8 @@ CombustionChamber::CombustionChamber() {
     m_crankcasePressure = 0.0;
     m_piston = nullptr;
     m_head = nullptr;
+    m_engine = nullptr;
+    m_fuel = nullptr;
     m_lit = false;
     m_litLastFrame = false;
     m_peakTemperature = 0;
@@ -27,7 +29,7 @@ CombustionChamber::CombustionChamber() {
     m_exhaustFlowRate = 0;
     m_intakeFlowRate = 0;
 
-    m_fuel = nullptr;
+    m_exhaustMomentum = 0.0;
 }
 
 CombustionChamber::~CombustionChamber() {
@@ -47,6 +49,11 @@ void CombustionChamber::initialize(const Parameters &params) {
         m_pistonSpeed[i] = 0;
         m_pressure[i] = 0;
     }
+
+    m_exhaustRunner.initialize(
+        units::pressure(1.0, units::atm),
+        units::volume(100.0, units::cc),
+        units::celcius(25.0));
 }
 
 double CombustionChamber::getVolume() const {
@@ -179,16 +186,65 @@ void CombustionChamber::flow(double dt) {
     const double intakeFlow = m_system.flow(
             m_intakeFlowRate,
             dt,
-            &m_head->getIntake(m_piston->getCylinderIndex())->m_system,
-            -DBL_MAX,
-            DBL_MAX);
+            &m_head->getIntake(m_piston->getCylinderIndex())->m_system);
+
+    /*
+    const double exhaustFlow = m_system.flow(
+        m_exhaustFlowRate,
+        dt,
+        &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system,
+        -DBL_MAX,
+        DBL_MAX);*/
+
+    // temp
+    m_exhaustRunner.start();
+
+    const double molecularMass = units::mass(32, units::g);
+    const double runnerStaticPressure = m_exhaustRunner.pressure();
+    const double runnerVelocity =
+        m_exhaustMomentum / (m_exhaustRunner.n() * molecularMass);
+    const double machNumber = runnerVelocity / units::distance(345, units::m);
+    const double hcr = m_exhaustRunner.heatCapacityRatio();
+    //const double runnerTotalPressure =
+    //    runnerStaticPressure
+    //    * std::pow(1 + machNumber * machNumber * (hcr - 1) / 2, hcr / (hcr - 1));
+    const double dynamicPressure =
+        machNumber * machNumber * 0.5 * m_exhaustRunner.heatCapacityRatio() * runnerStaticPressure;
+
+    GasSystem *source = (m_system.pressure() > runnerTotalPressure)
+        ? &m_system
+        : &m_exhaustRunner;
 
     const double exhaustFlow = m_system.flow(
             m_exhaustFlowRate,
             dt,
-            &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system,
-            -DBL_MAX,
-            DBL_MAX);
+            &m_exhaustRunner);
+
+    const double crossSectionArea = units::area(10.0, units::cm2);
+    const double volumeOut =
+        exhaustFlow * constants::R * m_system.temperature() / m_system.pressure();
+    const double v = (volumeOut / crossSectionArea) / dt;
+    const double mass = exhaustFlow * units::mass(32, units::g);
+    const double newMomentum = v * mass;
+
+    const double runnerToManifold = m_exhaustRunner.flow(
+        m_exhaustFlowRate * 10,
+        dt,
+        &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system);
+
+    m_exhaustRunner.end();
+
+    if (runnerToManifold > 0) {
+        m_exhaustMomentum -= (m_exhaustMomentum / m_exhaustRunner.n()) * runnerToManifold;
+    }
+
+    if (exhaustFlow < 0) {
+        m_exhaustMomentum -=
+    }
+
+    m_exhaustMomentum += newMomentum;
+
+    // end temp
 
     if (std::abs(intakeFlow) > 1E-9 && m_lit) {
         m_lit = false;
