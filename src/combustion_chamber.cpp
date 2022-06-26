@@ -176,19 +176,19 @@ void CombustionChamber::flow(double dt) {
 
     const double start_n = m_system.n();
 
-    const double intakeFlow = m_system.flow(
+    const double intakeFlow = 0.0; /* m_system.flow(
             m_intakeFlowRate,
             dt,
             &m_head->getIntake(m_piston->getCylinderIndex())->m_system,
             -DBL_MAX,
-            DBL_MAX);
+            DBL_MAX);*/
 
-    const double exhaustFlow = m_system.flow(
+    const double exhaustFlow = 0.0; /* m_system.flow(
             m_exhaustFlowRate,
             dt,
             &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system,
             -DBL_MAX,
-            DBL_MAX);
+            DBL_MAX);*/
 
     if (std::abs(intakeFlow) > 1E-9 && m_lit) {
         m_lit = false;

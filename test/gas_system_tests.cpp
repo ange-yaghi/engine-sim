@@ -50,34 +50,46 @@ TEST(GasSystemTests, PressureEqualizationEnergyConservation) {
     GasSystem system1, system2;
     system1.initialize(
         units::pressure(1.0, units::atm),
-        units::volume(1.0, units::cc),
+        units::volume(1000.0, units::cc),
         units::celcius(25.0)
     );
 
     system2.initialize(
         units::pressure(2.0, units::atm),
-        units::volume(1.0, units::cc),
+        units::volume(1000.0, units::cc),
         units::celcius(25.0)
     );
 
-    const double initialSystemEnergy = system1.kineticEnergy() + system2.kineticEnergy();
+    const double initialSystemEnergy = system1.totalEnergy() + system2.totalEnergy();
     const double initialMolecules = system1.n() + system2.n();
 
-    const double dt = 1.0;
-    const double flow_k = 0.000001;
-    const int steps = 100;
+    GasSystem::FlowParameters params;
+    params.k_flow = 0.000001;
+    params.crossSectionArea_0 = 1.0;
+    params.crossSectionArea_1 = 1.0;
+    params.direction_x = 1.0;
+    params.direction_y = 0.0;
+    params.dt = 1.0;
+    params.system_0 = &system1;
+    params.system_1 = &system2;
+
+    const double dt = 1 / 100.0;
+    const int steps = 1000;
     for (int i = 1; i <= steps; ++i) {
         system1.start();
         system2.start();
 
-        system1.flow(flow_k, dt, &system2);
+        GasSystem::flow(params);
 
         system1.end();
         system2.end();
     }
 
-    const double finalSystemEnergy = system1.kineticEnergy() + system2.kineticEnergy();
+    const double finalSystemEnergy = system1.totalEnergy() + system2.totalEnergy();
     const double finalMolecules = system1.n() + system2.n();
+
+    const double p0 = system1.pressure();
+    const double p1 = system2.pressure();
 
     EXPECT_NEAR(finalMolecules, initialMolecules, 1E-6);
     EXPECT_NEAR(finalSystemEnergy, initialSystemEnergy, 1E-4);
@@ -280,17 +292,24 @@ TEST(GasSystemTests, CompositionSanityCheck) {
     const double PV = system1.pressure() * system1.volume();
     const double nRT = system1.n() * constants::R * system1.temperature();
 
+    GasSystem::FlowParameters params;
+    params.k_flow = 1.0;
+    params.crossSectionArea_0 = 1.0;
+    params.crossSectionArea_1 = 1.0;
+    params.direction_x = 1.0;
+    params.direction_y = 0.0;
+    params.dt = 1 / 60.0;
+    params.system_0 = &system1;
+    params.system_1 = &system2;
+
     for (int i = 0; i < 200; ++i) {
         system1.start();
         system2.start();
-        const double flowRate0 = system1.flow(
-            1.0,
-            1 / 60.0,
-            &system2);
+        const double flowRate = GasSystem::flow(params);
         system1.end();
         system2.end();
 
-        std::cerr << i << ", " << flowRate0 << ", " << system1.pressure() << "\n";
+        std::cerr << i << ", " << flowRate << ", " << system1.pressure() << "\n";
     }
 
     EXPECT_NEAR(system2.mix().p_fuel, 1.0, 2E-2);
@@ -382,4 +401,66 @@ TEST(GasSystemTests, FlowRateConstant) {
             GasSystem::chokedFlowRate(5));
 
     EXPECT_NEAR(flowRate, units::flow(400, units::scfm), 1E-6);
+}
+
+TEST(GasSystemTests, GasVelocityReducesStaticPressure) {
+    GasSystem system1, system2;
+    system1.initialize(
+        units::pressure(2.0, units::atm),
+        units::volume(1000.0, units::cc),
+        units::celcius(25.0)
+    );
+
+    system2.initialize(
+        units::pressure(1.0, units::atm),
+        units::volume(1.0, units::L),
+        units::celcius(25.0)
+    );
+
+    const double initialSystemEnergy = system1.totalEnergy() + system2.totalEnergy();
+    const double initialMolecules = system1.n() + system2.n();
+
+    GasSystem::FlowParameters params;
+    params.k_flow = GasSystem::k_carb(200.0);
+    params.crossSectionArea_0 = 100.0;
+    params.crossSectionArea_1 = units::cm * units::cm;
+    params.direction_x = 1.0;
+    params.direction_y = 0.0;
+    params.dt = 1 / 10000.0;
+    params.system_0 = &system1;
+    params.system_1 = &system2;
+
+    const int steps = 1000;
+    for (int i = 1; i <= steps; ++i) {
+        const double staticPressure =
+            system2.pressure() + system2.dynamicPressure(0.0, 1.0);
+        const double totalPressure =
+            system2.pressure() + system2.dynamicPressure(1.0, 0.0);
+
+        const double systemEnergy = system1.totalEnergy() + system2.totalEnergy();
+        const double velocity_x = system2.velocity_x();
+
+        if (i == 12) {
+            int a = 0;
+        }
+
+        system1.start();
+        system2.start();
+
+        GasSystem::flow(params);
+        //system1.dissipateVelocity(params.dt, 0.5);
+        //system2.dissipateVelocity(params.dt, 0.5);
+
+        system1.end();
+        system2.end();
+    }
+
+    const double finalSystemEnergy = system1.totalEnergy() + system2.totalEnergy();
+    const double finalMolecules = system1.n() + system2.n();
+
+    const double p0 = system1.pressure();
+    const double p1 = system2.pressure();
+
+    EXPECT_NEAR(finalMolecules, initialMolecules, 1E-6);
+    EXPECT_NEAR(finalSystemEnergy, initialSystemEnergy, 1E-4);
 }
