@@ -27,6 +27,8 @@ class ExhaustSystem : public Part {
         double m_flowK;
         double m_flow;
         int m_index;
+
+        GasSystem m_atmosphere;
 };
 
 #endif /* ATG_ENGINE_SIM_EXHAUST_SYSTEM_H */

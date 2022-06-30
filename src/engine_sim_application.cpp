@@ -136,7 +136,7 @@ void EngineSimApplication::initialize() {
     engineParams.CrankshaftCount = 1;
     engineParams.ExhaustSystemCount = 2;
     engineParams.IntakeCount = 1;
-    engineParams.StarterTorque = units::torque(100, units::ft_lb);
+    engineParams.StarterTorque = units::torque(200, units::ft_lb);
     m_iceEngine.initialize(engineParams);
 
     Piston::Parameters pistonParams;
@@ -266,7 +266,7 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
-    camLift0->setInputScale(1.15);//1.15
+    camLift0->setInputScale(1.0);//1.15
     camLift0->setOutputScale(1.0);
     /*
     camLift0->addSample(0.0, units::distance(565, units::thou));
@@ -298,8 +298,8 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
     camLift0->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift0->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));//75
-    camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));//75
+    camLift0->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
     camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -334,7 +334,7 @@ void EngineSimApplication::initialize() {
     camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
     Camshaft::Parameters camParams;
-    const double lobeSeparation = 106;// 114;
+    const double lobeSeparation = 110;// 114;
     const double advance = (lobeSeparation - 106);
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;

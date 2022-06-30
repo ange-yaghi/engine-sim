@@ -90,6 +90,9 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double calculateFrictionForce(double v) const;
         void updateCycleStates();
 
+        GasSystem m_intakeRunner;
+        GasSystem m_exhaustRunner;
+
         double m_intakeFlowRate;
         double m_exhaustFlowRate;
 

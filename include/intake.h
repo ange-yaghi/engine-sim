@@ -53,6 +53,8 @@ class Intake : public Part {
         double m_molecularAfr;
         double m_idleThrottlePlatePosition;
         double m_flowAttenuationGamma;
+
+        GasSystem m_atmosphere;
 };
 
 #endif /* ATG_ENGINE_SIM_INTAKE_H */

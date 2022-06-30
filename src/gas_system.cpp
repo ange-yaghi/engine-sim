@@ -7,11 +7,11 @@
 #include <cassert>
 
 void GasSystem::start() {
-    m_next = m_state;
+    //m_next = m_state;
 }
 
 void GasSystem::end() {
-    m_state = m_next;
+    //m_state = m_next;
 
     m_state.E_k = std::fmax(m_state.E_k, 0.0);
     m_state.n_mol = std::fmax(m_state.n_mol, 0.0);
@@ -31,13 +31,20 @@ void GasSystem::initialize(double P, double V, double T, const Mix &mix, int deg
     m_chokedFlowFactorCached = chokedFlowRate(degreesOfFreedom);
 }
 
+void GasSystem::reset(double P, double T, const Mix &mix) {
+    m_state.n_mol = P * volume() / (constants::R * T);
+    m_state.E_k = T * (0.5 * m_degreesOfFreedom * m_state.n_mol * constants::R);
+    m_state.mix = mix;
+    m_state.momentum[0] = m_state.momentum[1] = 0;
+}
+
 void GasSystem::setVolume(double V) {
-    return changeVolume(V - m_next.V);
+    return changeVolume(V - m_state.V);
 }
 
 void GasSystem::setN(double n) {
-    m_next.n_mol = n;
-    m_next.E_k = kineticEnergy(n);
+    m_state.E_k = kineticEnergy(n);
+    m_state.n_mol = n;
 }
 
 void GasSystem::changeVolume(double dV) {
@@ -47,34 +54,34 @@ void GasSystem::changeVolume(double dV) {
     const double dL = -dV / surfaceArea;
     const double W = dL * pressure() * surfaceArea;
 
-    m_next.V += dV;
-    m_next.E_k += W;
+    m_state.V += dV;
+    m_state.E_k += W;
 }
 
 void GasSystem::changePressure(double dP) {
-    m_next.E_k += dP * volume() * m_degreesOfFreedom * 0.5;
+    m_state.E_k += dP * volume() * m_degreesOfFreedom * 0.5;
 }
 
 void GasSystem::changeTemperature(double dT) {
-    m_next.E_k += dT * 0.5 * m_degreesOfFreedom * n() * constants::R;
+    m_state.E_k += dT * 0.5 * m_degreesOfFreedom * n() * constants::R;
 }
 
 void GasSystem::changeEnergy(double dE) {
-    m_next.E_k += dE;
+    m_state.E_k += dE;
 }
 
 void GasSystem::changeMix(const Mix &mix) {
-    m_next.mix = mix;
+    m_state.mix = mix;
 }
 
 void GasSystem::injectFuel(double n) {
     const double n_fuel = this->n_fuel() + n;
     const double p_fuel = n_fuel / this->n();
-    m_next.mix.p_fuel = p_fuel;
+    m_state.mix.p_fuel = p_fuel;
 }
 
 void GasSystem::changeTemperature(double dT, double n) {
-    m_next.E_k += dT * 0.5 * m_degreesOfFreedom * n * constants::R;
+    m_state.E_k += dT * 0.5 * m_degreesOfFreedom * n * constants::R;
 }
 
 double GasSystem::react(double n, const Mix &mix) {
@@ -106,7 +113,7 @@ double GasSystem::react(double n, const Mix &mix) {
     const double products_n = output_input_ratio * reactants_n;
     const double dn = products_n - reactants_n;
 
-    m_next.n_mol += dn;
+    m_state.n_mol += dn;
 
     // Adjust mix
     const double new_system_n_fuel = system_n_fuel - a_n_fuel;
@@ -115,12 +122,12 @@ double GasSystem::react(double n, const Mix &mix) {
     const double new_system_n = system_n + dn;
 
     if (new_system_n != 0) {
-        m_next.mix.p_fuel = new_system_n_fuel / new_system_n;
-        m_next.mix.p_inert = new_system_n_inert / new_system_n;
-        m_next.mix.p_o2 = new_system_n_o2 / new_system_n;
+        m_state.mix.p_fuel = new_system_n_fuel / new_system_n;
+        m_state.mix.p_inert = new_system_n_inert / new_system_n;
+        m_state.mix.p_o2 = new_system_n_o2 / new_system_n;
     }
     else {
-        m_next.mix.p_fuel = m_next.mix.p_inert = m_next.mix.p_o2 = 0;
+        m_state.mix.p_fuel = m_state.mix.p_inert = m_state.mix.p_o2 = 0;
     }
 
     return a_n_fuel;
@@ -188,6 +195,8 @@ double GasSystem::flowRate(
     double chokedFlowLimit,
     double chokedFlowRateCached)
 {
+    if (k_flow == 0) return 0;
+
     double direction;
     double T_0;
     double p_0, p_T; // p_0 = upstream pressure
@@ -233,66 +242,92 @@ double GasSystem::flow(double dn, double E_k_per_mol, const Mix &mix) {
 }
 
 double GasSystem::loseN(double dn) {
-    m_next.E_k -= kineticEnergy(dn);
-    m_next.n_mol -= dn;
+    m_state.E_k -= kineticEnergy(dn);
+    m_state.n_mol -= dn;
 
-    if (m_next.n_mol < 0) {
-        m_next.n_mol = 0;
+    if (m_state.n_mol < 0) {
+        m_state.n_mol = 0;
     }
 
     return dn;
 }
 
 double GasSystem::gainN(double dn, double E_k_per_mol, const Mix &mix) {
-    const double next_n = m_next.n_mol + dn;
-    const double current_n = m_next.n_mol;
+    const double next_n = m_state.n_mol + dn;
+    const double current_n = m_state.n_mol;
 
-    m_next.E_k += dn * E_k_per_mol;
-    m_next.n_mol = next_n;
+    m_state.E_k += dn * E_k_per_mol;
+    m_state.n_mol = next_n;
 
     if (next_n != 0) {
-        m_next.mix.p_fuel = (m_next.mix.p_fuel * current_n + dn * mix.p_fuel) / next_n;
-        m_next.mix.p_inert = (m_next.mix.p_inert * current_n + dn * mix.p_inert) / next_n;
-        m_next.mix.p_o2 = (m_next.mix.p_o2 * current_n + dn * mix.p_o2) / next_n;
+        m_state.mix.p_fuel = (m_state.mix.p_fuel * current_n + dn * mix.p_fuel) / next_n;
+        m_state.mix.p_inert = (m_state.mix.p_inert * current_n + dn * mix.p_inert) / next_n;
+        m_state.mix.p_o2 = (m_state.mix.p_o2 * current_n + dn * mix.p_o2) / next_n;
     }
     else {
-        m_next.mix.p_fuel = m_next.mix.p_inert = m_next.mix.p_o2 = 0;
+        m_state.mix.p_fuel = m_state.mix.p_inert = m_state.mix.p_o2 = 0;
     }
 
     return -dn;
+}
+
+void GasSystem::velocityWall(
+    double dt,
+    double timeConstant,
+    double dx,
+    double dy)
+{
+    if (n() == 0) return;
+    if (dx * m_state.momentum[0] + dy * m_state.momentum[1] < 0) return;
+
+    const double p_dx = -dy;
+    const double p_dy = dx;
+
+    const double invMass = 1.0 / mass();
+    const double velocity_x = m_state.momentum[0] * invMass;
+    const double velocity_y = m_state.momentum[1] * invMass;
+    const double velocity_squared =
+        velocity_x * velocity_x + velocity_y * velocity_y;
+
+    const double momentum_dir = dx * m_state.momentum[0] + dy * m_state.momentum[1];
+    const double momentum_pdir = p_dx * m_state.momentum[0] + p_dy * m_state.momentum[1];
+
+    const double s = dt / (dt + timeConstant);
+    const double momentum_dx = dx * m_state.momentum[0] * (1 - s);
+    const double momentum_dy = dy * m_state.momentum[1] * (1 - s);
+    
+    m_state.momentum[0] = momentum_dx * dx + (momentum_pdir * p_dx);
+    m_state.momentum[1] = momentum_dy * dy + (momentum_pdir * p_dy);
+
+    const double newVelocity_x = m_state.momentum[0] * invMass;
+    const double newVelocity_y = m_state.momentum[1] * invMass;
+    const double newVelocity_squared =
+        newVelocity_x * newVelocity_x + newVelocity_y * newVelocity_y;
+
+    const double dE_k = 0.5 * mass() * (velocity_squared - newVelocity_squared);
+    m_state.E_k += dE_k;
 }
 
 void GasSystem::dissipateVelocity(double dt, double timeConstant) {
     if (n() == 0) return;
 
     const double invMass = 1.0 / mass();
-    const double velocity_x = m_next.momentum[0] * invMass;
-    const double velocity_y = m_next.momentum[1] * invMass;
+    const double velocity_x = m_state.momentum[0] * invMass;
+    const double velocity_y = m_state.momentum[1] * invMass;
     const double velocity_squared =
         velocity_x * velocity_x + velocity_y * velocity_y;
+
     const double s = dt / (dt + timeConstant);
+    m_state.momentum[0] = m_state.momentum[0] * (1 - s);
+    m_state.momentum[1] = m_state.momentum[1] * (1 - s);
 
-    const double momentum_x_0 = m_next.momentum[0];
-    const double momentum_y_0 = m_next.momentum[1];
-
-    m_next.momentum[0] -= (1 - s) * m_state.momentum[0];
-    m_next.momentum[1] -= (1 - s) * m_state.momentum[1];
-
-    if (momentum_x_0 >= 0 != m_next.momentum[0] >= 0) {
-        m_next.momentum[0] = 0;
-    }
-
-    if (momentum_y_0 >= 0 != m_next.momentum[1] >= 0) {
-        m_next.momentum[1] = 0;
-    }
-
-    const double newVelocity_x = m_next.momentum[0] * invMass;
-    const double newVelocity_y = m_next.momentum[1] * invMass;
+    const double newVelocity_x = m_state.momentum[0] * invMass;
+    const double newVelocity_y = m_state.momentum[1] * invMass;
     const double newVelocity_squared =
         newVelocity_x * newVelocity_x + newVelocity_y * newVelocity_y;
 
     const double dE_k = 0.5 * mass() * (velocity_squared - newVelocity_squared);
-    m_next.E_k += dE_k;
+    m_state.E_k += dE_k;
 }
 
 double GasSystem::flow(const FlowParameters &params) {
@@ -380,11 +415,6 @@ double GasSystem::flow(const FlowParameters &params) {
     source->loseN(flow);
     sink->gainN(flow, source->kineticEnergyPerMol(), source->mix());
     */
-
-    const double fraction = flow / source->n();
-    const double fractionVolume = fraction * source->volume();
-    const double invMass = 1 / source->mass();
-    const double fractionMass = fraction * source->mass();
 
     // - Stage 1
     // The flow fraction is accelerated to the flow velocity appropriate for the
@@ -530,10 +560,110 @@ double GasSystem::flow(const FlowParameters &params) {
     //const double sourceFlowVelocity_y = dy * sourceFlowVelocity;
     //const double sourceFlowVelocity_squared = sourceFlowVelocity * sourceFlowVelocity;
 
-    const double sinkFractionVelocity = (fractionVolume / sinkCrossSection) / params.dt;
+    const double fraction = flow / source->n();
+    const double fractionVolume = fraction * source->volume();
+    const double invMass = 1 / source->mass();
+    const double fractionMass = fraction * source->mass();
+    const double remainingMass = (1 - fraction) * source->mass();
+    const double sinkMass = sink->mass();
+
+    const double c_source = source->c();
+    const double c_sink = sink->c();
+
+    const double acc_s = params.dt / (params.accelerationTimeConstant + params.dt);
+
+    if (flow != 0) {
+        // - Stage 1
+        // Fraction flows from source to sink.
+
+        // Convert fraction kinetic energy to molecular kinetic energy for easier
+        // accounting later
+        const double fractionInitialVelocity_x = fraction * source->m_state.momentum[0] / fractionMass;
+        const double fractionInitialVelocity_y = fraction * source->m_state.momentum[1] / fractionMass;
+        const double fractionInitialVelocity_squared =
+            fractionInitialVelocity_x * fractionInitialVelocity_x
+            + fractionInitialVelocity_y * fractionInitialVelocity_y;
+        sink->m_state.E_k += 0.5 * fractionMass * fractionInitialVelocity_squared;
+
+        source->m_state.momentum[0] -= fraction * source->m_state.momentum[0];
+        source->m_state.momentum[1] -= fraction * source->m_state.momentum[1];
+
+        source->loseN(flow);
+        sink->gainN(flow, source->kineticEnergyPerMol(), source->mix());
+    }
+
+    // - Stage 2
+    // Remaining source mass accelerates to fill missing space converting some
+    // molecular kinetic energy.
+    const double sourceVelocity =
+        0.5 * clamp((fractionVolume / sourceCrossSection) / params.dt, 0.0, c_source);
+    const double sourceVelocity_x = dx * sourceVelocity;
+    const double sourceVelocity_y = dy * sourceVelocity;
+    const double sourceVelocity_squared = sourceVelocity * sourceVelocity;
+    const double sourceMomentum_x = sourceVelocity_x * remainingMass;
+    const double sourceMomentum_y = sourceVelocity_y * remainingMass;
+
+    const double initialVelocity_x = source->m_state.momentum[0] / remainingMass;
+    const double initialVelocity_y = source->m_state.momentum[1] / remainingMass;
+    const double initialVelocity_squared =
+        initialVelocity_x * initialVelocity_x + initialVelocity_y * initialVelocity_y;
+
+    const double finalVelocity_x = acc_s * sourceVelocity_x + (1 - acc_s) * initialVelocity_x;
+    const double finalVelocity_y = acc_s * sourceVelocity_y + (1 - acc_s) * initialVelocity_y;
+    const double finalVelocity_squared =
+        finalVelocity_x * finalVelocity_x + finalVelocity_y * finalVelocity_y;
+
+    const double E_k_sourceInitial = 0.5 * remainingMass * initialVelocity_squared;
+    const double E_k_sourceFinal = 0.5 * remainingMass * finalVelocity_squared;
+
+    source->m_state.E_k -= (E_k_sourceFinal - E_k_sourceInitial);
+    source->m_state.momentum[0] = finalVelocity_x * remainingMass;
+    source->m_state.momentum[1] = finalVelocity_y * remainingMass;
+
+    // - Stage 3
+    // Moving airflow collides inelastically with air mass in sink vessel.
+    // Excess energy is converted to molecular kinetic energy.
+    const double sinkFractionVelocity =
+        0.5 * clamp((fractionVolume / sinkCrossSection) / params.dt, 0.0, c_sink);
     const double sinkFractionVelocity_squared = sinkFractionVelocity * sinkFractionVelocity;
     const double sinkFractionVelocity_x = sinkFractionVelocity * dx;
     const double sinkFractionVelocity_y = sinkFractionVelocity * dy;
+    const double sinkFractionMomentum_x = sinkFractionVelocity_x * fractionMass;
+    const double sinkFractionMomentum_y = sinkFractionVelocity_y * fractionMass;
+
+    /*
+    const double sinkMomentum_x = sink->m_state.momentum[0];
+    const double sinkMomentum_y = sink->m_state.momentum[1];
+    const double sinkVelocity_x = sinkMomentum_x / sinkMass;
+    const double sinkVelocity_y = sinkMomentum_y / sinkMass;
+    const double sinkVelocity_squared =
+        sinkVelocity_x * sinkVelocity_x + sinkVelocity_y * sinkVelocity_y;
+
+    const double finalSinkVelocity_x =
+        (sinkFractionMomentum_x + sinkMomentum_x) / (fractionMass + sinkMass);
+    const double finalSinkVelocity_y =
+        (sinkFractionMomentum_y + sinkMomentum_y) / (fractionMass + sinkMass);
+    const double finalSinkVelocity_squared =
+        finalSinkVelocity_x * finalSinkVelocity_x + finalSinkVelocity_y * finalSinkVelocity_y;
+        */
+    const double sinkMomentum_x = sink->m_state.momentum[0];
+    const double sinkMomentum_y = sink->m_state.momentum[1];
+    const double sinkVelocity_x = sinkMomentum_x / sinkMass;
+    const double sinkVelocity_y = sinkMomentum_y / sinkMass;
+    const double sinkVelocity_squared =
+        sinkVelocity_x * sinkVelocity_x + sinkVelocity_y * sinkVelocity_y;
+
+    const double finalSinkVelocity_x = acc_s * sinkFractionVelocity_x + (1 - acc_s) * sinkVelocity_x;
+    const double finalSinkVelocity_y = acc_s * sinkFractionVelocity_y + (1 - acc_s) * sinkVelocity_y;
+    const double finalSinkVelocity_squared =
+        finalSinkVelocity_x * finalSinkVelocity_x + finalSinkVelocity_y * finalSinkVelocity_y;
+
+    const double E_k_initialSink = 0.5 * sinkMass * sinkVelocity_squared;
+    const double E_k_finalSink = 0.5 * (fractionMass + sinkMass) * finalSinkVelocity_squared;
+
+    sink->m_state.momentum[0] = finalSinkVelocity_x * (fractionMass + sinkMass);
+    sink->m_state.momentum[1] = finalSinkVelocity_y * (fractionMass + sinkMass);
+    sink->m_state.E_k -= (E_k_finalSink - E_k_initialSink);
 
     return flow * direction;
 }

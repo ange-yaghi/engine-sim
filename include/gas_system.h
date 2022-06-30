@@ -29,22 +29,8 @@ class GasSystem {
             double dt;
             double direction_x, direction_y;
             double crossSectionArea_0, crossSectionArea_1;
+            double accelerationTimeConstant;
             GasSystem *system_0, *system_1;
-        };
-
-        class FlowState {
-        public:
-            struct FlowFraction {
-                double mass;
-                double momentum[2];
-                double E_k_mol;
-            };
-
-        public:
-            FlowFraction fractions[3];
-
-            inline void changeVelocity(int f, double v_x, double v_y);
-            inline void inelasticCollision(int f0, int f1);
         };
 
     public:
@@ -52,6 +38,7 @@ class GasSystem {
         ~GasSystem() { /* void */ }
 
         void initialize(double P, double V, double T, const Mix &mix = {}, int degreesOfFreedom = 5);
+        void reset(double P, double T, const Mix &mix = {});
 
         void start();
         void end();
@@ -83,6 +70,7 @@ class GasSystem {
         double flow(double dn, double E_k_per_mol, const Mix &mix = {});
         double loseN(double dn);
         double gainN(double dn, double E_k_per_mol, const Mix &mix = {});
+        void velocityWall(double dt, double timeConstant, double dx, double dy);
         void dissipateVelocity(double dt, double timeConstant);
 
         static double flow(const FlowParameters &params);
@@ -104,6 +92,7 @@ class GasSystem {
         inline double kineticEnergy(double n) const;
         inline double kineticEnergyPerMol() const { return kineticEnergy(1.0); }
         inline double totalEnergy() const;
+        inline double c() const;
         inline double dynamicPressure(double dx, double dy) const;
         inline double mass() const;
         inline double pressure() const;
@@ -120,7 +109,6 @@ class GasSystem {
 
     protected:
         State m_state;
-        State m_next;
 
         int m_degreesOfFreedom = 5;
 
@@ -167,6 +155,17 @@ inline double GasSystem::kineticEnergy() const {
 
 inline double GasSystem::kineticEnergy(double n) const {
     return (kineticEnergy() / this->n()) * n;
+}
+
+inline double GasSystem::c() const {
+    if (n() == 0 || kineticEnergy() == 0) return 0;
+
+    const double hcr = heatCapacityRatio();
+    const double staticPressure = pressure();
+    const double density = approximateDensity();
+    const double c = std::sqrt(staticPressure * hcr / density);
+
+    return c;
 }
 
 inline double GasSystem::totalEnergy() const {
@@ -250,46 +249,6 @@ inline double GasSystem::n_o2() const {
 
 inline double GasSystem::heatCapacityRatio() const {
     return heatCapacityRatio(m_degreesOfFreedom);
-}
-
-inline void GasSystem::FlowState::changeVelocity(int f, double v_x, double v_y) {
-    FlowFraction &frac = fractions[f];
-
-    const double vx_0 = frac.momentum[0] / frac.mass;
-    const double vy_0 = frac.momentum[1] / frac.mass;
-
-    const double E_k_current = 0.5 * frac.mass * (vx_0 * vx_0 + vy_0 * vy_0);
-    const double E_k_final = 0.5 * frac.mass * (v_x * v_x + v_y * v_y);
-
-    frac.E_k_mol -= (E_k_final - E_k_current);
-}
-
-inline void GasSystem::FlowState::inelasticCollision(int f0, int f1) {
-    FlowFraction &frac0 = fractions[f0];
-    FlowFraction &frac1 = fractions[f1];
-
-    const double vx_0 = frac0.momentum[0] / frac0.mass;
-    const double vy_0 = frac0.momentum[1] / frac0.mass;
-
-    const double vx_1 = frac1.momentum[0] / frac1.mass;
-    const double vy_1 = frac1.momentum[1] / frac1.mass;
-
-    const double vf_x = (frac0.momentum[0] + frac1.momentum[0]) / (frac0.mass + frac1.mass);
-    const double vf_y = (frac0.momentum[1] + frac1.momentum[1]) / (frac0.mass + frac1.mass);
-
-    const double E_k_current_0 = 0.5 * frac0.mass * (vx_0 * vx_0 + vy_0 * vy_0);
-    const double E_k_current_1 = 0.5 * frac1.mass * (vx_1 * vx_1 + vy_1 * vy_1);
-    const double E_k_final = 0.5 * (frac0.mass + frac1.mass) * (vf_x * vf_x + vf_y * vf_y);
-    const double E_k_residual = E_k_final - (E_k_current_0 + E_k_current_1);
-
-    const double s = frac0.mass / (frac0.mass + frac1.mass);
-    frac0.E_k_mol -= E_k_residual * s;
-    frac1.E_k_mol -= E_k_residual * (1 - s);
-
-    frac0.momentum[0] = vf_x * frac0.mass;
-    frac0.momentum[1] = vf_y * frac0.mass;
-    frac1.momentum[0] = vf_x * frac1.mass;
-    frac1.momentum[1] = vf_y * frac1.mass;
 }
 
 #endif /* ATG_ENGINE_SIM_GAS_SYSTEM_H */

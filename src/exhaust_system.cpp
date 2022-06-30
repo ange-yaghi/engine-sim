@@ -16,6 +16,10 @@ void ExhaustSystem::initialize(Parameters &params) {
             units::pressure(1.0, units::atm),
             params.volume,
             units::celcius(25.0));
+    m_atmosphere.initialize(
+        units::pressure(1.0, units::atm),
+        units::volume(1000.0, units::m3),
+        units::celcius(25.0));
     m_flowK = params.flowK;
 }
 
@@ -33,12 +37,20 @@ void ExhaustSystem::process(double dt) {
     airMix.p_inert = 1.0;
     airMix.p_o2 = 0.0;
 
-    m_flow = m_system.flow(
-        m_flowK,
-        dt,
-        units::pressure(1.0, units::atm),
-        units::celcius(25),
-        airMix);
+    GasSystem::FlowParameters flowParams;
+    flowParams.accelerationTimeConstant = 0.01;
+    flowParams.crossSectionArea_0 = units::area(100, units::cm2);
+    flowParams.crossSectionArea_1 = units::area(100, units::cm2);
+    flowParams.direction_x = 0.0;
+    flowParams.direction_y = -1.0;
+    flowParams.dt = dt;
+
+    m_atmosphere.reset(units::pressure(1.0, units::atm), units::celcius(25.0), airMix);
+    flowParams.system_0 = &m_atmosphere;
+    flowParams.system_1 = &m_system;
+    flowParams.k_flow = m_flowK;
+
+    m_flow = m_system.flow(flowParams);
 }
 
 void ExhaustSystem::end() {
