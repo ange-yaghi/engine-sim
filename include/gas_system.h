@@ -37,6 +37,7 @@ class GasSystem {
         GasSystem() { /* void */ }
         ~GasSystem() { /* void */ }
 
+        void setGeometry(double width, double height, double dx, double dy);
         void initialize(double P, double V, double T, const Mix &mix = {}, int degreesOfFreedom = 5);
         void reset(double P, double T, const Mix &mix = {});
 
@@ -67,9 +68,10 @@ class GasSystem {
             double hcr,
             double chokedFlowLimit,
             double chokedFlowRateCached);
-        double flow(double dn, double E_k_per_mol, const Mix &mix = {});
-        double loseN(double dn);
+        double loseN(double dn, double E_k_per_mol);
         double gainN(double dn, double E_k_per_mol, const Mix &mix = {});
+
+        void updateVelocity(double dt);
         void velocityWall(double dt, double timeConstant, double dx, double dy);
         void dissipateVelocity(double dt, double timeConstant);
 
@@ -107,13 +109,18 @@ class GasSystem {
         inline double heatCapacityRatio() const;
         inline Mix mix() const { return m_state.mix; }
 
-    protected:
+    //protected:
         State m_state;
 
         int m_degreesOfFreedom = 5;
 
-        double m_chokedFlowLimit;
-        double m_chokedFlowFactorCached;
+        double m_chokedFlowLimit = 0;
+        double m_chokedFlowFactorCached = 0;
+
+        double m_width = 0.0;
+        double m_height = 0.0;
+        double m_dx = 0.0;
+        double m_dy = 0.0;
 };
 
 inline constexpr double GasSystem::kineticEnergyPerMol(double T, int degreesOfFreedom) {

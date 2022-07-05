@@ -117,8 +117,8 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlow) {
     system1.start();
     system2.start();
 
-    system1.flow(maxFlowIn, system2.kineticEnergyPerMol(), system2.mix());
-    system2.flow(-maxFlowIn, system1.kineticEnergyPerMol(), system1.mix());
+    //system1.flow(maxFlowIn, system2.kineticEnergyPerMol(), system2.mix());
+    //system2.flow(-maxFlowIn, system1.kineticEnergyPerMol(), system1.mix());
 
     system1.end();
     system2.end();
@@ -134,8 +134,8 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlow) {
     system1.start();
     system2.start();
 
-    system1.flow(maxFlowOut, system2.kineticEnergyPerMol(), system2.mix());
-    system2.flow(-maxFlowOut, system1.kineticEnergyPerMol(), system1.mix());
+    //system1.flow(maxFlowOut, system2.kineticEnergyPerMol(), system2.mix());
+    //system2.flow(-maxFlowOut, system1.kineticEnergyPerMol(), system1.mix());
 
     system1.end();
     system2.end();
@@ -158,7 +158,7 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfinite) {
     const double E_k_per_mol = GasSystem::kineticEnergyPerMol(T_env, system1.degreesOfFreedom());
 
     system1.start();
-    system1.flow(maxFlow, E_k_per_mol);
+    //system1.flow(maxFlow, E_k_per_mol);
     system1.end();
 
     EXPECT_NEAR(system1.pressure(), P_env, 1E-6);
@@ -178,7 +178,7 @@ TEST(GasSystemTests, PressureEquilibriumMaxFlowInfiniteOverpressure) {
     const double maxFlow = system1.pressureEquilibriumMaxFlow(P_env, T_env);
 
     system1.start();
-    system1.flow(maxFlow, T_env);
+    //system1.flow(maxFlow, T_env);
     system1.end();
 
     EXPECT_NEAR(system1.pressure(), P_env, 1E-6);
@@ -411,32 +411,31 @@ TEST(GasSystemTests, GasVelocityReducesStaticPressure) {
     csv.initialize();
     csv.m_columns = 5;
 
-    GasSystem system1, system2, atmosphere;
+    GasSystem system1, system2;
     system1.initialize(
         units::pressure(15, units::psi),
         units::volume(300, units::cc),
         units::celcius(25.0)
     );
+    system1.setGeometry(units::distance(10, units::cm), units::distance(10, units::cm), 1.0, 0.0);
 
     system2.initialize(
         units::pressure(2, units::psi),
         units::volume(1.0, units::L),
         units::celcius(25.0)
     );
+    system2.setGeometry(units::distance(10, units::cm), units::distance(10, units::cm), 1.0, 0.0);
 
-    atmosphere.initialize(
-        units::pressure(15, units::psi),
-        units::volume(10000, units::m3),
-        units::celcius(25.0)
-    );
+    system1.m_state.momentum[0] = 0.001;
+    system2.m_state.momentum[0] = 0.0;
 
     const double initialSystemEnergy = system1.totalEnergy() + system2.totalEnergy();
     const double initialMolecules = system1.n() + system2.n();
 
     GasSystem::FlowParameters params;
     params.k_flow = GasSystem::k_28inH2O(500.0) * 1.0;
-    params.crossSectionArea_0 = 4.0 * units::cm * units::cm;
-    params.crossSectionArea_1 = 50.0 * units::cm * units::cm;
+    params.crossSectionArea_0 = 50.0 * units::cm * units::cm;
+    params.crossSectionArea_1 = 4.0 * units::cm * units::cm;
     params.direction_x = 1.0;
     params.direction_y = 0.0;
     params.dt = 1 / 10000.0;
@@ -472,12 +471,14 @@ TEST(GasSystemTests, GasVelocityReducesStaticPressure) {
         system2.start();
 
         GasSystem::flow(params);
+        system1.updateVelocity(params.dt);
+        system2.updateVelocity(params.dt);
 
         //system1.velocityWall(params.dt, 0.001, -1.0, 0.0);
         //system2.velocityWall(params.dt, 0.001, 1.0, 0.0);
 
-        system1.dissipateVelocity(params.dt, 0.01);
-        system2.dissipateVelocity(params.dt, 0.01);
+        //system1.dissipateVelocity(params.dt, 0.01);
+        //system2.dissipateVelocity(params.dt, 0.01);
 
         system1.end();
         system2.end();
