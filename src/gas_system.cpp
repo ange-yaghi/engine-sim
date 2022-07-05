@@ -302,8 +302,8 @@ void GasSystem::updateVelocity(double dt) {
     const double v0_x = m_state.momentum[0] * inv_m;
     const double v0_y = m_state.momentum[1] * inv_m;
 
-    m_state.momentum[0] += d_momentum_x * dt;
-    m_state.momentum[1] += d_momentum_y * dt;
+    m_state.momentum[0] -= d_momentum_x * dt;
+    m_state.momentum[1] -= d_momentum_y * dt;
 
     const double v1_x = m_state.momentum[0] * inv_m;
     const double v1_y = m_state.momentum[1] * inv_m;
@@ -499,7 +499,7 @@ double GasSystem::flow(const FlowParameters &params) {
     // Change in momentum due to pressure differential
     const double pressureDifferential = (sourcePressure - sinkPressure);
 
-    const double SA = units::area(1.0, units::cm2);
+    const double SA = units::area(6.0, units::cm2);
 
     source->m_state.momentum[0] += dx * pressureDifferential * SA * params.dt;
     source->m_state.momentum[1] += dy * pressureDifferential * SA * params.dt;
@@ -535,8 +535,6 @@ double GasSystem::flow(const FlowParameters &params) {
     sink->m_state.E_k -=
         0.5 * sink->mass()
         * (sinkVelocity1_y * sinkVelocity1_y - sinkVelocity0_y * sinkVelocity0_y);
-
-    int a = 0;
 
     return flow * direction;
 }

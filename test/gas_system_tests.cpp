@@ -409,7 +409,7 @@ TEST(GasSystemTests, FlowRateConstant) {
 TEST(GasSystemTests, GasVelocityReducesStaticPressure) {
     atg_csv::CsvData csv;
     csv.initialize();
-    csv.m_columns = 5;
+    csv.m_columns = 6;
 
     GasSystem system1, system2;
     system1.initialize(
@@ -424,7 +424,7 @@ TEST(GasSystemTests, GasVelocityReducesStaticPressure) {
         units::volume(1.0, units::L),
         units::celcius(25.0)
     );
-    system2.setGeometry(units::distance(10, units::cm), units::distance(10, units::cm), 1.0, 0.0);
+    system2.setGeometry(units::distance(10, units::cm), units::distance(2, units::cm), 1.0, 0.0);
 
     system1.m_state.momentum[0] = 0.001;
     system2.m_state.momentum[0] = 0.0;
@@ -448,6 +448,7 @@ TEST(GasSystemTests, GasVelocityReducesStaticPressure) {
     csv.write("P_1");
     csv.write("v_0");
     csv.write("v_1");
+    csv.write("total_energy");
 
     const int steps = 1000;
     for (int i = 1; i <= steps; ++i) {
@@ -489,6 +490,7 @@ TEST(GasSystemTests, GasVelocityReducesStaticPressure) {
         csv.write(std::to_string(P_1).c_str());
         csv.write(std::to_string(velocity_x_0).c_str());
         csv.write(std::to_string(velocity_x_1).c_str());
+        csv.write(std::to_string(systemEnergy).c_str());
     }
 
     const double finalSystemEnergy = system1.totalEnergy() + system2.totalEnergy();
@@ -515,12 +517,22 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         units::volume(1000, units::cc),
         units::celcius(1000.0)
     );
+    system1.setGeometry(
+        units::distance(10.0, units::cm),
+        units::distance(10.0, units::cm),
+        1.0,
+        0.0);
 
     system2.initialize(
         units::pressure(15, units::psi),
         units::volume(300, units::cc),
         units::celcius(25.0)
     );
+    system2.setGeometry(
+        units::distance(5.0, units::cm),
+        units::distance(5.0, units::cm),
+        1.0,
+        0.0);
 
     atmosphere.initialize(
         units::pressure(15, units::psi),
@@ -593,6 +605,9 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         params.crossSectionArea_1 = atmosphereArea;
         params.k_flow = GasSystem::k_carb(5000.0);
         GasSystem::flow(params);
+
+        system1.updateVelocity(params.dt);
+        system2.updateVelocity(params.dt);
 
         //system1.velocityWall(params.dt, 0.001, -1.0, 0.0);
         //system2.velocityWall(params.dt, 0.001, 1.0, 0.0);
