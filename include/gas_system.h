@@ -94,6 +94,7 @@ class GasSystem {
         inline double kineticEnergy(double n) const;
         inline double kineticEnergyPerMol() const { return kineticEnergy(1.0); }
         inline double totalEnergy() const;
+        inline double bulkKineticEnergy() const;
         inline double c() const;
         inline double dynamicPressure(double dx, double dy) const;
         inline double mass() const;
@@ -184,6 +185,16 @@ inline double GasSystem::totalEnergy() const {
     const double v_squared = v_x * v_x + v_y * v_y;
 
     return kineticEnergy() + 0.5 * mass() * v_squared;
+}
+
+inline double GasSystem::bulkKineticEnergy() const {
+    const double m = mass();
+    if (m == 0) return 0;
+
+    const double v_x = m_state.momentum[0] / m;
+    const double v_y = m_state.momentum[1] / m;
+    const double v_squared = v_x * v_x + v_y * v_y;
+    return 0.5 * m * v_squared;
 }
 
 inline double GasSystem::dynamicPressure(double dx, double dy) const {
