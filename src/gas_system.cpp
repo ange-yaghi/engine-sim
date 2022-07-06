@@ -269,6 +269,26 @@ double GasSystem::gainN(double dn, double E_k_per_mol, const Mix &mix) {
     return -dn;
 }
 
+void GasSystem::dissipateExcessVelocity() {
+    const double v_x = velocity_x();
+    const double v_y = velocity_y();
+    const double v_squared = v_x * v_x + v_y * v_y;
+    const double c = this->c();
+    const double c_squared = c * c;
+
+    if (c_squared > v_squared) {
+        return;
+    }
+
+    const double k_squared = c_squared / v_squared;
+    const double k = std::sqrt(k_squared);
+
+    m_state.momentum[0] *= k;
+    m_state.momentum[1] *= k;
+
+    m_state.E_k += 0.5 * mass() * (v_squared - c_squared);
+}
+
 void GasSystem::updateVelocity(double dt) {
     const double depth = volume() / (m_width * m_height);
     
@@ -479,8 +499,8 @@ double GasSystem::flow(const FlowParameters &params) {
     const double sinkFractionMomentum_x = sinkFractionVelocity_x * fractionMass;
     const double sinkFractionMomentum_y = sinkFractionVelocity_y * fractionMass;
 
-    //sink->m_state.momentum[0] += sinkFractionMomentum_x;
-    //sink->m_state.momentum[1] += sinkFractionMomentum_y;
+    sink->m_state.momentum[0] += sinkFractionMomentum_x;
+    sink->m_state.momentum[1] += sinkFractionMomentum_y;
 
     // Change in momentum due to pressure differential
     const double pressureDifferential = (sourcePressure - sinkPressure);

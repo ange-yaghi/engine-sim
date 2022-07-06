@@ -70,6 +70,7 @@ class GasSystem {
             double chokedFlowRateCached);
         double loseN(double dn, double E_k_per_mol);
         double gainN(double dn, double E_k_per_mol, const Mix &mix = {});
+        void dissipateExcessVelocity();
 
         void updateVelocity(double dt);
         void velocityWall(double dt, double timeConstant, double dx, double dy);

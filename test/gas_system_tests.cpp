@@ -514,7 +514,7 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
     const double cylinderArea =
         constants::pi * units::distance(2.0, units::inch) * units::distance(2.0, units::inch);
     const double tubeArea =
-        constants::pi * units::distance(1.75, units::inch) * units::distance(1.75, units::inch);
+        constants::pi * units::distance(1.75 / 2, units::inch) * units::distance(1.75 / 2, units::inch);
 
     GasSystem system1, system2, atmosphere;
     system1.initialize(
@@ -530,11 +530,11 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
 
     system2.initialize(
         units::pressure(15, units::psi),
-        tubeArea * units::distance(100.0, units::inch),
+        tubeArea * units::distance(50.0, units::inch),
         units::celcius(25.0)
     );
     system2.setGeometry(
-        units::distance(100.0, units::inch),
+        units::distance(50.0, units::inch),
         std::sqrt(tubeArea),
         1.0,
         0.0);
@@ -582,14 +582,6 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         const double P_1 = system2.pressure() + system2.dynamicPressure(1.0, 0.0);
         const double exhaustStaticPressure = system2.pressure();
 
-        if (velocity_x_1 < -10000 || i == 410) {
-            int a = 0;
-        }
-
-        if (i % 100 == 0) {
-            int a = 0;
-        }
-
         system1.start();
         system2.start();
 
@@ -608,11 +600,13 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         params.system_1 = &atmosphere;
         params.crossSectionArea_0 = tubeArea;
         params.crossSectionArea_1 = atmosphereArea;
-        params.k_flow = GasSystem::k_carb(300.0);
+        params.k_flow = GasSystem::k_carb(1000);
         GasSystem::flow(params);
 
         system1.updateVelocity(params.dt);
         system2.updateVelocity(params.dt);
+        system1.dissipateExcessVelocity();
+        system2.dissipateExcessVelocity();
 
         //system1.velocityWall(params.dt, 0.001, -1.0, 0.0);
         //system2.velocityWall(params.dt, 0.001, 1.0, 0.0);
