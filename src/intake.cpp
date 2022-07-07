@@ -25,10 +25,22 @@ void Intake::initialize(Parameters &params) {
             units::pressure(1.0, units::atm),
             params.Volume,
             units::celcius(25.0));
+    m_system.setGeometry(
+        units::distance(10.0, units::inch),
+        units::distance(4.0, units::inch),
+        1.0,
+        0.0);
+
     m_atmosphere.initialize(
         units::pressure(1.0, units::atm),
         units::volume(1000.0, units::m3),
         units::celcius(25.0));
+    m_atmosphere.setGeometry(
+        units::distance(100.0, units::m),
+        units::distance(100.0, units::m),
+        1.0,
+        0.0);
+
     m_inputFlowK = params.InputFlowK;
     m_molecularAfr = params.MolecularAfr;
     m_idleFlowK = params.IdleFlowK;

@@ -509,7 +509,7 @@ TEST(GasSystemTests, GasVelocityReducesStaticPressure) {
 TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
     atg_csv::CsvData csv;
     csv.initialize();
-    csv.m_columns = 6;
+    csv.m_columns = 7;
 
     const double cylinderArea =
         constants::pi * units::distance(2.0, units::inch) * units::distance(2.0, units::inch);
@@ -545,7 +545,10 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         units::celcius(25.0)
     );
 
-    const double initialSystemEnergy = system1.totalEnergy() + system2.totalEnergy();
+    const double initialSystemEnergy =
+        system1.totalEnergy()
+        + system2.totalEnergy()
+        + atmosphere.totalEnergy();
     const double initialMolecules = system1.n() + system2.n();
 
     const double atmosphereArea =
@@ -555,11 +558,12 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
     params.k_flow = GasSystem::k_28inH2O(230.0) * 1.0;        
     params.direction_x = 1.0;
     params.direction_y = 0.0;
-    params.dt = 1 / (10000.0 * 16);
+    params.dt = 1 / (16 * 10000.0);
     params.system_0 = &system1;
     params.system_1 = &system2;
     params.accelerationTimeConstant = 0.001;
 
+    csv.write("iteration");
     csv.write("time");
     csv.write("static_cylinder_pressure");
     csv.write("exhaust_pressure");
@@ -574,7 +578,10 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         const double totalPressure =
             system2.pressure() + system2.dynamicPressure(1.0, 0.0);
 
-        const double systemEnergy = system1.totalEnergy() + system2.totalEnergy();
+        const double systemEnergy0 =
+            system1.totalEnergy()
+            + system2.totalEnergy()
+            + atmosphere.totalEnergy();
         const double velocity_x_0 = system1.velocity_x();
         const double velocity_x_1 = system2.velocity_x();
 
@@ -582,11 +589,16 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         const double P_1 = system2.pressure() + system2.dynamicPressure(1.0, 0.0);
         const double exhaustStaticPressure = system2.pressure();
 
+        //EXPECT_NEAR(systemEnergy0, initialSystemEnergy, 1E-4);
+
         system1.start();
         system2.start();
 
         if (system1.volume() > units::volume(118.0, units::cc)) {
-            system1.changeVolume(-units::volume(2.0, units::cc));
+            system1.changeVolume(-units::volume(200000.0, units::cc) * params.dt);
+        }
+        else {
+            system1.setVolume(units::volume(118.0, units::cc));
         }
 
         params.system_0 = &system1;
@@ -596,12 +608,26 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         params.k_flow = GasSystem::k_28inH2O(230.0) * 1.0;
         GasSystem::flow(params);
 
+        const double systemEnergy1 =
+            system1.totalEnergy()
+            + system2.totalEnergy()
+            + atmosphere.totalEnergy();
+
+        if (i == 26) {
+            int a = 0;
+        }
+
         params.system_0 = &system2;
         params.system_1 = &atmosphere;
         params.crossSectionArea_0 = tubeArea;
         params.crossSectionArea_1 = atmosphereArea;
         params.k_flow = GasSystem::k_carb(1000);
         GasSystem::flow(params);
+
+        const double systemEnergy2 =
+            system1.totalEnergy()
+            + system2.totalEnergy()
+            + atmosphere.totalEnergy();
 
         system1.updateVelocity(params.dt);
         system2.updateVelocity(params.dt);
@@ -618,6 +644,7 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         system2.end();
 
         ++csv.m_rows;
+        csv.write(std::to_string(i).c_str());
         csv.write(std::to_string(i * params.dt).c_str());
         csv.write(std::to_string(P_0).c_str());
         csv.write(std::to_string(P_1).c_str());

@@ -16,10 +16,22 @@ void ExhaustSystem::initialize(Parameters &params) {
             units::pressure(1.0, units::atm),
             params.volume,
             units::celcius(25.0));
+    m_system.setGeometry(
+        units::distance(1.0, units::m),
+        units::distance(3.0, units::inch),
+        1.0,
+        0.0);
+
     m_atmosphere.initialize(
         units::pressure(1.0, units::atm),
         units::volume(1000.0, units::m3),
         units::celcius(25.0));
+    m_atmosphere.setGeometry(
+        units::distance(10.0, units::m),
+        units::distance(10.0, units::m),
+        1.0,
+        0.0);
+
     m_flowK = params.flowK;
 }
 

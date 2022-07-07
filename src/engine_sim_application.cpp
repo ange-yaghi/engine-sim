@@ -411,8 +411,8 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getIntake(0)->initialize(inParams);
 
     ExhaustSystem::Parameters esParams;
-    esParams.flowK = GasSystem::k_carb(1000.0);
-    esParams.volume = units::volume(1.0, units::L);
+    esParams.flowK = GasSystem::k_carb(100.0);
+    esParams.volume = units::volume(40.0, units::L);
     m_iceEngine.getExhaustSystem(0)->initialize(esParams);
     m_iceEngine.getExhaustSystem(1)->initialize(esParams);
 
