@@ -76,8 +76,13 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         void resetLastTimestepExhaustFlow() { m_lastTimestepTotalExhaustFlow = 0; }
         double getLastTimestepExhaustFlow() const { return m_lastTimestepTotalExhaustFlow; }
 
+        void resetLastTimestepIntakeFlow() { m_lastTimestepTotalIntakeFlow = 0; }
+        double getLastTimestepIntakeFlow() const { return m_lastTimestepTotalIntakeFlow; }
+
         Function *m_meanPistonSpeedToTurbulence;
         GasSystem m_system;
+        GasSystem m_intakeRunner;
+        GasSystem m_exhaustRunner;
         FlameEvent m_flameEvent;
         bool m_lit;
 
@@ -90,13 +95,11 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double calculateFrictionForce(double v) const;
         void updateCycleStates();
 
-        GasSystem m_intakeRunner;
-        GasSystem m_exhaustRunner;
-
         double m_intakeFlowRate;
         double m_exhaustFlowRate;
 
         double m_lastTimestepTotalExhaustFlow;
+        double m_lastTimestepTotalIntakeFlow;
         double m_exhaustFlow;
 
         double m_crankcasePressure;

@@ -103,8 +103,8 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_cylinderPressureScope->setBufferSize(1024);
     m_cylinderPressureScope->m_xMin = 0.0f;
     m_cylinderPressureScope->m_xMax = constants::pi * 4;
-    m_cylinderPressureScope->m_yMin = -(float)units::pressure(250, units::psi);
-    m_cylinderPressureScope->m_yMax = (float)units::pressure(1000, units::psi);
+    m_cylinderPressureScope->m_yMin = -(float)units::pressure(50, units::psi); //250, 1000
+    m_cylinderPressureScope->m_yMax = (float)units::pressure(150, units::psi);
     m_cylinderPressureScope->m_lineWidth = 2.0f;
     m_cylinderPressureScope->m_drawReverse = false;
     m_cylinderPressureScope->i_color = m_app->getOrange();

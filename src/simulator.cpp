@@ -16,7 +16,7 @@ Simulator::Simulator() {
     m_currentIteration = 0;
     m_simulationSpeed = 1.0;
     m_targetSynthesizerLatency = 0.1;
-    m_simulationFrequency = 10000;//11000;//9000;//13000
+    m_simulationFrequency = 4000;//11000;//9000;//13000
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
@@ -311,6 +311,7 @@ bool Simulator::simulateStep() {
 
     for (int i = 0; i < cylinderCount; ++i) {
         m_engine->getChamber(i)->resetLastTimestepExhaustFlow();
+        m_engine->getChamber(i)->resetLastTimestepIntakeFlow();
     }
 
     constexpr int iterations = 16;

@@ -23,6 +23,7 @@ CombustionChamber::CombustionChamber() {
     m_nBurntFuel = 0;
 
     m_lastTimestepTotalExhaustFlow = 0;
+    m_lastTimestepTotalIntakeFlow = 0;
     m_exhaustFlow = 0;
     m_exhaustFlowRate = 0;
     m_intakeFlowRate = 0;
@@ -48,9 +49,15 @@ void CombustionChamber::initialize(const Parameters &params) {
         m_pressure[i] = 0;
     }
 
+    m_system.setGeometry(
+        units::distance(4.0, units::inch),
+        units::distance(1.0, units::inch),
+        1.0,
+        0.0);
+
     m_intakeRunner.initialize(
         units::pressure(1.0, units::atm),
-        units::volume(300.0, units::cc),
+        units::volume(320.0, units::cc),
         units::celcius(25.0));
     m_intakeRunner.setGeometry(
         units::distance(10.0, units::cm),
@@ -60,11 +67,11 @@ void CombustionChamber::initialize(const Parameters &params) {
 
     m_exhaustRunner.initialize(
         units::pressure(1.0, units::atm),
-        units::volume(300.0, units::cc),
+        units::volume(4.5, units::L),
         units::celcius(25.0));
     m_exhaustRunner.setGeometry(
         units::distance(90.0, units::inch),
-        units::distance(2.0, units::inch),
+        units::distance(1.75, units::inch),
         1.0,
         0.0);
 }
@@ -149,7 +156,7 @@ void CombustionChamber::ignite() {
         const double r = (double)rand() / RAND_MAX;
         const double s = ((equivalenceRatio - fuel_air_low) / (fuel_air_high - fuel_air_low)) * (r * 0.5 + 0.5);
 
-        m_flameEvent.efficiency = 0.75 * (0.7 + 0.3 * ((double)rand() / RAND_MAX));
+        m_flameEvent.efficiency = 1.0 * (0.7 + 0.3 * ((double)rand() / RAND_MAX));
         //m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
 
         const double turbulence = m_meanPistonSpeedToTurbulence->sampleTriangle(
@@ -196,7 +203,7 @@ void CombustionChamber::flow(double dt) {
 
     const double start_n = m_system.n();
 
-    const double intakeFlow = 0.0; /* m_system.flow(
+    /*const double intakeFlow = m_system.flow(
             m_intakeFlowRate,
             dt,
             &m_head->getIntake(m_piston->getCylinderIndex())->m_system,
@@ -215,35 +222,43 @@ void CombustionChamber::flow(double dt) {
     flowParams.accelerationTimeConstant = 0.001;
     flowParams.dt = dt;
 
-    flowParams.k_flow = GasSystem::k_carb(100.0);
-    flowParams.crossSectionArea_0 = units::area(2.0, units::cm2);
-    flowParams.crossSectionArea_1 = units::area(2.0, units::cm2);
+    flowParams.k_flow = GasSystem::k_carb(2000.0);
+    flowParams.crossSectionArea_0 = units::area(2.54 * 2.54, units::cm2);
+    flowParams.crossSectionArea_1 = units::area(2.54 * 2.54, units::cm2);
     flowParams.direction_x = 1.0;
     flowParams.direction_y = 0.0;
     flowParams.system_0 = &m_head->getIntake(m_piston->getCylinderIndex())->m_system;
     flowParams.system_1 = &m_intakeRunner;
     GasSystem::flow(flowParams);
 
+    m_intakeRunner.dissipateExcessVelocity();
+
     flowParams.k_flow = m_intakeFlowRate;
-    flowParams.crossSectionArea_0 = units::area(10.0, units::cm2);
-    flowParams.crossSectionArea_1 = units::area(20.0, units::cm2);
+    flowParams.crossSectionArea_0 = units::area(2.54 * 2.54, units::cm2) * m_intakeFlowRate * 1000;
+    flowParams.crossSectionArea_1 = units::area(20.0, units::cm2) * m_intakeFlowRate * 2000;
     flowParams.direction_x = 1.0;
     flowParams.direction_y = 0.0;
     flowParams.system_0 = &m_intakeRunner;
     flowParams.system_1 = &m_system;
-    GasSystem::flow(flowParams);
+    const double intakeFlow = GasSystem::flow(flowParams);
+
+    m_intakeRunner.dissipateExcessVelocity();
+    m_system.dissipateExcessVelocity();
 
     flowParams.k_flow = m_exhaustFlowRate;
-    flowParams.crossSectionArea_0 = units::area(100.0, units::cm2);
+    flowParams.crossSectionArea_0 = units::area(100.0, units::cm2) * m_exhaustFlowRate * 2000;
     flowParams.crossSectionArea_1 =
-        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch);
+        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch) * m_exhaustFlowRate * 2000;
     flowParams.direction_x = 1.0;
     flowParams.direction_y = 0.0;
     flowParams.system_0 = &m_system;
     flowParams.system_1 = &m_exhaustRunner;
     const double exhaustFlow = GasSystem::flow(flowParams);
 
-    flowParams.k_flow = GasSystem::k_carb(100.0);
+    m_system.dissipateExcessVelocity();
+    m_exhaustRunner.dissipateExcessVelocity();
+
+    flowParams.k_flow = GasSystem::k_carb(2000.0);
     flowParams.crossSectionArea_0 =
         constants::pi * units::distance(1.0, units::inch) * units::distance(1.0, units::inch);
     flowParams.crossSectionArea_1 =
@@ -254,12 +269,17 @@ void CombustionChamber::flow(double dt) {
     flowParams.system_1 = &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system;
     GasSystem::flow(flowParams);
 
+    m_intakeRunner.updateVelocity(dt, 1.0);
+    m_system.updateVelocity(dt);
+    m_exhaustRunner.updateVelocity(dt);
+
     if (std::abs(intakeFlow) > 1E-9 && m_lit) {
         m_lit = false;
     }
 
     m_exhaustFlow = exhaustFlow;
     m_lastTimestepTotalExhaustFlow += exhaustFlow;
+    m_lastTimestepTotalIntakeFlow += intakeFlow;
 
     if (m_lit) {
         CylinderBank *bank = m_head->getCylinderBank();

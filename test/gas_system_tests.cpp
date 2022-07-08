@@ -558,7 +558,7 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
     params.k_flow = GasSystem::k_28inH2O(230.0) * 1.0;        
     params.direction_x = 1.0;
     params.direction_y = 0.0;
-    params.dt = 1 / (16 * 10000.0);
+    params.dt = 1 / (16 * 4000.0);
     params.system_0 = &system1;
     params.system_1 = &system2;
     params.accelerationTimeConstant = 0.001;
@@ -605,7 +605,7 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         params.system_1 = &system2;
         params.crossSectionArea_0 = cylinderArea;
         params.crossSectionArea_1 = tubeArea;
-        params.k_flow = GasSystem::k_28inH2O(230.0) * 1.0;
+        params.k_flow = GasSystem::k_28inH2O(230.0) * 0.0;
         GasSystem::flow(params);
 
         const double systemEnergy1 =

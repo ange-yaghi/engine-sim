@@ -51,8 +51,8 @@ void ExhaustSystem::process(double dt) {
 
     GasSystem::FlowParameters flowParams;
     flowParams.accelerationTimeConstant = 0.01;
-    flowParams.crossSectionArea_0 = units::area(100, units::cm2);
-    flowParams.crossSectionArea_1 = units::area(100, units::cm2);
+    flowParams.crossSectionArea_0 = units::area(10, units::cm2);
+    flowParams.crossSectionArea_1 = units::area(10, units::cm2);
     flowParams.direction_x = 0.0;
     flowParams.direction_y = -1.0;
     flowParams.dt = dt;
@@ -63,6 +63,9 @@ void ExhaustSystem::process(double dt) {
     flowParams.k_flow = m_flowK;
 
     m_flow = m_system.flow(flowParams);
+
+    m_system.dissipateExcessVelocity();
+    m_system.updateVelocity(dt);
 }
 
 void ExhaustSystem::end() {

@@ -78,8 +78,8 @@ void Intake::process(double dt) {
 
     GasSystem::FlowParameters flowParams;
     flowParams.accelerationTimeConstant = 0.01;
-    flowParams.crossSectionArea_0 = units::area(100, units::cm2);
-    flowParams.crossSectionArea_1 = units::area(100, units::cm2);
+    flowParams.crossSectionArea_0 = units::area(100, units::cm2) * flowAttenuation;
+    flowParams.crossSectionArea_1 = units::area(100, units::cm2) * flowAttenuation;
     flowParams.direction_x = 0.0;
     flowParams.direction_y = -1.0;
     flowParams.dt = dt;
@@ -95,6 +95,9 @@ void Intake::process(double dt) {
     flowParams.system_1 = &m_system;
     flowParams.k_flow = m_idleFlowK;
     const double idleCircuitFlow = m_system.flow(flowParams);
+
+    m_system.dissipateExcessVelocity();
+    m_system.updateVelocity(dt);
 
     if (m_flow < 0) {
         m_totalFuelInjected += -fuelAirMix.p_fuel * m_flow;

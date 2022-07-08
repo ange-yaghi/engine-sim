@@ -297,9 +297,9 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(-units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift0->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
+    camLift0->addSample(units::angle(50, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));//75
-    camLift0->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
+    camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -322,14 +322,24 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));*/
 
     Function *camLift1 = new Function;
-    camLift1->initialize(1, units::angle(20, units::deg));
-    camLift1->addSample(0.0, units::distance(500, units::thou));
-    camLift1->addSample(-units::angle(20, units::deg), units::distance(250, units::thou));
-    camLift1->addSample(units::angle(20, units::deg), units::distance(250, units::thou));
-    camLift1->addSample(-units::angle(40, units::deg), units::distance(100, units::thou));
-    camLift1->addSample(units::angle(40, units::deg), units::distance(100, units::thou));
-    camLift1->addSample(-units::angle(60, units::deg), units::distance(0, units::thou));
-    camLift1->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift1->initialize(1, units::angle(10, units::deg));
+    camLift1->setInputScale(1.0);//1.15
+    camLift1->setOutputScale(1.0);
+    camLift1->addSample(0.0, units::distance(578, units::thou));
+    camLift1->addSample(-units::angle(10, units::deg), units::distance(550, units::thou));
+    camLift1->addSample(units::angle(10, units::deg), units::distance(550, units::thou));
+    camLift1->addSample(-units::angle(20, units::deg), units::distance(500, units::thou));
+    camLift1->addSample(units::angle(20, units::deg), units::distance(500, units::thou));
+    camLift1->addSample(-units::angle(30, units::deg), units::distance(440, units::thou));
+    camLift1->addSample(units::angle(30, units::deg), units::distance(440, units::thou));
+    camLift1->addSample(-units::angle(40, units::deg), units::distance(350, units::thou));
+    camLift1->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
+    camLift1->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
+    camLift1->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
+    camLift1->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));//75
+    camLift1->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
+    camLift1->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
+    camLift1->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift1->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
     camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
 
@@ -340,7 +350,7 @@ void EngineSimApplication::initialize() {
     camParams.Lobes = 4;
     camParams.Advance = units::angle(advance, units::deg);
 
-    camParams.LobeProfile = camLift0;
+    camParams.LobeProfile = camLift1;
     exhaustCamRight->initialize(camParams);
     exhaustCamLeft->initialize(camParams);
     camParams.LobeProfile = camLift0;
@@ -389,7 +399,7 @@ void EngineSimApplication::initialize() {
     CylinderHead::Parameters chParams;
     chParams.IntakePortFlow = flow;
     chParams.ExhaustPortFlow = exhaustFlow;
-    chParams.CombustionChamberVolume = units::volume(118.0-50, units::cc);
+    chParams.CombustionChamberVolume = units::volume(118.0, units::cc);
 
     chParams.IntakeCam = intakeCamLeft;
     chParams.ExhaustCam = exhaustCamLeft;
@@ -411,7 +421,7 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getIntake(0)->initialize(inParams);
 
     ExhaustSystem::Parameters esParams;
-    esParams.flowK = GasSystem::k_carb(100.0);
+    esParams.flowK = GasSystem::k_carb(1000.0);
     esParams.volume = units::volume(40.0, units::L);
     m_iceEngine.getExhaustSystem(0)->initialize(esParams);
     m_iceEngine.getExhaustSystem(1)->initialize(esParams);
@@ -595,9 +605,21 @@ void EngineSimApplication::process(float frame_dt) {
         m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
             totalFlow / (m_simulator.getTimestep()));
+
+        const double runnerPressure = m_simulator.getEngine()->getChamber(0)->m_intakeRunner.pressure()
+            + m_simulator.getEngine()->getChamber(0)->m_intakeRunner.dynamicPressure(1.0, 0.0);
+        const double cylinderPressure = m_simulator.getEngine()->getChamber(0)->m_system.pressure()
+            + m_simulator.getEngine()->getChamber(0)->m_system.dynamicPressure(-1.0, 0.0);
+
+        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
+        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
+        //    (runnerPressure - cylinderPressure) * 100);
+        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
+        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
+        //    m_simulator.getEngine()->getChamber(0)->m_intakeRunner.velocity_x() * 1000);
         m_oscCluster->getCylinderPressureScope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-            m_simulator.getEngine()->getChamber(0)->m_system.pressure());
+            m_simulator.getEngine()->getChamber(0)->getLastTimestepIntakeFlow() * 100000000);
         m_oscCluster->getExhaustValveLiftOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
             m_simulator.getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(
