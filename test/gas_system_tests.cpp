@@ -605,7 +605,7 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
         params.system_1 = &system2;
         params.crossSectionArea_0 = cylinderArea;
         params.crossSectionArea_1 = tubeArea;
-        params.k_flow = GasSystem::k_28inH2O(230.0) * 0.0;
+        params.k_flow = GasSystem::k_28inH2O(230.0);
         GasSystem::flow(params);
 
         const double systemEnergy1 =
@@ -655,6 +655,176 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
 
     csv.writeCsv("gas_system_test_output.csv", nullptr, '\t');
     csv.destroy();
+}
+
+TEST(GasSystemTests, GasVelocityProducesRamEffect) {
+    atg_csv::CsvData csv;
+    csv.initialize();
+    csv.m_columns = 9;
+
+    const double cylinderArea =
+        constants::pi * units::distance(2.0, units::inch) * units::distance(2.0, units::inch);
+    const double runnerArea =
+        constants::pi * units::distance(1.75 / 2, units::inch) * units::distance(1.75 / 2, units::inch);
+
+    GasSystem system1, system2, atmosphere;
+    system1.initialize(
+        units::pressure(1.0, units::atm),
+        units::volume(118, units::cc),
+        units::celcius(25.0)
+    );
+    system1.setGeometry(
+        units::distance(10.0, units::cm),
+        units::distance(1.0, units::cm),
+        1.0,
+        0.0);
+
+    system2.initialize(
+        units::pressure(1.0, units::atm),
+        runnerArea * units::distance(5.0, units::inch),
+        units::celcius(25.0)
+    );
+    system2.setGeometry(
+        units::distance(5.0, units::inch),
+        std::sqrt(runnerArea),
+        1.0,
+        0.0);
+
+    atmosphere.initialize(
+        units::pressure(1.0, units::atm),
+        units::volume(10000, units::m3),
+        units::celcius(25.0)
+    );
+
+    const double initialSystemEnergy =
+        system1.totalEnergy()
+        + system2.totalEnergy()
+        + atmosphere.totalEnergy();
+    const double initialMolecules = system1.n() + system2.n();
+
+    const double atmosphereArea =
+        1000.0;
+
+    GasSystem::FlowParameters params;
+    params.k_flow = GasSystem::k_28inH2O(230.0) * 1.0;
+    params.direction_x = 1.0;
+    params.direction_y = 0.0;
+    params.dt = 1 / (16 * 4000.0);
+    params.system_0 = &system1;
+    params.system_1 = &system2;
+    params.accelerationTimeConstant = 0.001;
+
+    csv.write("iteration");
+    csv.write("time");
+    csv.write("crank_angle");
+    csv.write("cylinder_volume");
+    csv.write("n_mol");
+    csv.write("cylinder_air_velocity");
+    csv.write("runner_air_velocity");
+    csv.write("cylinder_pressure");
+    csv.write("runner_pressure");
+
+    constexpr double speed = 6000; // rpm
+    constexpr double stroke = units::distance(4.0, units::inch);
+
+    double max_n = 0.0;
+    double max_n_angle = 0.0;
+
+    double max_v = 0.0;
+    double max_v_angle = 0.0;
+
+    const int steps = 10000;
+    for (int i = 1; i <= steps; ++i) {
+        const double staticPressure =
+            system2.pressure() + system2.dynamicPressure(0.0, 1.0);
+        const double totalPressure =
+            system2.pressure() + system2.dynamicPressure(1.0, 0.0);
+
+        const double systemEnergy0 =
+            system1.totalEnergy()
+            + system2.totalEnergy()
+            + atmosphere.totalEnergy();
+        const double velocity_x_0 = system1.velocity_x();
+        const double velocity_x_1 = system2.velocity_x();
+
+        const double P_0 = system1.pressure();
+        const double P_1 = system2.pressure() + system2.dynamicPressure(1.0, 0.0);
+        const double exhaustStaticPressure = system2.pressure();
+
+        const double t = i * params.dt;
+        const double pistonHeight =
+            units::distance(0.25, units::inch)
+            + stroke / 2
+            + (stroke / 2) * -std::cos(2 * constants::pi * (t * (speed / 60)));
+
+        system1.start();
+        system2.start();
+
+        system1.setVolume(pistonHeight * cylinderArea);
+
+        params.system_0 = &system1;
+        params.system_1 = &system2;
+        params.crossSectionArea_0 = cylinderArea;
+        params.crossSectionArea_1 = runnerArea;
+        params.k_flow = GasSystem::k_28inH2O(230.0);
+        GasSystem::flow(params);
+
+        const double systemEnergy1 =
+            system1.totalEnergy()
+            + system2.totalEnergy()
+            + atmosphere.totalEnergy();
+
+        params.system_0 = &system2;
+        params.system_1 = &atmosphere;
+        params.crossSectionArea_0 = runnerArea;
+        params.crossSectionArea_1 = atmosphereArea;
+        params.k_flow = GasSystem::k_carb(100);
+        GasSystem::flow(params);
+
+        const double systemEnergy2 =
+            system1.totalEnergy()
+            + system2.totalEnergy()
+            + atmosphere.totalEnergy();
+
+        system1.updateVelocity(params.dt);
+        system2.updateVelocity(params.dt);
+        //system1.dissipateExcessVelocity();
+        //system2.dissipateExcessVelocity();
+
+        system1.end();
+        system2.end();
+
+        const double angle = 360 * (t * (speed / 60));
+
+        if (system1.n() > max_n) {
+            max_n = system1.n();
+            max_n_angle = angle;
+        }
+
+        if (system1.volume() > max_v) {
+            max_v = system1.volume();
+            max_v_angle = angle;
+        }
+
+
+        ++csv.m_rows;
+        csv.write(std::to_string(i).c_str());
+        csv.write(std::to_string(i * params.dt).c_str());
+        csv.write(std::to_string(angle).c_str());
+        csv.write(std::to_string(system1.volume()).c_str());
+        csv.write(std::to_string(system1.n()).c_str());
+        csv.write(std::to_string(velocity_x_0).c_str());
+        csv.write(std::to_string(velocity_x_1).c_str());
+        csv.write(std::to_string(P_0).c_str());
+        csv.write(std::to_string(P_1).c_str());
+    }
+
+    csv.writeCsv("gas_system_test_output.csv", nullptr, '\t');
+    csv.destroy();
+
+    const double delay = max_n_angle - max_v_angle;
+
+    int a = 0;
 }
 
 TEST(GasSystemTests, GasVelocityStabilizesInClosedSystem) {

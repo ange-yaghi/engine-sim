@@ -526,15 +526,15 @@ double GasSystem::flow(const FlowParameters &params) {
 
     if (sinkCrossSection != 0) {
         const double sinkFractionVelocity =
-            0.5 * clamp((fractionVolume / sinkCrossSection) / params.dt, 0.0, c_sink);
+            clamp((fractionVolume / sinkCrossSection) / params.dt, 0.0, c_sink);
         const double sinkFractionVelocity_squared = sinkFractionVelocity * sinkFractionVelocity;
         const double sinkFractionVelocity_x = sinkFractionVelocity * dx;
         const double sinkFractionVelocity_y = sinkFractionVelocity * dy;
         const double sinkFractionMomentum_x = sinkFractionVelocity_x * fractionMass;
         const double sinkFractionMomentum_y = sinkFractionVelocity_y * fractionMass;
 
-        sink->m_state.momentum[0] += sinkFractionMomentum_x;
-        sink->m_state.momentum[1] += sinkFractionMomentum_y;
+        //sink->m_state.momentum[0] += sinkFractionMomentum_x;
+        //sink->m_state.momentum[1] += sinkFractionMomentum_y;
     }
 
     // Change in momentum due to pressure differential
