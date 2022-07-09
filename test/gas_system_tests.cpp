@@ -721,7 +721,7 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
     csv.write("cylinder_pressure");
     csv.write("runner_pressure");
 
-    constexpr double speed = 6000; // rpm
+    constexpr double speed = 3000; // rpm
     constexpr double stroke = units::distance(4.0, units::inch);
 
     double max_n = 0.0;
@@ -755,13 +755,6 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
             cylinder.changePressure(units::pressure(1.0, units::atm) - cylinder.pressure());
         }
 
-        if (i > 214) {
-            flow = 0;
-            if (flow < 0) {
-                flow = 0;
-            }
-        }
-
         params.system_0 = &runner;
         params.system_1 = &cylinder;
         params.crossSectionArea_0 = runnerArea;
@@ -777,7 +770,9 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
         GasSystem::flow(params);
 
         cylinder.updateVelocity(params.dt, 1.0);
-        runner.updateVelocity(params.dt, 0.0);
+        runner.updateVelocity(params.dt, 0.1);
+        cylinder.dissipateExcessVelocity();
+        runner.dissipateExcessVelocity();
 
         cylinder.end();
         runner.end();

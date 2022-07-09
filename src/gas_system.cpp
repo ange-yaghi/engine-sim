@@ -406,8 +406,6 @@ void GasSystem::dissipateVelocity(double dt, double timeConstant) {
 }
 
 double GasSystem::flow(const FlowParameters &params) {
-    if (params.k_flow == 0) return 0;
-
     GasSystem *source = nullptr, *sink = nullptr;
     double sourcePressure = 0, sinkPressure = 0;
     double dx, dy;
@@ -537,7 +535,7 @@ double GasSystem::flow(const FlowParameters &params) {
         sink->m_state.momentum[1] += sinkFractionMomentum_y;
     }
 
-    if (sourceCrossSection != 0) {
+    if (sourceCrossSection != 0 && source->mass() != 0) {
         const double sourceFractionVelocity =
             clamp((fractionVolume / sourceCrossSection) / params.dt, 0.0, c_source);
         const double sourceFractionVelocity_squared = sourceFractionVelocity * sourceFractionVelocity;
@@ -546,11 +544,8 @@ double GasSystem::flow(const FlowParameters &params) {
         const double sourceFractionMomentum_x = sourceFractionVelocity_x * fractionMass;
         const double sourceFractionMomentum_y = sourceFractionVelocity_y * fractionMass;
 
-        const double originalMomentum_x = fraction * source->m_state.momentum[0];
-        const double originalMomentum_y = fraction * source->m_state.momentum[1];
-
-        source->m_state.momentum[0] += sourceFractionMomentum_x - originalMomentum_x;
-        source->m_state.momentum[1] += sourceFractionMomentum_y - originalMomentum_y;
+        source->m_state.momentum[0] += sourceFractionMomentum_x;
+        source->m_state.momentum[1] += sourceFractionMomentum_y;
     }
 
     // Change in momentum due to pressure differential

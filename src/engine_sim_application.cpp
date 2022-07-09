@@ -297,9 +297,9 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(-units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift0->addSample(units::angle(50, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
     camLift0->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));//75
-    camLift0->addSample(units::angle(60, units::deg), units::distance(0, units::thou));
+    camLift0->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
     camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
@@ -414,7 +414,7 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getHead(1)->initialize(chParams);
 
     Intake::Parameters inParams;
-    inParams.InputFlowK = GasSystem::k_carb(750.0);
+    inParams.InputFlowK = GasSystem::k_carb(950.0);
     inParams.Volume = units::volume(5000.0, units::cc);
     inParams.IdleFlowK = 0.000002;
     inParams.IdleThrottlePlatePosition = 0.967;
