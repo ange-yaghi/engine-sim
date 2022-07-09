@@ -533,8 +533,21 @@ double GasSystem::flow(const FlowParameters &params) {
         const double sinkFractionMomentum_x = sinkFractionVelocity_x * fractionMass;
         const double sinkFractionMomentum_y = sinkFractionVelocity_y * fractionMass;
 
-        //sink->m_state.momentum[0] += sinkFractionMomentum_x;
-        //sink->m_state.momentum[1] += sinkFractionMomentum_y;
+        sink->m_state.momentum[0] += sinkFractionMomentum_x;
+        sink->m_state.momentum[1] += sinkFractionMomentum_y;
+    }
+
+    if (sourceCrossSection != 0) {
+        const double sourceFractionVelocity =
+            clamp((fractionVolume / sourceCrossSection) / params.dt, 0.0, c_source);
+        const double sourceFractionVelocity_squared = sourceFractionVelocity * sourceFractionVelocity;
+        const double sourceFractionVelocity_x = sourceFractionVelocity * dx;
+        const double sourceFractionVelocity_y = sourceFractionVelocity * dy;
+        const double sourceFractionMomentum_x = sourceFractionVelocity_x * fractionMass;
+        const double sourceFractionMomentum_y = sourceFractionVelocity_y * fractionMass;
+
+        source->m_state.momentum[0] += sourceFractionMomentum_x;
+        source->m_state.momentum[1] += sourceFractionMomentum_y;
     }
 
     // Change in momentum due to pressure differential
@@ -543,11 +556,11 @@ double GasSystem::flow(const FlowParameters &params) {
     const double SA = std::fmin(sourceCrossSection, sinkCrossSection); //units::area(6.0, units::cm2);
 
     if (source->mass() != 0) {
-        source->m_state.momentum[0] += dx * pressureDifferential * SA * params.dt;
-        source->m_state.momentum[1] += dy * pressureDifferential * SA * params.dt;
+        //source->m_state.momentum[0] += dx * pressureDifferential * SA * params.dt;
+        //source->m_state.momentum[1] += dy * pressureDifferential * SA * params.dt;
 
-        sink->m_state.momentum[0] += dx * pressureDifferential * SA * params.dt;
-        sink->m_state.momentum[1] += dy * pressureDifferential * SA * params.dt;
+        //sink->m_state.momentum[0] += dx * pressureDifferential * SA * params.dt;
+        //sink->m_state.momentum[1] += dy * pressureDifferential * SA * params.dt;
 
         // Energy conservation
         const double sourceVelocity0_x = sourceInitialMomentum_x / source->mass();

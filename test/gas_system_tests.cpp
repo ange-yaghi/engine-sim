@@ -665,26 +665,26 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
     const double cylinderArea =
         constants::pi * units::distance(2.0, units::inch) * units::distance(2.0, units::inch);
     const double runnerArea =
-        constants::pi * units::distance(1.75 / 2, units::inch) * units::distance(1.75 / 2, units::inch);
+        constants::pi * units::distance(0.5, units::inch) * units::distance(0.5, units::inch);
 
-    GasSystem system1, system2, atmosphere;
-    system1.initialize(
+    GasSystem cylinder, runner, atmosphere;
+    cylinder.initialize(
         units::pressure(1.0, units::atm),
         units::volume(118, units::cc),
         units::celcius(25.0)
     );
-    system1.setGeometry(
+    cylinder.setGeometry(
         units::distance(10.0, units::cm),
         units::distance(1.0, units::cm),
         1.0,
         0.0);
 
-    system2.initialize(
+    runner.initialize(
         units::pressure(1.0, units::atm),
-        runnerArea * units::distance(5.0, units::inch),
+        units::volume(320, units::cc),
         units::celcius(25.0)
     );
-    system2.setGeometry(
+    runner.setGeometry(
         units::distance(5.0, units::inch),
         std::sqrt(runnerArea),
         1.0,
@@ -697,22 +697,19 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
     );
 
     const double initialSystemEnergy =
-        system1.totalEnergy()
-        + system2.totalEnergy()
+        cylinder.totalEnergy()
+        + runner.totalEnergy()
         + atmosphere.totalEnergy();
-    const double initialMolecules = system1.n() + system2.n();
+    const double initialMolecules = cylinder.n() + runner.n();
 
     const double atmosphereArea =
         1000.0;
 
     GasSystem::FlowParameters params;
-    params.k_flow = GasSystem::k_28inH2O(230.0) * 1.0;
+    params.dt = 1 / (16 * 4000.0);
+    params.accelerationTimeConstant = 0.001;
     params.direction_x = 1.0;
     params.direction_y = 0.0;
-    params.dt = 1 / (16 * 4000.0);
-    params.system_0 = &system1;
-    params.system_1 = &system2;
-    params.accelerationTimeConstant = 0.001;
 
     csv.write("iteration");
     csv.write("time");
@@ -735,21 +732,12 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
 
     const int steps = 10000;
     for (int i = 1; i <= steps; ++i) {
-        const double staticPressure =
-            system2.pressure() + system2.dynamicPressure(0.0, 1.0);
-        const double totalPressure =
-            system2.pressure() + system2.dynamicPressure(1.0, 0.0);
+        const double velocity_x_0 = cylinder.velocity_x();
+        const double velocity_x_1 = runner.velocity_x();
 
-        const double systemEnergy0 =
-            system1.totalEnergy()
-            + system2.totalEnergy()
-            + atmosphere.totalEnergy();
-        const double velocity_x_0 = system1.velocity_x();
-        const double velocity_x_1 = system2.velocity_x();
-
-        const double P_0 = system1.pressure();
-        const double P_1 = system2.pressure() + system2.dynamicPressure(1.0, 0.0);
-        const double exhaustStaticPressure = system2.pressure();
+        const double P_0 = cylinder.pressure();
+        const double P_1 = runner.pressure() + runner.dynamicPressure(1.0, 0.0);
+        const double exhaustStaticPressure = runner.pressure();
 
         const double t = i * params.dt;
         const double pistonHeight =
@@ -757,62 +745,52 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
             + stroke / 2
             + (stroke / 2) * -std::cos(2 * constants::pi * (t * (speed / 60)));
 
-        system1.start();
-        system2.start();
+        cylinder.start();
+        runner.start();
 
-        system1.setVolume(pistonHeight * cylinderArea);
+        cylinder.setVolume(pistonHeight * cylinderArea);
+        if (i == 1) {
+            cylinder.changePressure(units::pressure(1.0, units::atm) - cylinder.pressure());
+        }
 
-        params.system_0 = &system1;
-        params.system_1 = &system2;
-        params.crossSectionArea_0 = cylinderArea;
-        params.crossSectionArea_1 = runnerArea;
+        params.system_0 = &runner;
+        params.system_1 = &cylinder;
+        params.crossSectionArea_0 = runnerArea;
+        params.crossSectionArea_1 = cylinderArea;
         params.k_flow = GasSystem::k_28inH2O(230.0);
         GasSystem::flow(params);
 
-        const double systemEnergy1 =
-            system1.totalEnergy()
-            + system2.totalEnergy()
-            + atmosphere.totalEnergy();
-
-        params.system_0 = &system2;
-        params.system_1 = &atmosphere;
-        params.crossSectionArea_0 = runnerArea;
-        params.crossSectionArea_1 = atmosphereArea;
-        params.k_flow = GasSystem::k_carb(100);
+        params.system_0 = &atmosphere;
+        params.system_1 = &runner;
+        params.crossSectionArea_0 = atmosphereArea;
+        params.crossSectionArea_1 = cylinderArea;
+        params.k_flow = GasSystem::k_carb(500);
         GasSystem::flow(params);
 
-        const double systemEnergy2 =
-            system1.totalEnergy()
-            + system2.totalEnergy()
-            + atmosphere.totalEnergy();
+        cylinder.updateVelocity(params.dt, 1.0);
+        runner.updateVelocity(params.dt, 0.0);
 
-        system1.updateVelocity(params.dt);
-        system2.updateVelocity(params.dt);
-        //system1.dissipateExcessVelocity();
-        //system2.dissipateExcessVelocity();
-
-        system1.end();
-        system2.end();
+        cylinder.end();
+        runner.end();
 
         const double angle = 360 * (t * (speed / 60));
 
-        if (system1.n() > max_n) {
-            max_n = system1.n();
+        if (cylinder.n() > max_n) {
+            max_n = cylinder.n();
             max_n_angle = angle;
         }
 
-        if (system1.volume() > max_v) {
-            max_v = system1.volume();
+        if (cylinder.volume() > max_v) {
+            max_v = cylinder.volume();
             max_v_angle = angle;
         }
-
 
         ++csv.m_rows;
         csv.write(std::to_string(i).c_str());
         csv.write(std::to_string(i * params.dt).c_str());
         csv.write(std::to_string(angle).c_str());
-        csv.write(std::to_string(system1.volume()).c_str());
-        csv.write(std::to_string(system1.n()).c_str());
+        csv.write(std::to_string(cylinder.volume()).c_str());
+        csv.write(std::to_string(cylinder.n()).c_str());
         csv.write(std::to_string(velocity_x_0).c_str());
         csv.write(std::to_string(velocity_x_1).c_str());
         csv.write(std::to_string(P_0).c_str());
@@ -823,6 +801,7 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
     csv.destroy();
 
     const double delay = max_n_angle - max_v_angle;
+    const double m_n = max_n;
 
     int a = 0;
 }
