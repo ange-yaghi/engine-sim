@@ -288,10 +288,10 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));*/
     
     camLift0->addSample(0.0, units::distance(578, units::thou));
-    camLift0->addSample(-units::angle(10, units::deg), units::distance(550, units::thou));
-    camLift0->addSample(units::angle(10, units::deg), units::distance(550, units::thou));
-    camLift0->addSample(-units::angle(20, units::deg), units::distance(500, units::thou));
-    camLift0->addSample(units::angle(20, units::deg), units::distance(500, units::thou));
+    camLift0->addSample(-units::angle(10, units::deg), units::distance(560, units::thou));
+    camLift0->addSample(units::angle(10, units::deg), units::distance(560, units::thou));
+    camLift0->addSample(-units::angle(20, units::deg), units::distance(510, units::thou));
+    camLift0->addSample(units::angle(20, units::deg), units::distance(510, units::thou));
     camLift0->addSample(-units::angle(30, units::deg), units::distance(440, units::thou));
     camLift0->addSample(units::angle(30, units::deg), units::distance(440, units::thou));
     camLift0->addSample(-units::angle(40, units::deg), units::distance(350, units::thou));
@@ -326,10 +326,10 @@ void EngineSimApplication::initialize() {
     camLift1->setInputScale(1.0);//1.15
     camLift1->setOutputScale(1.0);
     camLift1->addSample(0.0, units::distance(578, units::thou));
-    camLift1->addSample(-units::angle(10, units::deg), units::distance(550, units::thou));
-    camLift1->addSample(units::angle(10, units::deg), units::distance(550, units::thou));
-    camLift1->addSample(-units::angle(20, units::deg), units::distance(500, units::thou));
-    camLift1->addSample(units::angle(20, units::deg), units::distance(500, units::thou));
+    camLift1->addSample(-units::angle(10, units::deg), units::distance(560, units::thou));
+    camLift1->addSample(units::angle(10, units::deg), units::distance(560, units::thou));
+    camLift1->addSample(-units::angle(20, units::deg), units::distance(510, units::thou));
+    camLift1->addSample(units::angle(20, units::deg), units::distance(510, units::thou));
     camLift1->addSample(-units::angle(30, units::deg), units::distance(440, units::thou));
     camLift1->addSample(units::angle(30, units::deg), units::distance(440, units::thou));
     camLift1->addSample(-units::angle(40, units::deg), units::distance(350, units::thou));

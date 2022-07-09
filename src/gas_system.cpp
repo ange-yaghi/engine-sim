@@ -442,6 +442,7 @@ double GasSystem::flow(const FlowParameters &params) {
         direction = -1.0;
     }
 
+    /*
     if (std::isnan(sink->m_state.momentum[0])
         || std::isnan(source->m_state.momentum[0])
         || std::isnan(source->m_state.E_k)
@@ -452,7 +453,7 @@ double GasSystem::flow(const FlowParameters &params) {
         || sink->pressure() > 10000000)
     {
         int a = 0;
-    }
+    }*/
 
     double flow = params.dt * flowRate(
         params.k_flow,
@@ -464,26 +465,18 @@ double GasSystem::flow(const FlowParameters &params) {
         source->m_chokedFlowLimit,
         source->m_chokedFlowFactorCached);
 
-    const double maxFlow = source->pressureEquilibriumMaxFlow(sink);
+    //const double maxFlow = source->pressureEquilibriumMaxFlow(sink);
     flow = clamp(flow, 0.0, 0.9 * source->n());
 
+    /*
     if (std::isnan(flow)) {
         int a = 0;
-    }
+    }*/
 
     const double fraction = flow / source->n();
     const double fractionVolume = fraction * source->volume();
-    const double sourceMass = source->mass();
-    const double invSourceMass = 1 / sourceMass;
     const double fractionMass = fraction * source->mass();
     const double remainingMass = (1 - fraction) * source->mass();
-    const double sinkMass = sink->mass();
-    const double invSinkMass = 1 / sinkMass;
-
-    const double c_source = source->c();
-    const double c_sink = sink->c();
-
-    const double acc_s = params.dt / (params.accelerationTimeConstant + params.dt);
 
     if (flow != 0) {
         // - Stage 1
@@ -513,6 +506,14 @@ double GasSystem::flow(const FlowParameters &params) {
 
         sink->m_state.E_k -= ((E_k_bulk_src1 + E_k_bulk_sink1) - (E_k_bulk_src0 + E_k_bulk_sink0));
     }
+    
+    const double sourceMass = source->mass();
+    const double invSourceMass = 1 / sourceMass;
+    const double sinkMass = sink->mass();
+    const double invSinkMass = 1 / sinkMass;
+
+    const double c_source = source->c();
+    const double c_sink = sink->c();
 
     const double sourceInitialMomentum_x = source->m_state.momentum[0];
     const double sourceInitialMomentum_y = source->m_state.momentum[1];
@@ -535,7 +536,7 @@ double GasSystem::flow(const FlowParameters &params) {
         sink->m_state.momentum[1] += sinkFractionMomentum_y;
     }
 
-    if (sourceCrossSection != 0 && source->mass() != 0) {
+    if (sourceCrossSection != 0 && sourceMass != 0) {
         const double sourceFractionVelocity =
             clamp((fractionVolume / sourceCrossSection) / params.dt, 0.0, c_source);
         const double sourceFractionVelocity_squared = sourceFractionVelocity * sourceFractionVelocity;
@@ -549,11 +550,11 @@ double GasSystem::flow(const FlowParameters &params) {
     }
 
     // Change in momentum due to pressure differential
-    const double pressureDifferential = (sourcePressure - sinkPressure);
+    //const double pressureDifferential = (sourcePressure - sinkPressure);
 
-    const double SA = std::fmin(sourceCrossSection, sinkCrossSection); //units::area(6.0, units::cm2);
+    //const double SA = std::fmin(sourceCrossSection, sinkCrossSection); //units::area(6.0, units::cm2);
 
-    if (source->mass() != 0) {
+    if (sourceMass != 0) {
         //source->m_state.momentum[0] += dx * pressureDifferential * SA * params.dt;
         //source->m_state.momentum[1] += dy * pressureDifferential * SA * params.dt;
 
@@ -561,43 +562,45 @@ double GasSystem::flow(const FlowParameters &params) {
         //sink->m_state.momentum[1] += dy * pressureDifferential * SA * params.dt;
 
         // Energy conservation
-        const double sourceVelocity0_x = sourceInitialMomentum_x / source->mass();
-        const double sourceVelocity0_y = sourceInitialMomentum_y / source->mass();
+        const double sourceVelocity0_x = sourceInitialMomentum_x * invSourceMass;
+        const double sourceVelocity0_y = sourceInitialMomentum_y * invSourceMass;
 
-        const double sourceVelocity1_x = source->m_state.momentum[0] / source->mass();
-        const double sourceVelocity1_y = source->m_state.momentum[1] / source->mass();
+        const double sourceVelocity1_x = source->m_state.momentum[0] * invSourceMass;
+        const double sourceVelocity1_y = source->m_state.momentum[1] * invSourceMass;
 
         source->m_state.E_k -=
-            0.5 * source->mass()
+            0.5 * sourceMass
             * (sourceVelocity1_x * sourceVelocity1_x - sourceVelocity0_x * sourceVelocity0_x);
 
         source->m_state.E_k -=
-            0.5 * source->mass()
+            0.5 * sourceMass
             * (sourceVelocity1_y * sourceVelocity1_y - sourceVelocity0_y * sourceVelocity0_y);
 
+        /*
         if (sink->m_state.E_k < 0 || source->m_state.E_k < 0) {
             int a = 0;
-        }
+        }*/
     }
 
-    if (sink->mass() > 0) {
-        const double sinkVelocity0_x = sinkInitialMomentum_x / sink->mass();
-        const double sinkVelocity0_y = sinkInitialMomentum_y / sink->mass();
+    if (sinkMass > 0) {
+        const double sinkVelocity0_x = sinkInitialMomentum_x * invSinkMass;
+        const double sinkVelocity0_y = sinkInitialMomentum_y * invSinkMass;
 
-        const double sinkVelocity1_x = sink->m_state.momentum[0] / sink->mass();
-        const double sinkVelocity1_y = sink->m_state.momentum[1] / sink->mass();
+        const double sinkVelocity1_x = sink->m_state.momentum[0] * invSinkMass;
+        const double sinkVelocity1_y = sink->m_state.momentum[1] * invSinkMass;
 
         sink->m_state.E_k -=
-            0.5 * sink->mass()
+            0.5 * sinkMass
             * (sinkVelocity1_x * sinkVelocity1_x - sinkVelocity0_x * sinkVelocity0_x);
 
         sink->m_state.E_k -=
-            0.5 * sink->mass()
+            0.5 * sinkMass
             * (sinkVelocity1_y * sinkVelocity1_y - sinkVelocity0_y * sinkVelocity0_y);
 
+        /*
         if (sink->m_state.E_k < 0 || source->m_state.E_k < 0) {
             int a = 0;
-        }
+        }*/
     }
 
     if (sink->m_state.E_k < 0) {
@@ -608,6 +611,7 @@ double GasSystem::flow(const FlowParameters &params) {
         source->m_state.E_k = 0;
     }
 
+    /*
     if (std::isnan(sink->m_state.momentum[0])
         || std::isnan(source->m_state.momentum[0])
         || std::isnan(source->m_state.E_k)
@@ -630,7 +634,7 @@ double GasSystem::flow(const FlowParameters &params) {
 
     if (sink->m_state.momentum[0] > 1000 || source->m_state.momentum[0] > 1000) {
         int a = 0;
-    }
+    }*/
 
     return flow * direction;
 }

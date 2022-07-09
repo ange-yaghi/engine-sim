@@ -218,11 +218,14 @@ void CombustionChamber::flow(double dt) {
             -DBL_MAX,
             DBL_MAX);*/
 
+    static const double intakeToRunnerFlowRate = GasSystem::k_carb(200.0);
+    static const double runnerToExhaustFlowRate = GasSystem::k_carb(2000.0);
+
     GasSystem::FlowParameters flowParams;
     flowParams.accelerationTimeConstant = 0.001;
     flowParams.dt = dt;
 
-    flowParams.k_flow = GasSystem::k_carb(200.0);
+    flowParams.k_flow = intakeToRunnerFlowRate;
     flowParams.crossSectionArea_0 = units::area(100.0, units::cm2);
     flowParams.crossSectionArea_1 =
         constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch);
@@ -260,7 +263,7 @@ void CombustionChamber::flow(double dt) {
     m_system.dissipateExcessVelocity();
     m_exhaustRunner.dissipateExcessVelocity();
 
-    flowParams.k_flow = GasSystem::k_carb(2000.0);
+    flowParams.k_flow = runnerToExhaustFlowRate;
     flowParams.crossSectionArea_0 =
         constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch);
     flowParams.crossSectionArea_1 =

@@ -98,6 +98,7 @@ class GasSystem {
         inline double bulkKineticEnergy() const;
         inline double c() const;
         inline double dynamicPressure(double dx, double dy) const;
+        inline double fastDynamicPressure(double dx, double dy) const;
         inline double mass() const;
         inline double pressure() const;
         inline double temperature() const;
@@ -214,9 +215,27 @@ inline double GasSystem::dynamicPressure(double dx, double dy) const {
     const double c = std::sqrt(staticPressure * hcr / density);
     const double machNumber = v / c;
 
-    return
-        staticPressure
-        * (std::pow(1 + ((hcr - 1) / 2) * machNumber * machNumber, hcr / (hcr - 1)) - 1);
+    // Below is equivalent to:
+    // staticPressure * pow(1 + ((hcr - 1) / 2) * machNumber * machNumber, hcr / (hcr - 1)) - 1)
+
+    const double x = 1 + ((hcr - 1) / 2) * machNumber * machNumber;
+    double x_d;
+    switch (m_degreesOfFreedom) {
+    case 3:
+        x_d = x * x * x * x * x;
+        break;
+    case 5:
+    {
+        const double x_2 = x * x;
+        const double x_3 = x_2 * x;
+        x_d = x_3 * x_3 * x;
+        break;
+    }
+    default:
+        x_d = x;
+    }
+
+    return staticPressure * (std::sqrt(x_d) - 1);
 }
 
 inline double GasSystem::mass() const {
