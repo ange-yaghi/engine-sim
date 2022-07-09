@@ -546,8 +546,11 @@ double GasSystem::flow(const FlowParameters &params) {
         const double sourceFractionMomentum_x = sourceFractionVelocity_x * fractionMass;
         const double sourceFractionMomentum_y = sourceFractionVelocity_y * fractionMass;
 
-        source->m_state.momentum[0] += sourceFractionMomentum_x;
-        source->m_state.momentum[1] += sourceFractionMomentum_y;
+        const double originalMomentum_x = fraction * source->m_state.momentum[0];
+        const double originalMomentum_y = fraction * source->m_state.momentum[1];
+
+        source->m_state.momentum[0] += sourceFractionMomentum_x - originalMomentum_x;
+        source->m_state.momentum[1] += sourceFractionMomentum_y - originalMomentum_y;
     }
 
     // Change in momentum due to pressure differential

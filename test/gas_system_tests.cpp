@@ -730,6 +730,8 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
     double max_v = 0.0;
     double max_v_angle = 0.0;
 
+    double flow = 1.0;
+
     const int steps = 10000;
     for (int i = 1; i <= steps; ++i) {
         const double velocity_x_0 = cylinder.velocity_x();
@@ -753,11 +755,18 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
             cylinder.changePressure(units::pressure(1.0, units::atm) - cylinder.pressure());
         }
 
+        if (i > 214) {
+            flow = 0;
+            if (flow < 0) {
+                flow = 0;
+            }
+        }
+
         params.system_0 = &runner;
         params.system_1 = &cylinder;
         params.crossSectionArea_0 = runnerArea;
         params.crossSectionArea_1 = cylinderArea;
-        params.k_flow = GasSystem::k_28inH2O(230.0);
+        params.k_flow = GasSystem::k_28inH2O(230.0) * flow;
         GasSystem::flow(params);
 
         params.system_0 = &atmosphere;
