@@ -63,6 +63,9 @@ class EngineSimApplication {
 
         dbasic::AssetManager *getAssetManager() { return &m_assetManager; }
 
+        int getScreenWidth() const { return m_screenWidth; }
+        int getScreenHeight() const { return m_screenHeight; }
+
     protected:
         void renderScene();
 
@@ -72,6 +75,9 @@ class EngineSimApplication {
         virtual void render();
 
         float m_displayHeight;
+        int m_gameWindowHeight;
+        int m_screenWidth;
+        int m_screenHeight;
 
         dbasic::ShaderSet m_shaderSet;
         Shaders m_shaders;

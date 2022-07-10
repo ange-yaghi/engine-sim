@@ -40,9 +40,3 @@ double erfApproximation(double x) {
 
     return 1 - q4;
 }
-
-double clamp(double x, double x0, double x1) {
-    if (x <= x0) return x0;
-    else if (x >= x1) return x1;
-    else return x;
-}

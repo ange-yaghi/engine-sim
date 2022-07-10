@@ -81,7 +81,7 @@ void Synthesizer::initialize(const Parameters &p) {
     waveFile0.CloseFile();
 
     ysWindowsAudioWaveFile waveFile1;
-    waveFile1.OpenFile("../assets/test_engine_15_eq_adjusted_16.wav"); // ../assets/test_engine_16.wav
+    waveFile1.OpenFile("../assets/test_engine_16.wav"); // ../assets/test_engine_16.wav
     waveFile1.InitializeInternalBuffer(waveFile1.GetSampleCount());
     waveFile1.FillBuffer(0);
     waveFile1.CloseFile();

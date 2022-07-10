@@ -180,7 +180,7 @@ double Engine::getIntakeAfr() const {
     if (totalFuel == 0) return 0;
     else {
         return
-            (oxygenMolarMass * totalOxygen + nitrogenMolarMass * totalInert)
+            (oxygenMolarMass * totalOxygen / 0.21)
             / (totalFuel * octaneMolarMass);
     }
 }

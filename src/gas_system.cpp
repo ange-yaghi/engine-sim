@@ -225,16 +225,17 @@ double GasSystem::flowRate(
     if (p_ratio <= chokedFlowLimit) {
         // Choked flow
         flowRate = chokedFlowRateCached;
+        flowRate /= std::sqrt(constants::R * T_0);
     }
     else {
+        const double s = std::pow(p_ratio, 1 / hcr);
+
         flowRate = (2 * hcr) / (hcr - 1);
-        flowRate *= (1 - std::pow(p_ratio, (hcr - 1) / hcr));
-        flowRate = std::sqrt(std::fmax(flowRate, 0.0));
-        flowRate *= std::pow(p_ratio, 1 / hcr);
+        flowRate *= s * (s - p_ratio);
+        flowRate = std::sqrt(std::fmax(flowRate, 0.0) / (constants::R * T_0));
     }
 
     flowRate *= direction * p_0;
-    flowRate /= std::sqrt(constants::R * T_0);
 
     return flowRate * k_flow;
 }

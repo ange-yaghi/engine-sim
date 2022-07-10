@@ -57,6 +57,9 @@ EngineSimApplication::EngineSimApplication() {
     m_loadSimulationCluster = nullptr;
 
     m_oscillatorSampleOffset = 0;
+    m_gameWindowHeight = 256;
+    m_screenWidth = 256;
+    m_screenHeight = 256;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -112,11 +115,11 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     m_assetManager.SetEngine(&m_engine);
 
     m_engine.GetDevice()->CreateIndexBuffer(
-        &m_geometryIndexBuffer, sizeof(unsigned short) * 100000, nullptr);
+        &m_geometryIndexBuffer, sizeof(unsigned short) * 200000, nullptr);
     m_engine.GetDevice()->CreateVertexBuffer(
-        &m_geometryVertexBuffer, sizeof(dbasic::Vertex) * 50000, nullptr);
+        &m_geometryVertexBuffer, sizeof(dbasic::Vertex) * 100000, nullptr);
 
-    m_geometryGenerator.initialize(50000, 100000);
+    m_geometryGenerator.initialize(100000, 200000);
 
     initialize();
 }
@@ -415,14 +418,14 @@ void EngineSimApplication::initialize() {
 
     Intake::Parameters inParams;
     inParams.InputFlowK = GasSystem::k_carb(950.0);
-    inParams.Volume = units::volume(5000.0, units::cc);
-    inParams.IdleFlowK = 0.000002;
+    inParams.Volume = units::volume(20000.0, units::cc);
+    inParams.IdleFlowK = 0.0000015;
     inParams.IdleThrottlePlatePosition = 0.967;
     m_iceEngine.getIntake(0)->initialize(inParams);
 
     ExhaustSystem::Parameters esParams;
     esParams.flowK = GasSystem::k_carb(1000.0);
-    esParams.volume = units::volume(40.0, units::L);
+    esParams.volume = units::volume(10.0, units::L);
     m_iceEngine.getExhaustSystem(0)->initialize(esParams);
     m_iceEngine.getExhaustSystem(1)->initialize(esParams);
 
@@ -602,7 +605,7 @@ void EngineSimApplication::process(float frame_dt) {
     const int iterationCount = m_simulator.getFrameIterationCount();
     while (m_simulator.simulateStep()) {
         const double totalFlow = m_simulator.getTotalExhaustFlow();
-        m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
+        m_oscCluster->getTotalExhaustFlowOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
             totalFlow / (m_simulator.getTimestep()));
 
@@ -614,12 +617,27 @@ void EngineSimApplication::process(float frame_dt) {
         //m_oscCluster->getCylinderPressureScope()->addDataPoint(
         //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
         //    (runnerPressure - cylinderPressure) * 100);
-        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
-        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-        //    m_simulator.getEngine()->getChamber(0)->m_intakeRunner.velocity_x() * 1000);
         m_oscCluster->getCylinderPressureScope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-            m_simulator.getEngine()->getChamber(0)->getLastTimestepIntakeFlow() * 100000000);
+            m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.pressure()
+            + m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.dynamicPressure(1.0, 0.0)
+            + m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.dynamicPressure(-1.0, 0.0));
+        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
+        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
+        //    m_simulator.getEngine()->getChamber(0)->getLastTimestepIntakeFlow() * 100000000);
+        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
+        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
+        //    m_simulator.getEngine()->getChamber(0)->m_system.n() * 10000000);
+
+        m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
+            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator.getEngine()->getChamber(0)->getLastTimestepExhaustFlow() / m_simulator.getTimestep());
+        m_oscCluster->getIntakeFlowOscilloscope()->addDataPoint(
+            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator.getEngine()->getChamber(0)->getLastTimestepIntakeFlow() / m_simulator.getTimestep());
+        m_oscCluster->getCylinderMoleculesScope()->addDataPoint(
+            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator.getEngine()->getChamber(0)->m_system.n());
         m_oscCluster->getExhaustValveLiftOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
             m_simulator.getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(
@@ -710,12 +728,12 @@ void EngineSimApplication::render() {
 }
 
 float EngineSimApplication::pixelsToUnits(float pixels) const {
-    const float f = m_displayHeight / m_engine.GetGameWindow()->GetGameHeight();
+    const float f = m_displayHeight / m_gameWindowHeight;
     return pixels * f;
 }
 
 float EngineSimApplication::unitsToPixels(float units) const {
-    const float f = m_engine.GetGameWindow()->GetGameHeight() / m_displayHeight;
+    const float f = m_gameWindowHeight / m_displayHeight;
     return units * f;
 }
 
@@ -733,6 +751,10 @@ void EngineSimApplication::run() {
         const int mouseWheel = m_engine.GetMouseWheel();
         const int mouseWheelDelta = mouseWheel - lastMouseWheel;
         lastMouseWheel = mouseWheel;
+
+        m_gameWindowHeight = m_engine.GetGameWindow()->GetGameHeight();
+        m_screenHeight = m_engine.GetGameWindow()->GetScreenHeight();
+        m_screenWidth = m_engine.GetGameWindow()->GetScreenWidth();
 
         if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
             break;

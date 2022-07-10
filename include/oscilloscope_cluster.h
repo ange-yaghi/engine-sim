@@ -7,6 +7,9 @@
 #include "oscilloscope.h"
 
 class OscilloscopeCluster : public UiElement {
+    private:
+        static constexpr int MaxLayeredScopes = 5;
+
     public:
         OscilloscopeCluster();
         virtual ~OscilloscopeCluster();
@@ -20,12 +23,15 @@ class OscilloscopeCluster : public UiElement {
 
         Simulator *m_simulator;
 
-        Oscilloscope *getExhaustFlowOscilloscope() { return m_exhaustFlowScope; }
-        Oscilloscope *getAudioWaveformOscilloscope() { return m_audioWaveformScope; }
-        Oscilloscope *getIntakeValveLiftOscilloscope() { return m_intakeValveLiftScope; }
-        Oscilloscope *getExhaustValveLiftOscilloscope() { return m_exhaustValveLiftScope; }
-        Oscilloscope *getCylinderPressureScope() { return m_cylinderPressureScope; }
-        Oscilloscope *getSparkAdvanceScope() { return m_sparkAdvanceScope; }
+        Oscilloscope *getTotalExhaustFlowOscilloscope() const { return m_totalExhaustFlowScope; }
+        Oscilloscope *getExhaustFlowOscilloscope() const { return m_exhaustFlowScope; }
+        Oscilloscope *getIntakeFlowOscilloscope() const { return m_intakeFlowScope; }
+        Oscilloscope *getAudioWaveformOscilloscope() const { return m_audioWaveformScope; }
+        Oscilloscope *getIntakeValveLiftOscilloscope() const { return m_intakeValveLiftScope; }
+        Oscilloscope *getExhaustValveLiftOscilloscope() const { return m_exhaustValveLiftScope; }
+        Oscilloscope *getCylinderPressureScope() const { return m_cylinderPressureScope; }
+        Oscilloscope *getSparkAdvanceScope() const { return m_sparkAdvanceScope; }
+        Oscilloscope *getCylinderMoleculesScope() const { return m_cylinderMoleculesScope; }
 
     protected:
         void renderScope(
@@ -37,14 +43,16 @@ class OscilloscopeCluster : public UiElement {
         Oscilloscope
             *m_torqueScope,
             *m_hpScope,
-            *m_exhaustFlowScope,
             *m_audioWaveformScope,
             *m_exhaustValveLiftScope,
             *m_intakeValveLiftScope,
             *m_cylinderPressureScope,
+            *m_totalExhaustFlowScope,
+            *m_exhaustFlowScope,
+            *m_intakeFlowScope,
+            *m_cylinderMoleculesScope,
             *m_sparkAdvanceScope,
-            *m_currentFocusScope0,
-            *m_currentFocusScope1;
+            *m_currentFocusScopes[MaxLayeredScopes];
         float m_updatePeriod;
         float m_updateTimer;
 

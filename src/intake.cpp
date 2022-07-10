@@ -99,12 +99,12 @@ void Intake::process(double dt) {
     m_system.dissipateExcessVelocity();
     m_system.updateVelocity(dt);
 
-    if (m_flow < 0) {
-        m_totalFuelInjected += -fuelAirMix.p_fuel * m_flow;
+    if (m_flow > 0) {
+        m_totalFuelInjected += fuelAirMix.p_fuel * m_flow;
     }
 
-    if (idleCircuitFlow < 0) {
-        m_totalFuelInjected += -fuelMix.p_fuel * idleCircuitFlow;
+    if (idleCircuitFlow > 0) {
+        m_totalFuelInjected += fuelMix.p_fuel * idleCircuitFlow;
     }
 
     //m_system.changeMix(fuelAirMix);
