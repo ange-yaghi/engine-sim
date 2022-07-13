@@ -24,7 +24,7 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     constexpr float shortenAngle = (float)units::angle(1.0, units::deg);
 
     m_volumeGauge = addElement<LabeledGauge>();
-    m_volumeGauge->m_title = "Volume";
+    m_volumeGauge->m_title = "Vol.";
     m_volumeGauge->m_unit = "";
     m_volumeGauge->m_precision = 1;
     m_volumeGauge->setLocalPosition({ 0, 0 });
@@ -42,7 +42,7 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_volumeGauge->m_gauge->setBandCount(0);
 
     m_levelerGauge = addElement<LabeledGauge>();
-    m_levelerGauge->m_title = "Leveler";
+    m_levelerGauge->m_title = "Lvl.";
     m_levelerGauge->m_unit = "";
     m_levelerGauge->m_precision = 1;
     m_levelerGauge->setLocalPosition({ 0, 0 });
@@ -78,7 +78,7 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_convolutionGauge->m_gauge->setBandCount(0);
 
     m_highFreqFilterGauge = addElement<LabeledGauge>();
-    m_highFreqFilterGauge->m_title = "HF+";
+    m_highFreqFilterGauge->m_title = "+HF";
     m_highFreqFilterGauge->m_unit = "";
     m_highFreqFilterGauge->m_precision = 2;
     m_highFreqFilterGauge->setLocalPosition({ 0, 0 });
@@ -96,7 +96,7 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_highFreqFilterGauge->m_gauge->setBandCount(0);
 
     m_noise0Gauge = addElement<LabeledGauge>();
-    m_noise0Gauge->m_title = "NZ LF";
+    m_noise0Gauge->m_title = "~ LF";
     m_noise0Gauge->m_unit = "";
     m_noise0Gauge->m_precision = 1;
     m_noise0Gauge->setLocalPosition({ 0, 0 });
@@ -114,7 +114,7 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_noise0Gauge->m_gauge->setBandCount(0);
 
     m_noise1Gauge = addElement<LabeledGauge>();
-    m_noise1Gauge->m_title = "NZ HF";
+    m_noise1Gauge->m_title = "~ HF";
     m_noise1Gauge->m_unit = "";
     m_noise1Gauge->m_precision = 1;
     m_noise1Gauge->setLocalPosition({ 0, 0 });

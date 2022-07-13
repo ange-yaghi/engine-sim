@@ -48,6 +48,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         virtual ~CombustionChamber();
 
         void initialize(const Parameters &params);
+        void destroy();
         void setEngine(Engine *engine) { m_engine = engine; }
         virtual void apply(atg_scs::SystemState *system);
 
@@ -113,7 +114,6 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         Piston *m_piston;
         CylinderHead *m_head;
         Engine *m_engine;
-
         Fuel *m_fuel;
 };
 

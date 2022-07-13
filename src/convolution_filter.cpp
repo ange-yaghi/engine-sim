@@ -38,7 +38,6 @@ double ConvolutionFilter::f(double sample) {
     m_shiftRegister[m_shiftOffset] = sample;
 
     double result = 0;
-
     for (int i = 0; i < m_sampleCount - m_shiftOffset; ++i) {
         result += m_impulseResponse[i] * m_shiftRegister[i + m_shiftOffset];
     }

@@ -77,6 +77,7 @@ void Engine::destroy() {
     for (int i = 0; i < m_cylinderCount; ++i) {
         m_pistons[i].destroy();
         m_connectingRods[i].destroy();
+        m_combustionChambers[i].destroy();
     }
 
     for (int i = 0; i < m_exhaustSystemCount; ++i) {
@@ -155,27 +156,24 @@ double Engine::getIntakeFlowRate() const {
 }
 
 double Engine::getManifoldPressure() const {
-    double averagePressure = 0.0;
+    double pressureSum = 0.0;
     for (int i = 0; i < m_intakeCount; ++i) {
-        averagePressure += m_intakes[i].m_system.pressure();
+        pressureSum += m_intakes[i].m_system.pressure();
     }
 
-    return averagePressure / m_intakeCount;
+    return pressureSum / m_intakeCount;
 }
 
 double Engine::getIntakeAfr() const {
-    double totalInert = 0.0;
     double totalOxygen = 0.0;
     double totalFuel = 0.0;
     for (int i = 0; i < m_intakeCount; ++i) {
-        totalInert += m_intakes[i].m_system.n_inert();
         totalOxygen += m_intakes[i].m_system.n_o2();
         totalFuel += m_intakes[i].m_system.n_fuel();
     }
 
     constexpr double octaneMolarMass = units::mass(114.23, units::g);
     constexpr double oxygenMolarMass = units::mass(31.9988, units::g);
-    constexpr double nitrogenMolarMass = units::mass(28.014, units::g);
 
     if (totalFuel == 0) return 0;
     else {
@@ -203,7 +201,10 @@ double Engine::getExhaustO2() const {
     else {
         return
             (oxygenMolarMass * totalOxygen)
-            / (totalFuel * octaneMolarMass + nitrogenMolarMass * totalInert);
+            / (
+                totalFuel * octaneMolarMass
+                + nitrogenMolarMass * totalInert
+                + oxygenMolarMass * totalOxygen);
     }
 }
 
@@ -213,7 +214,7 @@ void Engine::resetFuelConsumption() {
     }
 }
 
-double Engine::getTotalMassFuelConsumed() const {
+double Engine::getTotalFuelMassConsumed() const {
     double n_fuelConsumed = 0;
     for (int i = 0; i < m_intakeCount; ++i) {
         n_fuelConsumed += m_intakes[i].m_totalFuelInjected;
@@ -223,11 +224,10 @@ double Engine::getTotalMassFuelConsumed() const {
 }
 
 double Engine::getTotalVolumeFuelConsumed() const {
-    const double massFuelConsumed = getTotalMassFuelConsumed();
-    return massFuelConsumed / m_fuel.Density;
+    return getTotalFuelMassConsumed() / m_fuel.Density;
 }
 
 double Engine::getRpm() const {
     if (m_crankshaftCount == 0) return 0;
-    return -(getCrankshaft(0)->m_body.v_theta / (2 * constants::pi)) * units::minute;
+    else return -units::toRpm(m_body.v_theta);
 }

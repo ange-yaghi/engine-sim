@@ -59,7 +59,7 @@ class Engine : public Part {
         virtual double getRpm() const;
 
         virtual void resetFuelConsumption();
-        virtual double getTotalMassFuelConsumed() const;
+        virtual double getTotalFuelMassConsumed() const;
         double getTotalVolumeFuelConsumed() const;
 
         inline double getStarterTorque() const { return m_starterTorque; }

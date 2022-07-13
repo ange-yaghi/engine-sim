@@ -598,7 +598,7 @@ void EngineSimApplication::initialize() {
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    double speed = 1.0;
+    double speed = 1.0 / 20;
     if (m_engine.IsKeyDown(ysKey::Code::N1)) {
         speed = 1 / 10.0;
     }

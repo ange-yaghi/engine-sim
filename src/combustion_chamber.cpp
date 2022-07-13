@@ -32,7 +32,8 @@ CombustionChamber::CombustionChamber() {
 }
 
 CombustionChamber::~CombustionChamber() {
-    /* void */
+    assert(m_pistonSpeed == nullptr);
+    assert(m_pressure == nullptr);
 }
 
 void CombustionChamber::initialize(const Parameters &params) {
@@ -74,6 +75,14 @@ void CombustionChamber::initialize(const Parameters &params) {
         units::distance(1.75, units::inch),
         1.0,
         0.0);
+}
+
+void CombustionChamber::destroy() {
+    delete[] m_pistonSpeed;
+    delete[] m_pressure;
+
+    m_pistonSpeed = nullptr;
+    m_pressure = nullptr;
 }
 
 double CombustionChamber::getVolume() const {
@@ -134,10 +143,6 @@ void CombustionChamber::ignite() {
         if (equivalenceRatio < 0.5) return;
         else if (equivalenceRatio > 1.9) return;
 
-        // temp
-        //equivalenceRatio = std::fmin(7.5, std::fmax(20.5, equivalenceRatio));
-        //equivalenceRatio = 15.125;
-
         const double idealInert = m_system.mix().p_o2 / 0.7;
         const double dilution = (m_system.mix().p_inert / idealInert) - 1;
 
@@ -157,7 +162,9 @@ void CombustionChamber::ignite() {
         const double fuel_air_low = 0;
         const double fuel_air_high = 4.0 / 25;
         const double r = (double)rand() / RAND_MAX;
-        const double s = ((equivalenceRatio - fuel_air_low) / (fuel_air_high - fuel_air_low)) * (r * 0.5 + 0.5);
+        const double s =
+            ((equivalenceRatio - fuel_air_low)
+                / (fuel_air_high - fuel_air_low)) * (r * 0.5 + 0.5);
 
         const double turbulence = m_meanPistonSpeedToTurbulence->sampleTriangle(
             calculateMeanPistonSpeed());
@@ -166,26 +173,17 @@ void CombustionChamber::ignite() {
         const double rand_s = (0.7 + 0.3 * ((double)rand() / RAND_MAX));
         const double efficiencyAttenuation = (mixingFactor * rand_s + (1 - mixingFactor));
         m_flameEvent.efficiency = efficiencyAttenuation * 0.75;
-        //m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
-
-        const double maxFlameSpeedAttenuation = 0.9 * ((double)rand() / RAND_MAX) + 0.1;
-        const double flameSpeedAttenuation = 1.0; // (1 - (dilution / 30) * maxFlameSpeedAttenuation);
-        m_flameEvent.flameSpeed = flameSpeedAttenuation * m_fuel->flameSpeed(
+        m_flameEvent.flameSpeed = m_fuel->flameSpeed(
             turbulence,
             afr,
             m_system.temperature(),
             m_system.pressure(),
             calculateFiringPressure(),
             units::pressure(160, units::psi));
-        //m_flameEvent.efficiency = 1.0;
-        //m_flameEvent.flameSpeed = fastFlameSpeed;
 
         if (rand() % 32 == 0) {
             m_flameEvent.efficiency = 0.75;
-            //m_flameEvent.flameSpeed = fastFlameSpeed;
         }
-
-        //m_flameEvent.efficiency = 1;
     }
 }
 
@@ -212,21 +210,6 @@ void CombustionChamber::flow(double dt) {
     m_system.flow(m_piston->getBlowbyK(), dt, m_crankcasePressure, units::celcius(25.0));
 
     const double start_n = m_system.n();
-
-    /*const double intakeFlow = m_system.flow(
-            m_intakeFlowRate,
-            dt,
-            &m_head->getIntake(m_piston->getCylinderIndex())->m_system,
-            -DBL_MAX,
-            DBL_MAX);*/
-
-    //const double exhaustFlow = 0.0;
-    /* m_system.flow(
-            m_exhaustFlowRate,
-            dt,
-            &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system,
-            -DBL_MAX,
-            DBL_MAX);*/
 
     static const double intakeToRunnerFlowRate = GasSystem::k_carb(200.0);
     static const double runnerToExhaustFlowRate = GasSystem::k_carb(500.0);
