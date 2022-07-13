@@ -5,6 +5,7 @@
 
 #include "geometry_generator.h"
 #include "cylinder_bank.h"
+#include "cylinder_head.h"
 
 class CylinderBankObject : public SimulationObject {
     public:
@@ -17,6 +18,7 @@ class CylinderBankObject : public SimulationObject {
         virtual void destroy();
 
         CylinderBank *m_bank;
+        CylinderHead *m_head;
         GeometryGenerator::GeometryIndices m_walls;
 };
 

@@ -68,7 +68,7 @@ void IgnitionModule::update(double dt) {
         }
     }
 
-    const double alpha = dt / (0.00000006 + dt);
+    const double alpha = 1 - dt / (1.0 + dt);
     m_revLimiterDecay = alpha * m_revLimiterDecay;
 
     if (std::fabs(m_crankshaft->m_body.v_theta) > m_revLimit) {

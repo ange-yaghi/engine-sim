@@ -12,6 +12,7 @@
 #include "../include/csv_io.h"
 #include "../include/exhaust_system.h"
 #include "../include/feedback_comb_filter.h"
+#include "../include/utilities.h"
 
 #include <chrono>
 #include <stdlib.h>
@@ -55,6 +56,7 @@ EngineSimApplication::EngineSimApplication() {
     m_oscCluster = nullptr;
     m_performanceCluster = nullptr;
     m_loadSimulationCluster = nullptr;
+    m_mixerCluster = nullptr;
 
     m_oscillatorSampleOffset = 0;
     m_gameWindowHeight = 256;
@@ -139,7 +141,7 @@ void EngineSimApplication::initialize() {
     engineParams.CrankshaftCount = 1;
     engineParams.ExhaustSystemCount = 2;
     engineParams.IntakeCount = 1;
-    engineParams.StarterTorque = units::torque(200, units::ft_lb);
+    engineParams.StarterTorque = units::torque(500, units::ft_lb);
     m_iceEngine.initialize(engineParams);
 
     Piston::Parameters pistonParams;
@@ -295,8 +297,8 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(10, units::deg), units::distance(560, units::thou));
     camLift0->addSample(-units::angle(20, units::deg), units::distance(510, units::thou));
     camLift0->addSample(units::angle(20, units::deg), units::distance(510, units::thou));
-    camLift0->addSample(-units::angle(30, units::deg), units::distance(440, units::thou));
-    camLift0->addSample(units::angle(30, units::deg), units::distance(440, units::thou));
+    camLift0->addSample(-units::angle(30, units::deg), units::distance(430, units::thou));
+    camLift0->addSample(units::angle(30, units::deg), units::distance(430, units::thou));
     camLift0->addSample(-units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
@@ -329,6 +331,7 @@ void EngineSimApplication::initialize() {
     camLift1->setInputScale(1.0);//1.15
     camLift1->setOutputScale(1.0);
     camLift1->addSample(0.0, units::distance(578, units::thou));
+    /*
     camLift1->addSample(-units::angle(10, units::deg), units::distance(560, units::thou));
     camLift1->addSample(units::angle(10, units::deg), units::distance(560, units::thou));
     camLift1->addSample(-units::angle(20, units::deg), units::distance(510, units::thou));
@@ -339,21 +342,21 @@ void EngineSimApplication::initialize() {
     camLift1->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
     camLift1->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
     camLift1->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift1->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));//75
+    camLift1->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));
     camLift1->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
     camLift1->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
     camLift1->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift1->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
-    camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
+    camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));*/
 
     Camshaft::Parameters camParams;
     const double lobeSeparation = 110;// 114;
-    const double advance = (lobeSeparation - 106);
+    const double advance = (lobeSeparation - 106); // 106
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;
     camParams.Advance = units::angle(advance, units::deg);
 
-    camParams.LobeProfile = camLift1;
+    camParams.LobeProfile = camLift0;
     exhaustCamRight->initialize(camParams);
     exhaustCamLeft->initialize(camParams);
     camParams.LobeProfile = camLift0;
@@ -380,23 +383,35 @@ void EngineSimApplication::initialize() {
     intakeCamLeft->setLobeCenterline(3, units::angle(360 + lobeSeparation, units::deg) + 1 * units::angle(360, units::deg) / 4);
 
     Function *flow = new Function;
-    flow->initialize(1, units::distance(100, units::thou));
+    flow->initialize(1, units::distance(50, units::thou));
     flow->addSample(units::distance(0, units::thou), 0.0);
+    flow->addSample(units::distance(50, units::thou), GasSystem::k_28inH2O(10.0));
     flow->addSample(units::distance(100, units::thou), GasSystem::k_28inH2O(76.0));
+    flow->addSample(units::distance(150, units::thou), GasSystem::k_28inH2O(100.0));
     flow->addSample(units::distance(200, units::thou), GasSystem::k_28inH2O(146.0));
+    flow->addSample(units::distance(250, units::thou), GasSystem::k_28inH2O(175.0));
     flow->addSample(units::distance(300, units::thou), GasSystem::k_28inH2O(212.0));
+    flow->addSample(units::distance(350, units::thou), GasSystem::k_28inH2O(230.0));
     flow->addSample(units::distance(400, units::thou), GasSystem::k_28inH2O(255.0));
+    flow->addSample(units::distance(450, units::thou), GasSystem::k_28inH2O(275.0));
     flow->addSample(units::distance(500, units::thou), GasSystem::k_28inH2O(294.0));
+    flow->addSample(units::distance(550, units::thou), GasSystem::k_28inH2O(300.0));
     flow->addSample(units::distance(600, units::thou), GasSystem::k_28inH2O(314.0));
 
     Function *exhaustFlow = new Function;
-    exhaustFlow->initialize(1, units::distance(100, units::thou));
+    exhaustFlow->initialize(1, units::distance(50, units::thou));
     exhaustFlow->addSample(units::distance(0, units::thou), 0.0);
+    exhaustFlow->addSample(units::distance(50, units::thou), GasSystem::k_28inH2O(10.0));
     exhaustFlow->addSample(units::distance(100, units::thou), GasSystem::k_28inH2O(70.0));
+    exhaustFlow->addSample(units::distance(150, units::thou), GasSystem::k_28inH2O(100.0));
     exhaustFlow->addSample(units::distance(200, units::thou), GasSystem::k_28inH2O(132.0));
+    exhaustFlow->addSample(units::distance(250, units::thou), GasSystem::k_28inH2O(140.0));
     exhaustFlow->addSample(units::distance(300, units::thou), GasSystem::k_28inH2O(156.0));
+    exhaustFlow->addSample(units::distance(350, units::thou), GasSystem::k_28inH2O(170.0));
     exhaustFlow->addSample(units::distance(400, units::thou), GasSystem::k_28inH2O(181.0));
+    exhaustFlow->addSample(units::distance(450, units::thou), GasSystem::k_28inH2O(191.0));
     exhaustFlow->addSample(units::distance(500, units::thou), GasSystem::k_28inH2O(207.0));
+    exhaustFlow->addSample(units::distance(550, units::thou), GasSystem::k_28inH2O(214.0));
     exhaustFlow->addSample(units::distance(600, units::thou), GasSystem::k_28inH2O(228.0));
 
     CylinderHead::Parameters chParams;
@@ -418,7 +433,7 @@ void EngineSimApplication::initialize() {
 
     Intake::Parameters inParams;
     inParams.InputFlowK = GasSystem::k_carb(950.0);
-    inParams.Volume = units::volume(20000.0, units::cc);
+    inParams.Volume = units::volume(5000.0, units::cc);
     inParams.IdleFlowK = 0.0000015;
     inParams.IdleThrottlePlatePosition = 0.967;
     m_iceEngine.getIntake(0)->initialize(inParams);
@@ -563,6 +578,9 @@ void EngineSimApplication::initialize() {
     m_loadSimulationCluster = m_uiManager.getRoot()->addElement<LoadSimulationCluster>();
     m_loadSimulationCluster->setSimulator(&m_simulator);
 
+    m_mixerCluster = m_uiManager.getRoot()->addElement<MixerCluster>();
+    m_mixerCluster->setSimulator(&m_simulator);
+
     m_audioBuffer.initialize(44100, 44100);
     m_audioBuffer.m_writePointer = 44100 * 0.1;
 
@@ -604,24 +622,23 @@ void EngineSimApplication::process(float frame_dt) {
     auto proc_t0 = std::chrono::steady_clock::now();
     const int iterationCount = m_simulator.getFrameIterationCount();
     while (m_simulator.simulateStep()) {
-        const double totalFlow = m_simulator.getTotalExhaustFlow();
         m_oscCluster->getTotalExhaustFlowOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            totalFlow / (m_simulator.getTimestep()));
+            m_simulator.getTotalExhaustFlow() / m_simulator.getTimestep());
 
         const double runnerPressure = m_simulator.getEngine()->getChamber(0)->m_intakeRunner.pressure()
             + m_simulator.getEngine()->getChamber(0)->m_intakeRunner.dynamicPressure(1.0, 0.0);
         const double cylinderPressure = m_simulator.getEngine()->getChamber(0)->m_system.pressure()
             + m_simulator.getEngine()->getChamber(0)->m_system.dynamicPressure(-1.0, 0.0);
 
-        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
-        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-        //    (runnerPressure - cylinderPressure) * 100);
         m_oscCluster->getCylinderPressureScope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-            m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.pressure()
-            + m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.dynamicPressure(1.0, 0.0)
-            + m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.dynamicPressure(-1.0, 0.0));
+            std::sqrt(cylinderPressure));
+        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
+        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
+        //    m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.pressure()
+        //    + m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.dynamicPressure(1.0, 0.0)
+        //    + m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.dynamicPressure(-1.0, 0.0));
         //m_oscCluster->getCylinderPressureScope()->addDataPoint(
         //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
         //    m_simulator.getEngine()->getChamber(0)->getLastTimestepIntakeFlow() * 100000000);
@@ -775,6 +792,63 @@ void EngineSimApplication::run() {
             m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
         }
 
+        bool fineControlInUse = false;
+        if (m_engine.IsKeyDown(ysKey::Code::Z)) {
+            const double rate = fineControlMode
+                ? 0.001
+                : 0.01;
+
+            Synthesizer::AudioParameters audioParams = m_simulator.getSynthesizer()->getAudioParameters();
+            audioParams.Volume = clamp(audioParams.Volume + mouseWheelDelta * rate * dt);
+
+            m_simulator.getSynthesizer()->setAudioParameters(audioParams);
+            fineControlInUse = true;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::X)) {
+            const double rate = fineControlMode
+                ? 0.001
+                : 0.01;
+
+            Synthesizer::AudioParameters audioParams = m_simulator.getSynthesizer()->getAudioParameters();
+            audioParams.Convolution = clamp(audioParams.Convolution + mouseWheelDelta * rate * dt);
+
+            m_simulator.getSynthesizer()->setAudioParameters(audioParams);
+            fineControlInUse = true;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::C)) {
+            const double rate = fineControlMode
+                ? 0.00001
+                : 0.001;
+
+            Synthesizer::AudioParameters audioParams = m_simulator.getSynthesizer()->getAudioParameters();
+            audioParams.dF_F_mix = clamp(audioParams.dF_F_mix + mouseWheelDelta * rate * dt);
+
+            m_simulator.getSynthesizer()->setAudioParameters(audioParams);
+            fineControlInUse = true;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::V)) {
+            const double rate = fineControlMode
+                ? 0.001
+                : 0.01;
+
+            Synthesizer::AudioParameters audioParams = m_simulator.getSynthesizer()->getAudioParameters();
+            audioParams.AirNoise = clamp(audioParams.AirNoise + mouseWheelDelta * rate * dt);
+
+            m_simulator.getSynthesizer()->setAudioParameters(audioParams);
+            fineControlInUse = true;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::B)) {
+            const double rate = fineControlMode
+                ? 0.001
+                : 0.01;
+
+            Synthesizer::AudioParameters audioParams = m_simulator.getSynthesizer()->getAudioParameters();
+            audioParams.InputSampleNoise = clamp(audioParams.InputSampleNoise + mouseWheelDelta * rate * dt);
+
+            m_simulator.getSynthesizer()->setAudioParameters(audioParams);
+            fineControlInUse = true;
+        }
+
         targetThrottle = fineControlMode ? targetThrottle : 1.0;
         if (m_engine.IsKeyDown(ysKey::Code::Q)) {
             targetThrottle = 0.99;
@@ -788,7 +862,7 @@ void EngineSimApplication::run() {
         else if (m_engine.IsKeyDown(ysKey::Code::R)) {
             targetThrottle = 0.0;
         }
-        else if (fineControlMode) {
+        else if (fineControlMode && !fineControlInUse) {
             targetThrottle = std::fmax(0.0, std::fmin(1.0, targetThrottle - mouseWheelDelta * 0.0001));
         }
 
@@ -852,7 +926,7 @@ void EngineSimApplication::run() {
         clutchPressure = clutchPressure * (1 - clutch_s) + newClutchPressure * clutch_s;
         m_simulator.getTransmission()->setClutchPressure(clutchPressure);
 
-        if (m_engine.ProcessKeyDown(ysKey::Code::V) &&
+        if (m_engine.ProcessKeyDown(ysKey::Code::M) &&
             m_engine.GetGameWindow()->IsActive()) {
             if (!isRecording() && readyToRecord()) {
                 startRecording();
@@ -953,6 +1027,7 @@ void EngineSimApplication::createObjects(Engine *engine) {
         CylinderBankObject *cbObject = new CylinderBankObject;
         cbObject->initialize(this);
         cbObject->m_bank = engine->getCylinderBank(i);
+        cbObject->m_head = engine->getHead(i);
         m_objects.push_back(cbObject);
 
         CylinderHeadObject *chObject = new CylinderHeadObject;
@@ -991,6 +1066,11 @@ void EngineSimApplication::renderScene() {
     m_oscCluster->m_bounds = grid.get(windowBounds, 1, 1);
     m_performanceCluster->m_bounds = grid3x3.get(windowBounds, 0, 1);
     m_loadSimulationCluster->m_bounds = grid3x3.get(windowBounds, 0, 2);
+
+    Grid grid1x3;
+    grid1x3.v_cells = 3;
+    grid1x3.h_cells = 1;
+    m_mixerCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 2);
 
     m_geometryGenerator.reset();
 

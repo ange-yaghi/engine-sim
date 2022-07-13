@@ -69,41 +69,41 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_hpScope->i_color = m_app->getPink();
 
     // Total exhaust flow
-    m_totalExhaustFlowScope->setBufferSize(1024);
+    m_totalExhaustFlowScope->setBufferSize(1024 * 2);
     m_totalExhaustFlowScope->m_xMin = 0.0f;
     m_totalExhaustFlowScope->m_xMax = constants::pi * 4;
-    m_totalExhaustFlowScope->m_yMin = -units::flow(400.0, units::scfm);
-    m_totalExhaustFlowScope->m_yMax = units::flow(1500.0, units::scfm);
+    m_totalExhaustFlowScope->m_yMin = -units::flow(500, units::scfm);
+    m_totalExhaustFlowScope->m_yMax = units::flow(1500, units::scfm);
     m_totalExhaustFlowScope->m_lineWidth = 2.0f;
     m_totalExhaustFlowScope->m_drawReverse = false;
     m_totalExhaustFlowScope->i_color = m_app->getOrange();
 
     // Exhaust flow
-    m_exhaustFlowScope->setBufferSize(1024);
+    m_exhaustFlowScope->setBufferSize(1024 * 2);
     m_exhaustFlowScope->m_xMin = 0.0f;
     m_exhaustFlowScope->m_xMax = constants::pi * 4;
-    m_exhaustFlowScope->m_yMin = -units::flow(500.0, units::scfm);
-    m_exhaustFlowScope->m_yMax = units::flow(500.0, units::scfm);
+    m_exhaustFlowScope->m_yMin = -units::flow(1000.0, units::scfm);
+    m_exhaustFlowScope->m_yMax = units::flow(1000.0, units::scfm);
     m_exhaustFlowScope->m_lineWidth = 2.0f;
     m_exhaustFlowScope->m_drawReverse = false;
     m_exhaustFlowScope->i_color = m_app->getOrange();
 
     // Intake flow
-    m_intakeFlowScope->setBufferSize(1024);
+    m_intakeFlowScope->setBufferSize(1024 * 2);
     m_intakeFlowScope->m_xMin = 0.0f;
     m_intakeFlowScope->m_xMax = constants::pi * 4;
-    m_intakeFlowScope->m_yMin = -units::flow(500.0, units::scfm);
-    m_intakeFlowScope->m_yMax = units::flow(500.0, units::scfm);
+    m_intakeFlowScope->m_yMin = -units::flow(1000.0, units::scfm);
+    m_intakeFlowScope->m_yMax = units::flow(1000.0, units::scfm);
     m_intakeFlowScope->m_lineWidth = 2.0f;
     m_intakeFlowScope->m_drawReverse = false;
     m_intakeFlowScope->i_color = m_app->getBlue();
 
     // Cylinder molcules
-    m_cylinderMoleculesScope->setBufferSize(1024);
+    m_cylinderMoleculesScope->setBufferSize(1024 * 2);
     m_cylinderMoleculesScope->m_xMin = 0.0f;
     m_cylinderMoleculesScope->m_xMax = constants::pi * 4;
-    m_cylinderMoleculesScope->m_yMin = -0.1;
-    m_cylinderMoleculesScope->m_yMax = 0.1;
+    m_cylinderMoleculesScope->m_yMin = -0.05;
+    m_cylinderMoleculesScope->m_yMax = 0.2;
     m_cylinderMoleculesScope->m_lineWidth = 4.0f;
     m_cylinderMoleculesScope->m_drawReverse = false;
     m_cylinderMoleculesScope->i_color = m_app->getWhite();
@@ -119,36 +119,36 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_audioWaveformScope->i_color = m_app->getBlue();
 
     // Valve lift scopes
-    m_exhaustValveLiftScope->setBufferSize(1024);
+    m_exhaustValveLiftScope->setBufferSize(1024 * 2);
     m_exhaustValveLiftScope->m_xMin = 0.0f;
     m_exhaustValveLiftScope->m_xMax = constants::pi * 4;
-    m_exhaustValveLiftScope->m_yMin = (float)units::distance(0, units::thou);
-    m_exhaustValveLiftScope->m_yMax = (float)units::distance(2000, units::thou);
+    m_exhaustValveLiftScope->m_yMin = (float)units::distance(-500, units::thou);
+    m_exhaustValveLiftScope->m_yMax = (float)units::distance(1000, units::thou);
     m_exhaustValveLiftScope->m_lineWidth = 2.0f;
     m_exhaustValveLiftScope->m_drawReverse = false;
     m_exhaustValveLiftScope->i_color = m_app->getOrange();
 
-    m_intakeValveLiftScope->setBufferSize(1024);
+    m_intakeValveLiftScope->setBufferSize(1024 * 2);
     m_intakeValveLiftScope->m_xMin = 0.0f;
     m_intakeValveLiftScope->m_xMax = constants::pi * 4;
-    m_intakeValveLiftScope->m_yMin = (float)units::distance(0, units::thou);
-    m_intakeValveLiftScope->m_yMax = (float)units::distance(2000, units::thou);
+    m_intakeValveLiftScope->m_yMin = (float)units::distance(-500, units::thou);
+    m_intakeValveLiftScope->m_yMax = (float)units::distance(1000, units::thou);
     m_intakeValveLiftScope->m_lineWidth = 2.0f;
     m_intakeValveLiftScope->m_drawReverse = false;
     m_intakeValveLiftScope->i_color = m_app->getBlue();
 
     // Cylinder pressure scope
-    m_cylinderPressureScope->setBufferSize(1024);
+    m_cylinderPressureScope->setBufferSize(1024 * 2);
     m_cylinderPressureScope->m_xMin = 0.0f;
     m_cylinderPressureScope->m_xMax = constants::pi * 4;
-    m_cylinderPressureScope->m_yMin = -(float)units::pressure(50, units::psi); //250, 1000
-    m_cylinderPressureScope->m_yMax = (float)units::pressure(150, units::psi);
+    m_cylinderPressureScope->m_yMin = -(float)std::sqrt(units::pressure(50, units::psi));
+    m_cylinderPressureScope->m_yMax = (float)std::sqrt(units::pressure(1000, units::psi));
     m_cylinderPressureScope->m_lineWidth = 2.0f;
     m_cylinderPressureScope->m_drawReverse = false;
     m_cylinderPressureScope->i_color = m_app->getOrange();
 
     // Spark advance scope
-    m_sparkAdvanceScope->setBufferSize(1024);
+    m_sparkAdvanceScope->setBufferSize(1024 * 2);
     m_sparkAdvanceScope->m_xMin = 0.0f;
     m_sparkAdvanceScope->m_xMax = units::rpm(10000);
     m_sparkAdvanceScope->m_yMin = -units::angle(30, units::deg);
@@ -157,7 +157,7 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_sparkAdvanceScope->m_drawReverse = true;
     m_sparkAdvanceScope->i_color = m_app->getOrange();
 
-    m_currentFocusScopes[0] = m_exhaustFlowScope;
+    m_currentFocusScopes[0] = m_totalExhaustFlowScope;
     m_currentFocusScopes[1] = nullptr;
 }
 
@@ -182,16 +182,21 @@ void OscilloscopeCluster::signal(UiElement *element, Event event) {
         }
         else if (
             element == m_intakeValveLiftScope
-            || element == m_exhaustValveLiftScope
-            || element == m_intakeFlowScope
-            || element == m_exhaustFlowScope
-            || element == m_cylinderMoleculesScope)
+            || element == m_exhaustValveLiftScope)
         {
             m_currentFocusScopes[0] = m_intakeValveLiftScope;
             m_currentFocusScopes[1] = m_exhaustValveLiftScope;
-            m_currentFocusScopes[2] = m_intakeFlowScope;
-            m_currentFocusScopes[3] = m_exhaustFlowScope;
-            m_currentFocusScopes[4] = m_cylinderMoleculesScope;
+            m_currentFocusScopes[2] = nullptr;
+        }
+        else if (
+            element == m_intakeFlowScope
+            || element == m_exhaustFlowScope
+            || element == m_cylinderMoleculesScope)
+        {
+            m_currentFocusScopes[0] = m_intakeFlowScope;
+            m_currentFocusScopes[1] = m_exhaustFlowScope;
+            m_currentFocusScopes[2] = m_cylinderMoleculesScope;
+            m_currentFocusScopes[3] = nullptr;
         }
         else if (element == m_cylinderPressureScope) {
             m_currentFocusScopes[0] = m_cylinderPressureScope;
@@ -240,11 +245,13 @@ void OscilloscopeCluster::render() {
     renderScope(m_hpScope, hpTorqueBounds, "", true);
 
     const Bounds &valveLiftBounds = grid.get(m_bounds, 2, 2);
-    renderScope(m_intakeValveLiftScope, valveLiftBounds, "Flow");
+    renderScope(m_intakeValveLiftScope, valveLiftBounds, "Valve Lift");
     renderScope(m_exhaustValveLiftScope, valveLiftBounds, "", true);
-    renderScope(m_exhaustFlowScope, valveLiftBounds, "", true);
-    renderScope(m_intakeFlowScope, valveLiftBounds, "", true);
-    renderScope(m_cylinderMoleculesScope, valveLiftBounds, "", true);
+
+    const Bounds &flowBounds = grid.get(m_bounds, 2, 3);
+    renderScope(m_intakeFlowScope, flowBounds, "Flow");
+    renderScope(m_exhaustFlowScope, flowBounds, "", true);
+    renderScope(m_cylinderMoleculesScope, flowBounds, "", true);
 
     const Bounds &audioWaveformBounds = grid.get(m_bounds, 0, 2);
     renderScope(m_audioWaveformScope, audioWaveformBounds, "Waveform");
@@ -252,8 +259,11 @@ void OscilloscopeCluster::render() {
     const Bounds &cylinderPressureBounds = grid.get(m_bounds, 1, 3);
     renderScope(m_cylinderPressureScope, cylinderPressureBounds, "Cylinder Pressure");
 
+    const Bounds &totalExhaustPressureBounds = grid.get(m_bounds, 1, 2);
+    renderScope(m_totalExhaustFlowScope, totalExhaustPressureBounds, "Total Exhaust Flow");
+
     const Bounds &sparkAdvanceBounds = grid.get(m_bounds, 2, 3);
-    renderScope(m_sparkAdvanceScope, sparkAdvanceBounds, "Spark Advance");
+    //renderScope(m_sparkAdvanceScope, sparkAdvanceBounds, "Spark Advance");
 
     const Bounds &focusBounds = grid.get(m_bounds, 0, 0, 3, 2);
     const Bounds &focusTitle = focusBounds.verticalSplit(0.85f, 1.0f);

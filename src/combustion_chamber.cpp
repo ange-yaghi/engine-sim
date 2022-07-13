@@ -159,14 +159,17 @@ void CombustionChamber::ignite() {
         const double r = (double)rand() / RAND_MAX;
         const double s = ((equivalenceRatio - fuel_air_low) / (fuel_air_high - fuel_air_low)) * (r * 0.5 + 0.5);
 
-        m_flameEvent.efficiency = 1.0 * (0.7 + 0.3 * ((double)rand() / RAND_MAX));
-        //m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
-
         const double turbulence = m_meanPistonSpeedToTurbulence->sampleTriangle(
             calculateMeanPistonSpeed());
 
+        const double mixingFactor = 1.0 - (clamp(turbulence / 2) * clamp(1 - dilution / 10));
+        const double rand_s = (0.7 + 0.3 * ((double)rand() / RAND_MAX));
+        const double efficiencyAttenuation = (mixingFactor * rand_s + (1 - mixingFactor));
+        m_flameEvent.efficiency = efficiencyAttenuation * 0.75;
+        //m_flameEvent.flameSpeed = 0.8 * (s * fastFlameSpeed + (1 - s) * slowFlameSpeed);
+
         const double maxFlameSpeedAttenuation = 0.9 * ((double)rand() / RAND_MAX) + 0.1;
-        const double flameSpeedAttenuation = 1.0; // (1 - (dilution / 60) * maxFlameSpeedAttenuation);
+        const double flameSpeedAttenuation = 1.0; // (1 - (dilution / 30) * maxFlameSpeedAttenuation);
         m_flameEvent.flameSpeed = flameSpeedAttenuation * m_fuel->flameSpeed(
             turbulence,
             afr,
@@ -177,10 +180,12 @@ void CombustionChamber::ignite() {
         //m_flameEvent.efficiency = 1.0;
         //m_flameEvent.flameSpeed = fastFlameSpeed;
 
-        if (rand() % 16 == 0) {
-            //m_flameEvent.efficiency = 1;
+        if (rand() % 32 == 0) {
+            m_flameEvent.efficiency = 0.75;
             //m_flameEvent.flameSpeed = fastFlameSpeed;
         }
+
+        //m_flameEvent.efficiency = 1;
     }
 }
 
@@ -233,7 +238,7 @@ void CombustionChamber::flow(double dt) {
     flowParams.k_flow = intakeToRunnerFlowRate;
     flowParams.crossSectionArea_0 = units::area(100.0, units::cm2);
     flowParams.crossSectionArea_1 =
-        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch);
+        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch) * 0.5;
     flowParams.direction_x = 1.0;
     flowParams.direction_y = 0.0;
     flowParams.system_0 = &m_head->getIntake(m_piston->getCylinderIndex())->m_system;
@@ -244,7 +249,7 @@ void CombustionChamber::flow(double dt) {
 
     flowParams.k_flow = m_intakeFlowRate;
     flowParams.crossSectionArea_0 =
-        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch);
+        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch) * 0.5;
     flowParams.crossSectionArea_1 = units::area(10.0, units::cm2);
     flowParams.direction_x = 1.0;
     flowParams.direction_y = 0.0;
@@ -258,7 +263,7 @@ void CombustionChamber::flow(double dt) {
     flowParams.k_flow = m_exhaustFlowRate;
     flowParams.crossSectionArea_0 = units::area(1.0 * 10, units::cm2);
     flowParams.crossSectionArea_1 =
-        constants::pi * units::distance(0.95, units::inch) * units::distance(0.85, units::inch);
+        constants::pi * units::distance(0.85, units::inch) * units::distance(0.85, units::inch);
     flowParams.direction_x = 1.0;
     flowParams.direction_y = 0.0;
     flowParams.system_0 = &m_system;
@@ -281,7 +286,7 @@ void CombustionChamber::flow(double dt) {
 
     m_intakeRunner.updateVelocity(dt, 0.25);
     m_system.updateVelocity(dt, 0.5);
-    m_exhaustRunner.updateVelocity(dt, 0.25);
+    m_exhaustRunner.updateVelocity(dt, 0.1);
 
     if (std::abs(intakeFlow) > 1E-9 && m_lit) {
         m_lit = false;

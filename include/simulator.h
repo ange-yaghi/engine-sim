@@ -8,6 +8,7 @@
 #include "synthesizer.h"
 #include "dynamometer.h"
 #include "starter_motor.h"
+#include "derivative_filter.h"
 
 #include "scs.h"
 
@@ -69,9 +70,13 @@ class Simulator {
         double getSimulationSpeed() const { return m_simulationSpeed; }
 
         double getFilteredDynoTorque() const { return m_dynoTorque; }
+        double getAverageOutputSignal() const;
+
+        Synthesizer *getSynthesizer() { return &m_synthesizer; }
 
         Dynamometer m_dyno;
         StarterMotor m_starterMotor;
+        DerivativeFilter m_derivativeFilter;
 
     protected:
         void placeAndInitialize();

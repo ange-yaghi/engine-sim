@@ -656,7 +656,20 @@ double GasSystem::flow(double k_flow, double dt, double P_env, double T_env, con
         flow = maxFlow;
     }
 
-    //this->flow(flow, kineticEnergyPerMol(T_env, m_degreesOfFreedom), mix);
+    if (flow < 0) {
+        const double bulk_E_k_0 = bulkKineticEnergy();
+        gainN(-flow, kineticEnergyPerMol(T_env, m_degreesOfFreedom), mix);
+        const double bulk_E_k_1 = bulkKineticEnergy();
+
+        m_state.E_k += (bulk_E_k_1 - bulk_E_k_0);
+    }
+    else {
+        const double starting_n = n();
+        loseN(flow, kineticEnergyPerMol());
+
+        m_state.momentum[0] -= (flow / starting_n) * m_state.momentum[0];
+        m_state.momentum[1] -= (flow / starting_n) * m_state.momentum[1];
+    }
 
     return flow;
 }

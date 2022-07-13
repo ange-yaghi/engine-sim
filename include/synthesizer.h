@@ -22,7 +22,7 @@ class Synthesizer {
             double InputSampleNoiseFrequencyCutoff = 80000.0;
             double AirNoise = 1.0;
             double AirNoiseFrequencyCutoff = 10000.0;
-            double LevelerTarget = 40000;
+            double LevelerTarget = 30000;
             double LevelerMaxGain = 1.9;
             double LevelerMinGain = 0.00001;
         };

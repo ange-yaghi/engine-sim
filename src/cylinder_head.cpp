@@ -85,3 +85,11 @@ void CylinderHead::setAllIntakes(Intake *intake) {
 void CylinderHead::setIntake(int i, Intake *intake) {
     m_intakes[i] = intake;
 }
+
+Camshaft *CylinderHead::getExhaustCamshaft() {
+    return m_exhaustCamshaft;
+}
+
+Camshaft *CylinderHead::getIntakeCamshaft() {
+    return m_intakeCamshaft;
+}

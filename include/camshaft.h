@@ -4,6 +4,7 @@
 #include "part.h"
 
 #include "function.h"
+#include "units.h"
 
 class Crankshaft;
 class Camshaft : public Part {
@@ -20,6 +21,9 @@ class Camshaft : public Part {
 
             // Lobe profile
             Function *LobeProfile;
+
+            // Base radius
+            double BaseRadius = units::distance(600, units::thou);
         };
 
     public:
@@ -35,13 +39,18 @@ class Camshaft : public Part {
         void setLobeCenterline(int lobe, double crankAngle) { m_lobeAngles[lobe] = crankAngle / 2; }
         double getLobeCenterline(int lobe) const { return m_lobeAngles[lobe]; }
 
-    protected:
         double getAngle() const;
 
+        Function *getLobeProfile() const { return m_lobeProfile; }
+        double getAdvance() const { return m_advance; }
+        double getBaseRadius() const { return m_baseRadius; }
+
+    private:
         Crankshaft *m_crankshaft;
         Function *m_lobeProfile;
         double *m_lobeAngles;
         double m_advance;
+        double m_baseRadius;
         int m_lobes;
 };
 

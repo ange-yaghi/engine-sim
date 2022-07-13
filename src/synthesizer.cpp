@@ -81,7 +81,7 @@ void Synthesizer::initialize(const Parameters &p) {
     waveFile0.CloseFile();
 
     ysWindowsAudioWaveFile waveFile1;
-    waveFile1.OpenFile("../assets/test_engine_16.wav"); // ../assets/test_engine_16.wav
+    waveFile1.OpenFile("../assets/test_engine_15_eq_adjusted_16.wav"); // ../assets/test_engine_16.wav
     waveFile1.InitializeInternalBuffer(waveFile1.GetSampleCount());
     waveFile1.FillBuffer(0);
     waveFile1.CloseFile();
@@ -181,12 +181,11 @@ void Synthesizer::writeInput(const double *data) {
 }
 
 void Synthesizer::endInputBlock() {
-    {
-        std::lock_guard<std::mutex> lk(m_lock0);
-        m_inputSafetyBoundary = m_inputWriteOffset - 1;
-        m_processed = false;
-    }
+    std::unique_lock<std::mutex> lk(m_lock0);
+    m_inputSafetyBoundary = m_inputWriteOffset - 1;
+    m_processed = false;
 
+    lk.unlock();
     m_cv0.notify_one();
 }
 
@@ -201,7 +200,7 @@ void Synthesizer::renderAudio() {
 
     m_cv0.wait(lk0, [this] {
         const double timeOffset = audioSampleToTimeOffset(m_audioBufferWriteOffset);
-        return !m_run || timeOffsetInBounds(timeOffset, m_inputSafetyBoundary);
+        return (!m_run || timeOffsetInBounds(timeOffset, m_inputSafetyBoundary)) && m_audioBufferWriteOffset < m_audioBufferSize;
         });
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
@@ -283,8 +282,10 @@ void Synthesizer::setInputSampleRate(double sampleRate) {
         std::lock_guard<std::mutex> lock(m_lock0);
         m_inputSampleRate = sampleRate;
 
-        m_inputWriteOffset = 0;
-        m_inputSafetyBoundary = -1;
+        m_inputSafetyBoundary = (m_inputWriteOffset >= 5)
+            ? 5
+            : m_inputWriteOffset;
+        m_inputWriteOffset = m_inputSafetyBoundary + 1;
         m_audioSampleToTimeOffset = 0.0;
         m_audioBufferWriteOffset = 0;
 

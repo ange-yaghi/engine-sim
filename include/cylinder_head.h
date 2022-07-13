@@ -47,6 +47,9 @@ class CylinderHead : public Part {
         inline double getCombustionChamberVolume() const { return m_combustionChamberVolume; }
         inline CylinderBank *getCylinderBank() const { return m_bank; }
 
+        Camshaft *getExhaustCamshaft();
+        Camshaft *getIntakeCamshaft();
+
     protected:
         ExhaustSystem **m_exhaustSystems;
         Intake **m_intakes;

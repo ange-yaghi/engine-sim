@@ -15,7 +15,7 @@ LevelingFilter::~LevelingFilter() {
 }
 
 double LevelingFilter::f(double sample) {
-    m_peak = 0.9999 * m_peak;
+    m_peak = 0.999 * m_peak;
     if (std::abs(sample) > m_peak) {
         m_peak = std::abs(sample);
     }

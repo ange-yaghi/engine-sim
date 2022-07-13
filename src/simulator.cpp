@@ -16,7 +16,7 @@ Simulator::Simulator() {
     m_currentIteration = 0;
     m_simulationSpeed = 1.0;
     m_targetSynthesizerLatency = 0.1;
-    m_simulationFrequency = 7000;//11000;//9000;//13000
+    m_simulationFrequency = 11000;//11000;//9000;//13000
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
@@ -29,6 +29,8 @@ Simulator::Simulator() {
 
     m_filteredEngineSpeed = 0.0;
     m_dynoTorque = 0.0;
+
+    m_derivativeFilter.m_dt = 1.0;
 }
 
 Simulator::~Simulator() {
@@ -177,6 +179,15 @@ void Simulator::initialize(const Parameters &params) {
     initializeSynthesizer();
 }
 
+double Simulator::getAverageOutputSignal() const {
+    double sum = 0.0;
+    for (int i = 0; i < m_engine->getExhaustSystemCount(); ++i) {
+        sum += m_engine->getExhaustSystem(i)->m_system.pressure();
+    }
+
+    return sum / m_engine->getExhaustSystemCount();
+}
+
 void Simulator::placeAndInitialize() {
     const int cylinderCount = m_engine->getCylinderCount();
     for (int i = 0; i < cylinderCount; ++i) {
@@ -268,7 +279,7 @@ void Simulator::endAudioRenderingThread() {
 
 int Simulator::getSynthesizerInputLatencyTarget() const {
     return std::max(
-        10,
+        5,
         (int)std::ceil(m_targetSynthesizerLatency * m_simulationFrequency * m_simulationSpeed));
 }
 
@@ -314,7 +325,7 @@ bool Simulator::simulateStep() {
         m_engine->getChamber(i)->resetLastTimestepIntakeFlow();
     }
 
-    constexpr int iterations = 16;
+    constexpr int iterations = 8;
     for (int i = 0; i < iterations; ++i) {
         for (int j = 0; j < m_engine->getExhaustSystemCount(); ++j) {
             m_engine->getExhaustSystem(j)->start();
@@ -421,9 +432,17 @@ void Simulator::writeToSynthesizer() {
         m_exhaustFlowStagingBuffer[i] = 0;
     }
 
+    const double attenuation = std::min(std::abs(m_filteredEngineSpeed), 40.0) / 40.0;
+    const double attenuation_3 = attenuation * attenuation * attenuation;
+
     for (int i = 0; i < exhaustSystemCount; ++i) {
         ExhaustSystem *exhaustSystem = m_engine->getExhaustSystem(i);
-        m_exhaustFlowStagingBuffer[i] += 100 * exhaustSystem->m_system.pressure();
+        //m_exhaustFlowStagingBuffer[i] += 1000000 * exhaustSystem->m_system.n();
+        m_exhaustFlowStagingBuffer[i] +=
+            attenuation_3 * 100 * (
+                1.0 * (exhaustSystem->m_system.pressure() - units::pressure(1.0, units::atm))
+                + 0.5 * exhaustSystem->m_system.dynamicPressure(1.0, 0.0)
+                + 0.5 * exhaustSystem->m_system.dynamicPressure(-1.0, 0.0));
     }
 
     const double timestep = getTimestep();
@@ -433,17 +452,18 @@ void Simulator::writeToSynthesizer() {
         CylinderBank *bank = piston->getCylinderBank();
         CylinderHead *head = m_engine->getHead(bank->getIndex());
 
-        const double exhaustFlow = std::max(m_engine->getChamber(i)->getLastTimestepExhaustFlow(), 0.0);
-        //const double exhaustFlow =
-        //    (m_engine->getChamber(i)->m_exhaustRunner.pressure()
-        //    + m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(1.0, 0.0)
-        //    + m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(-1.0, 0.0))
-        //    / 50000;
-
-        const double attenuation = std::min(std::abs(m_filteredEngineSpeed), 1E-2) / 1E-2;
+        //const double exhaustFlow = std::max(m_engine->getChamber(i)->getLastTimestepExhaustFlow(), 0.0);
+        const double exhaustFlow =
+            attenuation_3 * 1600 * (
+                1.0 * (m_engine->getChamber(i)->m_exhaustRunner.pressure() - units::pressure(1.0, units::atm))
+                + 0.5 * m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(1.0, 0.0)
+                + 0.5 * m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(-1.0, 0.0));
 
         ExhaustSystem *exhaustSystem = head->getExhaustSystem(piston->getCylinderIndex());
-        m_exhaustFlowStagingBuffer[exhaustSystem->m_index] += 0.001 * attenuation * 50000 * exhaustFlow / timestep;
+        m_exhaustFlowStagingBuffer[exhaustSystem->m_index] += exhaustFlow / cylinderCount;
+
+        //m_exhaustFlowStagingBuffer[exhaustSystem->m_index] +=
+        //    attenuation * 50000 * exhaustFlow / timestep;
     }
 
     m_synthesizer.writeInput(m_exhaustFlowStagingBuffer);

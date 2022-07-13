@@ -615,6 +615,106 @@ bool GeometryGenerator::generateCircle2d(const Circle2dParameters &params) {
     return true;
 }
 
+bool GeometryGenerator::generateCam(const Cam2dParameters &params) {
+    // edge_length = (sin(theta) * radius) * 2
+    // theta = arcsin(edge_length / (2 * radius))
+    // theta2 = PI - theta
+
+    startSubshape();
+
+    float angle = std::asinf(params.maxEdgeLength / (2 * params.baseRadius)) * 2;
+    angle = std::fminf(angle, ysMath::Constants::PI - params.smallestAngle);
+
+    const float steps = ysMath::Constants::TWO_PI / angle;
+
+    int segmentCount = (int)std::ceilf(steps);
+    segmentCount = (segmentCount < 3)
+        ? 3
+        : segmentCount;
+
+    const int vertexCount = 1 + segmentCount;
+    const int faceCount = segmentCount;
+    const int indexCount = faceCount * 3;
+
+    if (!checkCapacity(vertexCount, indexCount)) {
+        return false;
+    }
+
+    // Generate center vertex
+    dbasic::Vertex *centerVertex = writeVertex();
+    centerVertex->Normal = ysMath::Constants::ZAxis;
+    centerVertex->Pos = ysMath::LoadVector(params.center_x, params.center_y);
+    centerVertex->TexCoord = ysVector2(0.5f, 0.5f);
+
+    const float angleStep = ysMath::Constants::TWO_PI / segmentCount;
+    const float baseRollerPosition = params.baseRadius + params.rollerRadius;
+
+    float lastRoller_x = 0;
+    float lastRoller_y = 0;
+
+    float *positions_x = new float[segmentCount];
+    float *positions_y = new float[segmentCount];
+
+    for (int i = 0; i < segmentCount; ++i) {
+        const float angle0 = angleStep * i;
+        const float x = std::cosf(angle0 + ysMath::Constants::PI / 2);
+        const float y = std::sinf(angle0 + ysMath::Constants::PI / 2);
+
+        const float lift = (params.lift == nullptr)
+            ? 0.0
+            : (float)params.lift->sampleTriangle(angle0 - ysMath::Constants::TWO_PI / 2);
+        const float rollerPosition = baseRollerPosition + lift;
+
+        const float rollerPos_x = params.center_x + x * rollerPosition;
+        const float rollerPos_y = params.center_y + y * rollerPosition;
+
+        float dx = -1, dy = 0;
+        if (i != 0) {
+            dx = rollerPos_x - lastRoller_x;
+            dy = rollerPos_y - lastRoller_y;
+
+            const float mag = std::sqrt(dx * dx + dy * dy);
+            dx /= mag;
+            dy /= mag;
+        }
+
+        lastRoller_x = rollerPos_x;
+        lastRoller_y = rollerPos_y;
+
+        const float t_dx = -dy;
+        const float t_dy = dx;
+
+        const float tangentPos_x = rollerPos_x + t_dx * params.rollerRadius;
+        const float tangentPos_y = rollerPos_y + t_dy * params.rollerRadius;
+
+        positions_x[i] = tangentPos_x;
+        positions_y[i] = tangentPos_y;
+    }
+
+    for (int i = 0; i < segmentCount; ++i) {
+        const int prev_i = (i - 1 + segmentCount) % segmentCount;
+        const int next_i = (i + 1) % segmentCount;
+
+        const float prev_x = positions_x[prev_i], prev_y = positions_y[prev_i];
+        const float next_x = positions_x[next_i], next_y = positions_y[next_i];
+
+        dbasic::Vertex *newVertex = writeVertex();
+        newVertex->Normal.Set(0, 0, 1, 0);
+        newVertex->Pos.Set((prev_x + next_x) / 2, (prev_y + next_y) / 2, 0.0f, 1.0f);
+        newVertex->TexCoord.x = 0.0f;
+        newVertex->TexCoord.y = 0.5f;
+    }
+
+    for (int i = 0; i < segmentCount; ++i) {
+        writeFace(0, i + 1, 1 + ((i + 1) % segmentCount));
+    }
+
+    delete[] positions_x;
+    delete[] positions_y;
+
+    return true;
+}
+
 bool GeometryGenerator::generateRhombus(const Rhombus2dParameters &params) {
     startSubshape();
 

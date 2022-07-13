@@ -13,6 +13,7 @@ Camshaft::Camshaft() {
     m_lobeProfile = nullptr;
     m_lobes = 0;
     m_advance = 0;
+    m_baseRadius = 0;
 }
 
 Camshaft::~Camshaft() {
@@ -27,6 +28,7 @@ void Camshaft::initialize(const Parameters &params) {
     m_crankshaft = params.Crankshaft;
     m_lobeProfile = params.LobeProfile;
     m_advance = params.Advance;
+    m_baseRadius = params.BaseRadius;
 }
 
 void Camshaft::destroy() {

@@ -3,6 +3,8 @@
 
 #include "delta.h"
 
+#include "../include/function.h"
+
 #include "../include/ui_math.h"
 
 class GeometryGenerator {
@@ -58,6 +60,15 @@ public:
     struct Circle2dParameters {
         float center_x = 0.0f, center_y = 0.0f;
         float radius = 1.0f;
+        float maxEdgeLength = 0.1f;
+        float smallestAngle = ysMath::Constants::PI * 0.95f;
+    };
+
+    struct Cam2dParameters {
+        float center_x = 0.0f, center_y = 0.0f;
+        float baseRadius = 1.0f;
+        float rollerRadius = 1.0f;
+        Function *lift = nullptr;
         float maxEdgeLength = 0.1f;
         float smallestAngle = ysMath::Constants::PI * 0.95f;
     };
@@ -158,6 +169,9 @@ public:
 
     bool generateCircle2d(
         const Circle2dParameters &params);
+
+    bool generateCam(
+        const Cam2dParameters &params);
 
     bool generateRhombus(
         const Rhombus2dParameters &params);

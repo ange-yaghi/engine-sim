@@ -17,6 +17,13 @@ class CylinderHeadObject : public SimulationObject {
         virtual void destroy();
 
         CylinderHead *m_head;
+
+    protected:
+        void generateCamshaft(
+            Camshaft *camshaft,
+            double padding,
+            double rollerRadius,
+            GeometryGenerator::GeometryIndices *indices);
 };
 
 #endif /* ATG_ENGINE_SIM_CYLINDER_HEAD_OBJECT_H */
