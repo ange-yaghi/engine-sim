@@ -11,6 +11,7 @@ class Vehicle {
             double CrossSectionArea;
             double DiffRatio;
             double TireRadius;
+            double RollingResistance;
         };
 
     public:
@@ -21,6 +22,7 @@ class Vehicle {
         void update(double dt);
         void addToSystem(atg_scs::RigidBodySystem *system, atg_scs::RigidBody *rotatingMass);
         inline double getMass() const { return m_mass; }
+        inline double getRollingResistance() const { return m_rollingResistance; }
         inline double getDragCoefficient() const { return m_dragCoefficient; }
         inline double getCrossSectionArea() const { return m_crossSectionArea; }
         inline double getDiffRatio() const { return m_diffRatio; }
@@ -28,6 +30,7 @@ class Vehicle {
         double getSpeed() const;
         inline double getTravelledDistance() const { return m_travelledDistance; }
         inline void resetTravelledDistance() { m_travelledDistance = 0; }
+        double linearForceToVirtualTorque(double force) const;
 
     protected:
         atg_scs::RigidBody *m_rotatingMass;
@@ -38,6 +41,7 @@ class Vehicle {
         double m_diffRatio;
         double m_tireRadius;
         double m_travelledDistance;
+        double m_rollingResistance;
 };
 
 #endif /* ATG_ENGINE_SIM_VEHICLE_H */

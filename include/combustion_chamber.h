@@ -24,15 +24,15 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         };
 
         struct FlameEvent {
-            double lit_n;
-            double total_n;
-            double percentageLit;
-            double efficiency;
-            double flameSpeed;
+            double lit_n = 0;
+            double total_n = 0;
+            double percentageLit = 0;
+            double efficiency = 1.0;
+            double flameSpeed = 0.0;
 
-            double lastVolume;
-            double travel_x;
-            double travel_y;
+            double lastVolume = 0.0;
+            double travel_x = 0.0;
+            double travel_y = 0.0;
             GasSystem::Mix globalMix;
         };
 
@@ -65,10 +65,8 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         bool popLitLastFrame();
 
         void ignite();
-        void start();
         void update(double dt);
         void flow(double dt);
-        void end();
 
         double lastEventAfr() const;
 

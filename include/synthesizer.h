@@ -28,11 +28,11 @@ class Synthesizer {
         };
 
         struct Parameters {
-            int InputChannelCount;
-            int InputBufferSize;
-            int AudioBufferSize;
-            double InputSampleRate;
-            double AudioSampleRate;
+            int InputChannelCount = 1;
+            int InputBufferSize = 1024;
+            int AudioBufferSize = 44100;
+            double InputSampleRate = 10000;
+            double AudioSampleRate = 44100;
             AudioParameters InitialAudioParameters;
         };
 

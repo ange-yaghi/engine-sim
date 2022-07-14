@@ -19,9 +19,7 @@ class ExhaustSystem : public Part {
         void initialize(Parameters &params);
         virtual void destroy();
 
-        void start();
         void process(double dt);
-        void end();
 
         GasSystem m_system;
         double m_flowK;

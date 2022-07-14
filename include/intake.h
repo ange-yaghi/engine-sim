@@ -34,9 +34,7 @@ class Intake : public Part {
         void initialize(Parameters &params);
         virtual void destroy();
 
-        void start();
         void process(double dt);
-        void end();
 
         inline double getThrottlePlatePosition() const { return m_idleThrottlePlatePosition * m_throttle; }
 

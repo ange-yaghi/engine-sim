@@ -520,9 +520,9 @@ bool GeometryGenerator::generateRing2d(const Ring2dParameters &params) {
 
         const float s = (params.drawArrow)
             ? (angle0 - arrowStart) / (arrowEnd - arrowStart)
-            : 0.0;
+            : 0.0f;
 
-        const float width = fullWidth * (1 - std::fmin(1.0, std::fmax(s, 0.0)));
+        const float width = fullWidth * (1 - std::fminf(1.0, std::fmaxf(s, 0.0)));
         const float innerRadius = midRadius - width / 2;
         const float outerRadius = midRadius + width / 2;
 
@@ -661,8 +661,8 @@ bool GeometryGenerator::generateCam(const Cam2dParameters &params) {
         const float y = std::sinf(angle0 + ysMath::Constants::PI / 2);
 
         const float lift = (params.lift == nullptr)
-            ? 0.0
-            : (float)params.lift->sampleTriangle(angle0 - ysMath::Constants::TWO_PI / 2);
+            ? 0.0f
+            : (float)params.lift->sampleTriangle((double)angle0 - ysMath::Constants::TWO_PI / 2);
         const float rollerPosition = baseRollerPosition + lift;
 
         const float rollerPos_x = params.center_x + x * rollerPosition;

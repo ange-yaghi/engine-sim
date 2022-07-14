@@ -76,7 +76,7 @@ void Oscilloscope::render(const Bounds &bounds) {
     m_app->getGeometryGenerator()->startShape();
 
     params.i = 0;
-    params.width = pixelsToUnits(0.5f) * m_lineWidth;
+    params.width = pixelsToUnits(0.5f) * (float)m_lineWidth;
     if (!m_app->getGeometryGenerator()->startPath(params)) {
         return;
     }
@@ -93,7 +93,7 @@ void Oscilloscope::render(const Bounds &bounds) {
         const float s = (float)(i) / (n0 + n1);
         const Point p_i = p[index];
         params.i = i;
-        params.width = m_lineWidth * std::fmaxf(
+        params.width = (float)m_lineWidth * std::fmaxf(
             pixelsToUnits(1.0f) * s,
             pixelsToUnits(0.5f));
 

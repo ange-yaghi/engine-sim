@@ -271,26 +271,8 @@ void EngineSimApplication::initialize() {
     Camshaft *intakeCamLeft = new Camshaft, *intakeCamRight = new Camshaft;
     Function *camLift0 = new Function;
     camLift0->initialize(1, units::angle(10, units::deg));
-    camLift0->setInputScale(1.0);//1.15
+    camLift0->setInputScale(1.0);
     camLift0->setOutputScale(1.0);
-    /*
-    camLift0->addSample(0.0, units::distance(565, units::thou));
-    camLift0->addSample(-units::angle(10, units::deg), units::distance(560, units::thou));
-    camLift0->addSample(units::angle(10, units::deg), units::distance(560, units::thou));
-    camLift0->addSample(-units::angle(20, units::deg), units::distance(550, units::thou));
-    camLift0->addSample(units::angle(20, units::deg), units::distance(550, units::thou));
-    camLift0->addSample(-units::angle(30, units::deg), units::distance(500, units::thou));
-    camLift0->addSample(units::angle(30, units::deg), units::distance(500, units::thou));
-    camLift0->addSample(-units::angle(40, units::deg), units::distance(400, units::thou));
-    camLift0->addSample(units::angle(40, units::deg), units::distance(400, units::thou));
-    camLift0->addSample(-units::angle(50, units::deg), units::distance(250, units::thou));
-    camLift0->addSample(units::angle(50, units::deg), units::distance(250, units::thou));
-    camLift0->addSample(-units::angle(60, units::deg), units::distance(100, units::thou));
-    camLift0->addSample(units::angle(60, units::deg), units::distance(100, units::thou));
-    camLift0->addSample(-units::angle(70, units::deg), units::distance(25, units::thou));
-    camLift0->addSample(units::angle(70, units::deg), units::distance(25, units::thou));
-    camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
-    camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));*/
     
     camLift0->addSample(0.0, units::distance(578, units::thou));
     camLift0->addSample(-units::angle(10, units::deg), units::distance(560, units::thou));
@@ -303,55 +285,22 @@ void EngineSimApplication::initialize() {
     camLift0->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
     camLift0->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
     camLift0->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift0->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));//75
+    camLift0->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));
     camLift0->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
     camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
     camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
     camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));
-    /*camLift0->addSample(-units::angle(10, units::deg), units::distance(600, units::thou));
-    camLift0->addSample(units::angle(10, units::deg), units::distance(600, units::thou));
-    camLift0->addSample(-units::angle(20, units::deg), units::distance(550, units::thou));
-    camLift0->addSample(units::angle(20, units::deg), units::distance(550, units::thou));
-    camLift0->addSample(-units::angle(30, units::deg), units::distance(500, units::thou));
-    camLift0->addSample(units::angle(30, units::deg), units::distance(500, units::thou));
-    camLift0->addSample(-units::angle(40, units::deg), units::distance(400, units::thou));
-    camLift0->addSample(units::angle(40, units::deg), units::distance(400, units::thou));
-    camLift0->addSample(-units::angle(50, units::deg), units::distance(150, units::thou));
-    camLift0->addSample(units::angle(50, units::deg), units::distance(150, units::thou));
-    camLift0->addSample(-units::angle(60, units::deg), units::distance(50, units::thou));
-    camLift0->addSample(units::angle(60, units::deg), units::distance(50, units::thou));
-    camLift0->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
-    camLift0->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
-    camLift0->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
-    camLift0->addSample(units::angle(80, units::deg), units::distance(0, units::thou));*/
 
     Function *camLift1 = new Function;
     camLift1->initialize(1, units::angle(10, units::deg));
-    camLift1->setInputScale(1.0);//1.15
+    camLift1->setInputScale(1.0);
     camLift1->setOutputScale(1.0);
     camLift1->addSample(0.0, units::distance(578, units::thou));
-    /*
-    camLift1->addSample(-units::angle(10, units::deg), units::distance(560, units::thou));
-    camLift1->addSample(units::angle(10, units::deg), units::distance(560, units::thou));
-    camLift1->addSample(-units::angle(20, units::deg), units::distance(510, units::thou));
-    camLift1->addSample(units::angle(20, units::deg), units::distance(510, units::thou));
-    camLift1->addSample(-units::angle(30, units::deg), units::distance(440, units::thou));
-    camLift1->addSample(units::angle(30, units::deg), units::distance(440, units::thou));
-    camLift1->addSample(-units::angle(40, units::deg), units::distance(350, units::thou));
-    camLift1->addSample(units::angle(40, units::deg), units::distance(350, units::thou));
-    camLift1->addSample(-units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift1->addSample(units::angle(50, units::deg), units::distance(220, units::thou));
-    camLift1->addSample(-units::angle(60, units::deg), units::distance(75, units::thou));
-    camLift1->addSample(units::angle(60, units::deg), units::distance(75, units::thou));
-    camLift1->addSample(-units::angle(70, units::deg), units::distance(0, units::thou));
-    camLift1->addSample(units::angle(70, units::deg), units::distance(0, units::thou));
-    camLift1->addSample(-units::angle(80, units::deg), units::distance(0, units::thou));
-    camLift1->addSample(units::angle(80, units::deg), units::distance(0, units::thou));*/
 
     Camshaft::Parameters camParams;
-    const double lobeSeparation = 110;// 114;
-    const double advance = (lobeSeparation - 106); // 106
+    const double lobeSeparation = 109;
+    const double advance = (lobeSeparation - 106);
     camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
     camParams.Lobes = 4;
     camParams.Advance = units::angle(advance, units::deg);
@@ -488,20 +437,7 @@ void EngineSimApplication::initialize() {
     equivalenceRatioToLaminarFlameSpeed->addSample(1.3, units::distance(30, units::cm) / units::sec);
     equivalenceRatioToLaminarFlameSpeed->addSample(1.4, units::distance(25, units::cm) / units::sec);
 
-    const double lin_s = 1.0;
-    const double a = 0.0;
-    const double b = 1.0;
-
     turbulenceToFlameSpeedRatio->initialize(10, 10.0);
-    /*
-    for (int i = 0; i < 1000; ++i) {
-        const double x = i - 1.0;
-        turbulenceToFlameSpeedRatio->addSample(
-            (double)i,
-            (i == 0)
-                ? 1.0
-                : (1 - lin_s) * a * x * x + lin_s * b * x + 1);
-    }*/
     turbulenceToFlameSpeedRatio->addSample(0.0, 1.0);
     turbulenceToFlameSpeedRatio->addSample(5.0, 1.5 * 5.0);
     turbulenceToFlameSpeedRatio->addSample(10.0, 1.5 * 10.0);
@@ -542,6 +478,9 @@ void EngineSimApplication::initialize() {
     vehParams.Mass = units::mass(1597, units::kg);
     vehParams.DiffRatio = 3.42;
     vehParams.TireRadius = units::distance(10, units::inch);
+    vehParams.DragCoefficient = 0.25;
+    vehParams.CrossSectionArea = units::distance(6.0, units::foot) * units::distance(6.0, units::foot);
+    vehParams.RollingResistance = 2000.0;
     Vehicle *vehicle = new Vehicle;
     vehicle->initialize(vehParams);
 
@@ -582,7 +521,7 @@ void EngineSimApplication::initialize() {
     m_mixerCluster->setSimulator(&m_simulator);
 
     m_audioBuffer.initialize(44100, 44100);
-    m_audioBuffer.m_writePointer = 44100 * 0.1;
+    m_audioBuffer.m_writePointer = (int)(44100 * 0.1);
 
     ysAudioParameters params;
     params.m_bitsPerSample = 16;
@@ -598,7 +537,7 @@ void EngineSimApplication::initialize() {
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    double speed = 1.0 / 20;
+    double speed = 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::N1)) {
         speed = 1 / 10.0;
     }
@@ -622,30 +561,17 @@ void EngineSimApplication::process(float frame_dt) {
     auto proc_t0 = std::chrono::steady_clock::now();
     const int iterationCount = m_simulator.getFrameIterationCount();
     while (m_simulator.simulateStep()) {
-        m_oscCluster->getTotalExhaustFlowOscilloscope()->addDataPoint(
-            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getTotalExhaustFlow() / m_simulator.getTimestep());
-
         const double runnerPressure = m_simulator.getEngine()->getChamber(0)->m_intakeRunner.pressure()
             + m_simulator.getEngine()->getChamber(0)->m_intakeRunner.dynamicPressure(1.0, 0.0);
         const double cylinderPressure = m_simulator.getEngine()->getChamber(0)->m_system.pressure()
             + m_simulator.getEngine()->getChamber(0)->m_system.dynamicPressure(-1.0, 0.0);
 
+        m_oscCluster->getTotalExhaustFlowOscilloscope()->addDataPoint(
+            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator.getTotalExhaustFlow() / m_simulator.getTimestep());
         m_oscCluster->getCylinderPressureScope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
             std::sqrt(cylinderPressure));
-        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
-        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-        //    m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.pressure()
-        //    + m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.dynamicPressure(1.0, 0.0)
-        //    + m_simulator.getEngine()->getChamber(0)->m_exhaustRunner.dynamicPressure(-1.0, 0.0));
-        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
-        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-        //    m_simulator.getEngine()->getChamber(0)->getLastTimestepIntakeFlow() * 100000000);
-        //m_oscCluster->getCylinderPressureScope()->addDataPoint(
-        //    m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-        //    m_simulator.getEngine()->getChamber(0)->m_system.n() * 10000000);
-
         m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
             m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
             m_simulator.getEngine()->getChamber(0)->getLastTimestepExhaustFlow() / m_simulator.getTimestep());
@@ -680,7 +606,7 @@ void EngineSimApplication::process(float frame_dt) {
     const SampleOffset writePosition = m_audioBuffer.m_writePointer;
 
     SampleOffset targetWritePosition =
-        m_audioBuffer.getBufferIndex(currentAudioPosition, 44100 * 0.1);
+        m_audioBuffer.getBufferIndex(currentAudioPosition, (int)(44100 * 0.1));
     SampleOffset maxWrite = m_audioBuffer.offsetDelta(writePosition, targetWritePosition);
 
     SampleOffset currentLead = m_audioBuffer.offsetDelta(currentAudioPosition, writePosition);
@@ -693,7 +619,7 @@ void EngineSimApplication::process(float frame_dt) {
     int16_t *samples = new int16_t[maxWrite];
     const int readSamples = m_simulator.readAudioOutput(maxWrite, samples);
 
-    for (int i = 0; i < readSamples && i < maxWrite; ++i) {
+    for (SampleOffset i = 0; i < (SampleOffset)readSamples && i < maxWrite; ++i) {
         const int16_t sample = samples[i];
         if (m_oscillatorSampleOffset % 4 == 0) {
             m_oscCluster->getAudioWaveformOscilloscope()->addDataPoint(
@@ -701,7 +627,7 @@ void EngineSimApplication::process(float frame_dt) {
                 sample / (float)(INT16_MAX));
         }
 
-        m_audioBuffer.writeSample(sample, m_audioBuffer.m_writePointer, i);
+        m_audioBuffer.writeSample(sample, m_audioBuffer.m_writePointer, (int)i);
 
         m_oscillatorSampleOffset = (m_oscillatorSampleOffset + 1) % (44100 / 10);
     }

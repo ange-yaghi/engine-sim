@@ -8,6 +8,7 @@
 #include <sstream>
 
 PerformanceCluster::PerformanceCluster() {
+    m_simulator = nullptr;
     m_timePerTimestepGauge = nullptr;
     m_timePerTimestepGauge = nullptr;
     m_fpsGauge = nullptr;
@@ -41,9 +42,9 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_timePerTimestepGauge->m_gauge->m_minorStep = 5;
     m_timePerTimestepGauge->m_gauge->m_majorStep = 10;
     m_timePerTimestepGauge->m_gauge->m_maxMinorTick = 1000000;
-    m_timePerTimestepGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_timePerTimestepGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_timePerTimestepGauge->m_gauge->m_needleWidth = 4.0;
+    m_timePerTimestepGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_timePerTimestepGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_timePerTimestepGauge->m_gauge->m_needleWidth = 4.0f;
     m_timePerTimestepGauge->m_gauge->m_gamma = 1.0f;
     m_timePerTimestepGauge->m_gauge->m_needleKs = 1000.0f;
     m_timePerTimestepGauge->m_gauge->m_needleKd = 20.0f;
@@ -65,9 +66,9 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_fpsGauge->m_gauge->m_minorStep = 1;
     m_fpsGauge->m_gauge->m_majorStep = 15;
     m_fpsGauge->m_gauge->m_maxMinorTick = 60;
-    m_fpsGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_fpsGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_fpsGauge->m_gauge->m_needleWidth = 4.0;
+    m_fpsGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_fpsGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_fpsGauge->m_gauge->m_needleWidth = 4.0f;
     m_fpsGauge->m_gauge->m_gamma = 0.6f;
     m_fpsGauge->m_gauge->m_needleKs = 1000.0f;
     m_fpsGauge->m_gauge->m_needleKd = 20.0f;
@@ -94,9 +95,9 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_simSpeedGauge->m_gauge->m_minorStep = 10;
     m_simSpeedGauge->m_gauge->m_majorStep = 50;
     m_simSpeedGauge->m_gauge->m_maxMinorTick = 1000;
-    m_simSpeedGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_simSpeedGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_simSpeedGauge->m_gauge->m_needleWidth = 4.0;
+    m_simSpeedGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_simSpeedGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_simSpeedGauge->m_gauge->m_needleWidth = 4.0f;
     m_simSpeedGauge->m_gauge->m_gamma = 1.0f;
     m_simSpeedGauge->m_gauge->m_needleKs = 1000.0f;
     m_simSpeedGauge->m_gauge->m_needleKd = 20.0f;
@@ -113,9 +114,9 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_audioLagGauge->m_gauge->m_minorStep = 5;
     m_audioLagGauge->m_gauge->m_majorStep = 10;
     m_audioLagGauge->m_gauge->m_maxMinorTick = 1000;
-    m_audioLagGauge->m_gauge->m_thetaMin = constants::pi * 0.8;
-    m_audioLagGauge->m_gauge->m_thetaMax = 0.2 * constants::pi;
-    m_audioLagGauge->m_gauge->m_needleWidth = 4.0;
+    m_audioLagGauge->m_gauge->m_thetaMin = (float)constants::pi * 0.8f;
+    m_audioLagGauge->m_gauge->m_thetaMax = (float)constants::pi * 0.2f;
+    m_audioLagGauge->m_gauge->m_needleWidth = 4.0f;
     m_audioLagGauge->m_gauge->m_gamma = 1.0f;
     m_audioLagGauge->m_gauge->m_needleKs = 1000.0f;
     m_audioLagGauge->m_gauge->m_needleKd = 20.0f;
@@ -138,9 +139,9 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_inputSamplesGauge->m_gauge->m_minorStep = 5;
     m_inputSamplesGauge->m_gauge->m_majorStep = 10;
     m_inputSamplesGauge->m_gauge->m_maxMinorTick = 1000;
-    m_inputSamplesGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_inputSamplesGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_inputSamplesGauge->m_gauge->m_needleWidth = 4.0;
+    m_inputSamplesGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_inputSamplesGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_inputSamplesGauge->m_gauge->m_needleWidth = 4.0f;
     m_inputSamplesGauge->m_gauge->m_gamma = 1.0f;
     m_inputSamplesGauge->m_gauge->m_needleKs = 1000.0f;
     m_inputSamplesGauge->m_gauge->m_needleKd = 20.0f;
@@ -158,13 +159,13 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_simulationFrequencyGauge->m_precision = 0;
     m_simulationFrequencyGauge->setLocalPosition({ 0, 0 });
     m_simulationFrequencyGauge->m_gauge->m_min = 1000;
-    m_simulationFrequencyGauge->m_gauge->m_max = 50000;
+    m_simulationFrequencyGauge->m_gauge->m_max = 51000;
     m_simulationFrequencyGauge->m_gauge->m_minorStep = 1000;
     m_simulationFrequencyGauge->m_gauge->m_majorStep = 10000;
     m_simulationFrequencyGauge->m_gauge->m_maxMinorTick = 50000;
-    m_simulationFrequencyGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_simulationFrequencyGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_simulationFrequencyGauge->m_gauge->m_needleWidth = 4.0;
+    m_simulationFrequencyGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_simulationFrequencyGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_simulationFrequencyGauge->m_gauge->m_needleWidth = 4.0f;
     m_simulationFrequencyGauge->m_gauge->m_gamma = 0.9f;
     m_simulationFrequencyGauge->m_gauge->m_needleKs = 1000.0f;
     m_simulationFrequencyGauge->m_gauge->m_needleKd = 20.0f;
@@ -192,22 +193,23 @@ void PerformanceCluster::render() {
     constexpr float shortenAngle = (float)units::angle(1.0, units::deg);
     const double idealTimePerTimestep = (1.0 / m_filteredSimulationFrequency);
     m_timePerTimestepGauge->m_bounds = grid.get(m_bounds, 1, 0);
-    m_timePerTimestepGauge->m_gauge->m_value = (m_timePerTimestep / idealTimePerTimestep) * 100;
+    m_timePerTimestepGauge->m_gauge->m_value =
+        (float)(m_timePerTimestep / idealTimePerTimestep) * 100.0f;
 
     m_fpsGauge->m_bounds = grid.get(m_bounds, 0, 0);
     m_fpsGauge->m_gauge->m_value = m_app->getEngine()->GetAverageFramerate();
 
     m_simSpeedGauge->m_bounds = grid.get(m_bounds, 2, 0);
-    m_simSpeedGauge->m_gauge->m_value = 1 / m_simulator->getSimulationSpeed();
+    m_simSpeedGauge->m_gauge->m_value = 1 / (float)m_simulator->getSimulationSpeed();
 
     m_audioLagGauge->m_bounds = grid.get(m_bounds, 0, 1);
-    m_audioLagGauge->m_gauge->m_value = m_audioLatency * 100;
+    m_audioLagGauge->m_gauge->m_value = (float)m_audioLatency * 100.0f;
 
     m_inputSamplesGauge->m_bounds = grid.get(m_bounds, 1, 1);
-    m_inputSamplesGauge->m_gauge->m_value = m_inputBufferUsage * 100;
+    m_inputSamplesGauge->m_gauge->m_value = (float)m_inputBufferUsage * 100.0f;
 
     m_simulationFrequencyGauge->m_bounds = grid.get(m_bounds, 2, 1);
-    m_simulationFrequencyGauge->m_gauge->m_value = m_simulator->getSimulationFrequency();
+    m_simulationFrequencyGauge->m_gauge->m_value = (float)m_simulator->getSimulationFrequency();
 
     UiElement::render();
 }

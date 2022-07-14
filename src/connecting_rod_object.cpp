@@ -37,9 +37,9 @@ void ConnectingRodObject::render(const ViewParameters *view) {
     resetShader();
     setTransform(
         &m_connectingRod->m_body,
-        m_connectingRod->getCrankshaft()->getThrow(),
+        (float)m_connectingRod->getCrankshaft()->getThrow(),
         0.0f,
-        m_connectingRod->getBigEndLocal());
+        (float)m_connectingRod->getBigEndLocal());
 
     m_app->getShaders()->SetBaseColor(col);
     m_app->getEngine()->DrawModel(

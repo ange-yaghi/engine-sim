@@ -31,7 +31,7 @@ void EngineView::onDrag(const Point &p0, const Point &mouse0, const Point &mouse
 }
 
 void EngineView::onMouseScroll(int scroll) {
-    const double f = std::powf(2.0, (float)scroll / 500.0f);
+    const float f = std::powf(2.0, (float)scroll / 500.0f);
 
     const Point prevCenter = getCenter();
 
@@ -44,7 +44,6 @@ void EngineView::onMouseScroll(int scroll) {
 
     const Point test = getRenderPoint(m_bounds.getPosition(Bounds::center));
     const Point finalCenter = getCenter();
-    int a = 0;
 }
 
 Point EngineView::getCenter() const {

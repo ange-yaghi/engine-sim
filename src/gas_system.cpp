@@ -6,18 +6,6 @@
 #include <cmath>
 #include <cassert>
 
-void GasSystem::start() {
-    //m_next = m_state;
-}
-
-void GasSystem::end() {
-    //m_state = m_next;
-
-    m_state.E_k = std::fmax(m_state.E_k, 0.0);
-    m_state.n_mol = std::fmax(m_state.n_mol, 0.0);
-    m_state.V = std::fmax(m_state.V, 0.0);
-}
-
 void GasSystem::setGeometry(double width, double height, double dx, double dy) {
     m_width = width;
     m_height = height;
@@ -345,43 +333,6 @@ void GasSystem::updateVelocity(double dt, double beta) {
     if (std::isnan(m_state.momentum[0]) || std::isnan(m_state.E_k)) {
         int a = 0;
     }
-}
-
-void GasSystem::velocityWall(
-    double dt,
-    double timeConstant,
-    double dx,
-    double dy)
-{
-    if (n() == 0) return;
-    if (dx * m_state.momentum[0] + dy * m_state.momentum[1] < 0) return;
-
-    const double p_dx = -dy;
-    const double p_dy = dx;
-
-    const double invMass = 1.0 / mass();
-    const double velocity_x = m_state.momentum[0] * invMass;
-    const double velocity_y = m_state.momentum[1] * invMass;
-    const double velocity_squared =
-        velocity_x * velocity_x + velocity_y * velocity_y;
-
-    const double momentum_dir = dx * m_state.momentum[0] + dy * m_state.momentum[1];
-    const double momentum_pdir = p_dx * m_state.momentum[0] + p_dy * m_state.momentum[1];
-
-    const double s = dt / (dt + timeConstant);
-    const double momentum_dx = dx * m_state.momentum[0] * (1 - s);
-    const double momentum_dy = dy * m_state.momentum[1] * (1 - s);
-    
-    m_state.momentum[0] = momentum_dx * dx + (momentum_pdir * p_dx);
-    m_state.momentum[1] = momentum_dy * dy + (momentum_pdir * p_dy);
-
-    const double newVelocity_x = m_state.momentum[0] * invMass;
-    const double newVelocity_y = m_state.momentum[1] * invMass;
-    const double newVelocity_squared =
-        newVelocity_x * newVelocity_x + newVelocity_y * newVelocity_y;
-
-    const double dE_k = 0.5 * mass() * (velocity_squared - newVelocity_squared);
-    m_state.E_k += dE_k;
 }
 
 void GasSystem::dissipateVelocity(double dt, double timeConstant) {

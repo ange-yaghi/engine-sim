@@ -5,6 +5,7 @@
 #include "../include/constants.h"
 #include "../include/engine_sim_application.h"
 
+#include <cmath>
 #include <sstream>
 
 RightGaugeCluster::RightGaugeCluster() {
@@ -52,9 +53,9 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_tachometer->m_gauge->m_minorStep = 100;
     m_tachometer->m_gauge->m_majorStep = 1000;
     m_tachometer->m_gauge->m_maxMinorTick = INT_MAX;
-    m_tachometer->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_tachometer->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_tachometer->m_gauge->m_needleWidth = 4.0;
+    m_tachometer->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_tachometer->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_tachometer->m_gauge->m_needleWidth = 4.0f;
     m_tachometer->m_gauge->m_gamma = 1.0f;
     m_tachometer->m_gauge->m_needleKs = 1000.0f;
     m_tachometer->m_gauge->m_needleKd = 20.0f;
@@ -75,9 +76,9 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_speedometer->m_gauge->m_minorStep = 5;
     m_speedometer->m_gauge->m_majorStep = 10;
     m_speedometer->m_gauge->m_maxMinorTick = 200;
-    m_speedometer->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_speedometer->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_speedometer->m_gauge->m_needleWidth = 4.0;
+    m_speedometer->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_speedometer->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_speedometer->m_gauge->m_needleWidth = 4.0f;
     m_speedometer->m_gauge->m_gamma = 1.0f;
     m_speedometer->m_gauge->m_needleKs = 1000.0f;
     m_speedometer->m_gauge->m_needleKd = 20.0f;
@@ -92,9 +93,9 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_manifoldVacuumGauge->m_gauge->m_minorStep = 1;
     m_manifoldVacuumGauge->m_gauge->m_majorStep = 5;
     m_manifoldVacuumGauge->m_gauge->m_maxMinorTick = 200;
-    m_manifoldVacuumGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_manifoldVacuumGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_manifoldVacuumGauge->m_gauge->m_needleWidth = 4.0;
+    m_manifoldVacuumGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_manifoldVacuumGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_manifoldVacuumGauge->m_gauge->m_needleWidth = 4.0f;
     m_manifoldVacuumGauge->m_gauge->m_gamma = 1.0f;
     m_manifoldVacuumGauge->m_gauge->m_needleKs = 1000.0f;
     m_manifoldVacuumGauge->m_gauge->m_needleKd = 50.0f;
@@ -120,9 +121,9 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_volumetricEffGauge->m_gauge->m_minorStep = 5;
     m_volumetricEffGauge->m_gauge->m_majorStep = 10;
     m_volumetricEffGauge->m_gauge->m_maxMinorTick = 200;
-    m_volumetricEffGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_volumetricEffGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_volumetricEffGauge->m_gauge->m_needleWidth = 4.0;
+    m_volumetricEffGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_volumetricEffGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_volumetricEffGauge->m_gauge->m_needleWidth = 4.0f;
     m_volumetricEffGauge->m_gauge->m_gamma = 1.0f;
     m_volumetricEffGauge->m_gauge->m_needleKs = 1000.0f;
     m_volumetricEffGauge->m_gauge->m_needleKd = 50.0f;
@@ -143,9 +144,9 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_intakeCfmGauge->m_gauge->m_minorStep = 20;
     m_intakeCfmGauge->m_gauge->m_majorStep = 100;
     m_intakeCfmGauge->m_gauge->m_maxMinorTick = 1200;
-    m_intakeCfmGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_intakeCfmGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_intakeCfmGauge->m_gauge->m_needleWidth = 4.0;
+    m_intakeCfmGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_intakeCfmGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_intakeCfmGauge->m_gauge->m_needleWidth = 4.0f;
     m_intakeCfmGauge->m_gauge->m_gamma = 1.0f;
     m_intakeCfmGauge->m_gauge->m_needleKs = 1000.0f;
     m_intakeCfmGauge->m_gauge->m_needleKd = 50.0f;
@@ -184,13 +185,16 @@ void RightGaugeCluster::renderTachSpeedCluster(const Bounds &bounds) {
 
     const Bounds tach = left.verticalSplit(0.5f, 1.0f);
     m_tachometer->m_bounds = tach;
-    m_tachometer->m_gauge->m_value = m_engine->getRpm();
+    m_tachometer->m_gauge->m_value = (float)std::abs(m_engine->getRpm());
 
     constexpr float shortenAngle = (float)units::angle(1.0, units::deg);
-    const float maxRpm = (float)std::ceil(units::toRpm(m_engine->getRedline() * 1.25) / 1000.0) * 1000.0f;
-    const float redline = (float)std::ceil(units::toRpm(m_engine->getRedline()) / 500.0) * 500.0f;
-    const float redlineWarning = (float)std::floor(units::toRpm(m_engine->getRedline() * 0.9) / 500.0) * 500.0f;
-    m_tachometer->m_gauge->m_max = maxRpm;
+    const float maxRpm =
+        (float)std::ceil(units::toRpm(m_engine->getRedline() * 1.25) / 1000.0) * 1000.0f;
+    const float redline =
+        (float)std::ceil(units::toRpm(m_engine->getRedline()) / 500.0) * 500.0f;
+    const float redlineWarning =
+        (float)std::floor(units::toRpm(m_engine->getRedline() * 0.9) / 500.0) * 500.0f;
+    m_tachometer->m_gauge->m_max = (int)maxRpm;
     m_tachometer->m_gauge->setBandCount(3);
     m_tachometer->m_gauge->setBand(
         { m_app->getWhite(), 400, 1000, 3.0f, 6.0f }, 0);
@@ -202,7 +206,7 @@ void RightGaugeCluster::renderTachSpeedCluster(const Bounds &bounds) {
     const Bounds speed = left.verticalSplit(0.0f, 0.5f);
     m_speedometer->m_bounds = speed;
     m_speedometer->m_gauge->m_value =
-        units::convert(m_simulator->getVehicle()->getSpeed(), units::mile / units::hour);
+        (float)units::convert(std::abs(m_simulator->getVehicle()->getSpeed()), units::mile / units::hour);
 
     m_combusionChamberStatus->m_bounds = right;
 }
@@ -221,30 +225,35 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
     const Bounds fuelConsumption = fuelSection.horizontalSplit(0.5f, 1.0f);
     m_fuelCluster->m_bounds = fuelConsumption;
 
-    const double ambientPressure = units::pressure(1.0, units::atm);
-    const double ambientTemperature = units::celcius(25.0);
+    constexpr double ambientPressure = units::pressure(1.0, units::atm);
+    constexpr double ambientTemperature = units::celcius(25.0);
 
     Grid grid = { 1, 3 };
     const Bounds manifoldVacuum = grid.get(right, 0, 0, 1, 1);
     m_manifoldVacuumGauge->m_bounds = manifoldVacuum;
-    m_manifoldVacuumGauge->m_gauge->m_value =
-        units::convert(m_engine->getManifoldPressure() - ambientPressure, units::inHg);
 
-    const double rpm = m_engine->getRpm();
+    const double vacuumReading =
+        units::convert(std::fmin(m_engine->getManifoldPressure() - ambientPressure, 0.0), units::inHg);
+    m_manifoldVacuumGauge->m_gauge->m_value = (vacuumReading > -0.5)
+        ? 0.0f
+        : (float)vacuumReading;
+
+    const double rpm = std::fmax(m_engine->getRpm(), 0.0);
     const double theoreticalAirPerRevolution =
         (ambientPressure * m_engine->getDisplacement())
         / (constants::R * ambientTemperature);
     const double theoreticalAirPerSecond = 0.5 * theoreticalAirPerRevolution * rpm / 60.0;
-    const double actualAirPerSecond = m_engine->getIntakeFlowRate();
-    const double volumetricEfficiency = (std::abs(rpm) < 1E-3)
-        ? 0
+    const double actualAirPerSecond = std::fmax(m_engine->getIntakeFlowRate(), 0.0);
+    const double volumetricEfficiency = (std::abs(theoreticalAirPerSecond) < 1E-3)
+        ? 0.0
         : (actualAirPerSecond / theoreticalAirPerSecond);
 
     const Bounds cfmBounds = grid.get(right, 0, 1, 1, 1);
     m_intakeCfmGauge->m_bounds = cfmBounds;
-    m_intakeCfmGauge->m_gauge->m_value = units::convert(actualAirPerSecond, units::scfm);
+    m_intakeCfmGauge->m_gauge->m_value =
+        (float)units::convert(actualAirPerSecond, units::scfm);
 
     const Bounds volumetricEfficiencyBounds = grid.get(right, 0, 2, 1, 1);
     m_volumetricEffGauge->m_bounds = volumetricEfficiencyBounds;
-    m_volumetricEffGauge->m_gauge->m_value = 100 * volumetricEfficiency;
+    m_volumetricEffGauge->m_gauge->m_value = 100.0f * (float)volumetricEfficiency;
 }

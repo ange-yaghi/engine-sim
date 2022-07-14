@@ -12,6 +12,9 @@ MixerCluster::MixerCluster() {
     m_convolutionGauge = nullptr,
     m_highFreqFilterGauge = nullptr,
     m_levelerGauge = nullptr;
+    m_noise0Gauge = nullptr;
+    m_noise1Gauge = nullptr;
+    m_simulator = nullptr;
 }
 
 MixerCluster::~MixerCluster() {
@@ -33,9 +36,9 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_volumeGauge->m_gauge->m_minorStep = 5;
     m_volumeGauge->m_gauge->m_majorStep = 10;
     m_volumeGauge->m_gauge->m_maxMinorTick = 1000000;
-    m_volumeGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_volumeGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_volumeGauge->m_gauge->m_needleWidth = 4.0;
+    m_volumeGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_volumeGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_volumeGauge->m_gauge->m_needleWidth = 4.0f;
     m_volumeGauge->m_gauge->m_gamma = 1.0f;
     m_volumeGauge->m_gauge->m_needleKs = 1000.0f;
     m_volumeGauge->m_gauge->m_needleKd = 20.0f;
@@ -51,9 +54,9 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_levelerGauge->m_gauge->m_minorStep = 5;
     m_levelerGauge->m_gauge->m_majorStep = 10;
     m_levelerGauge->m_gauge->m_maxMinorTick = 1000000;
-    m_levelerGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_levelerGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_levelerGauge->m_gauge->m_needleWidth = 4.0;
+    m_levelerGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_levelerGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_levelerGauge->m_gauge->m_needleWidth = 4.0f;
     m_levelerGauge->m_gauge->m_gamma = 1.0f;
     m_levelerGauge->m_gauge->m_needleKs = 1000.0f;
     m_levelerGauge->m_gauge->m_needleKd = 20.0f;
@@ -69,9 +72,9 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_convolutionGauge->m_gauge->m_minorStep = 5;
     m_convolutionGauge->m_gauge->m_majorStep = 10;
     m_convolutionGauge->m_gauge->m_maxMinorTick = 1000000;
-    m_convolutionGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_convolutionGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_convolutionGauge->m_gauge->m_needleWidth = 4.0;
+    m_convolutionGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_convolutionGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_convolutionGauge->m_gauge->m_needleWidth = 4.0f;
     m_convolutionGauge->m_gauge->m_gamma = 1.0f;
     m_convolutionGauge->m_gauge->m_needleKs = 1000.0f;
     m_convolutionGauge->m_gauge->m_needleKd = 20.0f;
@@ -87,9 +90,9 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_highFreqFilterGauge->m_gauge->m_minorStep = 1;
     m_highFreqFilterGauge->m_gauge->m_majorStep = 2;
     m_highFreqFilterGauge->m_gauge->m_maxMinorTick = 10;
-    m_highFreqFilterGauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_highFreqFilterGauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_highFreqFilterGauge->m_gauge->m_needleWidth = 4.0;
+    m_highFreqFilterGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_highFreqFilterGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_highFreqFilterGauge->m_gauge->m_needleWidth = 4.0f;
     m_highFreqFilterGauge->m_gauge->m_gamma = 1.0f;
     m_highFreqFilterGauge->m_gauge->m_needleKs = 1000.0f;
     m_highFreqFilterGauge->m_gauge->m_needleKd = 20.0f;
@@ -105,9 +108,9 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_noise0Gauge->m_gauge->m_minorStep = 5;
     m_noise0Gauge->m_gauge->m_majorStep = 10;
     m_noise0Gauge->m_gauge->m_maxMinorTick = 1000000;
-    m_noise0Gauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_noise0Gauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_noise0Gauge->m_gauge->m_needleWidth = 4.0;
+    m_noise0Gauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_noise0Gauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_noise0Gauge->m_gauge->m_needleWidth = 4.0f;
     m_noise0Gauge->m_gauge->m_gamma = 1.0f;
     m_noise0Gauge->m_gauge->m_needleKs = 1000.0f;
     m_noise0Gauge->m_gauge->m_needleKd = 20.0f;
@@ -123,9 +126,9 @@ void MixerCluster::initialize(EngineSimApplication *app) {
     m_noise1Gauge->m_gauge->m_minorStep = 5;
     m_noise1Gauge->m_gauge->m_majorStep = 10;
     m_noise1Gauge->m_gauge->m_maxMinorTick = 1000000;
-    m_noise1Gauge->m_gauge->m_thetaMin = constants::pi * 1.2;
-    m_noise1Gauge->m_gauge->m_thetaMax = -0.2 * constants::pi;
-    m_noise1Gauge->m_gauge->m_needleWidth = 4.0;
+    m_noise1Gauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_noise1Gauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_noise1Gauge->m_gauge->m_needleWidth = 4.0f;
     m_noise1Gauge->m_gauge->m_gamma = 1.0f;
     m_noise1Gauge->m_gauge->m_needleKs = 1000.0f;
     m_noise1Gauge->m_gauge->m_needleKd = 20.0f;
@@ -148,23 +151,24 @@ void MixerCluster::render() {
     Synthesizer::AudioParameters parameters = m_simulator->getSynthesizer()->getAudioParameters();
 
     m_volumeGauge->m_bounds = grid.get(m_bounds, 0, 0);
-    m_volumeGauge->m_gauge->m_value = parameters.Volume * 100;
+    m_volumeGauge->m_gauge->m_value = (float)parameters.Volume * 100.0f;
 
     m_convolutionGauge->m_bounds = grid.get(m_bounds, 1, 0);
-    m_convolutionGauge->m_gauge->m_value = parameters.Convolution * 100;
+    m_convolutionGauge->m_gauge->m_value = (float)parameters.Convolution * 100.0f;
 
     m_highFreqFilterGauge->m_bounds = grid.get(m_bounds, 2, 0);
-    m_highFreqFilterGauge->m_gauge->m_value = parameters.dF_F_mix * 1000;
+    m_highFreqFilterGauge->m_gauge->m_value = (float)parameters.dF_F_mix * 1000.0f;
 
     m_noise0Gauge->m_bounds = grid.get(m_bounds, 3, 0);
-    m_noise0Gauge->m_gauge->m_value = parameters.AirNoise * 100;
+    m_noise0Gauge->m_gauge->m_value = (float)parameters.AirNoise * 100.0f;
 
     m_noise1Gauge->m_bounds = grid.get(m_bounds, 4, 0);
-    m_noise1Gauge->m_gauge->m_value = parameters.InputSampleNoise * 100;
+    m_noise1Gauge->m_gauge->m_value = (float)parameters.InputSampleNoise * 100.0f;
 
     const double gain = m_simulator->getSynthesizer()->getLevelerGain();
     m_levelerGauge->m_bounds = grid.get(m_bounds, 5, 0);
-    m_levelerGauge->m_gauge->m_value = 100 * (gain - parameters.LevelerMinGain) / parameters.LevelerMaxGain;
+    m_levelerGauge->m_gauge->m_value =
+        100.0f * (float)((gain - parameters.LevelerMinGain) / parameters.LevelerMaxGain);
 
     UiElement::render();
 }

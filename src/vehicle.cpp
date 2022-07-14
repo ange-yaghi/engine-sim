@@ -22,6 +22,7 @@ void Vehicle::initialize(const Parameters &params) {
     m_crossSectionArea = params.CrossSectionArea;
     m_diffRatio = params.DiffRatio;
     m_tireRadius = params.TireRadius;
+    m_rollingResistance = params.RollingResistance;
 }
 
 void Vehicle::update(double dt) {
@@ -37,4 +38,13 @@ double Vehicle::getSpeed() const {
     const double vehicleSpeed = std::sqrt(2 * E_r / m_mass);
 
     return vehicleSpeed;
+
+    // E_r = 0.5 * I * v_theta^2
+    // E_k = 0.5 * m * v^2
+}
+
+double Vehicle::linearForceToVirtualTorque(double force) const {
+    const double rotationToKineticRatio =
+        std::sqrt(m_rotatingMass->I / m_mass);
+    return rotationToKineticRatio * force;
 }

@@ -62,7 +62,7 @@ void CylinderPressureGauge::render() {
         const double value = units::convert(chamber->m_system.pressure(), units::psi);
 
         std::stringstream ss;
-        ss << std::lroundf(value);
+        ss << std::lround(value);
         drawCenteredText(ss.str(), b_cyl.verticalSplit(0.0f, 2 / 6.0f), b_cyl.height() / 6);
 
         m_gauges[i]->m_bounds = b_cyl;
@@ -72,10 +72,10 @@ void CylinderPressureGauge::render() {
         m_gauges[i]->m_minorStep = 20;
         m_gauges[i]->m_majorStep = 100;
         m_gauges[i]->m_maxMinorTick = 400;
-        m_gauges[i]->m_thetaMin = constants::pi * 1.2;
-        m_gauges[i]->m_thetaMax = -0.2 * constants::pi;
+        m_gauges[i]->m_thetaMin = (float)constants::pi * 1.2f;
+        m_gauges[i]->m_thetaMax = -(float)constants::pi * 0.2f;
         m_gauges[i]->m_outerRadius = std::fmin(b_cyl.width(), b_cyl.height()) / 2.0f;
-        m_gauges[i]->m_value = units::convert(chamber->m_system.pressure(), units::psi);
+        m_gauges[i]->m_value = (float)units::convert(chamber->m_system.pressure(), units::psi);
         m_gauges[i]->m_needleOuterRadius = m_gauges[i]->m_outerRadius * 0.7f;
         m_gauges[i]->m_needleInnerRadius = -m_gauges[i]->m_outerRadius * 0.1f;
         m_gauges[i]->m_needleWidth = 2.0;

@@ -15,6 +15,9 @@ CombustionChamber::CombustionChamber() {
     m_crankcasePressure = 0.0;
     m_piston = nullptr;
     m_head = nullptr;
+    m_engine = nullptr;
+    m_pistonSpeed = nullptr;
+    m_pressure = nullptr;
     m_lit = false;
     m_litLastFrame = false;
     m_peakTemperature = 0;
@@ -187,14 +190,8 @@ void CombustionChamber::ignite() {
     }
 }
 
-void CombustionChamber::start() {
-    m_system.start();
-}
-
 void CombustionChamber::update(double dt) {
-    m_system.start();
     m_system.setVolume(getVolume());
-    m_system.end();
 
     updateCycleStates();
 
@@ -322,10 +319,6 @@ void CombustionChamber::flow(double dt) {
     }
 }
 
-void CombustionChamber::end() {
-    m_system.end();
-}
-
 double CombustionChamber::lastEventAfr() const {
     const double totalFuel = m_flameEvent.globalMix.p_fuel * m_flameEvent.total_n;
     const double totalOxygen = m_flameEvent.globalMix.p_o2 * m_flameEvent.total_n;
@@ -363,7 +356,7 @@ double CombustionChamber::calculateFrictionForce(double v_s) const {
 
 void CombustionChamber::updateCycleStates() {
     const double crankAngle = m_engine->getOutputCrankshaft()->getCycleAngle();
-    const int i = std::round((crankAngle / (4 * constants::pi)) * (StateSamples - 1));
+    const int i = (int)std::round((crankAngle / (4 * constants::pi)) * (StateSamples - 1.0));
 
     m_pistonSpeed[i] = std::abs(pistonSpeed());
     m_pressure[i] = m_system.pressure();

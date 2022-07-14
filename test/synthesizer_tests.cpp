@@ -66,7 +66,8 @@ TEST(SynthesizerTests, SynthesizerSampleTest) {
     setupStandardSynthesizer(synth);
 
     for (int i = 0; i < 1024; ++i) {
-        double data[] = { i, i, i, i, i, i, i, i };
+        const double v = (double)i;
+        const double data[] = { v, v, v, v, v, v, v, v };
         synth.writeInput(data);
     }
 
@@ -101,7 +102,8 @@ TEST(SynthesizerTests, SynthesizerSystemTestSingleThread) {
 
     for (int i = 0; i < inputSamples;) {
         for (int j = 0; j < 16; ++j, ++i) {
-            double data[] = { i, i, i, i, i, i, i, i };
+            const double v = (double)i;
+            const double data[] = { v, v, v, v, v, v, v, v };
             synth.writeInput(data);
         }
 
@@ -139,7 +141,8 @@ TEST(SynthesizerTests, SynthesizerSystemTest) {
 
     for (int i = 0; i < inputSamples;) {
         for (int j = 0; j < 16; ++j, ++i) {
-            double data[] = { i, i, i, i, i, i, i, i };
+            const double v = (double)i;
+            const double data[] = { v, v, v, v, v, v, v, v };
             synth.writeInput(data);
         }
 

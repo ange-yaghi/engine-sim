@@ -27,10 +27,10 @@ void CrankshaftObject::render(const ViewParameters *view) {
         resetShader();
         setTransform(
             &m_crankshaft->m_body,
-            m_crankshaft->getThrow(),
+            (float)m_crankshaft->getThrow(),
             0.0f,
             0.0f,
-            m_crankshaft->getRodJournalAngle(i));
+            (float)m_crankshaft->getRodJournalAngle(i));
 
         m_app->getShaders()->SetBaseColor(col);
         m_app->getEngine()->DrawModel(
@@ -38,6 +38,24 @@ void CrankshaftObject::render(const ViewParameters *view) {
             m_app->getAssetManager()->GetModelAsset("Crankshaft"),
             0x10 - layer);
     }
+
+    setTransform(
+        &m_crankshaft->m_body,
+        (float)m_crankshaft->getThrow(),
+        0.0f,
+        0.0f,
+        0.0f);
+    m_app->getShaders()->SetBaseColor(tintByLayer(ysColor::srgbiToLinear(0x999999), 0));
+    m_app->getEngine()->DrawModel(
+        m_app->getShaders()->GetRegularFlags(),
+        m_app->getAssetManager()->GetModelAsset("CrankSnout"),
+        0x10);
+
+    m_app->getShaders()->SetBaseColor(tintByLayer(ysColor::srgbiToLinear(0xFFFFFF), 1));
+    m_app->getEngine()->DrawModel(
+        m_app->getShaders()->GetRegularFlags(),
+        m_app->getAssetManager()->GetModelAsset("CrankSnoutThreads"),
+        0x10);
 }
 
 void CrankshaftObject::process(float dt) {

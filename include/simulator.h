@@ -9,6 +9,7 @@
 #include "dynamometer.h"
 #include "starter_motor.h"
 #include "derivative_filter.h"
+#include "vehicle_drag_constraint.h"
 
 #include "scs.h"
 
@@ -22,10 +23,13 @@ class Simulator {
         };
 
         struct Parameters {
-            SystemType SystemType;
-            Engine *Engine;
-            Transmission *Transmission;
-            Vehicle *Vehicle;
+            SystemType SystemType = SystemType::NsvOptimized;
+            Engine *Engine = nullptr;
+            Transmission *Transmission = nullptr;
+            Vehicle *Vehicle = nullptr;
+
+            int SimulationFrequency = 10000;
+            int FluidSimulationSteps = 8;
         };
 
     public:
@@ -61,6 +65,9 @@ class Simulator {
         void setSimulationFrequency(int frequency) { m_simulationFrequency = frequency; }
         int getSimulationFrequency() const { return m_simulationFrequency; }
 
+        int getFluidSimulationSteps() const { return m_fluidSimulationSteps; }
+        int getFluidSimulationFrequency() const { return m_fluidSimulationSteps * m_simulationFrequency; }
+
         double getTimestep() const { return 1.0 / m_simulationFrequency; }
 
         void setTargetSynthesizerLatency(double latency) { m_targetSynthesizerLatency = latency; }
@@ -95,6 +102,7 @@ class Simulator {
         atg_scs::LineConstraint *m_cylinderWallConstraints;
         atg_scs::LinkConstraint *m_linkConstraints;
         atg_scs::RigidBody m_vehicleMass;
+        VehicleDragConstraint m_vehicleDrag;
 
         std::chrono::steady_clock::time_point m_simulationStart;
         std::chrono::steady_clock::time_point m_simulationEnd;
@@ -107,6 +115,8 @@ class Simulator {
         double m_physicsProcessingTime;
 
         int m_simulationFrequency;
+        int m_fluidSimulationSteps;
+
         double m_targetSynthesizerLatency;
         double m_simulationSpeed;
         double *m_exhaustFlowStagingBuffer;

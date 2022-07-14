@@ -4,7 +4,7 @@
 #include "../include/constants.h"
 
 Gauge::Gauge() {
-    m_thetaMin = constants::pi;
+    m_thetaMin = (float)constants::pi;
     m_thetaMax = 0.0f;
 
     m_min = m_max = 0;
@@ -48,7 +48,7 @@ void Gauge::destroy() {
 }
 
 void Gauge::update(float dt) {
-    const float value = std::fmax(m_min, std::fmin(m_max, m_value));
+    const float value = std::fmaxf((float)m_min, std::fmin((float)m_max, (float)m_value));
     const float needle_s = std::powf((value - m_min) / std::abs(m_max - m_min), m_gamma);
     const float F =
         m_needleKs * (needle_s - m_needlePosition)

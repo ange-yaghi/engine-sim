@@ -66,6 +66,7 @@ add_library(engine-sim STATIC
     src/vehicle.cpp
     src/derivative_filter.cpp
     src/low_pass_filter.cpp
+    src/vehicle_drag_constraint.cpp
 
     # Include files
     include/crankshaft.h
@@ -99,6 +100,7 @@ add_library(engine-sim STATIC
     include/vehicle.h
     include/derivative_filter.h
     include/low_pass_filter.h
+    include/vehicle_drag_constraint.h
 )
 
 target_link_libraries(engine-sim

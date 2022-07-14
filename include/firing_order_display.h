@@ -21,7 +21,7 @@ class FiringOrderDisplay : public UiElement {
 
     protected:
         int m_cylinderCount;
-        double *m_cylinderLit;
+        float *m_cylinderLit;
 };
 
 #endif /* ATG_ENGINE_SIM_FIRING_ORDER_DISPLAY_H */

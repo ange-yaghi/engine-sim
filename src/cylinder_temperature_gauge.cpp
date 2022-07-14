@@ -103,7 +103,7 @@ void CylinderTemperatureGauge::render() {
         generator->generateCircle2d(params);
         generator->endShape(&indices);
 
-        m_app->getShaders()->SetBaseColor(mix(cold, hot, value / m_maxTemperature));
+        m_app->getShaders()->SetBaseColor(mix(cold, hot, (float)(value / m_maxTemperature)));
         m_app->drawGenerated(indices, 0x11, m_app->getShaders()->GetUiFlags());
     }
 

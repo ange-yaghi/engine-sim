@@ -37,16 +37,16 @@ void FiringOrderDisplay::update(float dt) {
         }
 
         m_cylinderCount = m_engine->getCylinderCount();
-        m_cylinderLit = new double[m_cylinderCount];
-        memset(m_cylinderLit, 0, sizeof(double) * m_cylinderCount);
+        m_cylinderLit = new float[m_cylinderCount];
+        memset(m_cylinderLit, 0, sizeof(float) * m_cylinderCount);
     }
 
     for (int i = 0; i < m_cylinderCount; ++i) {
         if (m_engine->getChamber(i)->popLitLastFrame() || m_engine->getChamber(i)->isLit()) {
-            m_cylinderLit[i] = 0.05 + 0.95 * m_cylinderLit[i];
+            m_cylinderLit[i] = 0.05f + 0.95f * m_cylinderLit[i];
         }
         else {
-            m_cylinderLit[i] *= (dt / (dt + 0.01));
+            m_cylinderLit[i] *= (dt / (dt + 0.01f));
         }
     }
 }
@@ -118,7 +118,7 @@ void FiringOrderDisplay::render() {
         m_app->getShaders()->SetBaseColor(fixed);
         m_app->drawGenerated(ring, 0x11, m_app->getShaders()->GetUiFlags());
 
-        m_app->getShaders()->SetBaseColor(mix(cold, hot, lit));
+        m_app->getShaders()->SetBaseColor(mix(cold, hot, (float)lit));
         m_app->drawGenerated(light, 0x11, m_app->getShaders()->GetUiFlags());
     }
 

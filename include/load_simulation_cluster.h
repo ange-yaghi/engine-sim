@@ -25,7 +25,7 @@ class LoadSimulationCluster : public UiElement {
         void drawSystemStatus(const Bounds &bounds);
         void updateHpAndTorque(float dt);
 
-        double m_systemStatusLights[3];
+        float m_systemStatusLights[3];
         LabeledGauge *m_dynoSpeedGauge;
         LabeledGauge *m_torqueGauge;
         LabeledGauge *m_hpGauge;

@@ -5,6 +5,7 @@
 ExhaustSystem::ExhaustSystem() {
     m_flowK = 0;
     m_flow = 0;
+    m_index = -1;
 }
 
 ExhaustSystem::~ExhaustSystem() {
@@ -39,10 +40,6 @@ void ExhaustSystem::destroy() {
     /* void */
 }
 
-void ExhaustSystem::start() {
-    m_system.start();
-}
-
 void ExhaustSystem::process(double dt) {
     GasSystem::Mix airMix;
     airMix.p_fuel = 0;
@@ -66,8 +63,4 @@ void ExhaustSystem::process(double dt) {
 
     m_system.dissipateExcessVelocity();
     m_system.updateVelocity(dt);
-}
-
-void ExhaustSystem::end() {
-    m_system.end();
 }

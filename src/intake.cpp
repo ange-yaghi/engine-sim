@@ -52,10 +52,6 @@ void Intake::destroy() {
     /* void */
 }
 
-void Intake::start() {
-    m_system.start();
-}
-
 void Intake::process(double dt) {
     const double ideal_afr = 0.8 * m_molecularAfr * 4;
     const double current_afr = (m_system.mix().p_o2 + m_system.mix().p_inert) / m_system.mix().p_fuel;
@@ -106,10 +102,4 @@ void Intake::process(double dt) {
     if (idleCircuitFlow > 0) {
         m_totalFuelInjected += fuelMix.p_fuel * idleCircuitFlow;
     }
-
-    //m_system.changeMix(fuelAirMix);
-}
-
-void Intake::end() {
-    m_system.end();
 }

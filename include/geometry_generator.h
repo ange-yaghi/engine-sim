@@ -10,11 +10,11 @@
 class GeometryGenerator {
 public:
     struct GeometryIndices {
-        int BaseIndex;
-        int BaseVertex;
-        int FaceCount;
+        int BaseIndex = -1;
+        int BaseVertex = -1;
+        int FaceCount = -1;
 
-        dbasic::Vertex *VertexData;
+        dbasic::Vertex *VertexData = nullptr;
     };
 
     struct LineRingParameters {
@@ -207,10 +207,10 @@ protected:
     int m_indexBufferSize;
 
     struct State {
-        int vertexPointer;
-        int indexPointer;
+        int vertexPointer = 0;
+        int indexPointer = 0;
         GeometryIndices currentShape;
-        int subshapeVertexPointer;
+        int subshapeVertexPointer = 0;
     } m_state;
 };
 

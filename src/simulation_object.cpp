@@ -47,7 +47,7 @@ void SimulationObject::setTransform(
 
     const ysMatrix rot = ysMath::RotationTransform(
             ysMath::Constants::ZAxis,
-            rigidBody->theta + angle);
+            (float)rigidBody->theta + angle);
     const ysMatrix trans = ysMath::TranslationTransform(
             ysMath::LoadVector((float)p_x, (float)p_y, 0.0f));
     const ysMatrix scaleTransform = ysMath::ScaleTransform(ysMath::LoadScalar(scale));

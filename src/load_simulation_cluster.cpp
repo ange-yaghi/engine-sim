@@ -36,9 +36,9 @@ void LoadSimulationCluster::initialize(EngineSimApplication *app) {
     m_dynoSpeedGauge->m_gauge->m_minorStep = 500;
     m_dynoSpeedGauge->m_gauge->m_majorStep = 1000;
     m_dynoSpeedGauge->m_gauge->m_maxMinorTick = INT_MAX;
-    m_dynoSpeedGauge->m_gauge->m_thetaMin = constants::pi * 0.8;
-    m_dynoSpeedGauge->m_gauge->m_thetaMax = 0.2 * constants::pi;
-    m_dynoSpeedGauge->m_gauge->m_needleWidth = 4.0;
+    m_dynoSpeedGauge->m_gauge->m_thetaMin = (float)constants::pi * 0.8f;
+    m_dynoSpeedGauge->m_gauge->m_thetaMax = (float)constants::pi * 0.2f;
+    m_dynoSpeedGauge->m_gauge->m_needleWidth = 4.0f;
     m_dynoSpeedGauge->m_gauge->m_gamma = 1.0f;
     m_dynoSpeedGauge->m_gauge->m_needleKs = 1000.0f;
     m_dynoSpeedGauge->m_gauge->m_needleKd = 5.0f;
@@ -54,9 +54,9 @@ void LoadSimulationCluster::initialize(EngineSimApplication *app) {
     m_torqueGauge->m_gauge->m_minorStep = 50;
     m_torqueGauge->m_gauge->m_majorStep = 100;
     m_torqueGauge->m_gauge->m_maxMinorTick = INT_MAX;
-    m_torqueGauge->m_gauge->m_thetaMin = constants::pi * 0.8;
-    m_torqueGauge->m_gauge->m_thetaMax = 0.2 * constants::pi;
-    m_torqueGauge->m_gauge->m_needleWidth = 4.0;
+    m_torqueGauge->m_gauge->m_thetaMin = (float)constants::pi * 0.8f;
+    m_torqueGauge->m_gauge->m_thetaMax = (float)constants::pi * 0.2f;
+    m_torqueGauge->m_gauge->m_needleWidth = 4.0f;
     m_torqueGauge->m_gauge->m_gamma = 1.0f;
     m_torqueGauge->m_gauge->m_needleKs = 1000.0f;
     m_torqueGauge->m_gauge->m_needleKd = 5.0f;
@@ -72,9 +72,9 @@ void LoadSimulationCluster::initialize(EngineSimApplication *app) {
     m_hpGauge->m_gauge->m_minorStep = 50;
     m_hpGauge->m_gauge->m_majorStep = 100;
     m_hpGauge->m_gauge->m_maxMinorTick = INT_MAX;
-    m_hpGauge->m_gauge->m_thetaMin = constants::pi * 0.8;
-    m_hpGauge->m_gauge->m_thetaMax = 0.2 * constants::pi;
-    m_hpGauge->m_gauge->m_needleWidth = 4.0;
+    m_hpGauge->m_gauge->m_thetaMin = (float)constants::pi * 0.8f;
+    m_hpGauge->m_gauge->m_thetaMax = (float)constants::pi * 0.2f;
+    m_hpGauge->m_gauge->m_needleWidth = 4.0f;
     m_hpGauge->m_gauge->m_gamma = 1.0f;
     m_hpGauge->m_gauge->m_needleKs = 1000.0f;
     m_hpGauge->m_gauge->m_needleKd = 5.0f;
@@ -91,9 +91,9 @@ void LoadSimulationCluster::initialize(EngineSimApplication *app) {
     m_clutchPressureGauge->m_gauge->m_minorStep = 10;
     m_clutchPressureGauge->m_gauge->m_majorStep = 50;
     m_clutchPressureGauge->m_gauge->m_maxMinorTick = 200;
-    m_clutchPressureGauge->m_gauge->m_thetaMin = constants::pi * 0.8;
-    m_clutchPressureGauge->m_gauge->m_thetaMax = 0.2 * constants::pi;
-    m_clutchPressureGauge->m_gauge->m_needleWidth = 4.0;
+    m_clutchPressureGauge->m_gauge->m_thetaMin = (float)constants::pi * 0.8f;
+    m_clutchPressureGauge->m_gauge->m_thetaMax = (float)constants::pi * 0.2f;
+    m_clutchPressureGauge->m_gauge->m_needleWidth = 4.0f;
     m_clutchPressureGauge->m_gauge->m_gamma = 1.0f;
     m_clutchPressureGauge->m_gauge->m_needleKs = 1000.0f;
     m_clutchPressureGauge->m_gauge->m_needleKd = 5.0f;
@@ -114,13 +114,13 @@ void LoadSimulationCluster::update(float dt) {
         m_simulator->m_dyno.m_enabled
     };
 
-    constexpr double RC = 0.08;
-    const double alpha = dt / (dt + RC);
+    constexpr float RC = 0.08f;
+    const float alpha = dt / (dt + RC);
 
     for (int i = 0; i < 3; ++i) {
-        const double next = systemStatuses[i]
-            ? 1.0
-            : 0.01;
+        const float next = systemStatuses[i]
+            ? 1.0f
+            : 0.01f;
         m_systemStatusLights[i] = (1 - alpha) * m_systemStatusLights[i] + alpha * next;
     }
 
@@ -142,7 +142,8 @@ void LoadSimulationCluster::render() {
     drawSystemStatus(systemStatusBounds);
 
     const Bounds dynoSpeedBounds = grid.get(m_bounds, 0, 1);
-    m_dynoSpeedGauge->m_gauge->m_value = units::toRpm(m_simulator->m_dyno.m_rotationSpeed);
+    m_dynoSpeedGauge->m_gauge->m_value = 
+       (float)units::toRpm(m_simulator->m_dyno.m_rotationSpeed);
     m_dynoSpeedGauge->m_bounds = dynoSpeedBounds;
 
     constexpr float shortenAngle = (float)units::angle(1.0, units::deg);
@@ -154,11 +155,15 @@ void LoadSimulationCluster::render() {
         { m_app->getRed(), (float)redline, (float)maxRpm, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 0);
 
     const Bounds torqueBounds = grid.get(m_bounds, 1, 1);
-    m_torqueGauge->m_gauge->m_value = m_simulator->m_dyno.m_enabled ? m_filteredTorque : m_peakTorque;
+    m_torqueGauge->m_gauge->m_value = m_simulator->m_dyno.m_enabled
+        ? (float)m_filteredTorque
+        : (float)m_peakTorque;
     m_torqueGauge->m_bounds = torqueBounds;
 
     const Bounds horsepowerBounds = grid.get(m_bounds, 2, 1);
-    m_hpGauge->m_gauge->m_value = m_simulator->m_dyno.m_enabled ? m_filteredHorsepower : m_peakHorsepower;
+    m_hpGauge->m_gauge->m_value = m_simulator->m_dyno.m_enabled
+        ? (float)m_filteredHorsepower
+        : (float)m_peakHorsepower;
     m_hpGauge->m_bounds = horsepowerBounds;
 
     UiElement::render();
@@ -183,7 +188,8 @@ void LoadSimulationCluster::drawCurrentGear(const Bounds &bounds) {
 
 void LoadSimulationCluster::drawClutchPressureGauge(const Bounds &bounds) {
     m_clutchPressureGauge->m_bounds = bounds;
-    m_clutchPressureGauge->m_gauge->m_value = m_simulator->getTransmission()->getClutchPressure() * 100;
+    m_clutchPressureGauge->m_gauge->m_value =
+        (float)m_simulator->getTransmission()->getClutchPressure() * 100.0f;
 }
 
 void LoadSimulationCluster::drawSystemStatus(const Bounds &bounds) {

@@ -8,10 +8,10 @@
 class Gauge : public UiElement {
     public:
         struct Band {
-            ysVector color;
-            float start;
-            float end;
-            float width;
+            ysVector color = ysMath::Constants::One;
+            float start = 0.0;
+            float end = 0.0;
+            float width = 0.0;
             float radial_offset = 0.0f;
             float shorten_start = 0.0f;
             float shorten_end = 0.0f;

@@ -78,7 +78,7 @@ void UiElement::onMouseScroll(int mouseScroll) {
 UiElement *UiElement::mouseOver(const Point &mouseLocal) {
     if (m_disabled) return nullptr;
 
-    const size_t n = getChildCount();
+    const int n = (int)getChildCount();
     for (int i = n - 1; i >= 0; --i) {
         UiElement *child = m_children[i];
         UiElement *clickedElement = child->mouseOver(mouseLocal - child->m_localPosition);

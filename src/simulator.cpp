@@ -16,7 +16,8 @@ Simulator::Simulator() {
     m_currentIteration = 0;
     m_simulationSpeed = 1.0;
     m_targetSynthesizerLatency = 0.1;
-    m_simulationFrequency = 11000;//11000;//9000;//13000
+    m_simulationFrequency = 10000;
+    m_fluidSimulationSteps = 8;
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
@@ -62,6 +63,8 @@ void Simulator::initialize(const Parameters &params) {
     m_engine = params.Engine;
     m_vehicle = params.Vehicle;
     m_transmission = params.Transmission;
+    m_fluidSimulationSteps = params.FluidSimulationSteps;
+    m_simulationFrequency = params.SimulationFrequency;
 
     const int crankCount = m_engine->getCrankshaftCount();
     const int cylinderCount = m_engine->getCylinderCount();
@@ -104,6 +107,9 @@ void Simulator::initialize(const Parameters &params) {
 
     m_transmission->addToSystem(m_system, &m_vehicleMass, m_vehicle, m_engine);
     m_vehicle->addToSystem(m_system, &m_vehicleMass);
+
+    m_vehicleDrag.initialize(&m_vehicleMass, m_vehicle);
+    m_system->addConstraint(&m_vehicleDrag);
 
     m_vehicleMass.m = 1.0;
     m_vehicleMass.I = 1.0;
@@ -325,32 +331,21 @@ bool Simulator::simulateStep() {
         m_engine->getChamber(i)->resetLastTimestepIntakeFlow();
     }
 
-    constexpr int iterations = 8;
-    for (int i = 0; i < iterations; ++i) {
-        for (int j = 0; j < m_engine->getExhaustSystemCount(); ++j) {
-            m_engine->getExhaustSystem(j)->start();
-            m_engine->getExhaustSystem(j)->process(timestep / iterations);
+    const int exhaustSystemCount = m_engine->getExhaustSystemCount();
+    const int intakeCount = m_engine->getIntakeCount();
+    const double fluidTimestep = timestep / m_fluidSimulationSteps;
+    for (int i = 0; i < m_fluidSimulationSteps; ++i) {
+        for (int j = 0; j < exhaustSystemCount; ++j) {
+            m_engine->getExhaustSystem(j)->process(fluidTimestep);
         }
 
-        for (int j = 0; j < m_engine->getIntakeCount(); ++j) {
-            m_engine->getIntake(j)->start();
-            m_engine->getIntake(j)->process(timestep / iterations);
-
+        for (int j = 0; j < intakeCount; ++j) {
+            m_engine->getIntake(j)->process(fluidTimestep);
             m_engine->getIntake(j)->m_flowRate += m_engine->getIntake(j)->m_flow;
         }
 
         for (int j = 0; j < cylinderCount; ++j) {
-            m_engine->getChamber(j)->start();
-            m_engine->getChamber(j)->flow(timestep / iterations);
-            m_engine->getChamber(j)->end();
-        }
-
-        for (int j = 0; j < m_engine->getIntakeCount(); ++j) {
-            m_engine->getIntake(j)->end();
-        }
-
-        for (int j = 0; j < m_engine->getExhaustSystemCount(); ++j) {
-            m_engine->getExhaustSystem(j)->end();
+            m_engine->getChamber(j)->flow(fluidTimestep);
         }
     }
 

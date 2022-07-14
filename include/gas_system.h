@@ -41,9 +41,6 @@ class GasSystem {
         void initialize(double P, double V, double T, const Mix &mix = {}, int degreesOfFreedom = 5);
         void reset(double P, double T, const Mix &mix = {});
 
-        void start();
-        void end();
-
         void setVolume(double V);
         void setN(double n);
 
@@ -73,7 +70,6 @@ class GasSystem {
         void dissipateExcessVelocity();
 
         void updateVelocity(double dt, double beta = 1.0);
-        void velocityWall(double dt, double timeConstant, double dx, double dy);
         void dissipateVelocity(double dt, double timeConstant);
 
         static double flow(const FlowParameters &params);
@@ -98,7 +94,6 @@ class GasSystem {
         inline double bulkKineticEnergy() const;
         inline double c() const;
         inline double dynamicPressure(double dx, double dy) const;
-        inline double fastDynamicPressure(double dx, double dy) const;
         inline double mass() const;
         inline double pressure() const;
         inline double temperature() const;
@@ -112,7 +107,7 @@ class GasSystem {
         inline double heatCapacityRatio() const;
         inline Mix mix() const { return m_state.mix; }
 
-    //protected:
+    protected:
         State m_state;
 
         int m_degreesOfFreedom = 5;
@@ -263,7 +258,6 @@ inline double GasSystem::velocity_y() const {
     if (n() == 0) return 0;
     else return m_state.momentum[1] / mass();
 }
-
 
 inline double GasSystem::volume() const {
     return m_state.V;
