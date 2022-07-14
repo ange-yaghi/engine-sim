@@ -19,6 +19,7 @@
 #include "performance_cluster.h"
 #include "load_simulation_cluster.h"
 #include "mixer_cluster.h"
+#include "info_cluster.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -108,6 +109,7 @@ class EngineSimApplication {
         PerformanceCluster *m_performanceCluster;
         LoadSimulationCluster *m_loadSimulationCluster;
         MixerCluster *m_mixerCluster;
+        InfoCluster *m_infoCluster;
 
         bool m_paused;
 

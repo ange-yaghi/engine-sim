@@ -144,6 +144,7 @@ add_executable(engine-sim-app WIN32
     src/firing_order_display.cpp
     src/load_simulation_cluster.cpp
     src/mixer_cluster.cpp
+    src/info_cluster.cpp
 
     # Include files
     include/delta.h
@@ -178,6 +179,7 @@ add_executable(engine-sim-app WIN32
     include/firing_order_display.h
     include/load_simulation_cluster.h
     include/mixer_cluster.h
+    include/info_cluster.h
 )
 
 target_link_libraries(engine-sim-app

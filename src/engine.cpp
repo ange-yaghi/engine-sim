@@ -7,6 +7,8 @@
 #include <assert.h>
 
 Engine::Engine() {
+    m_name = "";
+
     m_crankshafts = nullptr;
     m_cylinderBanks = nullptr;
     m_heads = nullptr;
@@ -48,6 +50,7 @@ void Engine::initialize(const Parameters &params) {
     m_starterTorque = params.StarterTorque;
     m_starterSpeed = params.StarterSpeed;
     m_redline = params.Redline;
+    m_name = params.Name;
 
     m_fuel = params.Fuel;
 

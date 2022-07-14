@@ -132,9 +132,11 @@ struct Bounds {
         return { m0.componentMin(b.m0), m1.componentMax(b.m1) };
     }
 
-    void move(const Point &delta) {
+    Bounds move(const Point &delta) {
         m0 += delta;
         m1 += delta;
+
+        return *this;
     }
 
     void setPosition(const Point &pos, const Point &ref = tl) {

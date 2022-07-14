@@ -79,6 +79,11 @@ class UiElement {
 
         void resetShader();
 
+        void drawModel(
+                dbasic::ModelAsset *model,
+                const ysVector &color,
+                const Point &p,
+                const Point &scale = { 1.0f, 1.0f });
         void drawFrame(
                 const Bounds &bounds,
                 float thickness,
@@ -90,6 +95,12 @@ class UiElement {
                 const Bounds &bounds,
                 float height,
                 const Point &ref = Bounds::tl);
+        void drawAlignedText(
+                const std::string &s,
+                const Bounds &bounds,
+                float height,
+                const Point &ref = Bounds::tl,
+                const Point &refText = Bounds::tl);
         void drawCenteredText(
                 const std::string &s,
                 const Bounds &bounds,

@@ -14,6 +14,8 @@
 #include "combustion_chamber.h"
 #include "units.h"
 
+#include <string>
+
 class Engine : public Part {
     public:
         struct FuelParameters {
@@ -32,6 +34,8 @@ class Engine : public Part {
             int ExhaustSystemCount;
             int IntakeCount;
 
+            std::string Name;
+
             double StarterTorque = units::torque(90.0, units::ft_lb);
             double StarterSpeed = units::rpm(200);
             double Redline = units::rpm(6500);
@@ -45,6 +49,8 @@ class Engine : public Part {
 
         void initialize(const Parameters &params);
         virtual void destroy();
+
+        std::string getName() const { return m_name; }
 
         virtual Crankshaft *getOutputCrankshaft() const;
         virtual void setThrottle(double throttle);
@@ -85,6 +91,8 @@ class Engine : public Part {
         const FuelParameters &getFuel() const { return m_fuel; }
 
     protected:
+        std::string m_name;
+
         Crankshaft *m_crankshafts;
         int m_crankshaftCount;
 

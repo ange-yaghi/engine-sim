@@ -45,12 +45,13 @@ void LabeledGauge::render() {
 
     std::stringstream ss;
     ss << std::fixed << std::setprecision(m_precision);
-    ss << value << (m_spaceBeforeUnit ? " " : "") << m_unit;
-    drawCenteredText(
+    ss << value << ((m_spaceBeforeUnit && m_unit.length() > 0) ? " " : "") << m_unit;
+    drawAlignedText(
         ss.str(),
         gaugeBounds.verticalSplit(0.0f, 2 / 8.0f), 
         gaugeBounds.height() / 8,
-        Bounds::center);
+        Bounds::bm,
+        Bounds::bm);
 
     m_gauge->m_bounds = gaugeBounds;
     m_gauge->setLocalPosition({ 0, 0 });

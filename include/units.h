@@ -42,6 +42,7 @@ namespace units {
     extern constexpr double mL = cc;
     extern constexpr double L = mL * 1000.0;
     extern constexpr double cubic_feet = foot * foot * foot;
+    extern constexpr double cubic_inches = inch * inch * inch;
     extern constexpr double gal = 3.785411784 * L;
 
     // Molecular

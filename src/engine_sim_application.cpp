@@ -57,6 +57,7 @@ EngineSimApplication::EngineSimApplication() {
     m_performanceCluster = nullptr;
     m_loadSimulationCluster = nullptr;
     m_mixerCluster = nullptr;
+    m_infoCluster = nullptr;
 
     m_oscillatorSampleOffset = 0;
     m_gameWindowHeight = 256;
@@ -136,6 +137,7 @@ void EngineSimApplication::initialize() {
     m_textRenderer.SetFont(m_engine.GetConsole()->GetFont());
 
     Engine::Parameters engineParams;
+    engineParams.Name = "Chev. 454 V8";
     engineParams.CylinderBanks = 2;
     engineParams.CylinderCount = 8;
     engineParams.CrankshaftCount = 1;
@@ -520,6 +522,9 @@ void EngineSimApplication::initialize() {
     m_mixerCluster = m_uiManager.getRoot()->addElement<MixerCluster>();
     m_mixerCluster->setSimulator(&m_simulator);
 
+    m_infoCluster = m_uiManager.getRoot()->addElement<InfoCluster>();
+    m_infoCluster->setEngine(&m_iceEngine);
+
     m_audioBuffer.initialize(44100, 44100);
     m_audioBuffer.m_writePointer = (int)(44100 * 0.1);
 
@@ -566,29 +571,31 @@ void EngineSimApplication::process(float frame_dt) {
         const double cylinderPressure = m_simulator.getEngine()->getChamber(0)->m_system.pressure()
             + m_simulator.getEngine()->getChamber(0)->m_system.dynamicPressure(-1.0, 0.0);
 
-        m_oscCluster->getTotalExhaustFlowOscilloscope()->addDataPoint(
-            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getTotalExhaustFlow() / m_simulator.getTimestep());
-        m_oscCluster->getCylinderPressureScope()->addDataPoint(
-            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-            std::sqrt(cylinderPressure));
-        m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
-            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getEngine()->getChamber(0)->getLastTimestepExhaustFlow() / m_simulator.getTimestep());
-        m_oscCluster->getIntakeFlowOscilloscope()->addDataPoint(
-            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getEngine()->getChamber(0)->getLastTimestepIntakeFlow() / m_simulator.getTimestep());
-        m_oscCluster->getCylinderMoleculesScope()->addDataPoint(
-            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getEngine()->getChamber(0)->m_system.n());
-        m_oscCluster->getExhaustValveLiftOscilloscope()->addDataPoint(
-            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(
-                m_simulator.getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
-        m_oscCluster->getIntakeValveLiftOscilloscope()->addDataPoint(
-            m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-            m_simulator.getEngine()->getChamber(0)->getCylinderHead()->intakeValveLift(
-                m_simulator.getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
+        if (m_simulator.getCurrentIteration() % 2 == 0) {
+            m_oscCluster->getTotalExhaustFlowOscilloscope()->addDataPoint(
+                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+                m_simulator.getTotalExhaustFlow() / m_simulator.getTimestep());
+            m_oscCluster->getCylinderPressureScope()->addDataPoint(
+                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
+                std::sqrt(cylinderPressure));
+            m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
+                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+                m_simulator.getEngine()->getChamber(0)->getLastTimestepExhaustFlow() / m_simulator.getTimestep());
+            m_oscCluster->getIntakeFlowOscilloscope()->addDataPoint(
+                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+                m_simulator.getEngine()->getChamber(0)->getLastTimestepIntakeFlow() / m_simulator.getTimestep());
+            m_oscCluster->getCylinderMoleculesScope()->addDataPoint(
+                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+                m_simulator.getEngine()->getChamber(0)->m_system.n());
+            m_oscCluster->getExhaustValveLiftOscilloscope()->addDataPoint(
+                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+                m_simulator.getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(
+                    m_simulator.getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
+            m_oscCluster->getIntakeValveLiftOscilloscope()->addDataPoint(
+                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
+                m_simulator.getEngine()->getChamber(0)->getCylinderHead()->intakeValveLift(
+                    m_simulator.getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
+        }
     }
 
     auto proc_t1 = std::chrono::steady_clock::now();
@@ -708,14 +715,9 @@ void EngineSimApplication::run() {
 
         updateScreenSizeStability();
 
-        if (m_engine.ProcessKeyDown(ysKey::Code::Space)
-            && m_engine.GetGameWindow()->IsActive())
-        {
-            //m_paused = !m_paused;
-        }
-
         if (m_engine.ProcessKeyDown(ysKey::Code::F)) {
             m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
+            m_infoCluster->setLogMessage("Entered fullscreen mode");
         }
 
         bool fineControlInUse = false;
@@ -729,6 +731,8 @@ void EngineSimApplication::run() {
 
             m_simulator.getSynthesizer()->setAudioParameters(audioParams);
             fineControlInUse = true;
+
+            m_infoCluster->setLogMessage("[Z] - Set volume to " + std::to_string(audioParams.Volume));
         }
         else if (m_engine.IsKeyDown(ysKey::Code::X)) {
             const double rate = fineControlMode
@@ -740,6 +744,8 @@ void EngineSimApplication::run() {
 
             m_simulator.getSynthesizer()->setAudioParameters(audioParams);
             fineControlInUse = true;
+
+            m_infoCluster->setLogMessage("[X] - Set convolution level to " + std::to_string(audioParams.Convolution));
         }
         else if (m_engine.IsKeyDown(ysKey::Code::C)) {
             const double rate = fineControlMode
@@ -751,6 +757,8 @@ void EngineSimApplication::run() {
 
             m_simulator.getSynthesizer()->setAudioParameters(audioParams);
             fineControlInUse = true;
+
+            m_infoCluster->setLogMessage("[C] - Set high freq. gain to " + std::to_string(audioParams.dF_F_mix));
         }
         else if (m_engine.IsKeyDown(ysKey::Code::V)) {
             const double rate = fineControlMode
@@ -762,6 +770,8 @@ void EngineSimApplication::run() {
 
             m_simulator.getSynthesizer()->setAudioParameters(audioParams);
             fineControlInUse = true;
+
+            m_infoCluster->setLogMessage("[V] - Set low freq. noise to " + std::to_string(audioParams.AirNoise));
         }
         else if (m_engine.IsKeyDown(ysKey::Code::B)) {
             const double rate = fineControlMode
@@ -773,8 +783,11 @@ void EngineSimApplication::run() {
 
             m_simulator.getSynthesizer()->setAudioParameters(audioParams);
             fineControlInUse = true;
+
+            m_infoCluster->setLogMessage("[B] - Set high freq. noise to " + std::to_string(audioParams.InputSampleNoise));
         }
 
+        const double prevTargetThrottle = targetThrottle;
         targetThrottle = fineControlMode ? targetThrottle : 1.0;
         if (m_engine.IsKeyDown(ysKey::Code::Q)) {
             targetThrottle = 0.99;
@@ -792,12 +805,21 @@ void EngineSimApplication::run() {
             targetThrottle = std::fmax(0.0, std::fmin(1.0, targetThrottle - mouseWheelDelta * 0.0001));
         }
 
+        if (prevTargetThrottle != targetThrottle) {
+            m_infoCluster->setLogMessage("Throttle set to " + std::to_string(targetThrottle));
+        }
+
         throttle = targetThrottle * 0.5 + 0.5 * throttle;
 
         m_iceEngine.setThrottle(throttle);
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_simulator.m_dyno.m_enabled = !m_simulator.m_dyno.m_enabled;
+
+            const std::string msg = m_simulator.m_dyno.m_enabled
+                ? "DYNOMOMETER ENABLED"
+                : "DYNOMOMETER DISABLED";
+            m_infoCluster->setLogMessage(msg);
         }
 
         if (m_simulator.m_dyno.m_enabled) {
@@ -819,6 +841,7 @@ void EngineSimApplication::run() {
 
         m_simulator.m_dyno.m_rotationSpeed = m_dynoSpeed + units::rpm(1000);
 
+        const bool prevStarterEnabled = m_simulator.m_starterMotor.m_enabled;
         if (m_engine.IsKeyDown(ysKey::Code::S)) {
             m_simulator.m_starterMotor.m_enabled = true;
         }
@@ -826,21 +849,41 @@ void EngineSimApplication::run() {
             m_simulator.m_starterMotor.m_enabled = false;
         }
 
+        if (prevStarterEnabled != m_simulator.m_starterMotor.m_enabled) {
+            const std::string msg = m_simulator.m_starterMotor.m_enabled
+                ? "STARTER ENABLED"
+                : "STARTER DISABLED";
+            m_infoCluster->setLogMessage(msg);
+        }
+
         if (m_engine.ProcessKeyDown(ysKey::Code::A)) {
             m_simulator.getEngine()->getIgnitionModule()->m_enabled =
                 !m_simulator.getEngine()->getIgnitionModule()->m_enabled;
+
+            const std::string msg = m_simulator.getEngine()->getIgnitionModule()->m_enabled
+                ? "IGNITION ENABLED"
+                : "IGNITION DISABLED";
+            m_infoCluster->setLogMessage(msg);
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::Up)) {
             m_simulator.getTransmission()->changeGear(m_simulator.getTransmission()->getGear() + 1);
+
+            m_infoCluster->setLogMessage(
+                "UPSHIFTED TO " + std::to_string(m_simulator.getTransmission()->getGear()));
         }
         else if (m_engine.ProcessKeyDown(ysKey::Code::Down)) {
             m_simulator.getTransmission()->changeGear(m_simulator.getTransmission()->getGear() - 1);
+
+            m_infoCluster->setLogMessage(
+                "DOWNSHIFTED TO " + std::to_string(m_simulator.getTransmission()->getGear()));
         }
 
         double newClutchPressure = 1.0;
         if (m_engine.IsKeyDown(ysKey::Code::Shift)) {
             newClutchPressure = 0.0;
+
+            m_infoCluster->setLogMessage("CLUTCH DEPRESSED");
         }
 
         double clutchRC = 0.001;
@@ -997,6 +1040,7 @@ void EngineSimApplication::renderScene() {
     grid1x3.v_cells = 3;
     grid1x3.h_cells = 1;
     m_mixerCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 2);
+    m_infoCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 0, 1, 2);
 
     m_geometryGenerator.reset();
 

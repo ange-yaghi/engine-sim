@@ -161,6 +161,28 @@ void UiElement::resetShader() {
     m_app->getShaders()->SetObjectTransform(ysMath::LoadIdentity());
 }
 
+void UiElement::drawModel(
+    dbasic::ModelAsset *model,
+    const ysVector &color,
+    const Point &p,
+    const Point &s)
+{
+    resetShader();
+
+    const Point p_render = getRenderPoint(p);
+    const Point s_render = pixelsToUnits(s);
+
+    m_app->getShaders()->SetObjectTransform(
+        ysMath::MatMult(
+            ysMath::TranslationTransform(ysMath::LoadVector(p_render.x, p_render.y, 0.0)),
+            ysMath::ScaleTransform(ysMath::LoadVector(s_render.x, s_render.y, 0.0))
+        )
+    );
+
+    m_app->getShaders()->SetBaseColor(color);
+    m_app->getEngine()->DrawModel(m_app->getShaders()->GetUiFlags(), model, 0x11);
+}
+
 void UiElement::drawFrame(
         const Bounds &bounds,
         float thickness,
@@ -217,6 +239,30 @@ void UiElement::drawText(
 
     m_app->getTextRenderer()->RenderText(
             s, origin.x, origin.y - height / 4, height);
+}
+
+void UiElement::drawAlignedText(
+        const std::string &s,
+        const Bounds &bounds,
+        float height,
+        const Point &ref,
+        const Point &refText)
+{
+    const Bounds renderBounds = unitsToPixels(getRenderBounds(bounds));
+    const Point origin = renderBounds.getPosition(ref);
+
+    const float textWidth = m_app->getTextRenderer()->CalculateWidth(s, height);
+    const float textHeight = height;
+
+    const Bounds textBounds(
+        textWidth,
+        textHeight,
+        { 0.0f, textHeight - textHeight * 0.25f },
+        Bounds::tl);
+    const Point r = textBounds.getPosition(refText);
+
+    m_app->getTextRenderer()->RenderText(
+        s, origin.x - r.x, origin.y - r.y, height);
 }
 
 void UiElement::drawCenteredText(

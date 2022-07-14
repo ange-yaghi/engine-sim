@@ -262,12 +262,11 @@ void OscilloscopeCluster::render() {
     const Bounds &totalExhaustPressureBounds = grid.get(m_bounds, 1, 2);
     renderScope(m_totalExhaustFlowScope, totalExhaustPressureBounds, "Total Exhaust Flow");
 
-    const Bounds &sparkAdvanceBounds = grid.get(m_bounds, 2, 3);
-    //renderScope(m_sparkAdvanceScope, sparkAdvanceBounds, "Spark Advance");
-
     const Bounds &focusBounds = grid.get(m_bounds, 0, 0, 3, 2);
-    const Bounds &focusTitle = focusBounds.verticalSplit(0.85f, 1.0f);
-    const Bounds &focusBody = focusBounds.verticalSplit(0.0f, 0.85f);
+    Bounds focusTitle = focusBounds;
+    focusTitle.m0.y = focusTitle.m1.y - (24.0f + 15.0f);
+    Bounds focusBody = focusBounds;
+    focusBody.m1 = focusBody.m1 - Point(0.0f, 24.0f + 15.0f);
 
     drawFrame(focusTitle, 1.0, ysMath::Constants::One, m_app->getBackgroundColor());
     drawFrame(focusBody, 1.0, ysMath::Constants::One, m_app->getBackgroundColor());
@@ -298,7 +297,10 @@ void OscilloscopeCluster::renderScope(
         grid.v_cells = 4;
 
         const Bounds &focusBounds = grid.get(m_bounds, 0, 0, 3, 2);
-        const Bounds &focusTitle = focusBounds.verticalSplit(0.85f, 1.0f);
+        Bounds focusTitle = focusBounds;
+        focusTitle.m1 -= Point(0.0f, 24.0f + 15.0f);
+        Bounds focusBody = focusBounds;
+        focusTitle.m1 += Point(0.0f, 24.0f + 15.0f);
 
         drawText(title, focusTitle.inset(20.0f), 24.0f, Bounds::tl);
     }
