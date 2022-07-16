@@ -9,16 +9,15 @@ private import "../types/conversions.mr"
 
 // Channels
 public node engine => __engine_sim__engine_channel { /* void */ }
+public node crankshaft_channel => __engine_sim__crankshaft_channel { /* void */ }
+public node rod_journal_channel => __engine_sim__rod_journal { /* void */ }
+public node connecting_rod_channel => __engine_sim__connecting_rod_channel { /* void */ }
+public node piston_channel => __engine_sim__piston_channel { /* void */ }
+public node cylinder_bank_channel => __engine_sim__cylinder_bank_channel { /* void */ }
 
 // Engine
 public node _build_engine => __engine_sim__engine {
     input name [string]: "Engine";
-
-    input crankshafts [int] : 1;
-    input cylinder_banks [int] : 2;
-    input cylinders [int] : 8;
-    input exhaust_systems [int]: 2;
-    input intakes [int]: 1;
     
     input redline [float]: 0;
     input starter_speed [float]: 0;
@@ -35,5 +34,134 @@ public node build_engine {
     alias output __out:
         _build_engine(
 
+        );
+}
+
+// Cylinder Bank
+public node cylinder_bank_parameter_defaults {
+    input index [int]: 0;
+    input bore [float]: 0.0;
+    input angle [float]: 0.0;
+    input deck_height [float]: 0.0;
+}
+
+public node cylinder_bank_parameters {
+    input copy: cylinder_bank_parameter_defaults();
+    input bore: copy.bore;
+    input angle: copy.angle;
+    input deck_height: copy.deck_height;
+}
+
+public node _cylinder_bank => __engine_sim__cylinder_bank {
+    input angle [float];
+    input bore [float];
+    input deck_height [float];
+    alias output __out [cylinder_bank_channel];
+}
+
+public node cylinder_bank {
+    input params: cylinder_bank_parameters();
+    alias output __out:
+        _cylinder_bank(
+            angle: params.angle,
+            bore: params.bore,
+            deck_height: params.deck_height
+        )
+}
+
+// Crankshaft
+public node _crankshaft => __engine_sim__crankshaft {
+    input throw [float]: 0.0;
+    input flywheel_mass [float]: 0.0;
+    input mass [float]: 0.0;
+    input friction_torque [float]: 0.0;
+    input moment_of_inertia [float]: 0.0;
+    input position_x [float]: 0.0;
+    input position_y [float]: 0.0;
+    input tdc [float]: 0.0;
+    alias output __out [crankshaft_channel];
+}
+
+// Rod Journal
+public node rod_journal => __engine_sim__rod_journal {
+    input angle [float]: 0;
+    alias output __out [rod_journal_channel];
+}
+
+// Connecting Rod
+public node connecting_rod_parameter_defaults {
+    input mass: 0.0;
+    input moment_of_inertia: 0.0;
+    input center_of_mass: 0.0;
+    input length: 0.0;
+    input rod_journal;
+}
+
+public node connecting_rod_parameters {
+    input copy: connecting_rod_parameter_defaults();
+    input mass: copy.mass;
+    input moment_of_inertia: copy.moment_of_inertia;
+    input center_of_mass: copy.center_of_mass;
+    input length: copy.length;
+    input rod_journal: copy.rod_journal;
+}
+
+public node _connecting_rod => __engine_sim__connecting_rod {
+    input mass [float];
+    input moment_of_inertia [float];
+    input center_of_mass [float];
+    input length [float];
+    input rod_journal [rod_journal];
+    alias output __out [rod_journal_channel];
+}
+
+public node connecting_rod {
+    input params: connecting_rod_parameters();
+    alias output __out:
+        _connecting_rod(
+            mass: params.mass,
+            moment_of_inertia: params.moment_of_inertia,
+            center_of_mass: params.center_of_mass,
+            length: params.length,
+            rod_journal: params.rod_journal
+        );
+}
+
+// Piston
+public node piston_parameter_defaults {
+    input blowby: 0.0;
+    input wrist_pin_position: 0.0;
+    input wrist_pin_location: 0.0;
+    input displacement: 0.0;
+    input mass: 0.0;
+}
+
+public node piston_parameters {
+    input copy: piston_parameter_defaults();
+    input blowby: copy.blowby;
+    input wrist_pin_position: copy.compression_height;
+    input wrist_pin_location: copy.wrist_pin_location;
+    input displacement: copy.displacement;
+    input mass: copy.mass;
+}
+
+public node _piston => __engine_sim__piston {
+    input mass [float]: 0.0;
+    input blowby [float]: 0.0;
+    input compression_height [float]: 0.0;
+    input wrist_pin_position [float]: 0.0;
+    input displacement [float]: 0.0;
+    alias output __out [__engine_sim__piston_channel];
+}
+
+public node piston {
+    input params: piston_parameters();
+    alias output __out:
+        _piston(
+            mass: params.mass,
+            blowby: params.blowby,
+            compression_height: params.compression_height,
+            wrist_pin_position: params.wrist_pin_position,
+            displacement: params.displacement,
         );
 }

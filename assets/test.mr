@@ -1,5 +1,21 @@
 import "engine_sim.mr"
 
+build_engine engine()
+
+_crankshaft c0()
+rod_journal rj0(index: 0, angle: 0.0)
+rod_journal rj1(index: 0, angle: 0.0)
+rod_journal rj2(index: 0, angle: 0.0)
+rod_journal rj3(index: 0, angle: 0.0)
+
+c0
+    .add_rod_journal(rj0)
+    .add_rod_journal(rj1)
+    .add_rod_journal(rj2)
+    .add_rod_journal(rj3)
+
+engine.add_crankshaft(c0)
+
 set_engine(
-    engine: build_engine()
+    engine: engine
 )

@@ -18,6 +18,10 @@ namespace es_script {
             /* void */
         }
 
+        virtual void fullCompute(void *target) const {
+            *reinterpret_cast<Type **>(target) = m_data;
+        }
+
         Type *getReference() const { return m_data; }
         void setReference(Type *data) { m_data = data; }
 

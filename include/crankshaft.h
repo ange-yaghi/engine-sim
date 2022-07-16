@@ -21,7 +21,7 @@ class Crankshaft : public Part {
         Crankshaft();
         virtual ~Crankshaft();
 
-        void initialize(Parameters &params);
+        void initialize(const Parameters &params);
         virtual void destroy();
         inline int getRodJournalCount() const { return m_rodJournalCount; }
         void setRodJournalAngle(int i, double angle);

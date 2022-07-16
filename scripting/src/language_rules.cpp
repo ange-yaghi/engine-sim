@@ -3,6 +3,7 @@
 #include "../include/channel_types.h"
 #include "../include/engine_node.h"
 #include "../include/actions.h"
+#include "../include/rod_journal_node.h"
 
 es_script::LanguageRules::LanguageRules() {
     /* void */
@@ -28,6 +29,12 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__string", &piranha::FundamentalType::StringType);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__engine_channel", &es_script::ObjectChannel::EngineChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__crankshaft_channel", &es_script::ObjectChannel::CrankshaftChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__rod_journal_channel", &es_script::ObjectChannel::RodJournalChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__connecting_rod_channel", &es_script::ObjectChannel::ConnectingRodChannel);
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -67,8 +74,16 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<piranha::NumNegateOperationNode<
         piranha::native_int>>("__engine_sim__int_negate");
 
+    // Actions
     registerBuiltinType<SetEngineNode>("__engine_sim__set_engine");
+    registerBuiltinType<AddRodJournalNode>("__engine_sim__add_rod_journal");
+    registerBuiltinType<AddCrankshaftNode>("__engine_sim__add_crankshaft");
+
+    // Objects
     registerBuiltinType<EngineNode>("__engine_sim__engine");
+    registerBuiltinType<RodJournalNode>("__engine_sim__rod_journal");
+    registerBuiltinType<CrankshaftNode>("__engine_sim__crankshaft");
+    registerBuiltinType<CrankshaftNode>("__engine_sim__connecting_rod");
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<

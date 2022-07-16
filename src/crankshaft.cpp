@@ -21,7 +21,7 @@ Crankshaft::~Crankshaft() {
     assert(m_rodJournalAngles == nullptr);
 }
 
-void Crankshaft::initialize(Parameters &params) {
+void Crankshaft::initialize(const Parameters &params) {
     m_m = params.Mass;
     m_flywheelMass = params.FlywheelMass;
     m_I = params.MomentOfInertia;
