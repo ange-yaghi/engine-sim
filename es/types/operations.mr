@@ -1,0 +1,54 @@
+module {
+    @name:      "Operations"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+private import "atomic_types.mr"
+private import "conversions.mr"
+
+// Float operations
+
+public node float_negate => __engine_sim__float_negate {
+    input __in [float];
+    alias output __out [float];
+}
+
+public node float_divide => __engine_sim__float_divide {
+    input __in0 [float];
+    input __in1 [float];
+    alias output __out [float];
+}
+
+// String operations
+
+public node string_add => __engine_sim__string_add {
+    input __in0 [string];
+    input __in1 [string];
+    alias output __out [string];
+}
+
+// Int operations
+
+public node int_add => __engine_sim__int_add {
+    input __in0 [int];
+    input __in1 [int];
+    alias output __out [int];
+}
+
+public node int_mul => __engine_sim__int_multiply {
+    input __in0 [int];
+    input __in1 [int];
+    alias output __out [int];
+}
+
+public node int_sub => __engine_sim__int_sub {
+    input __in0 [int];
+    input __in1 [int];
+    alias output __out [int];
+}
+
+public node int_negate => __engine_sim__int_negate {
+    input __in [int];
+    alias output __out [int];
+}

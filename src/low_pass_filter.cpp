@@ -11,8 +11,5 @@ LowPassFilter::~LowPassFilter() {
 }
 
 double LowPassFilter::f(double sample) {
-    const double alpha = m_dt / (m_rc + m_dt);
-    m_y = alpha * sample + (1 - alpha) * m_y;
-
-    return m_y;
+    return fast_f(sample);
 }

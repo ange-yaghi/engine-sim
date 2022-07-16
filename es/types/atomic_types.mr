@@ -1,0 +1,75 @@
+module {
+    @name:      "Atomic Types"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+// ========================================================
+//  Channels
+// ========================================================
+
+@doc: "Floating-point channel type"
+private node float_channel => __engine_sim__float { /* void */ }
+
+@doc: "String channel type"
+private node string_channel => __engine_sim__string { /* void */ }
+
+@doc: "Integer channel type"
+private node int_channel => __engine_sim__int { /* void */ }
+
+@doc: "Bool channel type"
+private node bool_channel => __engine_sim__bool { /* void */ }
+
+// ========================================================
+//  Types
+// ========================================================
+
+@doc: "Float cast type"
+@detail: "Converts anything connected to __in to "
+         "a float type"
+public inline node float {
+    input __in [::float_channel]: 0.0;
+    alias output __out [::float_channel]: __in;
+}
+
+@doc: "Integer cast type"
+@detail: "Converts anything connected to __in to "
+         "an integer type"
+public inline node int {
+    input __in [::int_channel]: 0;
+    alias output __out [::int_channel]: __in;
+}
+
+@doc: "Boolean cast type"
+@detail: "Converts anything connected to __in to "
+         "a boolean type"
+public inline node bool {
+    input __in [::bool_channel]: false;
+    alias output __out [::bool_channel]: __in;
+}
+
+@doc: "String type"
+public inline node string {
+    input s [::string_channel]: "";
+    alias output __out [::string_channel]: s;
+}
+
+// ========================================================
+//  Literals
+// ========================================================
+
+public node literal_string => __engine_sim__literal_string {
+    alias output __out [::string];
+}
+
+public node literal_float => __engine_sim__literal_float {
+    alias output __out [::float];
+}
+
+public node literal_int => __engine_sim__literal_int {
+    alias output __out [::int];
+}
+
+public node literal_bool => __engine_sim__literal_bool {
+    alias output __out [::bool];
+}

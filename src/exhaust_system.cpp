@@ -15,7 +15,7 @@ ExhaustSystem::~ExhaustSystem() {
 void ExhaustSystem::initialize(Parameters &params) {
     m_system.initialize(
             units::pressure(1.0, units::atm),
-            params.volume,
+            params.Volume,
             units::celcius(25.0));
     m_system.setGeometry(
         units::distance(1.0, units::m),
@@ -33,7 +33,8 @@ void ExhaustSystem::initialize(Parameters &params) {
         1.0,
         0.0);
 
-    m_flowK = params.flowK;
+    m_flowK = params.FlowK;
+    m_audioVolume = params.AudioVolume;
 }
 
 void ExhaustSystem::destroy() {

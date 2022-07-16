@@ -5,6 +5,7 @@
 #include "leveling_filter.h"
 #include "derivative_filter.h"
 #include "low_pass_filter.h"
+#include "ring_buffer.h"
 
 #include <cinttypes>
 #include <thread>
@@ -37,7 +38,10 @@ class Synthesizer {
         };
 
         struct InputChannel {
-            double *Data;
+            RingBuffer<double> Data;
+            double *TransferBuffer = nullptr;
+
+            double LastInputSample = 0.0;
         };
 
         struct ProcessingFilters {
@@ -67,42 +71,34 @@ class Synthesizer {
         void audioRenderingThread();
         void renderAudio();
 
-        double audioSampleToTimeOffset(int sample) const;
-        double audioSamplesToTimeDelta(int samples) const;
-        double timeOffsetToInputSample(double timeOffset) const;
-        double inputSampleToTimeOffset(double inputSample) const;
-        double sampleInput(double timeOffset, int channel) const;
+        //double sampleInput(double timeOffset, int channel) const;
+        double getLatency() const;
 
-        bool timeOffsetGreaterZero(double timeOffset) const;
-        bool timeOffsetInBounds(double timeOffset, int safetyBoundary) const;
+        int inputDelta(int s1, int s0) const;
+        double inputDistance(double s1, double s0) const;
 
         void setInputSampleRate(double sampleRate);
         double getInputSampleRate() const { return m_inputSampleRate; }
 
-        void trim(int audioSamples);
-        void trimInput(double startTimeOffset, bool move=true);
-        int16_t renderAudio(double timeOffset);
-
-        int getInputWriteOffset() const { return m_inputWriteOffset; }
+        int16_t renderAudio(int inputOffset);
 
         double getLevelerGain();
         AudioParameters getAudioParameters();
         void setAudioParameters(const AudioParameters &params);
 
-    protected:
+    //protected:
         LevelingFilter m_levelingFilter;
         InputChannel *m_inputChannels;
         AudioParameters m_audioParameters;
         int m_inputChannelCount;
         int m_inputBufferSize;
-        int m_inputWriteOffset;
-        int m_inputSafetyBoundary;
+        int m_inputSamplesRead;
+        int m_latency;
+        double m_inputWriteOffset;
+        double m_lastInputSampleOffset;
 
-        int16_t *m_audioBuffer;
+        RingBuffer<int16_t> m_audioBuffer;
         int m_audioBufferSize;
-        int m_audioBufferWriteOffset;
-        int m_audioBufferSafetyBoundary;
-        double m_audioSampleToTimeOffset;
 
         double m_inputSampleRate;
         double m_audioSampleRate;
@@ -111,6 +107,7 @@ class Synthesizer {
         std::atomic<bool> m_run;
         bool m_processed;
 
+        std::mutex m_inputLock;
         std::mutex m_lock0;
         std::condition_variable m_cv0;
 

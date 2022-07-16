@@ -14,6 +14,8 @@
 #include "../include/feedback_comb_filter.h"
 #include "../include/utilities.h"
 
+#include "../scripting/include/compiler.h"
+
 #include <chrono>
 #include <stdlib.h>
 #include <sstream>
@@ -211,8 +213,8 @@ void EngineSimApplication::initialize() {
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
-    crankshaftParams.FlywheelMass = units::mass(29, units::lb) * 2;
-    crankshaftParams.Mass = units::mass(75, units::lb);
+    crankshaftParams.FlywheelMass = 0.5 * units::mass(29, units::lb) * 2;
+    crankshaftParams.Mass = 0.5 * units::mass(75, units::lb);
     crankshaftParams.FrictionTorque = units::torque(10.0, units::ft_lb);
 
     // Temporary moment of inertia approximation
@@ -390,9 +392,12 @@ void EngineSimApplication::initialize() {
     m_iceEngine.getIntake(0)->initialize(inParams);
 
     ExhaustSystem::Parameters esParams;
-    esParams.flowK = GasSystem::k_carb(1000.0);
-    esParams.volume = units::volume(10.0, units::L);
+    esParams.FlowK = GasSystem::k_carb(1000.0);
+    esParams.Volume = units::volume(10.0, units::L);
+    esParams.AudioVolume = 1.0;
     m_iceEngine.getExhaustSystem(0)->initialize(esParams);
+
+    esParams.AudioVolume = 0.1;
     m_iceEngine.getExhaustSystem(1)->initialize(esParams);
 
     m_iceEngine.getHead(0)->setAllExhaustSystems(m_iceEngine.getExhaustSystem(0));
@@ -499,6 +504,7 @@ void EngineSimApplication::initialize() {
     simulatorParams.SystemType = Simulator::SystemType::NsvOptimized;
     simulatorParams.Transmission = transmission;
     simulatorParams.Vehicle = vehicle;
+    simulatorParams.SimulationFrequency = 11000;
     m_simulator.initialize(simulatorParams);
     m_simulator.startAudioRenderingThread();
     createObjects(&m_iceEngine);
@@ -542,21 +548,23 @@ void EngineSimApplication::initialize() {
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    double speed = 1.0;
+    //frame_dt = clamp(frame_dt, 1 / 100.0f, 1 / 30.0f);
+
+    double speed = 1.0 / 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::N1)) {
         speed = 1 / 10.0;
     }
     else if (m_engine.IsKeyDown(ysKey::Code::N2)) {
-        speed = 1 / 50.0;
-    }
-    else if (m_engine.IsKeyDown(ysKey::Code::N3)) {
         speed = 1 / 100.0;
     }
+    else if (m_engine.IsKeyDown(ysKey::Code::N3)) {
+        speed = 1 / 200.0;
+    }
     else if (m_engine.IsKeyDown(ysKey::Code::N4)) {
-        speed = 1 / 150.0;
+        speed = 1 / 500.0;
     }
     else if (m_engine.IsKeyDown(ysKey::Code::N5)) {
-        speed = 1 / 200.0;
+        speed = 1 / 1000.0;
     }
 
     m_simulator.setSimulationSpeed(speed);
@@ -662,6 +670,13 @@ void EngineSimApplication::process(float frame_dt) {
         m_audioBuffer.offsetDelta(m_audioSource->GetCurrentPosition(), m_audioBuffer.m_writePointer) / (44100 * 0.1));
     m_performanceCluster->addInputBufferUsageSample(
         (double)m_simulator.getSynthesizerInputLatency() / m_simulator.getSynthesizerInputLatencyTarget());
+
+    //m_infoCluster->setLogMessage(
+    //    std::to_string(m_simulator.getSynthesizer()->m_audioBuffer.size()));
+    //m_infoCluster->setLogMessage(
+    //    std::to_string(maxWrite));
+    //m_infoCluster->setLogMessage(
+    //    std::to_string(m_simulator.getSynthesizer()->m_inputChannels[0].Data.size()));
 }
 
 void EngineSimApplication::render() {
@@ -693,6 +708,17 @@ void EngineSimApplication::run() {
 
     double clutchPressure = 1.0;
     int lastMouseWheel = 0;
+
+    // Scripting
+#ifdef ATG_ENGINE_PIRANHA_ENABLED
+
+    es_script::Compiler compiler;
+    compiler.initialize();
+    compiler.compile("../assets/test.mr");
+    es_script::Compiler::Output output = compiler.execute();
+    compiler.destroy();
+
+#endif /* PIRANHA_ENABLED */
 
     while (true) {
         const float dt = m_engine.GetFrameLength();

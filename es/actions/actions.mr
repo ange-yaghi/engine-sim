@@ -1,0 +1,11 @@
+module {
+    @name:      "Actions"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+private import "../objects/objects.mr"
+
+public node set_engine => __engine_sim__set_engine {
+    input engine [engine];
+}

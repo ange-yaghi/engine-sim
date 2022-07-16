@@ -1,0 +1,16 @@
+module {
+    @name:      "Engine Simulator Library"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+// Types
+public import "types/atomic_types.mr"
+public import "types/conversions.mr"
+public import "types/operations.mr"
+
+// Actions
+public import "actions/actions.mr"
+
+// Objects
+public import "objects/objects.mr"

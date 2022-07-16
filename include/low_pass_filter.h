@@ -12,6 +12,13 @@ class LowPassFilter : public Filter {
 
         virtual double f(double sample);
 
+        __forceinline double fast_f(double sample) {
+            const double alpha = m_dt / (m_rc + m_dt);
+            m_y = alpha * sample + (1 - alpha) * m_y;
+
+            return m_y;
+        }
+
         inline void setCutoffFrequency(double f) {
             m_rc = 1 / (f * 2 * constants::pi);
         }

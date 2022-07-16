@@ -257,16 +257,27 @@ void Simulator::startFrame(double dt) {
     const double timestep = getTimestep();
     i_steps = (int)std::round((dt * m_simulationSpeed) / timestep);
 
-    const int targetLatency = getSynthesizerInputLatencyTarget();
-    if (m_synthesizer.getInputWriteOffset() < targetLatency) {
+    const double targetLatency = getSynthesizerInputLatencyTarget();
+    
+    if (m_synthesizer.getLatency() < targetLatency) {
         ++i_steps;
     }
-    else if (m_synthesizer.getInputWriteOffset() > targetLatency) {
-        i_steps -= (m_synthesizer.getInputWriteOffset() - targetLatency);
+    else if (m_synthesizer.getLatency() > targetLatency) {
+        --i_steps;
+        //i_steps -= (m_synthesizer.getLatency() - targetLatency) * m_simulationFrequency;
         if (i_steps < 0) {
             i_steps = 0;
         }
     }
+    //const int maxSteps = std::max(4000 - (int)m_synthesizer.m_inputChannels[0].Data.size(), 0);
+    //i_steps = std::min(maxSteps, i_steps);
+
+    //if (m_synthesizer.m_audioBufferWriteOffset > 10000) {
+    //    --i_steps;
+    //}
+    //else {
+    //    ++i_steps;
+    //}
 
     if (i_steps > 0) {
         for (int i = 0; i < m_engine->getIntakeCount(); ++i) {
@@ -283,10 +294,8 @@ void Simulator::endAudioRenderingThread() {
     m_synthesizer.endAudioRenderingThread();
 }
 
-int Simulator::getSynthesizerInputLatencyTarget() const {
-    return std::max(
-        5,
-        (int)std::ceil(m_targetSynthesizerLatency * m_simulationFrequency * m_simulationSpeed));
+double Simulator::getSynthesizerInputLatencyTarget() const {
+    return m_targetSynthesizerLatency;
 }
 
 bool Simulator::simulateStep() {
@@ -353,7 +362,7 @@ bool Simulator::simulateStep() {
 
     writeToSynthesizer();
     if (m_currentIteration % 8 == 0 && m_currentIteration > 0) {
-        m_synthesizer.endInputBlock();
+        //m_synthesizer.endInputBlock();
     }
 
     ++m_currentIteration;
@@ -408,7 +417,7 @@ void Simulator::initializeSynthesizer() {
     Synthesizer::Parameters synthParams;
     synthParams.AudioBufferSize = 44100;
     synthParams.AudioSampleRate = 44100;
-    synthParams.InputBufferSize = 2048 * 2 * 2 * 2;
+    synthParams.InputBufferSize = 44100;
     synthParams.InputChannelCount = m_engine->getExhaustSystemCount();
     synthParams.InputSampleRate = (double)m_simulationFrequency;
     m_synthesizer.initialize(synthParams);
@@ -455,7 +464,8 @@ void Simulator::writeToSynthesizer() {
                 + 0.5 * m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(-1.0, 0.0));
 
         ExhaustSystem *exhaustSystem = head->getExhaustSystem(piston->getCylinderIndex());
-        m_exhaustFlowStagingBuffer[exhaustSystem->m_index] += exhaustFlow / cylinderCount;
+        m_exhaustFlowStagingBuffer[exhaustSystem->m_index] +=
+            exhaustSystem->m_audioVolume * exhaustFlow / cylinderCount;
 
         //m_exhaustFlowStagingBuffer[exhaustSystem->m_index] +=
         //    attenuation * 50000 * exhaustFlow / timestep;

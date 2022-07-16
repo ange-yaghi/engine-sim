@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.10)
 
 option(DTV "Enable video output" OFF)
+option(PIRANHA_ENABLED "Enable scripting input" OFF)
 
 if (DTV)
     add_compile_definitions(ATG_ENGINE_SIM_VIDEO_CAPTURE)
 endif (DTV)
+
+if (PIRANHA_ENABLED)
+    add_compile_definitions(ATG_ENGINE_PIRANHA_ENABLED)
+endif (PIRANHA_ENABLED)
 
 # Enable group projects in folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -111,6 +116,27 @@ target_link_libraries(engine-sim
 target_include_directories(engine-sim
     PUBLIC dependencies/submodules)
 
+if (PIRANHA_ENABLED)
+    add_library(engine-sim-script-interpreter STATIC
+        # Source files
+        scripting/src/language_rules.cpp
+        scripting/src/compiler.cpp
+
+        # Include files
+        scripting/include/compiler.h
+        scripting/include/engine_sim.h
+        scripting/include/language_rules.h
+        scripting/include/piranha.h
+    )
+
+    target_include_directories(engine-sim-script-interpreter
+        PUBLIC dependencies/submodules)
+
+    target_link_libraries(engine-sim-script-interpreter
+        csv-io
+        piranha)
+endif (PIRANHA_ENABLED)
+
 add_executable(engine-sim-app WIN32
     # Source files
     src/main.cpp
@@ -190,6 +216,11 @@ if (DTV)
     target_link_libraries(engine-sim-app
         direct-to-video)
 endif (DTV)
+
+if (PIRANHA_ENABLED)
+    target_link_libraries(engine-sim-app
+        engine-sim-script-interpreter)
+endif (PIRANHA_ENABLED)
 
 target_include_directories(engine-sim-app
     PUBLIC dependencies/submodules)

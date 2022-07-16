@@ -91,9 +91,9 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_simSpeedGauge->m_precision = 1;
     m_simSpeedGauge->setLocalPosition({ 0, 0 });
     m_simSpeedGauge->m_gauge->m_min = 0;
-    m_simSpeedGauge->m_gauge->m_max = 200;
-    m_simSpeedGauge->m_gauge->m_minorStep = 10;
-    m_simSpeedGauge->m_gauge->m_majorStep = 50;
+    m_simSpeedGauge->m_gauge->m_max = 1000;
+    m_simSpeedGauge->m_gauge->m_minorStep = 50;
+    m_simSpeedGauge->m_gauge->m_majorStep = 100;
     m_simSpeedGauge->m_gauge->m_maxMinorTick = 1000;
     m_simSpeedGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
     m_simSpeedGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
@@ -182,7 +182,8 @@ void PerformanceCluster::update(float dt) {
     UiElement::update(dt);
 
     m_filteredSimulationFrequency =
-        0.9 * m_filteredSimulationFrequency + 0.1 * m_simulator->getSimulationFrequency() * m_simulator->getSimulationSpeed();
+        0.9 * m_filteredSimulationFrequency
+        + 0.1 * m_simulator->getSimulationFrequency() * m_simulator->getSimulationSpeed();
 }
 
 void PerformanceCluster::render() {

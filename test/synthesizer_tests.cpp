@@ -10,9 +10,17 @@ void setupStandardSynthesizer(Synthesizer &synth) {
     Synthesizer::Parameters params;
     params.AudioBufferSize = 512 * 16;
     params.AudioSampleRate = 16;
-    params.InputBufferSize = 1024;
+    params.InputBufferSize = 256;
     params.InputChannelCount = 8;
     params.InputSampleRate = 32;
+
+    Synthesizer::AudioParameters audioParams;
+    audioParams.AirNoise = 0.0;
+    audioParams.InputSampleNoise = 0.0;
+    audioParams.LevelerMaxGain = 1.0;
+    audioParams.LevelerMinGain = 1.0;
+    audioParams.dF_F_mix = 0.0;
+    params.InitialAudioParameters = audioParams;
 
     synth.initialize(params);
 }
@@ -25,6 +33,14 @@ void setupSynchronizedSynthesizer(Synthesizer &synth) {
     params.InputChannelCount = 8;
     params.InputSampleRate = 32;
 
+    Synthesizer::AudioParameters audioParams;
+    audioParams.AirNoise = 0.0;
+    audioParams.InputSampleNoise = 0.0;
+    audioParams.LevelerMaxGain = 1.0;
+    audioParams.LevelerMinGain = 1.0;
+    audioParams.dF_F_mix = 0.0;
+    params.InitialAudioParameters = audioParams;
+
     synth.initialize(params);
 }
 
@@ -33,7 +49,7 @@ TEST(SynthesizerTests, SynthesizerSanityCheck) {
     setupStandardSynthesizer(synth);
     synth.destroy();
 }
-
+/*
 TEST(SynthesizerTests, SynthesizerConversionTest) {
     Synthesizer synth;
     setupStandardSynthesizer(synth);
@@ -89,10 +105,11 @@ TEST(SynthesizerTests, SynthesizerSampleTest) {
 
     synth.destroy();
 }
+*/
 
 TEST(SynthesizerTests, SynthesizerSystemTestSingleThread) {
     constexpr int inputSamples = 64;
-    constexpr int outputSamples = 64 + 16;
+    constexpr int outputSamples = 63;
 
     Synthesizer synth;
     setupSynchronizedSynthesizer(synth);
@@ -114,14 +131,16 @@ TEST(SynthesizerTests, SynthesizerSystemTestSingleThread) {
         int a = 0;
     }
 
-    synth.readAudioOutput(outputSamples - totalSamples, output + totalSamples);
+    const int rem = synth.readAudioOutput(outputSamples - totalSamples, output + totalSamples);
+
+    EXPECT_EQ(rem, outputSamples - totalSamples);
 
     for (int i = 0; i < 16; ++i) {
         EXPECT_EQ(output[i], 0);
     }
 
     for (int i = 16; i < outputSamples; ++i) {
-        EXPECT_EQ(output[i], (i - 16) * 10);
+        EXPECT_EQ(output[i], (i - 16) * 10 * 8);
     }
 
     synth.destroy();
@@ -129,8 +148,8 @@ TEST(SynthesizerTests, SynthesizerSystemTestSingleThread) {
 }
 
 TEST(SynthesizerTests, SynthesizerSystemTest) {
-    constexpr int inputSamples = 64;
-    constexpr int outputSamples = 64 + 16;
+    constexpr int inputSamples = 1024;
+    constexpr int outputSamples = 1023;
 
     Synthesizer synth;
     setupSynchronizedSynthesizer(synth);
@@ -161,7 +180,7 @@ TEST(SynthesizerTests, SynthesizerSystemTest) {
     }
 
     for (int i = 16; i < outputSamples; ++i) {
-        EXPECT_EQ(output[i], (i - 16) * 10);
+        EXPECT_EQ(output[i], std::min(32767, (i - 16) * 10 * 8));
     }
 
     synth.endAudioRenderingThread();

@@ -48,8 +48,8 @@ class Simulator {
         void startAudioRenderingThread();
         void endAudioRenderingThread();
 
-        int getSynthesizerInputLatency() const { return m_synthesizer.getInputWriteOffset(); }
-        int getSynthesizerInputLatencyTarget() const;
+        double getSynthesizerInputLatency() const { return m_synthesizer.getLatency(); }
+        double getSynthesizerInputLatencyTarget() const;
 
         int getCurrentIteration() const { return m_currentIteration; }
 

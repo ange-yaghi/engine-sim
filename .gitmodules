@@ -10,3 +10,6 @@
 [submodule "dependencies/submodules/csv-io"]
 	path = dependencies/submodules/csv-io
 	url = https://github.com/ange-yaghi/csv-io
+[submodule "dependencies/submodules/piranha"]
+	path = dependencies/submodules/piranha
+	url = https://github.com/ange-yaghi/piranha.git

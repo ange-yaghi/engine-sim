@@ -1,0 +1,39 @@
+module {
+    @name:      "Objects"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+private import "../types/atomic_types.mr"
+private import "../types/conversions.mr"
+
+// Channels
+public node engine => __engine_sim__engine_channel { /* void */ }
+
+// Engine
+public node _build_engine => __engine_sim__engine {
+    input name [string]: "Engine";
+
+    input crankshafts [int] : 1;
+    input cylinder_banks [int] : 2;
+    input cylinders [int] : 8;
+    input exhaust_systems [int]: 2;
+    input intakes [int]: 1;
+    
+    input redline [float]: 0;
+    input starter_speed [float]: 0;
+    input starter_torque [float]: 0;
+
+    input fuel_density [float]: 0;
+    input fuel_energy_density [float]: 0;
+    input fuel_molecular_mass [float]: 0;
+
+    alias output __out [engine];
+}
+
+public node build_engine {
+    alias output __out:
+        _build_engine(
+
+        );
+}

@@ -8,8 +8,9 @@
 class ExhaustSystem : public Part {
     public:
         struct Parameters {
-            double volume;
-            double flowK;
+            double Volume;
+            double FlowK;
+            double AudioVolume;
         };
 
     public:
@@ -24,6 +25,7 @@ class ExhaustSystem : public Part {
         GasSystem m_system;
         double m_flowK;
         double m_flow;
+        double m_audioVolume;
         int m_index;
 
         GasSystem m_atmosphere;
