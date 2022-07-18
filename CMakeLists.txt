@@ -119,14 +119,26 @@ target_include_directories(engine-sim
 if (PIRANHA_ENABLED)
     add_library(engine-sim-script-interpreter STATIC
         # Source files
-        scripting/src/language_rules.cpp
+        scripting/src/channel_types.cpp
         scripting/src/compiler.cpp
+        scripting/src/language_rules.cpp
 
         # Include files
+        scripting/include/actions.h
+        scripting/include/channel_types.h
         scripting/include/compiler.h
+        scripting/include/connecting_rod_node.h
+        scripting/include/crankshaft_node.h
+        scripting/include/cylinder_bank_node.h
+        scripting/include/engine_node.h
         scripting/include/engine_sim.h
         scripting/include/language_rules.h
+        scripting/include/node.h
+        scripting/include/object_reference_node.h
+        scripting/include/object_reference_node_output.h
         scripting/include/piranha.h
+        scripting/include/piston_node.h
+        scripting/include/rod_journal_node.h
     )
 
     target_include_directories(engine-sim-script-interpreter

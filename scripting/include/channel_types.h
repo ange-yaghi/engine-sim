@@ -24,18 +24,21 @@ namespace es_script {
     class RodJournalNode;
     class CrankshaftNode;
     class ConnectingRodNode;
-    class CylinderBankChannelNode;
-    class PistonChannelNode;
+    class CylinderBankNode;
+    class PistonNode;
 
-#define ASSIGN_CHANNEL_TYPE(type, channel) template <> extern inline const piranha::ChannelType *LookupChannelType<type>() { return &ObjectChannel::channel; }
+#define ASSIGN_CHANNEL_TYPE(type, channel) \
+    template <> extern inline const piranha::ChannelType *LookupChannelType<type>() { \
+        return &ObjectChannel::channel; \
+    }
 
     // Register all types
     ASSIGN_CHANNEL_TYPE(EngineNode, EngineChannel);
     ASSIGN_CHANNEL_TYPE(CrankshaftNode, CrankshaftChannel);
     ASSIGN_CHANNEL_TYPE(RodJournalNode, RodJournalChannel);
     ASSIGN_CHANNEL_TYPE(ConnectingRodNode, ConnectingRodChannel);
-    ASSIGN_CHANNEL_TYPE(CylinderBankChannelNode, CylinderBankChannel);
-    ASSIGN_CHANNEL_TYPE(PistonChannelNode, PistonChannel);
+    ASSIGN_CHANNEL_TYPE(CylinderBankNode, CylinderBankChannel);
+    ASSIGN_CHANNEL_TYPE(PistonNode, PistonChannel);
 
 } /* namespace es_script */
 

@@ -82,10 +82,10 @@ namespace es_script {
         EngineNode *m_engine = nullptr;
     };
 
-    class AddCylinderBank : public Node {
+    class AddCylinderBankNode : public Node {
     public:
-        AddCylinderBank() { /* void */ }
-        virtual ~AddCylinderBank() { /* void */ }
+        AddCylinderBankNode() { /* void */ }
+        virtual ~AddCylinderBankNode() { /* void */ }
 
     protected:
         virtual void registerInputs() {
@@ -98,12 +98,44 @@ namespace es_script {
         virtual void _evaluate() {
             readAllInputs();
 
-            m_engine->addCrankshaft(m_crankshaft);
+            m_engine->addCylinderBank(m_cylinderBankNode);
         }
 
     protected:
         CylinderBankNode *m_cylinderBankNode = nullptr;
         EngineNode *m_engine = nullptr;
+    };
+
+    class AddCylinderNode : public Node {
+    public:
+        AddCylinderNode() { /* void */ }
+        virtual ~AddCylinderNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("piston", &m_pistonNode, InputTarget::Type::Object);
+            addInput("connecting_rod", &m_connectingRod, InputTarget::Type::Object);
+            addInput("rod_journal", &m_rodJournal, InputTarget::Type::Object);
+            addInput("cylinder_bank", &m_cylinderBank, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_cylinderBank->addCylinder(
+                m_pistonNode,
+                m_connectingRod,
+                m_rodJournal
+            );
+        }
+
+    protected:
+        PistonNode *m_pistonNode = nullptr;
+        ConnectingRodNode *m_connectingRod = nullptr;
+        RodJournalNode *m_rodJournal = nullptr;
+        CylinderBankNode *m_cylinderBank = nullptr;
     };
 
 } /* namespace es_script */

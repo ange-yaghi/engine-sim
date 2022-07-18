@@ -35,7 +35,6 @@ namespace es_script {
             addInput("moment_of_inertia", &m_parameters.MomentOfInertia);
             addInput("center_of_mass", &m_parameters.CenterOfMass);
             addInput("length", &m_parameters.Length);
-            addInput("rod_journal", &m_rodJournal, InputTarget::Type::Object);
 
             ObjectReferenceNode<ConnectingRodNode>::registerInputs();
         }
@@ -48,8 +47,6 @@ namespace es_script {
 
             m_parameters.Crankshaft = nullptr;
             m_parameters.Piston = nullptr;
-
-            m_rodJournal->addRod(this);
         }
 
         ConnectingRod::Parameters m_parameters;

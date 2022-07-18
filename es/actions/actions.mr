@@ -13,21 +13,28 @@ public node set_engine => __engine_sim__set_engine {
     input engine [engine];
 }
 
-public node add_rod_journal => __engine_sim__add_rod_journal {
+private node _add_rod_journal => __engine_sim__add_rod_journal {
     input rod_journal [rod_journal];
     input crankshaft [_crankshaft];
 }
 
+public node add_rod_journal {
+    input rod_journal;
+    input this;
+    alias output out: this;
+
+    _add_rod_journal(rod_journal, this)
+}
+
 public node _add_crankshaft => __engine_sim__add_crankshaft {
-    input engine [engine];
     input crankshaft [_crankshaft];
+    input engine [engine];
 }
 
 public node add_crankshaft {
     input crankshaft;
-
     input this;
     alias output out: this;
 
-    _add_crankshaft(this, crankshaft)
+    _add_crankshaft(crankshaft, this)
 }

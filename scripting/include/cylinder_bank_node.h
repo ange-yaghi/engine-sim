@@ -26,25 +26,23 @@ namespace es_script {
         CylinderBankNode() { /* void */ }
         virtual ~CylinderBankNode() { /* void */ }
 
-        void generate(
-            ConnectingRod *connectingRod,
-            Crankshaft *crankshaft) const
-        {
-            ConnectingRod::Parameters params = m_parameters;
-            params.Crankshaft = crankshaft;
-            params.Journal = m_rodJournal->getJournalIndex();
-            params.Piston = nullptr;
+        void generate(int index, CylinderBank *cylinderBank) const {
+            CylinderBank::Parameters params = m_parameters;
+            params.CylinderCount = (int)m_cylinders.size();
+            params.Index = index;
 
-            connectingRod->initialize(params);
+            cylinderBank->initialize(params);
+        }
+
+        void addCylinder(PistonNode *piston, ConnectingRodNode *rod, RodJournalNode *rodJournal) {
+            m_cylinders.push_back({ piston, rod, rodJournal });
         }
 
     protected:
         virtual void registerInputs() {
-            addInput("mass", &m_parameters.Mass);
-            addInput("moment_of_inertia", &m_parameters.MomentOfInertia);
-            addInput("center_of_mass", &m_parameters.CenterOfMass);
-            addInput("length", &m_parameters.Length);
-            addInput("rod_journal", &m_rodJournal, InputTarget::Type::Object);
+            addInput("angle", &m_parameters.Angle);
+            addInput("bore", &m_parameters.Bore);
+            addInput("deck_height", &m_parameters.DeckHeight);
 
             ObjectReferenceNode<CylinderBankNode>::registerInputs();
         }
@@ -55,10 +53,8 @@ namespace es_script {
             // Read inputs
             readAllInputs();
 
-            m_parameters.Crankshaft = nullptr;
-            m_parameters.Piston = nullptr;
-
-            m_rodJournal->addRod(this);
+            m_parameters.CylinderCount = 0;
+            m_parameters.Index = 0;
         }
 
         CylinderBank::Parameters m_parameters;

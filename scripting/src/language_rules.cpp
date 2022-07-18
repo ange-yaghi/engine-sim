@@ -35,6 +35,10 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__rod_journal_channel", &es_script::ObjectChannel::RodJournalChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__connecting_rod_channel", &es_script::ObjectChannel::ConnectingRodChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__piston_channel", &es_script::ObjectChannel::PistonChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__cylinder_bank_channel", &es_script::ObjectChannel::CylinderBankChannel);
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -78,12 +82,16 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<SetEngineNode>("__engine_sim__set_engine");
     registerBuiltinType<AddRodJournalNode>("__engine_sim__add_rod_journal");
     registerBuiltinType<AddCrankshaftNode>("__engine_sim__add_crankshaft");
+    registerBuiltinType<AddCylinderBankNode>("__engine_sim__add_cylinder_bank");
+    registerBuiltinType<AddCylinderNode>("__engine_sim__add_cylinder");
 
     // Objects
     registerBuiltinType<EngineNode>("__engine_sim__engine");
     registerBuiltinType<RodJournalNode>("__engine_sim__rod_journal");
     registerBuiltinType<CrankshaftNode>("__engine_sim__crankshaft");
-    registerBuiltinType<CrankshaftNode>("__engine_sim__connecting_rod");
+    registerBuiltinType<ConnectingRodNode>("__engine_sim__connecting_rod");
+    registerBuiltinType<CylinderBankNode>("__engine_sim__cylinder_bank");
+    registerBuiltinType<PistonNode>("__engine_sim__piston");
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<
