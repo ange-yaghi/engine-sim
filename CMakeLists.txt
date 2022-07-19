@@ -121,17 +121,22 @@ if (PIRANHA_ENABLED)
         # Source files
         scripting/src/channel_types.cpp
         scripting/src/compiler.cpp
+        scripting/src/engine_context.cpp
         scripting/src/language_rules.cpp
 
         # Include files
         scripting/include/actions.h
+        scripting/include/camshaft_node.h
         scripting/include/channel_types.h
         scripting/include/compiler.h
         scripting/include/connecting_rod_node.h
         scripting/include/crankshaft_node.h
         scripting/include/cylinder_bank_node.h
+        scripting/include/cylinder_head_node.h
+        scripting/include/engine_context.h
         scripting/include/engine_node.h
         scripting/include/engine_sim.h
+        scripting/include/function_node.h
         scripting/include/language_rules.h
         scripting/include/node.h
         scripting/include/object_reference_node.h

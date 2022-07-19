@@ -1,0 +1,12 @@
+module {
+    @name:      "Units"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+private import "../types/atomic_types.mr"
+private import "../types/conversions.mr"
+
+public auto node constants {
+    output pi: 3.14159265359;
+}

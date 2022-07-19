@@ -1,0 +1,93 @@
+module {
+    @name:      "Units"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+private import "constants.mr"
+
+private import "../types/atomic_types.mr"
+private import "../types/conversions.mr"
+
+public auto node units {
+    // Force
+    output N: 1.0;
+    output lbf: N * 4.44822;
+
+    // Mass
+    output kg: 1.0;
+    output g: kg / 1000.0;
+
+    output lb: 0.45359237 * kg;
+
+    // Distance
+    output m: 1.0;
+    output cm: m / 100.0;
+    output mm: m / 1000.0;
+    output km: m * 1000.0;
+
+    output inch: cm * 2.54;
+    output foot: inch * 12.0;
+    output thou: inch / 1000.0;
+
+    output mile: m * 1609.344;
+
+    // Time
+    output sec: 1.0;
+    output minute: 60 * sec;
+    output hour: 60 * minute;
+
+    // Torque
+    output Nm: N * m;
+    output lb_ft: lbf * foot;
+
+    // Volume
+    output m3: 1.0;
+    output cc: cm * cm * cm;
+    output mL: cc;
+    output L: mL * 1000.0;
+    output cubic_feet: foot * foot * foot;
+    output cubic_inches: inch * inch * inch;
+    output gal: 3.785411784 * L;
+
+    // Molecular
+    output mol: 1.0;
+    output kmol: mol / 1000.0;
+    output mmol: kmol / 1000.0;
+    output lbmol: mol * 453.59237;
+
+    // Flow-rate
+    output mol_per_sec: mol / sec;
+    output scfm: 0.002641 * lbmol / minute;
+
+    // Area
+    output m2: 1.0;
+    output cm2: cm * cm;
+
+    // Pressure
+    output Pa: 1.0;
+    output kPa: Pa * 1000.0;
+    output MPa: kPa * 1000.0;
+    output atm: 101.325 * kPa;
+
+    output psi: lb / (inch * inch);
+    output psig: psi;
+    output inHg: Pa * 3386.3886666666713;
+    output inH2O: inHg * 0.0734824;
+
+    // Temperature
+    output K: 1.0;
+    output K0: 273.15;
+    output C: K;
+    output F: (5.0 / 9.0) * K;
+    output F0: -459.67;
+
+    // Energy
+    output J: 1.0;
+    output kJ: J * 1000.0;
+    output MJ: kJ * 1000.0;
+
+    // Angles
+    output rad: 1.0;
+    output deg: rad * (constants.pi / 180.0);
+}

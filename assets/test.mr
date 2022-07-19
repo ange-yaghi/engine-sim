@@ -85,6 +85,59 @@ engine
 
 engine.add_crankshaft(c0)
 
+function cam_lift(10 * units.deg)
+cam_lift.add_sample(0.0 * units.deg, 578.0 * units::thou)
+cam_lift.add_sample(10.0 * units.deg, 560.0 * units::thou)
+cam_lift.add_sample(-10.0 * units.deg, 560.0 * units::thou)
+cam_lift.add_sample(20.0 * units.deg, 510.0 * units::thou)
+cam_lift.add_sample(-20.0 * units.deg, 510.0 * units::thou)
+cam_lift.add_sample(30.0 * units.deg, 430.0 * units::thou)
+cam_lift.add_sample(-30.0 * units.deg, 430.0 * units::thou)
+cam_lift.add_sample(40.0 * units.deg, 350.0 * units::thou)
+cam_lift.add_sample(-40.0 * units.deg, 350.0 * units::thou)
+cam_lift.add_sample(50.0 * units.deg, 220.0 * units::thou)
+cam_lift.add_sample(-50.0 * units.deg, 220.0 * units::thou)
+cam_lift.add_sample(60.0 * units.deg, 75.0 * units::thou)
+cam_lift.add_sample(-60.0 * units.deg, 75.0 * units::thou)
+cam_lift.add_sample(70.0 * units.deg, 0.0 * units::thou)
+cam_lift.add_sample(-70.0 * units.deg, 0.0 * units::thou)
+cam_lift.add_sample(80.0 * units.deg, 0.0 * units::thou)
+cam_lift.add_sample(-80.0 * units.deg, 0.0 * units::thou)
+
+camshaft_parameters cam_params(
+    advance: 3.0 * units.deg,
+    base_radius: 1.0 * units.inch,
+    lobe_profile: cam_lift
+)
+camshaft exhaust_cam_0(cam_params)
+camshaft exhaust_cam_1(cam_params)
+camshaft intake_cam_0(cam_params)
+camshaft intake_cam_1(cam_params)
+
+exhaust_cam_0
+    .add_lobe(0)
+    .add_lobe(0)
+    .add_lobe(0)
+    .add_lobe(0)
+
+exhaust_cam_1
+    .add_lobe(0)
+    .add_lobe(0)
+    .add_lobe(0)
+    .add_lobe(0)
+
+intake_cam_0
+    .add_lobe(0)
+    .add_lobe(0)
+    .add_lobe(0)
+    .add_lobe(0)
+
+intake_cam_1
+    .add_lobe(0)
+    .add_lobe(0)
+    .add_lobe(0)
+    .add_lobe(0)
+
 set_engine(
     engine: engine
 )
