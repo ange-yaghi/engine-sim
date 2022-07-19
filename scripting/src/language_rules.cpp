@@ -4,6 +4,8 @@
 #include "../include/engine_node.h"
 #include "../include/actions.h"
 #include "../include/rod_journal_node.h"
+#include "../include/camshaft_node.h"
+#include "../include/cylinder_head_node.h"
 
 es_script::LanguageRules::LanguageRules() {
     /* void */
@@ -39,6 +41,12 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__piston_channel", &es_script::ObjectChannel::PistonChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__cylinder_bank_channel", &es_script::ObjectChannel::CylinderBankChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__function_channel", &es_script::ObjectChannel::FunctionChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__cylinder_head_channel", &es_script::ObjectChannel::CylinderHeadChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__camshaft_channel", &es_script::ObjectChannel::CamshaftChannel);
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -84,6 +92,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<AddCrankshaftNode>("__engine_sim__add_crankshaft");
     registerBuiltinType<AddCylinderBankNode>("__engine_sim__add_cylinder_bank");
     registerBuiltinType<AddCylinderNode>("__engine_sim__add_cylinder");
+    registerBuiltinType<AddSampleNode>("__engine_sim__add_sample");
+    registerBuiltinType<AddLobeNode>("__engine_sim__add_lobe");
 
     // Objects
     registerBuiltinType<EngineNode>("__engine_sim__engine");
@@ -92,6 +102,9 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<ConnectingRodNode>("__engine_sim__connecting_rod");
     registerBuiltinType<CylinderBankNode>("__engine_sim__cylinder_bank");
     registerBuiltinType<PistonNode>("__engine_sim__piston");
+    registerBuiltinType<FunctionNode>("__engine_sim__function");
+    registerBuiltinType<CylinderHeadNode>("__engine_sim__cylinder_head_node");
+    registerBuiltinType<CamshaftNode>("__engine_sim__camshaft");
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<

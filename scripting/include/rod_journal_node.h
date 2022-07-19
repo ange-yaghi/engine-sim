@@ -19,18 +19,6 @@ namespace es_script {
             return m_angle;
         }
 
-        int getJournalIndex() const {
-            return m_journalIndex;
-        }
-
-        void setJournalIndex(int index) {
-            m_journalIndex = index;
-        }
-
-        void setCrankshaft(CrankshaftNode *crankshaft) {
-            m_crankshaft = crankshaft;
-        }
-
     protected:
         virtual void registerInputs() {
             addInput("angle", &m_angle);
@@ -45,10 +33,7 @@ namespace es_script {
             readAllInputs();
         }
 
-        int m_journalIndex = 0;
         double m_angle = 0.0;
-
-        CrankshaftNode *m_crankshaft = nullptr;
     };
 
 } /* namespace es_script */

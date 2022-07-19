@@ -12,3 +12,13 @@ const piranha::ChannelType
     es_script::ObjectChannel::CylinderBankChannel("CylinderBankChannel");
 const piranha::ChannelType
     es_script::ObjectChannel::PistonChannel("PistonChannel");
+const piranha::ChannelType
+    es_script::ObjectChannel::FunctionChannel("FunctionChannel");
+const piranha::ChannelType
+    es_script::ObjectChannel::IntakeChannel("IntakeChannel");
+const piranha::ChannelType
+    es_script::ObjectChannel::ExhaustChannel("ExhaustChannel");
+const piranha::ChannelType
+    es_script::ObjectChannel::CylinderHeadChannel("CylinderHeadChannel");
+const piranha::ChannelType
+    es_script::ObjectChannel::CamshaftChannel("CamshaftChannel");

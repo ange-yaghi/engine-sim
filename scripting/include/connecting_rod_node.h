@@ -19,11 +19,12 @@ namespace es_script {
 
         void generate(
             ConnectingRod *connectingRod,
-            Crankshaft *crankshaft) const
+            Crankshaft *crankshaft,
+            int rodJournal) const
         {
             ConnectingRod::Parameters params = m_parameters;
             params.Crankshaft = crankshaft;
-            params.Journal = m_rodJournal->getJournalIndex();
+            params.Journal = rodJournal;
             params.Piston = nullptr;
 
             connectingRod->initialize(params);
@@ -50,7 +51,6 @@ namespace es_script {
         }
 
         ConnectingRod::Parameters m_parameters;
-        RodJournalNode *m_rodJournal = nullptr;
     };
 
 } /* namespace es_script */

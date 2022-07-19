@@ -14,6 +14,9 @@ public node rod_journal_channel => __engine_sim__rod_journal { /* void */ }
 public node connecting_rod_channel => __engine_sim__connecting_rod_channel { /* void */ }
 public node piston_channel => __engine_sim__piston_channel { /* void */ }
 public node cylinder_bank_channel => __engine_sim__cylinder_bank_channel { /* void */ }
+public node function_channel => __engine_sim__function_channel { /* void */ }
+public node cylinder_head_channel => __engine_sim__cylinder_head_channel { /* void */ }
+public node camshaft_channel => __engine_sim__camshaft_channel { /* void */ }
 
 // Engine
 public node _build_engine => __engine_sim__engine {
@@ -82,7 +85,7 @@ private node _connecting_rod => __engine_sim__connecting_rod {
 
 public node connecting_rod {
     input params: connecting_rod_parameters();
-    alias output __out:
+    alias output __out [_connecting_rod]:
         _connecting_rod(
             mass: params.mass,
             moment_of_inertia: params.moment_of_inertia,
@@ -122,7 +125,7 @@ private node _piston => __engine_sim__piston {
 
 public node piston {
     input params: piston_parameters();
-    alias output __out:
+    alias output __out [_piston]:
         _piston(
             mass: params.mass,
             blowby: params.blowby,
@@ -133,7 +136,7 @@ public node piston {
 }
 
 // Cylinder Bank
-private node cylinder_bank_parameter_defaults {
+public node cylinder_bank_parameter_defaults {
     input angle: 0.0;
     input bore: 0.0;
     input deck_height: 0.0;
@@ -158,10 +161,104 @@ public node cylinder_bank {
     input angle: parameters.angle;
     input bore: parameters.bore;
     input deck_height: parameters.deck_height;
-    alias output __out:
+    alias output __out [_cylinder_bank]:
         _cylinder_bank(
             angle: angle,
             bore: bore,
             deck_height: deck_height
+        );
+}
+
+// Function
+public node function => __engine_sim__function {
+    input filter_radius [float]: 1.0;
+    alias output __out [function_channel];
+}
+
+// Cylinder
+public node cylinder_friction_parameter_defaults {
+    output friction_k: 0.06;
+    output breakaway_friction: 0.0;
+    output breakaway_friction_velocity: 0.0;
+    output viscous_friction_coefficient: 0.0;
+}
+
+public node cylinder_friction_parameters {
+    input copy: cylinder_friction_parameter_defaults();
+    input friction_k: copy.friction_k;
+    input breakaway_friction: copy.breakaway_friction;
+    input breakaway_friction_velocity: copy.breakaway_friction_velocity;
+    input viscous_friction_coefficient: copy.viscous_friction_coefficient;
+}
+
+// Cylinder Head
+public node cylinder_head_parameter_defaults {
+    output intake_port_flow: function();
+    output exhaust_port_flow: function();
+    output chamber_volume: 0.0;
+    output flip_display: false;
+}
+
+public node cylinder_head_parameters {
+    input copy: cylinder_head_parameter_defaults();
+    input intake_port_flow: copy.intake_port_flow;
+    input exhaust_port_flow: copy.exhaust_port_flow;
+    input chamber_volume: copy.chamber_volume;
+    input flip_display: copy.flip_display;
+}
+
+private node _cylinder_head => __engine_sim__cylinder_head_node {
+    input intake_port_flow [function];
+    input exhaust_port_flow [function];
+    input intake_camshaft [camshaft];
+    input exhaust_camshaft [camshaft];
+    input chamber_volume [float];
+    input flip_display [bool];
+    alias output __out [cylinder_head_channel];
+}
+
+public node cylinder_head {
+    input params: cylinder_head_parameters();
+    input intake_camshaft;
+    input exhaust_camshaft;
+    alias output __out [_cylinder_head]:
+        _cylinder_head(
+            intake_port_flow: params.intake_port_flow,
+            exhaust_port_flow: params.exhaust_port_flow,
+            chamber_volume: params.chamber_volume,
+            flip_display: params.flip_display,
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        );
+}
+
+// Camshaft
+public node camshaft_parameter_defaults {
+    output advance: 0.0;
+    output base_radius: 0.0;
+    output lobe_profile: function();
+}
+
+public node camshaft_parameters {
+    input copy: camshaft_parameter_defaults();
+    input advance: copy.advance;
+    input base_radius: copy.base_radius;
+    input lobe_profile: copy.lobe_profile;
+}
+
+private node _camshaft => __engine_sim__camshaft {
+    input advance [float];
+    input base_radius [float];
+    input lobe_profile [function];
+    alias output __out [camshaft_channel];
+}
+
+public node camshaft {
+    input parameters: camshaft_parameters();
+    alias output __out [_camshaft]:
+        _camshaft(
+            advance: parameters.advance,
+            base_radius: parameters.base_radius,
+            lobe_profile: parameters.lobe_profile
         );
 }

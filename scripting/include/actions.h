@@ -9,6 +9,8 @@
 #include "crankshaft_node.h"
 #include "rod_journal_node.h"
 #include "cylinder_bank_node.h"
+#include "function_node.h"
+#include "camshaft_node.h"
 
 namespace es_script {
 
@@ -49,8 +51,6 @@ namespace es_script {
 
         virtual void _evaluate() {
             readAllInputs();
-
-            m_crankshaft->addRodJournal(m_rodJournal);
         }
 
     protected:
@@ -136,6 +136,56 @@ namespace es_script {
         ConnectingRodNode *m_connectingRod = nullptr;
         RodJournalNode *m_rodJournal = nullptr;
         CylinderBankNode *m_cylinderBank = nullptr;
+    };
+
+    class AddSampleNode : public Node {
+    public:
+        AddSampleNode() { /* void */ }
+        virtual ~AddSampleNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("x", &m_x);
+            addInput("y", &m_y);
+            addInput("function", &m_function, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_function->addSample(m_x, m_y);
+        }
+
+    protected:
+        double m_x = 0;
+        double m_y = 0;
+        FunctionNode *m_function = nullptr;
+    };
+
+    class AddLobeNode : public Node {
+    public:
+        AddLobeNode() { /* void */ }
+        virtual ~AddLobeNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("centerline", &m_centerline);
+            addInput("camshaft", &m_camshaft, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_camshaft->addLobe(m_centerline);
+        }
+
+    protected:
+        double m_centerline = 0;
+        CamshaftNode *m_camshaft = nullptr;
     };
 
 } /* namespace es_script */

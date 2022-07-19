@@ -26,16 +26,47 @@ namespace es_script {
         CylinderBankNode() { /* void */ }
         virtual ~CylinderBankNode() { /* void */ }
 
-        void generate(int index, CylinderBank *cylinderBank) const {
+        void generate(
+            int index,
+            int cylinderBaseIndex,
+            CylinderBank *cylinderBank,
+            Crankshaft *crankshaft,
+            Engine *engine,
+            EngineContext *context) const 
+       {
             CylinderBank::Parameters params = m_parameters;
             params.CylinderCount = (int)m_cylinders.size();
             params.Index = index;
 
             cylinderBank->initialize(params);
+
+            const int n = getCylinderCount();
+            for (int i = 0; i < n; ++i) {
+                Piston *piston = engine->getPiston(cylinderBaseIndex + i);
+                ConnectingRod *rod = engine->getConnectingRod(cylinderBaseIndex + i);
+
+                m_cylinders[i].piston->generate(
+                    piston,
+                    rod,
+                    cylinderBank,
+                    cylinderBaseIndex + 1);
+                m_cylinders[i].rod->generate(
+                    rod,
+                    crankshaft,
+                    context->getRodJournalIndex(m_cylinders[i].rodJournal));
+            }
         }
 
-        void addCylinder(PistonNode *piston, ConnectingRodNode *rod, RodJournalNode *rodJournal) {
+        void addCylinder(
+            PistonNode *piston,
+            ConnectingRodNode *rod,
+            RodJournalNode *rodJournal)
+        {
             m_cylinders.push_back({ piston, rod, rodJournal });
+        }
+
+        int getCylinderCount() const {
+            return (int)m_cylinders.size();
         }
 
     protected:

@@ -14,6 +14,75 @@ c0
     .add_rod_journal(rj2)
     .add_rod_journal(rj3)
 
+piston_parameters piston_params(
+    mass: 0.0,
+    blowby: 0.0,
+    compression_height: 0.0,
+    wrist_pin_position: 0.0,
+    displacement: 0.0
+)
+connecting_rod_parameters cr_params(
+    mass: 0.0,
+    moment_of_inertia: 0.0,
+    center_of_mass: 0.0,
+    length: 0.0
+)
+cylinder_bank_parameters bank_params(
+    angle: 0.0,
+    bore: 0.0,
+    deck_height: 0.0
+)
+cylinder_bank b0(bank_params, angle: 0.0)
+cylinder_bank b1(bank_params, angle: 0.0)
+
+b0
+    .add_cylinder(
+        piston: piston(piston_params),
+        connecting_rod: connecting_rod(cr_params),
+        rod_journal: rj0
+    )
+    .add_cylinder(
+        piston: piston(piston_params),
+        connecting_rod: connecting_rod(cr_params),
+        rod_journal: rj1
+    )
+    .add_cylinder(
+        piston: piston(piston_params),
+        connecting_rod: connecting_rod(cr_params),
+        rod_journal: rj2
+    )
+    .add_cylinder(
+        piston: piston(piston_params),
+        connecting_rod: connecting_rod(cr_params),
+        rod_journal: rj3
+    )
+
+b1
+    .add_cylinder(
+        piston: piston(piston_params),
+        connecting_rod: connecting_rod(cr_params),
+        rod_journal: rj0
+    )
+    .add_cylinder(
+        piston: piston(piston_params),
+        connecting_rod: connecting_rod(cr_params),
+        rod_journal: rj1
+    )
+    .add_cylinder(
+        piston: piston(piston_params),
+        connecting_rod: connecting_rod(cr_params),
+        rod_journal: rj2
+    )
+    .add_cylinder(
+        piston: piston(piston_params),
+        connecting_rod: connecting_rod(cr_params),
+        rod_journal: rj3
+    )
+
+engine
+    .add_cylinder_bank(b0)
+    .add_cylinder_bank(b1)
+
 engine.add_crankshaft(c0)
 
 set_engine(

@@ -36,5 +36,63 @@ public node add_crankshaft {
     input this;
     alias output out: this;
 
-    _add_crankshaft(crankshaft, this)
+    _add_crankshaft(crankshaft, engine: this)
+}
+
+private node _add_cylinder_bank => __engine_sim__add_cylinder_bank {
+    input engine [engine];
+    input cylinder_bank [cylinder_bank];
+}
+
+public node add_cylinder_bank {
+    input cylinder_bank;
+    input this;
+    alias output __out: this;
+
+    _add_cylinder_bank(engine: this, cylinder_bank)
+}
+
+private node _add_cylinder => __engine_sim__add_cylinder {
+    input piston [piston];
+    input connecting_rod [connecting_rod];
+    input rod_journal [rod_journal];
+    input cylinder_bank [cylinder_bank];
+}
+
+public node add_cylinder {
+    input piston;
+    input connecting_rod;
+    input rod_journal;
+    input this;
+    alias output __out: this;
+
+    _add_cylinder(piston, connecting_rod, rod_journal, cylinder_bank: this)
+}
+
+private node _add_sample => __engine_sim__add_sample {
+    input x [float];
+    input y [float];
+    input function [function];
+}
+
+public node add_sample {
+    input x;
+    input y;
+    input this;
+    alias output __out: this;
+
+    _add_sample(x: x, y: y, function: this)
+}
+
+private node _add_lobe => __engine_sim__add_lobe {
+    input centerline [float];
+    input camshaft [camshaft];
+}
+
+public node add_lobe {
+    input centerline;
+    input this;
+    alias output __out: this;
+
+    _add_lobe(centerline: centerline, camshaft: this)
 }

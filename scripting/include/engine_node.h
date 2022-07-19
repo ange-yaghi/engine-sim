@@ -5,6 +5,7 @@
 
 #include "crankshaft_node.h"
 #include "cylinder_bank_node.h"
+#include "engine_context.h"
 
 #include "engine_sim.h"
 
@@ -18,17 +19,34 @@ namespace es_script {
         virtual ~EngineNode() { /* void */ }
 
         void buildEngine(Engine *engine) {
+            int cylinderCount = 0;
+            for (const CylinderBankNode *bank : m_cylinderBanks) {
+                cylinderCount += bank->getCylinderCount();
+            }
+
+            EngineContext context;
             Engine::Parameters parameters = m_parameters;
             parameters.CrankshaftCount = (int)m_crankshafts.size();
-            parameters.CylinderBanks = 0;
-            parameters.CylinderCount = 0;
+            parameters.CylinderBanks = (int)m_cylinderBanks.size();
+            parameters.CylinderCount = cylinderCount;
             parameters.ExhaustSystemCount = 0;
             parameters.IntakeCount = 0;
 
             engine->initialize(parameters);
 
             for (int i = 0; i < parameters.CrankshaftCount; ++i) {
-                m_crankshafts[i]->generate(engine->getCrankshaft(i));
+                m_crankshafts[i]->generate(engine->getCrankshaft(i), &context);
+            }
+
+            int cylinderIndex = 0;
+            for (int i = 0; i < parameters.CylinderBanks; ++i) {
+                m_cylinderBanks[i]->generate(
+                    i,
+                    cylinderIndex + i,
+                    engine->getCylinderBank(i),
+                    engine->getCrankshaft(0),
+                    engine,
+                    &context);
             }
         }
 
@@ -58,14 +76,7 @@ namespace es_script {
             setOutput(this);
 
             // Read inputs
-            Engine::Parameters params;
-            params.Fuel.Density = readAtomicInput<double>("fuel_density");
-            params.Fuel.EnergyDensity = readAtomicInput<double>("fuel_energy_density");
-            params.Fuel.MolecularMass = readAtomicInput<double>("fuel_molecular_mass");
-            params.Name = readAtomicInput<std::string>("name");
-            params.Redline = readAtomicInput<double>("redline");
-            params.StarterSpeed = readAtomicInput<double>("starter_speed");
-            params.StarterTorque = readAtomicInput<double>("starter_torque");
+            readAllInputs();
         }
 
         Engine::Parameters m_parameters;

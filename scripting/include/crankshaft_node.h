@@ -4,6 +4,7 @@
 #include "object_reference_node.h"
 
 #include "rod_journal_node.h"
+#include "engine_context.h"
 
 #include "engine_sim.h"
 
@@ -18,12 +19,10 @@ namespace es_script {
         virtual ~CrankshaftNode() { /* void */ }
 
         void addRodJournal(RodJournalNode *rodJournal) {
-            rodJournal->setJournalIndex((int)m_rodJournals.size());
-            rodJournal->setCrankshaft(this);
             m_rodJournals.push_back(rodJournal);
         }
 
-        void generate(Crankshaft *crankshaft) const {
+        void generate(Crankshaft *crankshaft, EngineContext *context) {
             Crankshaft::Parameters params = m_parameters;
             params.RodJournals = (int)m_rodJournals.size();
 
@@ -31,10 +30,13 @@ namespace es_script {
             for (int i = 0; i < params.RodJournals; ++i) {
                 RodJournalNode *rodJournal = m_rodJournals[i];
                 crankshaft->setRodJournalAngle(
-                    rodJournal->getJournalIndex(),
+                    i,
                     rodJournal->getAngle()
                 );
+                context->addRodJournal(rodJournal, i);
             }
+
+            context->addCrankshaft(this, crankshaft);
         }
 
     protected:
