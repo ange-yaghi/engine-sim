@@ -1,12 +1,28 @@
 import "engine_sim.mr"
 
-build_engine engine()
+units units()
+constants constants()
 
-_crankshaft c0()
+engine engine(
+    name: "Chev. 454 V8",
+    starter_torque: 500 * units.lb_ft
+)
+
+crankshaft c0(
+    throw: 2.0 * units.inch,
+    flywheel_mass: 0.5 * 29 * 2 * units.lb,
+    mass: 0.5 * 75 * units.lb,
+    friction_torque: 10.0 * units.lb_ft,
+    moment_of_inertia: 1.0,
+    position_x: 0.0,
+    position_y: 0.0,
+    tdc: constants.pi / 4 - 2 * constants.pi
+)
+
 rod_journal rj0(angle: 0.0)
-rod_journal rj1(angle: 0.0)
-rod_journal rj2(angle: 0.0)
-rod_journal rj3(angle: 0.0)
+rod_journal rj1(angle: -constants.pi / 2)
+rod_journal rj2(angle: -3.0 * constants.pi / 2)
+rod_journal rj3(angle: constants.pi)
 
 c0
     .add_rod_journal(rj0)
@@ -15,68 +31,98 @@ c0
     .add_rod_journal(rj3)
 
 piston_parameters piston_params(
-    mass: 0.0,
-    blowby: 0.0,
-    compression_height: 0.0,
+    mass: 880 * units.g,
+    blowby: k_28inH2O(0.1),
+    compression_height: 1.640 * units.inch,
     wrist_pin_position: 0.0,
     displacement: 0.0
 )
 connecting_rod_parameters cr_params(
-    mass: 0.0,
-    moment_of_inertia: 0.0,
+    mass: 785.0 * units.g,
+    moment_of_inertia: 1.0,
     center_of_mass: 0.0,
-    length: 0.0
+    length: 6.135 * units.inch
 )
 cylinder_bank_parameters bank_params(
-    angle: 0.0,
-    bore: 0.0,
-    deck_height: 0.0
+    bore: 4.25 * units.inch,
+    deck_height: 9.8 * units.inch
 )
-cylinder_bank b0(bank_params, angle: 0.0)
-cylinder_bank b1(bank_params, angle: 0.0)
 
+intake intake(
+    plenum_volume: 5.0 * units.L,
+    intake_flow_rate: k_carb(950.0),
+    idle_flow_rate: 0.0000015,
+    idle_throttle_plate_position: 0.967
+)
+
+exhaust_system_parameters es_params(
+    exhaust_flow_rate: k_carb(1000.0),
+    volume: 10.0 * units.L
+)
+
+exhaust_system exhaust0(es_params, audio_volume: 1.0)
+exhaust_system exhaust1(es_params, audio_volume: 0.1)
+
+cylinder_bank b0(bank_params, angle: 45 * units.deg)
 b0
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
-        rod_journal: rj0
+        rod_journal: rj0,
+        intake: intake,
+        exhaust_system: exhaust0
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
-        rod_journal: rj1
+        rod_journal: rj1,
+        intake: intake,
+        exhaust_system: exhaust0
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
-        rod_journal: rj2
+        rod_journal: rj2,
+        intake: intake,
+        exhaust_system: exhaust0
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
-        rod_journal: rj3
+        rod_journal: rj3,
+        intake: intake,
+        exhaust_system: exhaust0
     )
 
+cylinder_bank b1(bank_params, angle: -45.0 * units.deg)
 b1
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
-        rod_journal: rj0
+        rod_journal: rj0,
+        intake: intake,
+        exhaust_system: exhaust1
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
-        rod_journal: rj1
+        rod_journal: rj1,
+        intake: intake,
+        exhaust_system: exhaust1
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
-        rod_journal: rj2
+        rod_journal: rj2,
+        intake: intake,
+        exhaust_system: exhaust1
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
-        rod_journal: rj3
+        rod_journal: rj3,
+        intake: intake,
+        exhaust_system: exhaust1
     )
 
 engine
@@ -86,23 +132,23 @@ engine
 engine.add_crankshaft(c0)
 
 function cam_lift(10 * units.deg)
-cam_lift.add_sample(0.0 * units.deg, 578.0 * units::thou)
-cam_lift.add_sample(10.0 * units.deg, 560.0 * units::thou)
-cam_lift.add_sample(-10.0 * units.deg, 560.0 * units::thou)
-cam_lift.add_sample(20.0 * units.deg, 510.0 * units::thou)
-cam_lift.add_sample(-20.0 * units.deg, 510.0 * units::thou)
-cam_lift.add_sample(30.0 * units.deg, 430.0 * units::thou)
-cam_lift.add_sample(-30.0 * units.deg, 430.0 * units::thou)
-cam_lift.add_sample(40.0 * units.deg, 350.0 * units::thou)
-cam_lift.add_sample(-40.0 * units.deg, 350.0 * units::thou)
-cam_lift.add_sample(50.0 * units.deg, 220.0 * units::thou)
-cam_lift.add_sample(-50.0 * units.deg, 220.0 * units::thou)
-cam_lift.add_sample(60.0 * units.deg, 75.0 * units::thou)
-cam_lift.add_sample(-60.0 * units.deg, 75.0 * units::thou)
-cam_lift.add_sample(70.0 * units.deg, 0.0 * units::thou)
-cam_lift.add_sample(-70.0 * units.deg, 0.0 * units::thou)
-cam_lift.add_sample(80.0 * units.deg, 0.0 * units::thou)
-cam_lift.add_sample(-80.0 * units.deg, 0.0 * units::thou)
+cam_lift.add_sample(0.0 * units.deg, 578.0 * units.thou)
+cam_lift.add_sample(10.0 * units.deg, 560.0 * units.thou)
+cam_lift.add_sample(-10.0 * units.deg, 560.0 * units.thou)
+cam_lift.add_sample(20.0 * units.deg, 510.0 * units.thou)
+cam_lift.add_sample(-20.0 * units.deg, 510.0 * units.thou)
+cam_lift.add_sample(30.0 * units.deg, 430.0 * units.thou)
+cam_lift.add_sample(-30.0 * units.deg, 430.0 * units.thou)
+cam_lift.add_sample(40.0 * units.deg, 350.0 * units.thou)
+cam_lift.add_sample(-40.0 * units.deg, 350.0 * units.thou)
+cam_lift.add_sample(50.0 * units.deg, 220.0 * units.thou)
+cam_lift.add_sample(-50.0 * units.deg, 220.0 * units.thou)
+cam_lift.add_sample(60.0 * units.deg, 75.0 * units.thou)
+cam_lift.add_sample(-60.0 * units.deg, 75.0 * units.thou)
+cam_lift.add_sample(70.0 * units.deg, 0.0 * units.thou)
+cam_lift.add_sample(-70.0 * units.deg, 0.0 * units.thou)
+cam_lift.add_sample(80.0 * units.deg, 0.0 * units.thou)
+cam_lift.add_sample(-80.0 * units.deg, 0.0 * units.thou)
 
 camshaft_parameters cam_params(
     advance: 3.0 * units.deg,
@@ -114,29 +160,86 @@ camshaft exhaust_cam_1(cam_params)
 camshaft intake_cam_0(cam_params)
 camshaft intake_cam_1(cam_params)
 
+label lobe_separation(109 * units.deg)
+label advance(lobe_separation - 106 * units.deg)
+label rot90(90 * units.deg)
+label rot360(360 * units.deg)
+
 exhaust_cam_0
-    .add_lobe(0)
-    .add_lobe(0)
-    .add_lobe(0)
-    .add_lobe(0)
+    .add_lobe(rot360 - lobe_separation)
+    .add_lobe(rot360 - lobe_separation + 3 * rot90)
+    .add_lobe(rot360 - lobe_separation + 5 * rot90)
+    .add_lobe(rot360 - lobe_separation + 6 * rot90)
 
 exhaust_cam_1
-    .add_lobe(0)
-    .add_lobe(0)
-    .add_lobe(0)
-    .add_lobe(0)
+    .add_lobe(rot360 - lobe_separation + 7 * rot90)
+    .add_lobe(rot360 - lobe_separation + 2 * rot90)
+    .add_lobe(rot360 - lobe_separation + 4 * rot90)
+    .add_lobe(rot360 - lobe_separation + 1 * rot90)
 
 intake_cam_0
-    .add_lobe(0)
-    .add_lobe(0)
-    .add_lobe(0)
-    .add_lobe(0)
+    .add_lobe(rot360 + lobe_separation)
+    .add_lobe(rot360 + lobe_separation + 3 * rot90)
+    .add_lobe(rot360 + lobe_separation + 5 * rot90)
+    .add_lobe(rot360 + lobe_separation + 6 * rot90)
 
 intake_cam_1
-    .add_lobe(0)
-    .add_lobe(0)
-    .add_lobe(0)
-    .add_lobe(0)
+    .add_lobe(rot360 + lobe_separation + 7 * rot90)
+    .add_lobe(rot360 + lobe_separation + 2 * rot90)
+    .add_lobe(rot360 + lobe_separation + 4 * rot90)
+    .add_lobe(rot360 + lobe_separation + 1 * rot90)
+
+function head_flow_intake(filter_radius: 50 * units.thou)
+head_flow_intake
+    .add_sample(0 * units.thou, 0.0)
+    .add_sample(50 * units.thou, k_28inH2O(10.0))
+    .add_sample(100 * units.thou, k_28inH2O(76.0))
+    .add_sample(150 * units.thou, k_28inH2O(100.0))
+    .add_sample(200 * units.thou, k_28inH2O(146.0))
+    .add_sample(250 * units.thou, k_28inH2O(175.0))
+    .add_sample(300 * units.thou, k_28inH2O(212.0))
+    .add_sample(350 * units.thou, k_28inH2O(230.0))
+    .add_sample(400 * units.thou, k_28inH2O(255.0))
+    .add_sample(450 * units.thou, k_28inH2O(275.0))
+    .add_sample(500 * units.thou, k_28inH2O(294.0))
+    .add_sample(550 * units.thou, k_28inH2O(300.0))
+    .add_sample(600 * units.thou, k_28inH2O(314.0))
+
+function head_flow_exhaust(filter_radius: 50 * units.thou)
+head_flow_exhaust
+    .add_sample(0 * units.thou, 0.0)
+    .add_sample(50 * units.thou, k_28inH2O(10.0))
+    .add_sample(100 * units.thou, k_28inH2O(70.0))
+    .add_sample(150 * units.thou, k_28inH2O(100.0))
+    .add_sample(200 * units.thou, k_28inH2O(132.0))
+    .add_sample(250 * units.thou, k_28inH2O(140.0))
+    .add_sample(300 * units.thou, k_28inH2O(156.0))
+    .add_sample(350 * units.thou, k_28inH2O(170.0))
+    .add_sample(400 * units.thou, k_28inH2O(181.0))
+    .add_sample(450 * units.thou, k_28inH2O(191.0))
+    .add_sample(500 * units.thou, k_28inH2O(207.0))
+    .add_sample(550 * units.thou, k_28inH2O(214.0))
+    .add_sample(600 * units.thou, k_28inH2O(228.0))
+
+b0.set_cylinder_head (
+    cylinder_head(
+        chamber_volume: 118.0 * units.cc,
+        intake_port_flow: head_flow_intake,
+        exhaust_port_flow: head_flow_exhaust,
+        intake_camshaft: intake_cam_0,
+        exhaust_camshaft: exhaust_cam_0,
+        flip_display: true
+    )
+)
+b1.set_cylinder_head (
+    cylinder_head(
+        chamber_volume: 118.0 * units.cc,
+        intake_port_flow: head_flow_intake,
+        exhaust_port_flow: head_flow_exhaust,
+        intake_camshaft: intake_cam_1,
+        exhaust_camshaft: exhaust_cam_1
+    )
+)
 
 set_engine(
     engine: engine

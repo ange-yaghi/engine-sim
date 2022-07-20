@@ -15,7 +15,7 @@ public node set_engine => __engine_sim__set_engine {
 
 private node _add_rod_journal => __engine_sim__add_rod_journal {
     input rod_journal [rod_journal];
-    input crankshaft [_crankshaft];
+    input crankshaft [crankshaft];
 }
 
 public node add_rod_journal {
@@ -27,7 +27,7 @@ public node add_rod_journal {
 }
 
 public node _add_crankshaft => __engine_sim__add_crankshaft {
-    input crankshaft [_crankshaft];
+    input crankshaft [crankshaft];
     input engine [engine];
 }
 
@@ -56,17 +56,28 @@ private node _add_cylinder => __engine_sim__add_cylinder {
     input piston [piston];
     input connecting_rod [connecting_rod];
     input rod_journal [rod_journal];
+    input exhaust_system [exhaust_system];
+    input intake [intake];
     input cylinder_bank [cylinder_bank];
 }
 
 public node add_cylinder {
+    input intake;
+    input exhaust_system;
     input piston;
     input connecting_rod;
     input rod_journal;
     input this;
     alias output __out: this;
 
-    _add_cylinder(piston, connecting_rod, rod_journal, cylinder_bank: this)
+    _add_cylinder(
+        piston: piston,
+        connecting_rod: connecting_rod,
+        rod_journal: rod_journal,
+        exhaust_system: exhaust_system,
+        intake: intake,
+        cylinder_bank: this
+    )
 }
 
 private node _add_sample => __engine_sim__add_sample {
@@ -95,4 +106,26 @@ public node add_lobe {
     alias output __out: this;
 
     _add_lobe(centerline: centerline, camshaft: this)
+}
+
+private node _set_cylinder_head => __engine_sim__set_cylinder_head {
+    input head [cylinder_head];
+    input bank [cylinder_bank];
+}
+
+public node set_cylinder_head {
+    input head;
+    input this;
+
+    _set_cylinder_head(head: head, bank: this)
+}
+
+public node k_28inH2O => __engine_sim__k_28inH2O {
+    input flow [float]: 1.0;
+    alias output __out [float];
+}
+
+public node k_carb => __engine_sim__k_carb {
+    input flow [float]: 1.0;
+    alias output __out [float];
 }

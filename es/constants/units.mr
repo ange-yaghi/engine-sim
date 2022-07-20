@@ -8,8 +8,10 @@ private import "constants.mr"
 
 private import "../types/atomic_types.mr"
 private import "../types/conversions.mr"
+private import "../types/operations.mr"
 
-public auto node units {
+constants constants()
+public node units {
     // Force
     output N: 1.0;
     output lbf: N * 4.44822;
@@ -34,8 +36,8 @@ public auto node units {
 
     // Time
     output sec: 1.0;
-    output minute: 60 * sec;
-    output hour: 60 * minute;
+    output minute: 60.0 * sec;
+    output hour: 60.0 * minute;
 
     // Torque
     output Nm: N * m;
@@ -90,4 +92,7 @@ public auto node units {
     // Angles
     output rad: 1.0;
     output deg: rad * (constants.pi / 180.0);
+
+    // RPM
+    output rpm: 0.104719755;
 }

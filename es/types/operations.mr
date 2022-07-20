@@ -20,6 +20,24 @@ public node float_divide => __engine_sim__float_divide {
     alias output __out [float];
 }
 
+public node float_multiply => __engine_sim__float_multiply {
+    input __in0 [float];
+    input __in1 [float];
+    alias output __out [float];
+}
+
+public node float_add => __engine_sim__float_add {
+    input __in0 [float];
+    input __in1 [float];
+    alias output __out [float];
+}
+
+public node float_subtract => __engine_sim__float_subtract {
+    input __in0 [float];
+    input __in1 [float];
+    alias output __out [float];
+}
+
 // String operations
 
 public node string_add => __engine_sim__string_add {
@@ -42,7 +60,13 @@ public node int_mul => __engine_sim__int_multiply {
     alias output __out [int];
 }
 
-public node int_sub => __engine_sim__int_sub {
+public node int_sub => __engine_sim__int_subtract {
+    input __in0 [int];
+    input __in1 [int];
+    alias output __out [int];
+}
+
+public node int_div => __engine_sim__int_divide {
     input __in0 [int];
     input __in1 [int];
     alias output __out [int];

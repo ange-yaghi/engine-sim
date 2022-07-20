@@ -6,6 +6,7 @@
 #include "rod_journal_node.h"
 #include "piston_node.h"
 #include "connecting_rod_node.h"
+#include "cylinder_head_node.h"
 
 #include "engine_sim.h"
 
@@ -20,6 +21,8 @@ namespace es_script {
             PistonNode *piston;
             ConnectingRodNode *rod;
             RodJournalNode *rodJournal;
+            IntakeNode *intake;
+            ExhaustSystemNode *exhaust;
         };
 
     public:
@@ -55,18 +58,53 @@ namespace es_script {
                     crankshaft,
                     context->getRodJournalIndex(m_cylinders[i].rodJournal));
             }
+
+            CylinderHead *head = context->getHead(m_head);
+            m_head->generate(head, cylinderBank, crankshaft, context);
+
+            const int n_cylinders = getCylinderCount();
+            for (int i = 0; i < n_cylinders; ++i) {
+                ExhaustSystemNode *exhaustNode = getCylinder(i).exhaust;
+                IntakeNode *intakeNode = getCylinder(i).intake;
+
+                ExhaustSystem *exhaust = exhaustNode->generate(context);
+                Intake *intake = intakeNode->generate(context);
+
+                head->setIntake(i, intake);
+                head->setExhaustSystem(i, exhaust);
+            }
         }
 
         void addCylinder(
             PistonNode *piston,
             ConnectingRodNode *rod,
-            RodJournalNode *rodJournal)
+            RodJournalNode *rodJournal,
+            IntakeNode *intake,
+            ExhaustSystemNode *exhaust)
         {
-            m_cylinders.push_back({ piston, rod, rodJournal });
+            m_cylinders.push_back({
+                piston,
+                rod,
+                rodJournal,
+                intake,
+                exhaust
+            });
+        }
+
+        const Cylinder &getCylinder(int i) const {
+            return m_cylinders[i];
         }
 
         int getCylinderCount() const {
             return (int)m_cylinders.size();
+        }
+
+        void setCylinderHead(CylinderHeadNode *head) {
+            m_head = head;
+        }
+
+        CylinderHeadNode *getCylinderHead() const {
+            return m_head;
         }
 
     protected:
@@ -90,6 +128,7 @@ namespace es_script {
 
         CylinderBank::Parameters m_parameters;
         std::vector<Cylinder> m_cylinders;
+        CylinderHeadNode *m_head = nullptr;
     };
 
 } /* namespace es_script */

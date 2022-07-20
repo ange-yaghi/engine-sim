@@ -47,6 +47,10 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__cylinder_head_channel", &es_script::ObjectChannel::CylinderHeadChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__camshaft_channel", &es_script::ObjectChannel::CamshaftChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__intake_channel", &es_script::ObjectChannel::IntakeChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__exhaust_system_channel", &es_script::ObjectChannel::ExhaustSystemChannel);
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -72,6 +76,18 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<piranha::OperationNodeSpecialized<
         piranha::native_float,
         piranha::DivideOperationNodeOutput>>("__engine_sim__float_divide");
+    registerBuiltinType<piranha::OperationNodeSpecialized<
+        piranha::native_float,
+        piranha::MultiplyOperationNodeOutput>>("__engine_sim__float_multiply");
+    registerBuiltinType<piranha::OperationNodeSpecialized<
+        piranha::native_float,
+        piranha::DivideOperationNodeOutput>>("__engine_sim__float_divide");
+    registerBuiltinType<piranha::OperationNodeSpecialized<
+        piranha::native_float,
+        piranha::AddOperationNodeOutput>>("__engine_sim__float_add");
+    registerBuiltinType<piranha::OperationNodeSpecialized<
+        piranha::native_float,
+        piranha::SubtractOperationNodeOutput>>("__engine_sim__float_subtract");
 
     // Int operations
     registerBuiltinType<piranha::OperationNodeSpecialized<
@@ -82,7 +98,10 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         piranha::AddOperationNodeOutput>>("__engine_sim__int_add");
     registerBuiltinType<piranha::OperationNodeSpecialized<
         piranha::native_int,
-        piranha::SubtractOperationNodeOutput>>("__engine_sim__int_sub");
+        piranha::SubtractOperationNodeOutput>>("__engine_sim__int_subtract");
+    registerBuiltinType<piranha::OperationNodeSpecialized<
+        piranha::native_int,
+        piranha::SubtractOperationNodeOutput>>("__engine_sim__int_divide");
     registerBuiltinType<piranha::NumNegateOperationNode<
         piranha::native_int>>("__engine_sim__int_negate");
 
@@ -94,6 +113,7 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<AddCylinderNode>("__engine_sim__add_cylinder");
     registerBuiltinType<AddSampleNode>("__engine_sim__add_sample");
     registerBuiltinType<AddLobeNode>("__engine_sim__add_lobe");
+    registerBuiltinType<SetCylinderHead>("__engine_sim__set_cylinder_head");
 
     // Objects
     registerBuiltinType<EngineNode>("__engine_sim__engine");
@@ -103,8 +123,12 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<CylinderBankNode>("__engine_sim__cylinder_bank");
     registerBuiltinType<PistonNode>("__engine_sim__piston");
     registerBuiltinType<FunctionNode>("__engine_sim__function");
-    registerBuiltinType<CylinderHeadNode>("__engine_sim__cylinder_head_node");
+    registerBuiltinType<CylinderHeadNode>("__engine_sim__cylinder_head");
     registerBuiltinType<CamshaftNode>("__engine_sim__camshaft");
+    registerBuiltinType<ExhaustSystemNode>("__engine_sim__exhaust_system");
+    registerBuiltinType<IntakeNode>("__engine_sim__intake");
+    registerBuiltinType<k_28inH2ONode>("__engine_sim__k_28inH2O");
+    registerBuiltinType<k_CarbNode>("__engine_sim__k_carb");
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<
@@ -133,4 +157,103 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerLiteralType(piranha::LiteralType::String, "__engine_sim__literal_string");
     registerLiteralType(piranha::LiteralType::Integer, "__engine_sim__literal_int");
     registerLiteralType(piranha::LiteralType::Boolean, "__engine_sim__literal_bool");
+
+    // Operations
+    registerUnaryOperator(
+        {
+            piranha::IrUnaryOperator::Operator::NumericNegate,
+            &piranha::FundamentalType::FloatType
+        },
+        "__engine_sim__float_negate");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Mul,
+            &piranha::FundamentalType::FloatType,
+            &piranha::FundamentalType::FloatType
+        },
+        "__engine_sim__float_multiply");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Mul,
+            &piranha::FundamentalType::FloatType,
+            &piranha::FundamentalType::IntType
+        },
+        "__engine_sim__float_multiply");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Div,
+            &piranha::FundamentalType::FloatType,
+            &piranha::FundamentalType::FloatType
+        },
+        "__engine_sim__float_divide");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Div,
+            &piranha::FundamentalType::FloatType,
+            &piranha::FundamentalType::IntType
+        },
+        "__engine_sim__float_divide");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Sub,
+            &piranha::FundamentalType::FloatType,
+            &piranha::FundamentalType::FloatType
+        },
+        "__engine_sim__float_subtract");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Sub,
+            &piranha::FundamentalType::FloatType,
+            &piranha::FundamentalType::IntType
+        },
+        "__engine_sim__float_subtract");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Add,
+            &piranha::FundamentalType::FloatType,
+            &piranha::FundamentalType::FloatType
+        },
+        "__engine_sim__float_add");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Add,
+            &piranha::FundamentalType::FloatType,
+            &piranha::FundamentalType::IntType
+        },
+        "__engine_sim__float_add");
+
+    registerUnaryOperator(
+        {
+            piranha::IrUnaryOperator::Operator::NumericNegate,
+            &piranha::FundamentalType::IntType
+        },
+        "__engine_sim__int_negate");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Mul,
+            &piranha::FundamentalType::IntType,
+            &piranha::FundamentalType::IntType
+        },
+        "__engine_sim__int_multiply");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Div,
+            &piranha::FundamentalType::IntType,
+            &piranha::FundamentalType::IntType
+        },
+        "__engine_sim__int_divide");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Sub,
+            &piranha::FundamentalType::IntType,
+            &piranha::FundamentalType::IntType
+        },
+        "__engine_sim__int_subtract");
+    registerOperator(
+        {
+            piranha::IrBinaryOperator::Operator::Add,
+            &piranha::FundamentalType::IntType,
+            &piranha::FundamentalType::IntType
+        },
+        "__engine_sim__int_add");
 }

@@ -11,9 +11,10 @@ namespace es_script {
     class CylinderBankNode;
     class CrankshaftNode;
     class FunctionNode;
-    class ExhaustNode;
+    class ExhaustSystemNode;
     class IntakeNode;
     class RodJournalNode;
+    class CamshaftNode;
 
     class EngineContext {
     public:
@@ -32,8 +33,8 @@ namespace es_script {
         void addIntake(IntakeNode *node, Intake *intake);
         Intake *getIntake(IntakeNode *intake) const;
 
-        void addExhaust(ExhaustNode *node, ExhaustSystem *exhaust);
-        ExhaustSystem *getExhaust(ExhaustNode *exhaust) const;
+        void addExhaust(ExhaustSystemNode *node, ExhaustSystem *exhaust);
+        ExhaustSystem *getExhaust(ExhaustSystemNode *exhaust) const;
 
         void addFunction(FunctionNode *node, Function *function);
         Function *getFunction(FunctionNode *exhaust) const;
@@ -41,14 +42,22 @@ namespace es_script {
         void addCrankshaft(CrankshaftNode *node, Crankshaft *crankshaft);
         Crankshaft *getCrankshaft(CrankshaftNode *node) const;
 
+        void addCamshaft(CamshaftNode *node, Camshaft *camshaft);
+        Camshaft *getCamshaft(CamshaftNode *node) const;
+
+        void setEngine(Engine *engine) { m_engine = engine; }
+        Engine *getEngine() const { return m_engine; }
+
     protected:
+        Engine *m_engine = nullptr;
         std::map<CylinderHeadNode *, CylinderHead *> m_heads;
         std::map<CylinderBankNode *, CylinderBank *> m_banks;
-        std::map<ExhaustNode *, ExhaustSystem *> m_exhaustSystems;
+        std::map<ExhaustSystemNode *, ExhaustSystem *> m_exhaustSystems;
         std::map<IntakeNode *, Intake *> m_intakes;
         std::map<FunctionNode *, Function *> m_functions;
         std::map<RodJournalNode *, int> m_rodJournals;
         std::map<CrankshaftNode *, Crankshaft *> m_crankshafts;
+        std::map<CamshaftNode *, Camshaft *> m_camshafts;
     };
 
 } /* namespace es_script */

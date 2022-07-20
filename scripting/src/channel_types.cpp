@@ -17,7 +17,7 @@ const piranha::ChannelType
 const piranha::ChannelType
     es_script::ObjectChannel::IntakeChannel("IntakeChannel");
 const piranha::ChannelType
-    es_script::ObjectChannel::ExhaustChannel("ExhaustChannel");
+    es_script::ObjectChannel::ExhaustSystemChannel("ExhaustChannel");
 const piranha::ChannelType
     es_script::ObjectChannel::CylinderHeadChannel("CylinderHeadChannel");
 const piranha::ChannelType

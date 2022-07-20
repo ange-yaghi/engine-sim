@@ -1,0 +1,10 @@
+module {
+    @name:      "Infrastructure"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+public node label {
+    input in;
+    alias output _out: in;
+}

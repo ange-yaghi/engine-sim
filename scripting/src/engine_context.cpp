@@ -58,11 +58,14 @@ Intake *es_script::EngineContext::getIntake(IntakeNode *intake) const {
     else return nullptr;
 }
 
-void es_script::EngineContext::addExhaust(ExhaustNode *node, ExhaustSystem *exhaust) {
+void es_script::EngineContext::addExhaust(
+    ExhaustSystemNode *node,
+    ExhaustSystem *exhaust)
+{
     m_exhaustSystems[node] = exhaust;
 }
 
-ExhaustSystem *es_script::EngineContext::getExhaust(ExhaustNode *exhaust) const {
+ExhaustSystem *es_script::EngineContext::getExhaust(ExhaustSystemNode *exhaust) const {
     auto it = m_exhaustSystems.find(exhaust);
     if (it != m_exhaustSystems.end()) {
         return it->second;
@@ -92,6 +95,21 @@ void es_script::EngineContext::addCrankshaft(
 Crankshaft *es_script::EngineContext::getCrankshaft(CrankshaftNode *node) const {
     auto it = m_crankshafts.find(node);
     if (it != m_crankshafts.end()) {
+        return it->second;
+    }
+    else return nullptr;
+}
+
+void es_script::EngineContext::addCamshaft(
+    CamshaftNode *node,
+    Camshaft *camshaft)
+{
+    m_camshafts[node] = camshaft;
+}
+
+Camshaft *es_script::EngineContext::getCamshaft(CamshaftNode *node) const {
+    auto it = m_camshafts.find(node);
+    if (it != m_camshafts.end()) {
         return it->second;
     }
     else return nullptr;

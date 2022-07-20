@@ -10,6 +10,7 @@
 #include "engine_sim.h"
 
 #include <map>
+#include <set>
 
 namespace es_script {
 
@@ -24,15 +25,55 @@ namespace es_script {
                 cylinderCount += bank->getCylinderCount();
             }
 
+            std::set<ExhaustSystemNode *> exhaustSystems;
+            std::set<IntakeNode *> intakes;
+            for (const CylinderBankNode *bank : m_cylinderBanks) {
+                const int n = bank->getCylinderCount();
+                for (int i = 0; i < n; ++i) {
+                    exhaustSystems.insert(bank->getCylinder(i).exhaust);
+                    intakes.insert(bank->getCylinder(i).intake);
+                }
+            }
+
             EngineContext context;
             Engine::Parameters parameters = m_parameters;
             parameters.CrankshaftCount = (int)m_crankshafts.size();
             parameters.CylinderBanks = (int)m_cylinderBanks.size();
             parameters.CylinderCount = cylinderCount;
-            parameters.ExhaustSystemCount = 0;
-            parameters.IntakeCount = 0;
-
+            parameters.ExhaustSystemCount = (int)exhaustSystems.size();
+            parameters.IntakeCount = (int)intakes.size();
             engine->initialize(parameters);
+
+            {
+                int i = 0;
+                for (ExhaustSystemNode *exhaust : exhaustSystems) {
+                    context.addExhaust(
+                        exhaust, engine->getExhaustSystem(i++));
+                }
+            }
+
+            {
+                int i = 0;
+                for (IntakeNode *intake : intakes) {
+                    context.addIntake(
+                        intake, engine->getIntake(i++));
+                }
+            }
+
+            {
+                int i = 0;
+                for (const CylinderBankNode *bank : m_cylinderBanks) {
+                    context.addHead(bank->getCylinderHead(), engine->getHead(i++));
+                }
+            }
+
+            for (const CylinderBankNode *bank : m_cylinderBanks) {
+                const int n = bank->getCylinderCount();
+                for (int i = 0; i < n; ++i) {
+                    exhaustSystems.insert(bank->getCylinder(i).exhaust);
+                    intakes.insert(bank->getCylinder(i).intake);
+                }
+            }
 
             for (int i = 0; i < parameters.CrankshaftCount; ++i) {
                 m_crankshafts[i]->generate(engine->getCrankshaft(i), &context);
@@ -42,11 +83,12 @@ namespace es_script {
             for (int i = 0; i < parameters.CylinderBanks; ++i) {
                 m_cylinderBanks[i]->generate(
                     i,
-                    cylinderIndex + i,
+                    cylinderIndex,
                     engine->getCylinderBank(i),
                     engine->getCrankshaft(0),
                     engine,
                     &context);
+                cylinderIndex += m_cylinderBanks[i]->getCylinderCount();
             }
         }
 

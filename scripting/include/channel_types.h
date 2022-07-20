@@ -14,7 +14,7 @@ namespace es_script {
         static const piranha::ChannelType PistonChannel;
         static const piranha::ChannelType FunctionChannel;
         static const piranha::ChannelType IntakeChannel;
-        static const piranha::ChannelType ExhaustChannel;
+        static const piranha::ChannelType ExhaustSystemChannel;
         static const piranha::ChannelType CylinderHeadChannel;
         static const piranha::ChannelType CamshaftChannel;
     };
@@ -33,7 +33,7 @@ namespace es_script {
     class PistonNode;
     class FunctionNode;
     class IntakeNode;
-    class ExhaustNode;
+    class ExhaustSystemNode;
     class CylinderHeadNode;
     class CamshaftNode;
 
@@ -51,7 +51,7 @@ namespace es_script {
     ASSIGN_CHANNEL_TYPE(PistonNode, PistonChannel);
     ASSIGN_CHANNEL_TYPE(FunctionNode, FunctionChannel);
     ASSIGN_CHANNEL_TYPE(IntakeNode, IntakeChannel);
-    ASSIGN_CHANNEL_TYPE(ExhaustNode, ExhaustChannel);
+    ASSIGN_CHANNEL_TYPE(ExhaustSystemNode, ExhaustSystemChannel);
     ASSIGN_CHANNEL_TYPE(CylinderHeadNode, CylinderHeadChannel);
     ASSIGN_CHANNEL_TYPE(CamshaftNode, CamshaftChannel);
 
