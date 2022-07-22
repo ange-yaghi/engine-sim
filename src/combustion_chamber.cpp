@@ -204,6 +204,9 @@ void CombustionChamber::flow(double dt) {
         m_peakTemperature = m_system.temperature();
     }
 
+    const double dT = units::celcius(40.0) - m_system.temperature();
+    //m_system.changeEnergy(dT * 100 * dt);
+
     m_system.flow(m_piston->getBlowbyK(), dt, m_crankcasePressure, units::celcius(25.0));
 
     const double start_n = m_system.n();
