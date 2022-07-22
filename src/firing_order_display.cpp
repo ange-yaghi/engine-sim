@@ -79,7 +79,7 @@ void FiringOrderDisplay::render() {
         const int bankIndex = bank->getIndex();
         const double lit = m_cylinderLit[i];
 
-        const Bounds &b = grid.get(body, bankIndex, 0);
+        const Bounds &b = grid.get(body, banks - bankIndex - 1, 0);
 
         Grid bankGrid = { 1, bank->getCylinderCount() };
         const Bounds &b_cyl =
@@ -93,17 +93,19 @@ void FiringOrderDisplay::render() {
         const Bounds worldBounds = getRenderBounds(b_cyl);
         const Point position = worldBounds.getPosition(Bounds::center);
 
+        const float radius = std::min(worldBounds.height() / 2, worldBounds.width() / 2);
+
         GeometryGenerator::Circle2dParameters params;
         params.center_x = position.x;
         params.center_y = position.y;
-        params.radius = (worldBounds.height() / 2) * 0.75f;
+        params.radius = radius * 0.75f;
         params.maxEdgeLength = pixelsToUnits(5.0f);
 
         GeometryGenerator::Ring2dParameters ringParams;
         ringParams.center_x = position.x;
         ringParams.center_y = position.y;
-        ringParams.innerRadius = (worldBounds.height() / 2) * 0.8f;
-        ringParams.outerRadius = (worldBounds.height() / 2) * 0.85f;
+        ringParams.innerRadius = radius * 0.8f;
+        ringParams.outerRadius = radius * 0.85f;
         ringParams.maxEdgeLength = pixelsToUnits(5.0f);
 
         GeometryGenerator::GeometryIndices ring, light;

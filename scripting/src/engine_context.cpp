@@ -114,3 +114,18 @@ Camshaft *es_script::EngineContext::getCamshaft(CamshaftNode *node) const {
     }
     else return nullptr;
 }
+
+void es_script::EngineContext::setCylinderIndex(
+    const CylinderBankNode *bank,
+    int localIndex,
+    int globalIndex)
+{
+    m_cylinderIndices[{ bank, localIndex }] = globalIndex;
+}
+
+int es_script::EngineContext::getCylinderIndex(
+    const CylinderBankNode *bank,
+    int localIndex) const
+{
+    return m_cylinderIndices.at({ bank, localIndex });
+}

@@ -13,6 +13,7 @@
 #include "camshaft_node.h"
 #include "cylinder_head_node.h"
 #include "cylinder_bank_node.h"
+#include "ignition_module_node.h"
 
 namespace es_script {
 
@@ -53,6 +54,8 @@ namespace es_script {
 
         virtual void _evaluate() {
             readAllInputs();
+
+            m_crankshaft->addRodJournal(m_rodJournal);
         }
 
     protected:
@@ -121,6 +124,7 @@ namespace es_script {
             addInput("exhaust_system", &m_exhaustSystem, InputTarget::Type::Object);
             addInput("intake", &m_intake, InputTarget::Type::Object);
             addInput("cylinder_bank", &m_cylinderBank, InputTarget::Type::Object);
+            addInput("ignition_wire", &m_ignitionWire, InputTarget::Type::Object);
 
             Node::registerInputs();
         }
@@ -133,7 +137,8 @@ namespace es_script {
                 m_connectingRod,
                 m_rodJournal,
                 m_intake,
-                m_exhaustSystem
+                m_exhaustSystem,
+                m_ignitionWire
             );
         }
 
@@ -144,6 +149,7 @@ namespace es_script {
         CylinderBankNode *m_cylinderBank = nullptr;
         ExhaustSystemNode *m_exhaustSystem = nullptr;
         IntakeNode *m_intake = nullptr;
+        IgnitionWireNode *m_ignitionWire = nullptr;
     };
 
     class AddSampleNode : public Node {
@@ -196,10 +202,10 @@ namespace es_script {
         CamshaftNode *m_camshaft = nullptr;
     };
 
-    class SetCylinderHead : public Node {
+    class SetCylinderHeadNode : public Node {
     public:
-        SetCylinderHead() { /* void */ }
-        virtual ~SetCylinderHead() { /* void */ }
+        SetCylinderHeadNode() { /* void */ }
+        virtual ~SetCylinderHeadNode() { /* void */ }
 
     protected:
         virtual void registerInputs() {
@@ -328,6 +334,56 @@ namespace es_script {
     protected:
         k_CarbNodeOutput m_output;
         double m_flowInput = 0.0;
+    };
+
+    class ConnectIgnitionWireNode : public Node {
+    public:
+        ConnectIgnitionWireNode() { /* void */ }
+        virtual ~ConnectIgnitionWireNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("wire", &m_wire, InputTarget::Type::Object);
+            addInput("ignition_module", &m_module, InputTarget::Type::Object);
+            addInput("angle", &m_angle);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_module->connect(m_wire, m_angle);
+        }
+
+    protected:
+        IgnitionWireNode *m_wire = nullptr;
+        IgnitionModuleNode *m_module = nullptr;
+        double m_angle = 0.0;
+    };
+
+    class AddIgnitionModuleNode : public Node {
+    public:
+        AddIgnitionModuleNode() { /* void */ }
+        virtual ~AddIgnitionModuleNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("engine", &m_engine, InputTarget::Type::Object);
+            addInput("ignition_module", &m_ignitionModule, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_engine->addIgnitionModule(m_ignitionModule);
+        }
+
+    protected:
+        IgnitionModuleNode *m_ignitionModule = nullptr;
+        EngineNode *m_engine = nullptr;
     };
 
 } /* namespace es_script */

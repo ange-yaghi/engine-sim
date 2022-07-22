@@ -20,12 +20,13 @@ namespace es_script {
         void generate(
             ConnectingRod *connectingRod,
             Crankshaft *crankshaft,
+            Piston *piston,
             int rodJournal) const
         {
             ConnectingRod::Parameters params = m_parameters;
             params.Crankshaft = crankshaft;
             params.Journal = rodJournal;
-            params.Piston = nullptr;
+            params.Piston = piston;
 
             connectingRod->initialize(params);
         }

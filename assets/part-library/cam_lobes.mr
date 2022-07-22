@@ -1,0 +1,29 @@
+import "engine_sim.mr"
+
+units units()
+
+private node add_sym_sample {
+    input angle;
+    input lift;
+    input this;
+    alias output __out: this;
+
+    this.add_sample(angle * units.deg, lift * units.thou)
+    this.add_sample(-angle * units.deg, lift * units.thou)
+}
+
+public node stock_454_lobe_profile {
+    alias output __out: lobe;
+
+    function lobe(10 * units.deg)
+    lobe
+        .add_sym_sample(0.0, 430.0)
+        .add_sym_sample(10.0, 410.0)
+        .add_sym_sample(20.0, 359.0)
+        .add_sym_sample(30.0, 250.0)
+        .add_sym_sample(40.0, 130.0)
+        .add_sym_sample(50.0, 50.0)
+        .add_sym_sample(60.0, 0.0)
+        .add_sym_sample(70.0, 0.0)
+        .add_sym_sample(80.0, 0.0)
+}

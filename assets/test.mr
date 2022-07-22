@@ -1,19 +1,21 @@
 import "engine_sim.mr"
+import "part-library/cam_lobes.mr"
+import "part-library/heads.mr"
 
 units units()
 constants constants()
 
 engine engine(
     name: "Chev. 454 V8",
-    starter_torque: 500 * units.lb_ft
+    starter_torque: 200 * units.lb_ft
 )
 
 crankshaft c0(
     throw: 2.0 * units.inch,
-    flywheel_mass: 0.5 * 29 * 2 * units.lb,
-    mass: 0.5 * 75 * units.lb,
+    flywheel_mass: 29 * 2 * units.lb,
+    mass: 75 * units.lb,
     friction_torque: 10.0 * units.lb_ft,
-    moment_of_inertia: 1.0,
+    moment_of_inertia: 0.22986844776863666 * 2,
     position_x: 0.0,
     position_y: 0.0,
     tdc: constants.pi / 4 - 2 * constants.pi
@@ -39,7 +41,7 @@ piston_parameters piston_params(
 )
 connecting_rod_parameters cr_params(
     mass: 785.0 * units.g,
-    moment_of_inertia: 1.0,
+    moment_of_inertia: 0.0015884918028487504,
     center_of_mass: 0.0,
     length: 6.135 * units.inch
 )
@@ -50,79 +52,96 @@ cylinder_bank_parameters bank_params(
 
 intake intake(
     plenum_volume: 5.0 * units.L,
-    intake_flow_rate: k_carb(950.0),
+    intake_flow_rate: k_carb(500.0),
     idle_flow_rate: 0.0000015,
-    idle_throttle_plate_position: 0.967
+    idle_throttle_plate_position: 0.945
 )
 
 exhaust_system_parameters es_params(
-    exhaust_flow_rate: k_carb(1000.0),
-    volume: 10.0 * units.L
+    exhaust_flow_rate: k_carb(500.0),
+    volume: 100.0 * units.L
 )
 
 exhaust_system exhaust0(es_params, audio_volume: 1.0)
-exhaust_system exhaust1(es_params, audio_volume: 0.1)
+exhaust_system exhaust1(es_params, audio_volume: 0.0)
 
-cylinder_bank b0(bank_params, angle: 45 * units.deg)
+ignition_wire wire1()
+ignition_wire wire2()
+ignition_wire wire3()
+ignition_wire wire4()
+ignition_wire wire5()
+ignition_wire wire6()
+ignition_wire wire7()
+ignition_wire wire8()
+
+cylinder_bank b0(bank_params, angle: -45 * units.deg)
 b0
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
         rod_journal: rj0,
         intake: intake,
-        exhaust_system: exhaust0
+        exhaust_system: exhaust0,
+        ignition_wire: wire1
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
         rod_journal: rj1,
         intake: intake,
-        exhaust_system: exhaust0
+        exhaust_system: exhaust0,
+        ignition_wire: wire3
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
         rod_journal: rj2,
         intake: intake,
-        exhaust_system: exhaust0
+        exhaust_system: exhaust0,
+        ignition_wire: wire5
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
         rod_journal: rj3,
         intake: intake,
-        exhaust_system: exhaust0
+        exhaust_system: exhaust0,
+        ignition_wire: wire7
     )
 
-cylinder_bank b1(bank_params, angle: -45.0 * units.deg)
+cylinder_bank b1(bank_params, angle: 45.0 * units.deg)
 b1
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
         rod_journal: rj0,
         intake: intake,
-        exhaust_system: exhaust1
+        exhaust_system: exhaust1,
+        ignition_wire: wire2
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
         rod_journal: rj1,
         intake: intake,
-        exhaust_system: exhaust1
+        exhaust_system: exhaust1,
+        ignition_wire: wire4
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
         rod_journal: rj2,
         intake: intake,
-        exhaust_system: exhaust1
+        exhaust_system: exhaust1,
+        ignition_wire: wire6
     )
     .add_cylinder(
         piston: piston(piston_params),
         connecting_rod: connecting_rod(cr_params),
         rod_journal: rj3,
         intake: intake,
-        exhaust_system: exhaust1
+        exhaust_system: exhaust1,
+        ignition_wire: wire8
     )
 
 engine
@@ -153,15 +172,15 @@ cam_lift.add_sample(-80.0 * units.deg, 0.0 * units.thou)
 camshaft_parameters cam_params(
     advance: 3.0 * units.deg,
     base_radius: 1.0 * units.inch,
-    lobe_profile: cam_lift
+    lobe_profile: stock_454_lobe_profile()
 )
 camshaft exhaust_cam_0(cam_params)
 camshaft exhaust_cam_1(cam_params)
 camshaft intake_cam_0(cam_params)
 camshaft intake_cam_1(cam_params)
 
-label lobe_separation(109 * units.deg)
-label advance(lobe_separation - 106 * units.deg)
+label lobe_separation(114 * units.deg)
+label advance(lobe_separation - 114 * units.deg)
 label rot90(90 * units.deg)
 label rot360(360 * units.deg)
 
@@ -222,24 +241,46 @@ head_flow_exhaust
     .add_sample(600 * units.thou, k_28inH2O(228.0))
 
 b0.set_cylinder_head (
-    cylinder_head(
-        chamber_volume: 118.0 * units.cc,
-        intake_port_flow: head_flow_intake,
-        exhaust_port_flow: head_flow_exhaust,
+    chevy_bbc_peanut_port_head(
         intake_camshaft: intake_cam_0,
-        exhaust_camshaft: exhaust_cam_0,
-        flip_display: true
+        exhaust_camshaft: exhaust_cam_0
     )
 )
 b1.set_cylinder_head (
-    cylinder_head(
-        chamber_volume: 118.0 * units.cc,
-        intake_port_flow: head_flow_intake,
-        exhaust_port_flow: head_flow_exhaust,
+    chevy_bbc_peanut_port_head(
         intake_camshaft: intake_cam_1,
-        exhaust_camshaft: exhaust_cam_1
+        exhaust_camshaft: exhaust_cam_1,
+        flip_display: true
     )
 )
+
+function timing_curve(1000 * units.rpm)
+timing_curve
+    .add_sample(0000 * units.rpm, 12 * units.deg)
+    .add_sample(1000 * units.rpm, 12 * units.deg)
+    .add_sample(2000 * units.rpm, 20 * units.deg)
+    .add_sample(3000 * units.rpm, 30 * units.deg)
+    .add_sample(4000 * units.rpm, 38 * units.deg)
+    .add_sample(5000 * units.rpm, 38 * units.deg)
+    .add_sample(6000 * units.rpm, 38 * units.deg)
+
+ignition_module ignition_module(
+    timing_curve: timing_curve,
+    rev_limit: 6500 * units.rpm
+)
+
+label cycle(2 * 360 * units.deg)
+ignition_module
+    .connect_wire(wire1, (0.0 / 8.0) * cycle)
+    .connect_wire(wire8, (1.0 / 8.0) * cycle)
+    .connect_wire(wire4, (2.0 / 8.0) * cycle)
+    .connect_wire(wire3, (3.0 / 8.0) * cycle)
+    .connect_wire(wire6, (4.0 / 8.0) * cycle)
+    .connect_wire(wire5, (5.0 / 8.0) * cycle)
+    .connect_wire(wire7, (6.0 / 8.0) * cycle)
+    .connect_wire(wire2, (7.0 / 8.0) * cycle)
+
+engine.add_ignition_module(ignition_module)
 
 set_engine(
     engine: engine

@@ -48,7 +48,6 @@ void ExhaustSystem::process(double dt) {
     airMix.p_o2 = 0.0;
 
     GasSystem::FlowParameters flowParams;
-    flowParams.accelerationTimeConstant = 0.01;
     flowParams.crossSectionArea_0 = units::area(10, units::cm2);
     flowParams.crossSectionArea_1 = units::area(10, units::cm2);
     flowParams.direction_x = 0.0;

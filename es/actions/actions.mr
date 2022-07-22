@@ -59,6 +59,7 @@ private node _add_cylinder => __engine_sim__add_cylinder {
     input exhaust_system [exhaust_system];
     input intake [intake];
     input cylinder_bank [cylinder_bank];
+    input ignition_wire [ignition_wire];
 }
 
 public node add_cylinder {
@@ -67,6 +68,7 @@ public node add_cylinder {
     input piston;
     input connecting_rod;
     input rod_journal;
+    input ignition_wire;
     input this;
     alias output __out: this;
 
@@ -76,6 +78,7 @@ public node add_cylinder {
         rod_journal: rod_journal,
         exhaust_system: exhaust_system,
         intake: intake,
+        ignition_wire: ignition_wire,
         cylinder_bank: this
     )
 }
@@ -128,4 +131,32 @@ public node k_28inH2O => __engine_sim__k_28inH2O {
 public node k_carb => __engine_sim__k_carb {
     input flow [float]: 1.0;
     alias output __out [float];
+}
+
+public node _connect_wire => __engine_sim__connect_ignition_wire {
+    input wire [ignition_wire];
+    input ignition_module [ignition_module];
+    input angle [float];
+}
+
+public node connect_wire {
+    input wire;
+    input angle;
+    input this;
+    alias output __out: this;
+
+    _connect_wire(wire: wire, angle: angle, ignition_module: this)
+}
+
+private node _add_ignition_module => __engine_sim__add_ignition_module {
+    input ignition_module [ignition_module];
+    input engine [engine];
+}
+
+public node add_ignition_module {
+    input ignition_module;
+    input this;
+    alias output __out: this;
+
+    _add_ignition_module(ignition_module: ignition_module, engine: this)
 }

@@ -60,6 +60,7 @@ EngineSimApplication::EngineSimApplication() {
     m_loadSimulationCluster = nullptr;
     m_mixerCluster = nullptr;
     m_infoCluster = nullptr;
+    m_iceEngine = nullptr;
 
     m_oscillatorSampleOffset = 0;
     m_gameWindowHeight = 256;
@@ -138,6 +139,7 @@ void EngineSimApplication::initialize() {
     m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
     m_textRenderer.SetFont(m_engine.GetConsole()->GetFont());
 
+    Engine testEngine;
     Engine::Parameters engineParams;
     engineParams.Name = "Chev. 454 V8";
     engineParams.CylinderBanks = 2;
@@ -146,7 +148,7 @@ void EngineSimApplication::initialize() {
     engineParams.ExhaustSystemCount = 2;
     engineParams.IntakeCount = 1;
     engineParams.StarterTorque = units::torque(500, units::ft_lb);
-    m_iceEngine.initialize(engineParams);
+    testEngine.initialize(engineParams);
 
     Piston::Parameters pistonParams;
     pistonParams.CompressionHeight = units::distance(1.640, units::inch);
@@ -155,48 +157,48 @@ void EngineSimApplication::initialize() {
     pistonParams.Mass = units::mass(880, units::g);
 
     pistonParams.CylinderIndex = 0;
-    pistonParams.Bank = m_iceEngine.getCylinderBank(1);
-    pistonParams.Rod = m_iceEngine.getConnectingRod(0);
+    pistonParams.Bank = testEngine.getCylinderBank(1);
+    pistonParams.Rod = testEngine.getConnectingRod(0);
     pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.2);
-    m_iceEngine.getPiston(0)->initialize(pistonParams);
+    testEngine.getPiston(0)->initialize(pistonParams);
 
-    pistonParams.Bank = m_iceEngine.getCylinderBank(0);
-    pistonParams.Rod = m_iceEngine.getConnectingRod(1);
+    pistonParams.Bank = testEngine.getCylinderBank(0);
+    pistonParams.Rod = testEngine.getConnectingRod(1);
     pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
-    m_iceEngine.getPiston(1)->initialize(pistonParams);
+    testEngine.getPiston(1)->initialize(pistonParams);
 
     pistonParams.CylinderIndex = 1;
-    pistonParams.Bank = m_iceEngine.getCylinderBank(1);
-    pistonParams.Rod = m_iceEngine.getConnectingRod(2);
+    pistonParams.Bank = testEngine.getCylinderBank(1);
+    pistonParams.Rod = testEngine.getConnectingRod(2);
     pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
-    m_iceEngine.getPiston(2)->initialize(pistonParams);
+    testEngine.getPiston(2)->initialize(pistonParams);
 
-    pistonParams.Bank = m_iceEngine.getCylinderBank(0);
-    pistonParams.Rod = m_iceEngine.getConnectingRod(3);
+    pistonParams.Bank = testEngine.getCylinderBank(0);
+    pistonParams.Rod = testEngine.getConnectingRod(3);
     pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
-    m_iceEngine.getPiston(3)->initialize(pistonParams);
+    testEngine.getPiston(3)->initialize(pistonParams);
 
     pistonParams.CylinderIndex = 2;
-    pistonParams.Bank = m_iceEngine.getCylinderBank(1);
-    pistonParams.Rod = m_iceEngine.getConnectingRod(4);
+    pistonParams.Bank = testEngine.getCylinderBank(1);
+    pistonParams.Rod = testEngine.getConnectingRod(4);
     pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
-    m_iceEngine.getPiston(4)->initialize(pistonParams);
+    testEngine.getPiston(4)->initialize(pistonParams);
 
-    pistonParams.Bank = m_iceEngine.getCylinderBank(0);
-    pistonParams.Rod = m_iceEngine.getConnectingRod(5);
+    pistonParams.Bank = testEngine.getCylinderBank(0);
+    pistonParams.Rod = testEngine.getConnectingRod(5);
     pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.2);
-    m_iceEngine.getPiston(5)->initialize(pistonParams);
+    testEngine.getPiston(5)->initialize(pistonParams);
 
     pistonParams.CylinderIndex = 3;
-    pistonParams.Bank = m_iceEngine.getCylinderBank(1);
-    pistonParams.Rod = m_iceEngine.getConnectingRod(6);
+    pistonParams.Bank = testEngine.getCylinderBank(1);
+    pistonParams.Rod = testEngine.getConnectingRod(6);
     pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.1);
-    m_iceEngine.getPiston(6)->initialize(pistonParams);
+    testEngine.getPiston(6)->initialize(pistonParams);
 
-    pistonParams.Bank = m_iceEngine.getCylinderBank(0);
-    pistonParams.Rod = m_iceEngine.getConnectingRod(7);
+    pistonParams.Bank = testEngine.getCylinderBank(0);
+    pistonParams.Rod = testEngine.getConnectingRod(7);
     pistonParams.BlowbyFlowCoefficient = GasSystem::k_28inH2O(0.3);
-    m_iceEngine.getPiston(7)->initialize(pistonParams);
+    testEngine.getPiston(7)->initialize(pistonParams);
 
     CylinderBank::Parameters cbParams;
     cbParams.Bore = units::distance(4.25, units::inch);
@@ -205,11 +207,11 @@ void EngineSimApplication::initialize() {
 
     cbParams.Index = 0;
     cbParams.Angle = constants::pi / 4;
-    m_iceEngine.getCylinderBank(0)->initialize(cbParams);
+    testEngine.getCylinderBank(0)->initialize(cbParams);
 
     cbParams.Index = 1;
     cbParams.Angle = -constants::pi / 4;
-    m_iceEngine.getCylinderBank(1)->initialize(cbParams);
+    testEngine.getCylinderBank(1)->initialize(cbParams);
 
     Crankshaft::Parameters crankshaftParams;
     crankshaftParams.CrankThrow = units::distance(2.0, units::inch);
@@ -229,46 +231,46 @@ void EngineSimApplication::initialize() {
     crankshaftParams.Pos_y = 0;
     crankshaftParams.RodJournals = 4;
     crankshaftParams.TDC = constants::pi / 4 - 2 * constants::pi;
-    m_iceEngine.getCrankshaft(0)->initialize(crankshaftParams);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(0, 0);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(1, -constants::pi / 2);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(2, -3 * constants::pi / 2);
-    m_iceEngine.getCrankshaft(0)->setRodJournalAngle(3, constants::pi);
+    testEngine.getCrankshaft(0)->initialize(crankshaftParams);
+    testEngine.getCrankshaft(0)->setRodJournalAngle(0, 0);
+    testEngine.getCrankshaft(0)->setRodJournalAngle(1, -constants::pi / 2);
+    testEngine.getCrankshaft(0)->setRodJournalAngle(2, -3 * constants::pi / 2);
+    testEngine.getCrankshaft(0)->setRodJournalAngle(3, constants::pi);
 
     ConnectingRod::Parameters crParams;
     crParams.CenterOfMass = 0;
-    crParams.Crankshaft = m_iceEngine.getCrankshaft(0);
+    crParams.Crankshaft = testEngine.getCrankshaft(0);
     crParams.Journal = 0;
     crParams.Length = units::distance(6.135, units::inch);
     crParams.Mass = units::mass(785, units::g);
     crParams.MomentOfInertia = (1 / 12.0) * crParams.Mass * crParams.Length * crParams.Length;
 
-    crParams.Piston = m_iceEngine.getPiston(0);
-    m_iceEngine.getConnectingRod(0)->initialize(crParams);
+    crParams.Piston = testEngine.getPiston(0);
+    testEngine.getConnectingRod(0)->initialize(crParams);
 
-    crParams.Piston = m_iceEngine.getPiston(1);
-    m_iceEngine.getConnectingRod(1)->initialize(crParams);
+    crParams.Piston = testEngine.getPiston(1);
+    testEngine.getConnectingRod(1)->initialize(crParams);
 
     crParams.Journal = 1;
-    crParams.Piston = m_iceEngine.getPiston(2);
-    m_iceEngine.getConnectingRod(2)->initialize(crParams);
+    crParams.Piston = testEngine.getPiston(2);
+    testEngine.getConnectingRod(2)->initialize(crParams);
 
-    crParams.Piston = m_iceEngine.getPiston(3);
-    m_iceEngine.getConnectingRod(3)->initialize(crParams);
+    crParams.Piston = testEngine.getPiston(3);
+    testEngine.getConnectingRod(3)->initialize(crParams);
 
     crParams.Journal = 2;
-    crParams.Piston = m_iceEngine.getPiston(4);
-    m_iceEngine.getConnectingRod(4)->initialize(crParams);
+    crParams.Piston = testEngine.getPiston(4);
+    testEngine.getConnectingRod(4)->initialize(crParams);
 
-    crParams.Piston = m_iceEngine.getPiston(5);
-    m_iceEngine.getConnectingRod(5)->initialize(crParams);
+    crParams.Piston = testEngine.getPiston(5);
+    testEngine.getConnectingRod(5)->initialize(crParams);
 
     crParams.Journal = 3;
-    crParams.Piston = m_iceEngine.getPiston(6);
-    m_iceEngine.getConnectingRod(6)->initialize(crParams);
+    crParams.Piston = testEngine.getPiston(6);
+    testEngine.getConnectingRod(6)->initialize(crParams);
 
-    crParams.Piston = m_iceEngine.getPiston(7);
-    m_iceEngine.getConnectingRod(7)->initialize(crParams);
+    crParams.Piston = testEngine.getPiston(7);
+    testEngine.getConnectingRod(7)->initialize(crParams);
 
     // Camshaft
     Camshaft *exhaustCamLeft = new Camshaft, *exhaustCamRight = new Camshaft;
@@ -305,7 +307,7 @@ void EngineSimApplication::initialize() {
     Camshaft::Parameters camParams;
     const double lobeSeparation = 109;
     const double advance = (lobeSeparation - 106);
-    camParams.Crankshaft = m_iceEngine.getCrankshaft(0);
+    camParams.Crankshaft = testEngine.getCrankshaft(0);
     camParams.Lobes = 4;
     camParams.Advance = units::angle(advance, units::deg);
 
@@ -374,37 +376,37 @@ void EngineSimApplication::initialize() {
 
     chParams.IntakeCam = intakeCamLeft;
     chParams.ExhaustCam = exhaustCamLeft;
-    chParams.Bank = m_iceEngine.getCylinderBank(0);
+    chParams.Bank = testEngine.getCylinderBank(0);
     chParams.FlipDisplay = true;
-    m_iceEngine.getHead(0)->initialize(chParams);
+    testEngine.getHead(0)->initialize(chParams);
 
     chParams.IntakeCam = intakeCamRight;
     chParams.ExhaustCam = exhaustCamRight;
-    chParams.Bank = m_iceEngine.getCylinderBank(1);
+    chParams.Bank = testEngine.getCylinderBank(1);
     chParams.FlipDisplay = false;
-    m_iceEngine.getHead(1)->initialize(chParams);
+    testEngine.getHead(1)->initialize(chParams);
 
     Intake::Parameters inParams;
     inParams.InputFlowK = GasSystem::k_carb(950.0);
     inParams.Volume = units::volume(5000.0, units::cc);
     inParams.IdleFlowK = 0.0000015;
     inParams.IdleThrottlePlatePosition = 0.967;
-    m_iceEngine.getIntake(0)->initialize(inParams);
+    testEngine.getIntake(0)->initialize(inParams);
 
     ExhaustSystem::Parameters esParams;
     esParams.FlowK = GasSystem::k_carb(1000.0);
     esParams.Volume = units::volume(10.0, units::L);
     esParams.AudioVolume = 1.0;
-    m_iceEngine.getExhaustSystem(0)->initialize(esParams);
+    testEngine.getExhaustSystem(0)->initialize(esParams);
 
     esParams.AudioVolume = 0.1;
-    m_iceEngine.getExhaustSystem(1)->initialize(esParams);
+    testEngine.getExhaustSystem(1)->initialize(esParams);
 
-    m_iceEngine.getHead(0)->setAllExhaustSystems(m_iceEngine.getExhaustSystem(0));
-    m_iceEngine.getHead(1)->setAllExhaustSystems(m_iceEngine.getExhaustSystem(1));
+    testEngine.getHead(0)->setAllExhaustSystems(testEngine.getExhaustSystem(0));
+    testEngine.getHead(1)->setAllExhaustSystems(testEngine.getExhaustSystem(1));
 
-    m_iceEngine.getHead(0)->setAllIntakes(m_iceEngine.getIntake(0));
-    m_iceEngine.getHead(1)->setAllIntakes(m_iceEngine.getIntake(0));
+    testEngine.getHead(0)->setAllIntakes(testEngine.getIntake(0));
+    testEngine.getHead(1)->setAllIntakes(testEngine.getIntake(0));
 
     Function *timingCurve = new Function;
     timingCurve->initialize(1, units::rpm(1000));
@@ -417,20 +419,20 @@ void EngineSimApplication::initialize() {
     timingCurve->addSample(units::rpm(6000), units::angle(38, units::deg));
 
     IgnitionModule::Parameters imParams;
-    imParams.Crankshaft = m_iceEngine.getCrankshaft(0);
+    imParams.Crankshaft = testEngine.getCrankshaft(0);
     imParams.CylinderCount = 8;
     imParams.TimingCurve = timingCurve;
     imParams.RevLimit = units::rpm(7000.0);
-    m_iceEngine.getIgnitionModule()->initialize(imParams);
+    testEngine.getIgnitionModule()->initialize(imParams);
     constexpr double cycle = units::angle(2 * 360.0, units::deg);
-    m_iceEngine.getIgnitionModule()->setFiringOrder(1 - 1, (0 / 8.0) * cycle);
-    m_iceEngine.getIgnitionModule()->setFiringOrder(8 - 1, (1 / 8.0) * cycle);
-    m_iceEngine.getIgnitionModule()->setFiringOrder(4 - 1, (2 / 8.0) * cycle);
-    m_iceEngine.getIgnitionModule()->setFiringOrder(3 - 1, (3 / 8.0) * cycle);
-    m_iceEngine.getIgnitionModule()->setFiringOrder(6 - 1, (4 / 8.0) * cycle);
-    m_iceEngine.getIgnitionModule()->setFiringOrder(5 - 1, (5 / 8.0) * cycle);
-    m_iceEngine.getIgnitionModule()->setFiringOrder(7 - 1, (6 / 8.0) * cycle);
-    m_iceEngine.getIgnitionModule()->setFiringOrder(2 - 1, (7 / 8.0) * cycle);
+    testEngine.getIgnitionModule()->setFiringOrder(1 - 1, (0 / 8.0) * cycle);
+    testEngine.getIgnitionModule()->setFiringOrder(8 - 1, (1 / 8.0) * cycle);
+    testEngine.getIgnitionModule()->setFiringOrder(4 - 1, (2 / 8.0) * cycle);
+    testEngine.getIgnitionModule()->setFiringOrder(3 - 1, (3 / 8.0) * cycle);
+    testEngine.getIgnitionModule()->setFiringOrder(6 - 1, (4 / 8.0) * cycle);
+    testEngine.getIgnitionModule()->setFiringOrder(5 - 1, (5 / 8.0) * cycle);
+    testEngine.getIgnitionModule()->setFiringOrder(7 - 1, (6 / 8.0) * cycle);
+    testEngine.getIgnitionModule()->setFiringOrder(2 - 1, (7 / 8.0) * cycle);
 
     Function *turbulenceToFlameSpeedRatio = new Function;
     Function *equivalenceRatioToLaminarFlameSpeed = new Function;
@@ -476,10 +478,23 @@ void EngineSimApplication::initialize() {
     ccParams.MeanPistonSpeedToTurbulence = meanPistonSpeedToTurbulence;
 
     for (int i = 0; i < 8; ++i) {
-        ccParams.Piston = m_iceEngine.getPiston(i);
-        ccParams.Head = m_iceEngine.getHead(ccParams.Piston->getCylinderBank()->getIndex());
-        m_iceEngine.getChamber(i)->initialize(ccParams);
+        ccParams.Piston = testEngine.getPiston(i);
+        ccParams.Head = testEngine.getHead(ccParams.Piston->getCylinderBank()->getIndex());
+        testEngine.getChamber(i)->initialize(ccParams);
     }
+
+    // Scripting
+#ifdef ATG_ENGINE_PIRANHA_ENABLED
+
+    es_script::Compiler compiler;
+    compiler.initialize();
+    compiler.compile("../assets/test.mr");
+    es_script::Compiler::Output output = compiler.execute();
+    compiler.destroy();
+
+    m_iceEngine = output.engine;
+
+#endif /* PIRANHA_ENABLED */
 
     Vehicle::Parameters vehParams;
     vehParams.Mass = units::mass(1597, units::kg);
@@ -500,20 +515,20 @@ void EngineSimApplication::initialize() {
     transmission->initialize(tParams);
 
     Simulator::Parameters simulatorParams;
-    simulatorParams.Engine = &m_iceEngine;
+    simulatorParams.Engine = m_iceEngine;
     simulatorParams.SystemType = Simulator::SystemType::NsvOptimized;
     simulatorParams.Transmission = transmission;
     simulatorParams.Vehicle = vehicle;
     simulatorParams.SimulationFrequency = 11000;
     m_simulator.initialize(simulatorParams);
     m_simulator.startAudioRenderingThread();
-    createObjects(&m_iceEngine);
+    createObjects(m_iceEngine);
 
     m_uiManager.initialize(this);
 
     m_engineView = m_uiManager.getRoot()->addElement<EngineView>();
     m_rightGaugeCluster = m_uiManager.getRoot()->addElement<RightGaugeCluster>();
-    m_rightGaugeCluster->m_engine = &m_iceEngine;
+    m_rightGaugeCluster->m_engine = m_iceEngine;
     m_rightGaugeCluster->m_simulator = &m_simulator;
 
     m_oscCluster = m_uiManager.getRoot()->addElement<OscilloscopeCluster>();
@@ -529,7 +544,7 @@ void EngineSimApplication::initialize() {
     m_mixerCluster->setSimulator(&m_simulator);
 
     m_infoCluster = m_uiManager.getRoot()->addElement<InfoCluster>();
-    m_infoCluster->setEngine(&m_iceEngine);
+    m_infoCluster->setEngine(m_iceEngine);
 
     m_audioBuffer.initialize(44100, 44100);
     m_audioBuffer.m_writePointer = (int)(44100 * 0.1);
@@ -545,6 +560,8 @@ void EngineSimApplication::initialize() {
     m_audioSource->SetMode(ysAudioSource::Mode::Loop);
     m_audioSource->SetPan(0.0f);
     m_audioSource->SetVolume(1.0f);
+
+    testEngine.destroy();
 }
 
 void EngineSimApplication::process(float frame_dt) {
@@ -709,17 +726,6 @@ void EngineSimApplication::run() {
     double clutchPressure = 1.0;
     int lastMouseWheel = 0;
 
-    // Scripting
-#ifdef ATG_ENGINE_PIRANHA_ENABLED
-
-    es_script::Compiler compiler;
-    compiler.initialize();
-    compiler.compile("../assets/test.mr");
-    es_script::Compiler::Output output = compiler.execute();
-    compiler.destroy();
-
-#endif /* PIRANHA_ENABLED */
-
     while (true) {
         const float dt = m_engine.GetFrameLength();
         const bool fineControlMode = m_engine.IsKeyDown(ysKey::Code::Space);
@@ -837,7 +843,7 @@ void EngineSimApplication::run() {
 
         throttle = targetThrottle * 0.5 + 0.5 * throttle;
 
-        m_iceEngine.setThrottle(throttle);
+        m_iceEngine->setThrottle(throttle);
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_simulator.m_dyno.m_enabled = !m_simulator.m_dyno.m_enabled;
@@ -856,7 +862,7 @@ void EngineSimApplication::run() {
                 m_dynoSpeed *= (1 / (1 + dt));
             }
 
-            if ((m_dynoSpeed + units::rpm(1000)) > m_iceEngine.getRedline()) {
+            if ((m_dynoSpeed + units::rpm(1000)) > m_iceEngine->getRedline()) {
                 m_simulator.m_dyno.m_enabled = false;
                 m_dynoSpeed = units::rpm(0);
             }
@@ -1007,7 +1013,7 @@ void EngineSimApplication::createObjects(Engine *engine) {
 
         CombustionChamberObject *ccObject = new CombustionChamberObject;
         ccObject->initialize(this);
-        ccObject->m_chamber = m_iceEngine.getChamber(i);
+        ccObject->m_chamber = m_iceEngine->getChamber(i);
         m_objects.push_back(ccObject);
     }
 

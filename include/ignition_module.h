@@ -19,6 +19,7 @@ class IgnitionModule : public Part {
         struct SparkPlug {
             double Angle = 0;
             bool IgnitionEvent = false;
+            bool Enabled = false;
         };
 
     public:

@@ -1,0 +1,64 @@
+import "engine_sim.mr"
+
+units units()
+
+private node add_flow_sample {
+    input lift;
+    input flow;
+    input this;
+    alias output __out: this;
+
+    this.add_sample(lift * units.thou, k_28inH2O(flow))
+}
+
+public node chevy_bbc_peanut_port_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0, 0)
+        .add_flow_sample(50, 25)
+        .add_flow_sample(100, 75)
+        .add_flow_sample(150, 100)
+        .add_flow_sample(200, 130)
+        .add_flow_sample(250, 180)
+        .add_flow_sample(300, 190)
+        .add_flow_sample(350, 220)
+        .add_flow_sample(400, 240)
+        .add_flow_sample(450, 250)
+        .add_flow_sample(500, 260)
+        .add_flow_sample(550, 260)
+        .add_flow_sample(600, 260)
+        .add_flow_sample(650, 255)
+        .add_flow_sample(700, 250)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0, 0)
+        .add_flow_sample(50, 25)
+        .add_flow_sample(100, 50)
+        .add_flow_sample(150, 75)
+        .add_flow_sample(200, 100)
+        .add_flow_sample(250, 125)
+        .add_flow_sample(300, 160)
+        .add_flow_sample(350, 175)
+        .add_flow_sample(400, 180)
+        .add_flow_sample(450, 190)
+        .add_flow_sample(500, 200)
+        .add_flow_sample(550, 205)
+        .add_flow_sample(600, 210)
+        .add_flow_sample(650, 210)
+        .add_flow_sample(700, 210)
+
+    cylinder_head head(
+        chamber_volume: 118.0 * units.cc,
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        intake_camshaft: intake_camshaft,
+        exhaust_camshaft: exhaust_camshaft,
+        flip_display: flip_display
+    )
+}

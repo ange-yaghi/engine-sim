@@ -73,7 +73,6 @@ void Intake::process(double dt) {
     const double flowAttenuation = std::pow(std::cos(throttle * 3.14159 / 2), m_flowAttenuationGamma);
 
     GasSystem::FlowParameters flowParams;
-    flowParams.accelerationTimeConstant = 0.01;
     flowParams.crossSectionArea_0 = units::area(100, units::cm2) * flowAttenuation;
     flowParams.crossSectionArea_1 = units::area(100, units::cm2) * flowAttenuation;
     flowParams.direction_x = 0.0;

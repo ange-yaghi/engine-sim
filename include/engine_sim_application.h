@@ -96,7 +96,7 @@ class EngineSimApplication {
         dbasic::TextRenderer m_textRenderer;
 
         std::vector<SimulationObject *> m_objects;
-        Engine m_iceEngine;
+        Engine *m_iceEngine;
         Simulator m_simulator;
         double m_dynoSpeed;
         double m_torque;

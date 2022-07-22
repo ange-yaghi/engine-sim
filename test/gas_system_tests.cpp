@@ -395,7 +395,6 @@ TEST(GasSystemTests, GasVelocityReducesStaticPressure) {
     params.dt = 1 / 10000.0;
     params.system_0 = &system1;
     params.system_1 = &system2;
-    params.accelerationTimeConstant = 0.01;
 
     csv.write("time");
     csv.write("P_0");
@@ -502,7 +501,6 @@ TEST(GasSystemTests, GasVelocityProducesScavengingEffect) {
     params.dt = 1 / (16 * 4000.0);
     params.system_0 = &system1;
     params.system_1 = &system2;
-    params.accelerationTimeConstant = 0.001;
 
     csv.write("iteration");
     csv.write("time");
@@ -630,7 +628,6 @@ TEST(GasSystemTests, GasVelocityProducesRamEffect) {
 
     GasSystem::FlowParameters params;
     params.dt = 1 / (16 * 4000.0);
-    params.accelerationTimeConstant = 0.001;
     params.direction_x = 1.0;
     params.direction_y = 0.0;
 

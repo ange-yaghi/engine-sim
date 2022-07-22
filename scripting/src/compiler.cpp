@@ -60,5 +60,7 @@ es_script::Compiler::Output es_script::Compiler::execute() {
 void es_script::Compiler::destroy() {
     m_program.free();
     m_compiler->free();
+
     delete m_compiler;
+    m_compiler = nullptr;
 }

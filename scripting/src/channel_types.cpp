@@ -22,3 +22,7 @@ const piranha::ChannelType
     es_script::ObjectChannel::CylinderHeadChannel("CylinderHeadChannel");
 const piranha::ChannelType
     es_script::ObjectChannel::CamshaftChannel("CamshaftChannel");
+const piranha::ChannelType
+    es_script::ObjectChannel::IgnitionModuleChannel("IgnitionModuleChannel");
+const piranha::ChannelType
+    es_script::ObjectChannel::IgnitionWireChannel("IgnitionWireChannel");

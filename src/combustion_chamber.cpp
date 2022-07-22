@@ -208,17 +208,16 @@ void CombustionChamber::flow(double dt) {
 
     const double start_n = m_system.n();
 
-    static const double intakeToRunnerFlowRate = GasSystem::k_carb(200.0);
-    static const double runnerToExhaustFlowRate = GasSystem::k_carb(500.0);
+    static const double intakeToRunnerFlowRate = GasSystem::k_carb(100.0); // 200
+    static const double runnerToExhaustFlowRate = GasSystem::k_carb(300.0); // 500
 
     GasSystem::FlowParameters flowParams;
-    flowParams.accelerationTimeConstant = 0.001;
     flowParams.dt = dt;
 
     flowParams.k_flow = intakeToRunnerFlowRate;
     flowParams.crossSectionArea_0 = units::area(100.0, units::cm2);
     flowParams.crossSectionArea_1 =
-        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch) * 0.5;
+        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch);
     flowParams.direction_x = 1.0;
     flowParams.direction_y = 0.0;
     flowParams.system_0 = &m_head->getIntake(m_piston->getCylinderIndex())->m_system;
@@ -229,7 +228,7 @@ void CombustionChamber::flow(double dt) {
 
     flowParams.k_flow = m_intakeFlowRate;
     flowParams.crossSectionArea_0 =
-        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch) * 0.5;
+        constants::pi * units::distance(0.75, units::inch) * units::distance(0.75, units::inch);
     flowParams.crossSectionArea_1 = units::area(10.0, units::cm2);
     flowParams.direction_x = 1.0;
     flowParams.direction_y = 0.0;
@@ -264,9 +263,9 @@ void CombustionChamber::flow(double dt) {
     flowParams.system_1 = &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system;
     GasSystem::flow(flowParams);
 
-    m_intakeRunner.updateVelocity(dt, 0.25);
-    m_system.updateVelocity(dt, 0.5);
-    m_exhaustRunner.updateVelocity(dt, 0.1);
+    m_intakeRunner.updateVelocity(dt, 0.75); // 0.25
+    m_system.updateVelocity(dt, 0.75); // 0.5
+    m_exhaustRunner.updateVelocity(dt, 0.75); // 0.1
 
     if (std::abs(intakeFlow) > 1E-9 && m_lit) {
         m_lit = false;

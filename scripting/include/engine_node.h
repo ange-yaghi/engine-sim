@@ -5,6 +5,7 @@
 
 #include "crankshaft_node.h"
 #include "cylinder_bank_node.h"
+#include "ignition_module_node.h"
 #include "engine_context.h"
 
 #include "engine_sim.h"
@@ -90,6 +91,58 @@ namespace es_script {
                     &context);
                 cylinderIndex += m_cylinderBanks[i]->getCylinderCount();
             }
+
+            m_ignitionModule->generate(engine, &context);
+            
+            // TEMP
+            Function *turbulenceToFlameSpeedRatio = new Function;
+            Function *equivalenceRatioToLaminarFlameSpeed = new Function;
+
+            equivalenceRatioToLaminarFlameSpeed->initialize(12, 0.1);
+            equivalenceRatioToLaminarFlameSpeed->addSample(0.8, units::distance(22, units::cm) / units::sec);
+            equivalenceRatioToLaminarFlameSpeed->addSample(0.9, units::distance(27, units::cm) / units::sec);
+            equivalenceRatioToLaminarFlameSpeed->addSample(1.0, units::distance(32, units::cm) / units::sec);
+            equivalenceRatioToLaminarFlameSpeed->addSample(1.1, units::distance(35, units::cm) / units::sec);
+            equivalenceRatioToLaminarFlameSpeed->addSample(1.2, units::distance(33, units::cm) / units::sec);
+            equivalenceRatioToLaminarFlameSpeed->addSample(1.3, units::distance(30, units::cm) / units::sec);
+            equivalenceRatioToLaminarFlameSpeed->addSample(1.4, units::distance(25, units::cm) / units::sec);
+
+            turbulenceToFlameSpeedRatio->initialize(10, 10.0);
+            turbulenceToFlameSpeedRatio->addSample(0.0, 1.0);
+            turbulenceToFlameSpeedRatio->addSample(5.0, 1.5 * 5.0);
+            turbulenceToFlameSpeedRatio->addSample(10.0, 1.5 * 10.0);
+            turbulenceToFlameSpeedRatio->addSample(15.0, 1.5 * 15.0);
+            turbulenceToFlameSpeedRatio->addSample(20.0, 1.5 * 20.0);
+            turbulenceToFlameSpeedRatio->addSample(25.0, 1.5 * 25.0);
+            turbulenceToFlameSpeedRatio->addSample(30.0, 1.5 * 30.0);
+            turbulenceToFlameSpeedRatio->addSample(35.0, 1.5 * 35.0);
+            turbulenceToFlameSpeedRatio->addSample(40.0, 1.5 * 40.0);
+            turbulenceToFlameSpeedRatio->addSample(45.0, 1.5 * 45.0);
+
+            Fuel::Parameters fParams;
+            fParams.TurbulenceToFlameSpeedRatio = turbulenceToFlameSpeedRatio;
+            Fuel *fuel = new Fuel;
+            fuel->initialize(fParams);
+
+            Function *meanPistonSpeedToTurbulence = new Function;
+            meanPistonSpeedToTurbulence->initialize(30, 1);
+            for (int i = 0; i < 30; ++i) {
+                const double s = (double)i;
+                meanPistonSpeedToTurbulence->addSample(s, s * 0.5);
+            }
+
+            CombustionChamber::Parameters ccParams;
+            ccParams.CrankcasePressure = units::pressure(1.0, units::atm);
+            ccParams.Fuel = fuel;
+            ccParams.StartingPressure = units::pressure(1.0, units::atm);
+            ccParams.StartingTemperature = units::celcius(25.0);
+            ccParams.MeanPistonSpeedToTurbulence = meanPistonSpeedToTurbulence;
+
+            for (int i = 0; i < engine->getCylinderCount(); ++i) {
+                ccParams.Piston = engine->getPiston(i);
+                ccParams.Head = engine->getHead(ccParams.Piston->getCylinderBank()->getIndex());
+                engine->getChamber(i)->initialize(ccParams);
+            }
         }
 
         void addCrankshaft(CrankshaftNode *crankshaft) {
@@ -98,6 +151,16 @@ namespace es_script {
 
         void addCylinderBank(CylinderBankNode *bank) {
             m_cylinderBanks.push_back(bank);
+        }
+
+        int getIgnitionModuleCount() const {
+            return m_ignitionModule == nullptr
+                ? 0
+                : 1;
+        }
+
+        void addIgnitionModule(IgnitionModuleNode *ignitionModule) {
+            m_ignitionModule = ignitionModule;
         }
 
     protected:
@@ -120,6 +183,8 @@ namespace es_script {
             // Read inputs
             readAllInputs();
         }
+
+        IgnitionModuleNode *m_ignitionModule = nullptr;
 
         Engine::Parameters m_parameters;
         std::vector<CrankshaftNode *> m_crankshafts;

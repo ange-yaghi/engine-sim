@@ -7,6 +7,7 @@
 #include "piston_node.h"
 #include "connecting_rod_node.h"
 #include "cylinder_head_node.h"
+#include "ignition_wire_node.h"
 
 #include "engine_sim.h"
 
@@ -48,14 +49,20 @@ namespace es_script {
                 Piston *piston = engine->getPiston(cylinderBaseIndex + i);
                 ConnectingRod *rod = engine->getConnectingRod(cylinderBaseIndex + i);
 
+                context->setCylinderIndex(
+                    this,
+                    i,
+                    cylinderBaseIndex + i);
+
                 m_cylinders[i].piston->generate(
                     piston,
                     rod,
                     cylinderBank,
-                    cylinderBaseIndex + 1);
+                    i);
                 m_cylinders[i].rod->generate(
                     rod,
                     crankshaft,
+                    piston,
                     context->getRodJournalIndex(m_cylinders[i].rodJournal));
             }
 
@@ -80,7 +87,8 @@ namespace es_script {
             ConnectingRodNode *rod,
             RodJournalNode *rodJournal,
             IntakeNode *intake,
-            ExhaustSystemNode *exhaust)
+            ExhaustSystemNode *exhaust,
+            IgnitionWireNode *wire)
         {
             m_cylinders.push_back({
                 piston,
@@ -89,6 +97,8 @@ namespace es_script {
                 intake,
                 exhaust
             });
+
+            wire->connect(this, getCylinderCount() - 1);
         }
 
         const Cylinder &getCylinder(int i) const {

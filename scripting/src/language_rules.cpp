@@ -6,6 +6,7 @@
 #include "../include/rod_journal_node.h"
 #include "../include/camshaft_node.h"
 #include "../include/cylinder_head_node.h"
+#include "../include/ignition_module_node.h"
 
 es_script::LanguageRules::LanguageRules() {
     /* void */
@@ -51,6 +52,10 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__intake_channel", &es_script::ObjectChannel::IntakeChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__exhaust_system_channel", &es_script::ObjectChannel::ExhaustSystemChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__ignition_module_channel", &es_script::ObjectChannel::IgnitionModuleChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__ignition_wire_channel", &es_script::ObjectChannel::IgnitionWireChannel);
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -113,7 +118,11 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<AddCylinderNode>("__engine_sim__add_cylinder");
     registerBuiltinType<AddSampleNode>("__engine_sim__add_sample");
     registerBuiltinType<AddLobeNode>("__engine_sim__add_lobe");
-    registerBuiltinType<SetCylinderHead>("__engine_sim__set_cylinder_head");
+    registerBuiltinType<SetCylinderHeadNode>("__engine_sim__set_cylinder_head");
+    registerBuiltinType<ConnectIgnitionWireNode>("__engine_sim__connect_ignition_wire");
+    registerBuiltinType<AddIgnitionModuleNode>("__engine_sim__add_ignition_module");
+    registerBuiltinType<k_28inH2ONode>("__engine_sim__k_28inH2O");
+    registerBuiltinType<k_CarbNode>("__engine_sim__k_carb");
 
     // Objects
     registerBuiltinType<EngineNode>("__engine_sim__engine");
@@ -127,8 +136,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<CamshaftNode>("__engine_sim__camshaft");
     registerBuiltinType<ExhaustSystemNode>("__engine_sim__exhaust_system");
     registerBuiltinType<IntakeNode>("__engine_sim__intake");
-    registerBuiltinType<k_28inH2ONode>("__engine_sim__k_28inH2O");
-    registerBuiltinType<k_CarbNode>("__engine_sim__k_carb");
+    registerBuiltinType<IgnitionModuleNode>("__engine_sim__ignition_module");
+    registerBuiltinType<IgnitionWireNode>("__engine_sim__ignition_wire");
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<

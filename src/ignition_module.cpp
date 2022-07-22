@@ -23,6 +23,8 @@ IgnitionModule::~IgnitionModule() {
 
 void IgnitionModule::destroy() {
     delete[] m_plugs;
+
+    m_plugs = nullptr;
     m_cylinderCount = 0;
 }
 
@@ -38,6 +40,7 @@ void IgnitionModule::setFiringOrder(int cylinderIndex, double angle) {
     assert(cylinderIndex < m_cylinderCount);
 
     m_plugs[cylinderIndex].Angle = angle;
+    m_plugs[cylinderIndex].Enabled = true;
 }
 
 void IgnitionModule::reset() {
@@ -63,7 +66,7 @@ void IgnitionModule::update(double dt) {
             }
 
             if (adjustedAngle >= r0 && adjustedAngle < r1) {
-                m_plugs[i].IgnitionEvent = true;
+                m_plugs[i].IgnitionEvent = m_plugs[i].Enabled;
             }
         }
     }

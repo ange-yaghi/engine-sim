@@ -29,7 +29,6 @@ class GasSystem {
             double dt;
             double direction_x, direction_y;
             double crossSectionArea_0, crossSectionArea_1;
-            double accelerationTimeConstant;
             GasSystem *system_0, *system_1;
         };
 

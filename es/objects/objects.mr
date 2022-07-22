@@ -23,6 +23,8 @@ public node cylinder_head_channel => __engine_sim__cylinder_head_channel { /* vo
 public node camshaft_channel => __engine_sim__camshaft_channel { /* void */ }
 public node intake_channel => __engine_sim__intake_channel { /* void */ }
 public node exhaust_system_channel => __engine_sim__exhaust_system_channel { /* void */ }
+public node ignition_module_channel => __engine_sim__ignition_module_channel { /* void */ }
+public node ignition_wire_channel => __engine_sim__ignition_wire_channel { /* void */ }
 
 // Engine
 public node engine_parameter_defaults {
@@ -400,4 +402,15 @@ public node exhaust_system {
             exhaust_flow_rate: exhaust_flow_rate,
             audio_volume: audio_volume
         );
+}
+
+// Ignition Module
+public node ignition_module => __engine_sim__ignition_module {
+    input timing_curve [function];
+    input rev_limit [float]: 7000.0 * units.rpm;
+    alias output __out [ignition_module_channel];
+}
+
+public node ignition_wire => __engine_sim__ignition_wire {
+    alias output __out [ignition_wire_channel];
 }
