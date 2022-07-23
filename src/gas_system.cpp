@@ -402,7 +402,7 @@ double GasSystem::flow(const FlowParameters &params) {
 
     const double maxFlow = source->pressureEquilibriumMaxFlow(sink);
     flow = clamp(flow, 0.0, 0.9 * source->n());
-    flow = clamp(flow, 0.0, maxFlow);
+    //flow = clamp(flow, 0.0, maxFlow);
 
     const double fraction = flow / source->n();
     const double fractionVolume = fraction * source->volume();
@@ -463,8 +463,8 @@ double GasSystem::flow(const FlowParameters &params) {
         const double sinkFractionMomentum_x = sinkFractionVelocity_x * fractionMass;
         const double sinkFractionMomentum_y = sinkFractionVelocity_y * fractionMass;
 
-        //sink->m_state.momentum[0] += sinkFractionMomentum_x;
-        //sink->m_state.momentum[1] += sinkFractionMomentum_y;
+        sink->m_state.momentum[0] += sinkFractionMomentum_x;
+        sink->m_state.momentum[1] += sinkFractionMomentum_y;
     }
 
     if (sourceCrossSection != 0 && sourceMass != 0) {
@@ -476,8 +476,8 @@ double GasSystem::flow(const FlowParameters &params) {
         const double sourceFractionMomentum_x = sourceFractionVelocity_x * fractionMass;
         const double sourceFractionMomentum_y = sourceFractionVelocity_y * fractionMass;
 
-        //source->m_state.momentum[0] += sourceFractionMomentum_x;
-        //source->m_state.momentum[1] += sourceFractionMomentum_y;
+        source->m_state.momentum[0] += sourceFractionMomentum_x;
+        source->m_state.momentum[1] += sourceFractionMomentum_y;
     }
 
     if (sourceMass != 0) {

@@ -17,6 +17,7 @@ OscilloscopeCluster::OscilloscopeCluster() {
     m_cylinderPressureScope = nullptr;
     m_sparkAdvanceScope = nullptr;
     m_cylinderMoleculesScope = nullptr;
+    m_pvScope = nullptr;
 
     for (int i = 0; i < MaxLayeredScopes; ++i) {
         m_currentFocusScopes[i] = nullptr;
@@ -47,6 +48,7 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_cylinderPressureScope = addElement<Oscilloscope>(this);
     m_sparkAdvanceScope = addElement<Oscilloscope>(this);
     m_cylinderMoleculesScope = addElement<Oscilloscope>(this);
+    m_pvScope = addElement<Oscilloscope>(this);
 
     // Torque
     m_torqueScope->setBufferSize(100);
@@ -147,6 +149,16 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_cylinderPressureScope->m_drawReverse = false;
     m_cylinderPressureScope->i_color = m_app->getOrange();
 
+    // Pressure volume scope
+    m_pvScope->setBufferSize(1024);
+    m_pvScope->m_xMin = 0.0f;
+    m_pvScope->m_xMax = units::volume(1.5, units::L);
+    m_pvScope->m_yMin = -(float)std::sqrt(units::pressure(50, units::psi));
+    m_pvScope->m_yMax = (float)std::sqrt(units::pressure(1000, units::psi));
+    m_pvScope->m_lineWidth = 2.0f;
+    m_pvScope->m_drawReverse = true;
+    m_pvScope->i_color = m_app->getOrange();
+
     // Spark advance scope
     m_sparkAdvanceScope->setBufferSize(1024);
     m_sparkAdvanceScope->m_xMin = 0.0f;
@@ -187,6 +199,10 @@ void OscilloscopeCluster::signal(UiElement *element, Event event) {
             m_currentFocusScopes[0] = m_intakeValveLiftScope;
             m_currentFocusScopes[1] = m_exhaustValveLiftScope;
             m_currentFocusScopes[2] = nullptr;
+        }
+        else if (element == m_pvScope) {
+            m_currentFocusScopes[0] = m_pvScope;
+            m_currentFocusScopes[1] = nullptr;
         }
         else if (
             element == m_intakeFlowScope
@@ -257,7 +273,8 @@ void OscilloscopeCluster::render() {
     renderScope(m_audioWaveformScope, audioWaveformBounds, "Waveform");
 
     const Bounds &cylinderPressureBounds = grid.get(m_bounds, 1, 3);
-    renderScope(m_cylinderPressureScope, cylinderPressureBounds, "Cylinder Pressure");
+    //renderScope(m_cylinderPressureScope, cylinderPressureBounds, "Cylinder Pressure");
+    renderScope(m_pvScope, cylinderPressureBounds, "pressure-volume");
 
     const Bounds &totalExhaustPressureBounds = grid.get(m_bounds, 1, 2);
     renderScope(m_totalExhaustFlowScope, totalExhaustPressureBounds, "Total Exhaust Flow");

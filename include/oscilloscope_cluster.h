@@ -32,6 +32,7 @@ class OscilloscopeCluster : public UiElement {
         Oscilloscope *getCylinderPressureScope() const { return m_cylinderPressureScope; }
         Oscilloscope *getSparkAdvanceScope() const { return m_sparkAdvanceScope; }
         Oscilloscope *getCylinderMoleculesScope() const { return m_cylinderMoleculesScope; }
+        Oscilloscope *getPvScope() const { return m_pvScope; }
 
     protected:
         void renderScope(
@@ -52,6 +53,7 @@ class OscilloscopeCluster : public UiElement {
             *m_intakeFlowScope,
             *m_cylinderMoleculesScope,
             *m_sparkAdvanceScope,
+            *m_pvScope,
             *m_currentFocusScopes[MaxLayeredScopes];
         float m_updatePeriod;
         float m_updateTimer;

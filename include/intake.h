@@ -11,6 +11,9 @@ class Intake : public Part {
             // Plenum volume
             double Volume;
 
+            // Plenum dimensions
+            double CrossSectionArea;
+
             // Input flow constant
             double InputFlowK;
 
@@ -24,7 +27,10 @@ class Intake : public Part {
             double IdleThrottlePlatePosition = 0.975;
 
             // Gamma value to skew throttle positions
-            double FlowAttenuationGamma = 2.0;
+            double ThrottleGamma = 2.0;
+
+            // Runner volume
+            double RunnerVolume = units::volume(300, units::cc);
         };
 
     public:
@@ -46,11 +52,13 @@ class Intake : public Part {
         double m_totalFuelInjected;
 
     protected:
+        double m_crossSectionArea;
         double m_inputFlowK;
         double m_idleFlowK;
         double m_molecularAfr;
         double m_idleThrottlePlatePosition;
-        double m_flowAttenuationGamma;
+        double m_throttleGamma;
+        double m_runnerVolume;
 
         GasSystem m_atmosphere;
 };

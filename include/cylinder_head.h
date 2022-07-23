@@ -20,6 +20,15 @@ class CylinderHead : public Part {
             Function *IntakePortFlow;
 
             double CombustionChamberVolume;
+
+            double IntakeRunnerVolume;
+            double IntakeRunnerCrossSectionArea;
+            double IntakeRunnerVelocityDecay;
+
+            double ExhaustRunnerVolume;
+            double ExhaustRunnerCrossSectionArea;
+            double ExhaustRunnerVelocityDecay;
+
             bool FlipDisplay = false;
         };
 
@@ -60,6 +69,14 @@ class CylinderHead : public Part {
 
         Function *m_exhaustPortFlow;
         Function *m_intakePortFlow;
+
+        double m_intakeRunnerVolume;
+        double m_intakeRunnerCrossSectionArea;
+        double m_intakeRunnerVelocityDecay;
+
+        double m_exhaustRunnerVolume;
+        double m_exhaustRunnerCrossSectionArea;
+        double m_exhaustRunnerVelocityDecay;
 
         double m_combustionChamberVolume;
         bool m_flipDisplay;

@@ -96,10 +96,10 @@ double CombustionChamber::getVolume() const {
     const double s =
         m_piston->relativeX() * bank->getDx()
         + m_piston->relativeY() * bank->getDy();
-    const double displacement =
+    const double sweep =
         area * (bank->getDeckHeight() - s - m_piston->getCompressionHeight());
 
-    return displacement + combustionPortVolume;
+    return sweep + combustionPortVolume - m_piston->getDisplacement();
 }
 
 double CombustionChamber::pistonSpeed() const {
@@ -204,15 +204,14 @@ void CombustionChamber::flow(double dt) {
         m_peakTemperature = m_system.temperature();
     }
 
-    const double dT = units::celcius(40.0) - m_system.temperature();
-    //m_system.changeEnergy(dT * 100 * dt);
+    m_system.changeEnergy((units::celcius(90.0) - m_system.temperature()) * 50 * dt);
 
     m_system.flow(m_piston->getBlowbyK(), dt, m_crankcasePressure, units::celcius(25.0));
 
     const double start_n = m_system.n();
 
-    static const double intakeToRunnerFlowRate = GasSystem::k_carb(100.0); // 200
-    static const double runnerToExhaustFlowRate = GasSystem::k_carb(300.0); // 500
+    static const double intakeToRunnerFlowRate = GasSystem::k_carb(200.0); // 200
+    static const double runnerToExhaustFlowRate = GasSystem::k_carb(500.0); // 500
 
     GasSystem::FlowParameters flowParams;
     flowParams.dt = dt;
@@ -263,12 +262,13 @@ void CombustionChamber::flow(double dt) {
     flowParams.direction_x = 1.0;
     flowParams.direction_y = 0.0;
     flowParams.system_0 = &m_exhaustRunner;
-    flowParams.system_1 = &m_head->getExhaustSystem(m_piston->getCylinderIndex())->m_system;
+    flowParams.system_1 =
+        m_head->getExhaustSystem(m_piston->getCylinderIndex())->getSystem();
     GasSystem::flow(flowParams);
 
-    m_intakeRunner.updateVelocity(dt, 0.75); // 0.25
-    m_system.updateVelocity(dt, 0.75); // 0.5
-    m_exhaustRunner.updateVelocity(dt, 0.75); // 0.1
+    m_intakeRunner.updateVelocity(dt, 0.25); // 0.25
+    m_system.updateVelocity(dt, 0.5); // 0.5
+    m_exhaustRunner.updateVelocity(dt, 0.1); // 0.1
 
     if (std::abs(intakeFlow) > 1E-9 && m_lit) {
         m_lit = false;

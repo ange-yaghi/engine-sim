@@ -29,11 +29,12 @@ namespace es_script {
     protected:
         virtual void registerInputs() {
             addInput("plenum_volume", &m_parameters.Volume);
+            addInput("plenum_cross_section_area", &m_parameters.CrossSectionArea);
             addInput("intake_flow_rate", &m_parameters.InputFlowK);
             addInput("idle_flow_rate", &m_parameters.IdleFlowK);
             addInput("molecular_afr", &m_parameters.MolecularAfr);
             addInput("idle_throttle_plate_position", &m_parameters.IdleThrottlePlatePosition);
-            addInput("flow_attenuation_gamma", &m_parameters.FlowAttenuationGamma);
+            addInput("throttle_gamma", &m_parameters.ThrottleGamma);
 
             ObjectReferenceNode<IntakeNode>::registerInputs();
         }
