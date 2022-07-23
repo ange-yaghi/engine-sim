@@ -136,6 +136,8 @@ if (PIRANHA_ENABLED)
         scripting/include/engine_context.h
         scripting/include/engine_node.h
         scripting/include/engine_sim.h
+        scripting/include/exhaust_system_node.h
+        scripting/include/intake_node.h
         scripting/include/function_node.h
         scripting/include/language_rules.h
         scripting/include/node.h

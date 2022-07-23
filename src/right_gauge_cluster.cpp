@@ -240,10 +240,10 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
 
     const double rpm = std::fmax(m_engine->getRpm(), 0.0);
     const double theoreticalAirPerRevolution =
-        (ambientPressure * m_engine->getDisplacement())
+        0.5 * (ambientPressure * m_engine->getDisplacement())
         / (constants::R * ambientTemperature);
-    const double theoreticalAirPerSecond = 0.5 * theoreticalAirPerRevolution * rpm / 60.0;
-    const double actualAirPerSecond = std::fmax(m_engine->getIntakeFlowRate(), 0.0);
+    const double theoreticalAirPerSecond = theoreticalAirPerRevolution * rpm / 60.0;
+    const double actualAirPerSecond = m_engine->getIntakeFlowRate();
     const double volumetricEfficiency = (std::abs(theoreticalAirPerSecond) < 1E-3)
         ? 0.0
         : (actualAirPerSecond / theoreticalAirPerSecond);

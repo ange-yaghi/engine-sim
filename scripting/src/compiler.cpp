@@ -29,10 +29,13 @@ void es_script::Compiler::initialize() {
     m_rules.initialize();
 }
 
-void es_script::Compiler::compile(const piranha::IrPath &path) {
+bool es_script::Compiler::compile(const piranha::IrPath &path) {
+    bool successful = false;
+
+    std::ofstream file("error_log.log", std::ios::out);
     piranha::IrCompilationUnit *unit = m_compiler->compile(path);
     if (unit == nullptr) {
-        // Todo: Could not find file
+        file << "Can't find file: " << path.toString() << "\n";
     }
     else {
         const piranha::ErrorList *errors = m_compiler->getErrorList();
@@ -40,11 +43,19 @@ void es_script::Compiler::compile(const piranha::IrPath &path) {
             unit->build(&m_program);
 
             m_program.initialize();
+
+            successful = true;
         }
         else {
-            // Todo: Compilation errors
+            for (int i = 0; i < errors->getErrorCount(); ++i) {
+                printError(errors->getCompilationError(i), file);
+            }
         }
     }
+
+    file.close();
+
+    return successful;
 }
 
 es_script::Compiler::Output es_script::Compiler::execute() {
@@ -63,4 +74,36 @@ void es_script::Compiler::destroy() {
 
     delete m_compiler;
     m_compiler = nullptr;
+}
+
+void es_script::Compiler::printError(
+    const piranha::CompilationError *err,
+    std::ofstream &file) const
+{
+    const piranha::ErrorCode_struct &errorCode = err->getErrorCode();
+    file << err->getCompilationUnit()->getPath().getStem()
+        << "(" << err->getErrorLocation()->lineStart << "): error "
+        << errorCode.stage << errorCode.code << ": " << errorCode.info << std::endl;
+
+    piranha::IrContextTree *context = err->getInstantiation();
+    while (context != nullptr) {
+        piranha::IrNode *instance = context->getContext();
+        if (instance != nullptr) {
+            const std::string instanceName = instance->getName();
+            const std::string definitionName = (instance->getDefinition() != nullptr)
+                ? instance->getDefinition()->getName()
+                : "<Type Error>";
+            const std::string formattedName = (instanceName.empty())
+                ? "<unnamed> " + definitionName
+                : instanceName + " " + definitionName;
+
+            file
+                << "       While instantiating: "
+                << instance->getParentUnit()->getPath().getStem()
+                << "(" << instance->getSummaryToken()->lineStart << "): "
+                << formattedName << std::endl;
+        }
+
+        context = context->getParent();
+    }
 }

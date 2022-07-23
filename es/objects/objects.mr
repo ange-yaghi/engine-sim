@@ -263,19 +263,20 @@ public node cylinder_friction_parameters {
 }
 
 // Cylinder Head
-public node cylinder_head_parameter_defaults {
-    output intake_port_flow: function();
-    output exhaust_port_flow: function();
-    output chamber_volume: 0.0;
-    output flip_display: false;
-}
-
 public node cylinder_head_parameters {
-    input copy: cylinder_head_parameter_defaults();
-    input intake_port_flow: copy.intake_port_flow;
-    input exhaust_port_flow: copy.exhaust_port_flow;
-    input chamber_volume: copy.chamber_volume;
-    input flip_display: copy.flip_display;
+    input intake_port_flow: function();
+    input exhaust_port_flow: function();
+    input chamber_volume: 0.0;
+
+    input intake_runner_volume: 300.0 * units.cc;
+    input intake_runner_cross_section_area: 10 * units.cm2;
+    input intake_runner_velocity_decay: 0.5;
+
+    input exhaust_runner_volume: 300.0 * units.cc;
+    input exhaust_runner_cross_section_area: 10 * units.cm2;
+    input exhaust_runner_velocity_decay: 0.5; 
+
+    input flip_display: false;
 }
 
 private node _cylinder_head => __engine_sim__cylinder_head {
@@ -284,23 +285,48 @@ private node _cylinder_head => __engine_sim__cylinder_head {
     input intake_camshaft [camshaft];
     input exhaust_camshaft [camshaft];
     input chamber_volume [float];
+    input intake_runner_volume [float];
+    input intake_runner_cross_section_area [float];
+    input intake_runner_velocity_decay [float];
+    input exhaust_runner_volume [float];
+    input exhaust_runner_cross_section_area [float];
+    input exhaust_runner_velocity_decay [float]; 
     input flip_display [bool];
     alias output __out [cylinder_head_channel];
 }
 
 public node cylinder_head {
     input parameters: cylinder_head_parameters();
+
     input intake_camshaft;
     input exhaust_camshaft;
+
     input intake_port_flow: parameters.intake_port_flow;
     input exhaust_port_flow: parameters.exhaust_port_flow;
+
     input chamber_volume: parameters.chamber_volume;
+
+    input intake_runner_volume: parameters.intake_runner_volume;
+    input intake_runner_cross_section_area: parameters.intake_runner_cross_section_area;
+    input intake_runner_velocity_decay: parameters.intake_runner_velocity_decay;
+
+    input exhaust_runner_volume: parameters.exhaust_runner_volume;
+    input exhaust_runner_cross_section_area: parameters.exhaust_runner_cross_section_area;
+    input exhaust_runner_velocity_decay: parameters.exhaust_runner_velocity_decay;  
+
     input flip_display: parameters.flip_display;
+
     alias output __out [_cylinder_head]:
         _cylinder_head(
             intake_port_flow: intake_port_flow,
             exhaust_port_flow: exhaust_port_flow,
             chamber_volume: chamber_volume,
+            intake_runner_volume: intake_runner_volume,
+            intake_runner_cross_section_area: intake_runner_cross_section_area,
+            intake_runner_velocity_decay: intake_runner_velocity_decay,
+            exhaust_runner_volume: exhaust_runner_volume,
+            exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+            exhaust_runner_velocity_decay: exhaust_runner_velocity_decay,
             flip_display: flip_display,
             intake_camshaft: intake_camshaft,
             exhaust_camshaft: exhaust_camshaft
@@ -339,54 +365,69 @@ public node camshaft {
 }
 
 // Intake
-public node intake_parameter_defaults {
-    output plenum_volume: 0.0;
-    output intake_flow_rate: 0.0;
-    output idle_flow_rate: 0.0;
-    output molecular_afr: (25.0 / 2.0);
-    output idle_throttle_plate_position: 0.975;
-    output flow_attenuation_gamma: 2.0;
+public node intake_parameters {
+    input plenum_volume: 2.0 * units.L;
+    input plenum_cross_section_area: 100.0 * units.cm2;
+    input intake_flow_rate: 0.0;
+    input idle_flow_rate: 0.0;
+    input molecular_afr: (25.0 / 2.0);
+    input idle_throttle_plate_position: 0.975;
+    input throttle_gamma: 2.0;
+    input runner_volume: 300.0 * units.cc;
 }
 
 private node _intake => __engine_sim__intake {
     input plenum_volume [float];
+    input plenum_cross_section_area [float];
     input intake_flow_rate [float];
     input idle_flow_rate [float];
     input molecular_afr [float];
     input idle_throttle_plate_position [float];
-    input flow_attenuation_gamma [float];
+    input throttle_gamma [float];
+    input runner_volume [float];
     alias output __out [intake_channel];
 }
 
 public node intake {
-    input parameters: intake_parameter_defaults();
+    input parameters: intake_parameters();
     input plenum_volume: parameters.plenum_volume;
+    input plenum_cross_section_area: parameters.plenum_cross_section_area;
     input intake_flow_rate: parameters.intake_flow_rate;
     input idle_flow_rate: parameters.idle_flow_rate;
     input molecular_afr: parameters.molecular_afr;
     input idle_throttle_plate_position: parameters.idle_throttle_plate_position;
-    input flow_attenuation_gamma: parameters.flow_attenuation_gamma;
+    input throttle_gamma: parameters.throttle_gamma;
+    input runner_volume: parameters.runner_volume;
     alias output __out [_intake]:
         _intake(
             plenum_volume: plenum_volume,
+            plenum_cross_section_area: plenum_cross_section_area,
             intake_flow_rate: intake_flow_rate,
             idle_flow_rate: idle_flow_rate,
             molecular_afr: molecular_afr,
             idle_throttle_plate_position: idle_throttle_plate_position,
-            flow_attenuation_gamma: flow_attenuation_gamma
+            throttle_gamma: throttle_gamma,
+            runner_volume: runner_volume
         );
 }
 
 // Exhaust System
 public node exhaust_system_parameters {
     input volume: 0.0;
+    input collector_cross_section_area: 0.0;
+    input outlet_flow_rate: 0.0;
+    input primary_tube_length: 0.0;
+    input primary_flow_rate: 0.0;
     input exhaust_flow_rate: 0.0;
     input audio_volume: 0.0;
 }
 
 private node _exhaust_system => __engine_sim__exhaust_system {
     input volume [float];
-    input exhaust_flow_rate [float];
+    input collector_cross_section_area [float];
+    input outlet_flow_rate [float];
+    input primary_tube_length [float];
+    input primary_flow_rate [float];
     input audio_volume [float];
     alias output __out [exhaust_system_channel];
 }
@@ -394,12 +435,18 @@ private node _exhaust_system => __engine_sim__exhaust_system {
 public node exhaust_system {
     input parameters: exhaust_system_parameters();
     input volume: parameters.volume;
-    input exhaust_flow_rate: parameters.exhaust_flow_rate;
+    input collector_cross_section_area: parameters.collector_cross_section_area;
+    input outlet_flow_rate: parameters.outlet_flow_rate;   
+    input primary_tube_length: parameters.primary_tube_length;
+    input primary_flow_rate: parameters.primary_flow_rate;
     input audio_volume: parameters.audio_volume;
     alias output __out [_exhaust_system]:
         _exhaust_system(
             volume: volume,
-            exhaust_flow_rate: exhaust_flow_rate,
+            collector_cross_section_area: collector_cross_section_area,
+            outlet_flow_rate: outlet_flow_rate,
+            primary_tube_length: primary_tube_length,
+            primary_flow_rate: primary_flow_rate,
             audio_volume: audio_volume
         );
 }

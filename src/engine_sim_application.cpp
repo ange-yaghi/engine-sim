@@ -394,7 +394,7 @@ void EngineSimApplication::initialize() {
     testEngine.getIntake(0)->initialize(inParams);
 
     ExhaustSystem::Parameters esParams;
-    esParams.FlowK = GasSystem::k_carb(1000.0);
+    esParams.OutletFlowRate = GasSystem::k_carb(1000.0);
     esParams.Volume = units::volume(10.0, units::L);
     esParams.AudioVolume = 1.0;
     testEngine.getExhaustSystem(0)->initialize(esParams);
@@ -488,11 +488,16 @@ void EngineSimApplication::initialize() {
 
     es_script::Compiler compiler;
     compiler.initialize();
-    compiler.compile("../assets/test.mr");
-    es_script::Compiler::Output output = compiler.execute();
-    compiler.destroy();
+    const bool compiled = compiler.compile("../assets/test.mr");
+    if (compiled) {
+        const es_script::Compiler::Output output = compiler.execute();
+        m_iceEngine = output.engine;
+    }
+    else {
+        m_iceEngine = nullptr;
+    }
 
-    m_iceEngine = output.engine;
+    compiler.destroy();
 
 #endif /* PIRANHA_ENABLED */
 
@@ -620,6 +625,9 @@ void EngineSimApplication::process(float frame_dt) {
                 m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
                 m_simulator.getEngine()->getChamber(0)->getCylinderHead()->intakeValveLift(
                     m_simulator.getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
+            m_oscCluster->getPvScope()->addDataPoint(
+                m_simulator.getEngine()->getChamber(0)->getVolume(),
+                std::sqrt(m_simulator.getEngine()->getChamber(0)->m_system.pressure()));
         }
     }
 
@@ -687,13 +695,6 @@ void EngineSimApplication::process(float frame_dt) {
         m_audioBuffer.offsetDelta(m_audioSource->GetCurrentPosition(), m_audioBuffer.m_writePointer) / (44100 * 0.1));
     m_performanceCluster->addInputBufferUsageSample(
         (double)m_simulator.getSynthesizerInputLatency() / m_simulator.getSynthesizerInputLatencyTarget());
-
-    //m_infoCluster->setLogMessage(
-    //    std::to_string(m_simulator.getSynthesizer()->m_audioBuffer.size()));
-    //m_infoCluster->setLogMessage(
-    //    std::to_string(maxWrite));
-    //m_infoCluster->setLogMessage(
-    //    std::to_string(m_simulator.getSynthesizer()->m_inputChannels[0].Data.size()));
 }
 
 void EngineSimApplication::render() {

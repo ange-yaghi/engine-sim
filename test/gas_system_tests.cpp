@@ -197,6 +197,57 @@ TEST(GasSystemTests, PowerStrokeTest) {
     }
 }
 
+TEST(GasSystemTests, IntakeStrokeTest) {
+    atg_csv::CsvData csv;
+    csv.initialize();
+    csv.m_columns = 3;
+
+    GasSystem system1, system2;
+    system1.initialize(
+        units::pressure(1.0, units::atm),
+        units::volume(1000.0, units::m3),
+        units::celcius(25.0)
+    );
+    system2.initialize(
+        units::pressure(1.0, units::atm),
+        units::volume(1.0, units::m3),
+        units::celcius(25.0)
+    );
+
+    csv.write("t");
+    csv.write("n");
+    csv.write("theoretical");
+
+    constexpr double dV = units::volume(4.0, units::m3);
+    constexpr double dt = 0.01;
+    system2.changeVolume(dV * dt * 100);
+    for (int i = 0; i < 100; ++i) {
+        GasSystem::FlowParameters flowParams;
+        flowParams.crossSectionArea_0 = 1.0;
+        flowParams.crossSectionArea_1 = 1.0;
+        flowParams.direction_x = 1.0;
+        flowParams.direction_y = 0.0;
+        flowParams.dt = dt;
+        flowParams.k_flow = GasSystem::k_carb(100000.0);
+        flowParams.system_0 = &system1;
+        flowParams.system_1 = &system2;
+
+        GasSystem::flow(flowParams);
+        //system2.changeVolume(dV * dt);
+        //system2.changeTemperature(units::celcius(25.0) - system2.temperature());
+
+        csv.write(std::to_string(i * dt).c_str());
+        csv.write(std::to_string(system2.n()).c_str());
+        csv.write(std::to_string(
+            units::pressure(1.0, units::atm) * system2.volume()
+            / (constants::R * units::celcius(25.0))).c_str());
+    }
+
+    csv.m_rows = 100 + 1;
+    csv.writeCsv("intake_stroke.csv");
+    csv.destroy();
+}
+
 TEST(GasSystemTests, FlowLimit) {
     GasSystem system1;
     system1.initialize(

@@ -39,12 +39,14 @@ piston_parameters piston_params(
     wrist_pin_position: 0.0,
     displacement: 0.0
 )
+
 connecting_rod_parameters cr_params(
     mass: 785.0 * units.g,
     moment_of_inertia: 0.0015884918028487504,
     center_of_mass: 0.0,
     length: 6.135 * units.inch
 )
+
 cylinder_bank_parameters bank_params(
     bore: 4.25 * units.inch,
     deck_height: 9.8 * units.inch

@@ -28,7 +28,10 @@ namespace es_script {
     protected:
         virtual void registerInputs() {
             addInput("volume", &m_parameters.Volume);
-            addInput("exhaust_flow_rate", &m_parameters.FlowK);
+            addInput("collector_cross_section_area", &m_parameters.CollectorCrossSectionArea);
+            addInput("outlet_flow_rate", &m_parameters.OutletFlowRate);
+            addInput("primary_tube_length", &m_parameters.PrimaryTubeLength);
+            addInput("primary_flow_rate", &m_parameters.PrimaryFlowRate);
             addInput("audio_volume", &m_parameters.AudioVolume);
 
             ObjectReferenceNode<ExhaustSystemNode>::registerInputs();

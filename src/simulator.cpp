@@ -188,7 +188,7 @@ void Simulator::initialize(const Parameters &params) {
 double Simulator::getAverageOutputSignal() const {
     double sum = 0.0;
     for (int i = 0; i < m_engine->getExhaustSystemCount(); ++i) {
-        sum += m_engine->getExhaustSystem(i)->m_system.pressure();
+        sum += m_engine->getExhaustSystem(i)->getSystem()->pressure();
     }
 
     return sum / m_engine->getExhaustSystemCount();
@@ -264,20 +264,10 @@ void Simulator::startFrame(double dt) {
     }
     else if (m_synthesizer.getLatency() > targetLatency) {
         --i_steps;
-        //i_steps -= (m_synthesizer.getLatency() - targetLatency) * m_simulationFrequency;
         if (i_steps < 0) {
             i_steps = 0;
         }
     }
-    //const int maxSteps = std::max(4000 - (int)m_synthesizer.m_inputChannels[0].Data.size(), 0);
-    //i_steps = std::min(maxSteps, i_steps);
-
-    //if (m_synthesizer.m_audioBufferWriteOffset > 10000) {
-    //    --i_steps;
-    //}
-    //else {
-    //    ++i_steps;
-    //}
 
     if (i_steps > 0) {
         for (int i = 0; i < m_engine->getIntakeCount(); ++i) {
@@ -361,9 +351,6 @@ bool Simulator::simulateStep() {
     im->resetIgnitionEvents();
 
     writeToSynthesizer();
-    if (m_currentIteration % 8 == 0 && m_currentIteration > 0) {
-        //m_synthesizer.endInputBlock();
-    }
 
     ++m_currentIteration;
 
@@ -441,12 +428,11 @@ void Simulator::writeToSynthesizer() {
 
     for (int i = 0; i < exhaustSystemCount; ++i) {
         ExhaustSystem *exhaustSystem = m_engine->getExhaustSystem(i);
-        //m_exhaustFlowStagingBuffer[i] += 1000000 * exhaustSystem->m_system.n();
         m_exhaustFlowStagingBuffer[i] +=
             attenuation_3 * 100 * (
-                1.0 * (exhaustSystem->m_system.pressure() - units::pressure(1.0, units::atm))
-                + 0.5 * exhaustSystem->m_system.dynamicPressure(1.0, 0.0)
-                + 0.5 * exhaustSystem->m_system.dynamicPressure(-1.0, 0.0));
+                1.0 * (exhaustSystem->getSystem()->pressure() - units::pressure(1.0, units::atm))
+                + 0.1 * exhaustSystem->getSystem()->dynamicPressure(1.0, 0.0)
+                + 0.1 * exhaustSystem->getSystem()->dynamicPressure(-1.0, 0.0));
     }
 
     const double timestep = getTimestep();
@@ -456,19 +442,15 @@ void Simulator::writeToSynthesizer() {
         CylinderBank *bank = piston->getCylinderBank();
         CylinderHead *head = m_engine->getHead(bank->getIndex());
 
-        //const double exhaustFlow = std::max(m_engine->getChamber(i)->getLastTimestepExhaustFlow(), 0.0);
         const double exhaustFlow =
             attenuation_3 * 1600 * (
                 1.0 * (m_engine->getChamber(i)->m_exhaustRunner.pressure() - units::pressure(1.0, units::atm))
-                + 0.5 * m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(1.0, 0.0)
-                + 0.5 * m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(-1.0, 0.0));
+                + 0.1 * m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(1.0, 0.0)
+                + 0.1 * m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(-1.0, 0.0));
 
         ExhaustSystem *exhaustSystem = head->getExhaustSystem(piston->getCylinderIndex());
-        m_exhaustFlowStagingBuffer[exhaustSystem->m_index] +=
-            exhaustSystem->m_audioVolume * exhaustFlow / cylinderCount;
-
-        //m_exhaustFlowStagingBuffer[exhaustSystem->m_index] +=
-        //    attenuation * 50000 * exhaustFlow / timestep;
+        m_exhaustFlowStagingBuffer[exhaustSystem->getIndex()] +=
+            exhaustSystem->getAudioVolume() * exhaustFlow / cylinderCount;
     }
 
     m_synthesizer.writeInput(m_exhaustFlowStagingBuffer);

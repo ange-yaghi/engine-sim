@@ -329,10 +329,6 @@ void GasSystem::updateVelocity(double dt, double beta) {
     m_state.E_k -= 0.5 * m * (v1_y * v1_y - v0_y * v0_y);
 
     if (m_state.E_k < 0) m_state.E_k = 0;
-
-    if (std::isnan(m_state.momentum[0]) || std::isnan(m_state.E_k)) {
-        int a = 0;
-    }
 }
 
 void GasSystem::dissipateVelocity(double dt, double timeConstant) {
@@ -394,19 +390,6 @@ double GasSystem::flow(const FlowParameters &params) {
         direction = -1.0;
     }
 
-    /*
-    if (std::isnan(sink->m_state.momentum[0])
-        || std::isnan(source->m_state.momentum[0])
-        || std::isnan(source->m_state.E_k)
-        || std::isnan(sink->m_state.E_k)
-        || source->m_state.momentum[0] > 100000
-        || sink->m_state.momentum[0] > 100000
-        || source->pressure() > 10000000
-        || sink->pressure() > 10000000)
-    {
-        int a = 0;
-    }*/
-
     double flow = params.dt * flowRate(
         params.k_flow,
         sourcePressure,
@@ -417,13 +400,9 @@ double GasSystem::flow(const FlowParameters &params) {
         source->m_chokedFlowLimit,
         source->m_chokedFlowFactorCached);
 
-    //const double maxFlow = source->pressureEquilibriumMaxFlow(sink);
+    const double maxFlow = source->pressureEquilibriumMaxFlow(sink);
     flow = clamp(flow, 0.0, 0.9 * source->n());
-
-    /*
-    if (std::isnan(flow)) {
-        int a = 0;
-    }*/
+    //flow = clamp(flow, 0.0, maxFlow);
 
     const double fraction = flow / source->n();
     const double fractionVolume = fraction * source->volume();
@@ -501,18 +480,7 @@ double GasSystem::flow(const FlowParameters &params) {
         source->m_state.momentum[1] += sourceFractionMomentum_y;
     }
 
-    // Change in momentum due to pressure differential
-    //const double pressureDifferential = (sourcePressure - sinkPressure);
-
-    //const double SA = std::fmin(sourceCrossSection, sinkCrossSection); //units::area(6.0, units::cm2);
-
     if (sourceMass != 0) {
-        //source->m_state.momentum[0] += dx * pressureDifferential * SA * params.dt;
-        //source->m_state.momentum[1] += dy * pressureDifferential * SA * params.dt;
-
-        //sink->m_state.momentum[0] += dx * pressureDifferential * SA * params.dt;
-        //sink->m_state.momentum[1] += dy * pressureDifferential * SA * params.dt;
-
         // Energy conservation
         const double sourceVelocity0_x = sourceInitialMomentum_x * invSourceMass;
         const double sourceVelocity0_y = sourceInitialMomentum_y * invSourceMass;
@@ -527,11 +495,6 @@ double GasSystem::flow(const FlowParameters &params) {
         source->m_state.E_k -=
             0.5 * sourceMass
             * (sourceVelocity1_y * sourceVelocity1_y - sourceVelocity0_y * sourceVelocity0_y);
-
-        /*
-        if (sink->m_state.E_k < 0 || source->m_state.E_k < 0) {
-            int a = 0;
-        }*/
     }
 
     if (sinkMass > 0) {
@@ -548,11 +511,6 @@ double GasSystem::flow(const FlowParameters &params) {
         sink->m_state.E_k -=
             0.5 * sinkMass
             * (sinkVelocity1_y * sinkVelocity1_y - sinkVelocity0_y * sinkVelocity0_y);
-
-        /*
-        if (sink->m_state.E_k < 0 || source->m_state.E_k < 0) {
-            int a = 0;
-        }*/
     }
 
     if (sink->m_state.E_k < 0) {
@@ -562,31 +520,6 @@ double GasSystem::flow(const FlowParameters &params) {
     if (source->m_state.E_k < 0) {
         source->m_state.E_k = 0;
     }
-
-    /*
-    if (std::isnan(sink->m_state.momentum[0])
-        || std::isnan(source->m_state.momentum[0])
-        || std::isnan(source->m_state.E_k)
-        || std::isnan(sink->m_state.E_k)
-        || source->m_state.momentum[0] > 100000
-        || sink->m_state.momentum[0] > 100000
-        || source->pressure() > 10000000
-        || sink->pressure() > 10000000)
-    {
-        int a = 0;
-    }
-
-    if (sink->pressure() > 1000000) {
-        int a = 0;
-    }
-
-    if (source->pressure() > 1000000) {
-        int a = 0;
-    }
-
-    if (sink->m_state.momentum[0] > 1000 || source->m_state.momentum[0] > 1000) {
-        int a = 0;
-    }*/
 
     return flow * direction;
 }

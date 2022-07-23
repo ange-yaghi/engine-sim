@@ -31,9 +31,12 @@ namespace es_script {
         static Output *output();
 
         void initialize();
-        void compile(const piranha::IrPath &path);
+        bool compile(const piranha::IrPath &path);
         Output execute();
         void destroy();
+
+    private:
+        void printError(const piranha::CompilationError *err, std::ofstream &file) const;
 
     private:
         LanguageRules m_rules;
