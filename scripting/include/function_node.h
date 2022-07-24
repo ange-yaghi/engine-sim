@@ -23,7 +23,11 @@ namespace es_script {
             m_samples.push_back({ x, y });
         }
 
-        Function *generate(EngineContext *context) {
+        void setFilterRadius(double filterRadius) {
+            m_filterRadius = filterRadius;
+        }
+
+        virtual Function *generate(EngineContext *context) {
             Function *existingFunction = context->getFunction(this);
             if (existingFunction != nullptr) {
                 return existingFunction;

@@ -8,9 +8,13 @@ Fuel::Fuel() {
     m_molecularMass = 0.0;
     m_energyDensity = 0.0;
     m_density = 0.0;
-    m_equivalenceRatioToLaminarFlameSpeed = nullptr;
     m_turbulenceToFlameSpeedRatio = nullptr;
     m_molecularAfr = 0.0;
+    m_maxBurningEfficiency = 0.0;
+    m_maxDilutionEffect = 0.0;
+    m_maxTurbulenceEffect = 0.0;
+    m_burningEfficiencyRandomness = 0.0;
+    m_lowEfficiencyAttenuation = 0.0;
 }
 
 Fuel::~Fuel() {
@@ -23,6 +27,11 @@ void Fuel::initialize(const Parameters &params) {
     m_density = params.Density;
     m_turbulenceToFlameSpeedRatio = params.TurbulenceToFlameSpeedRatio;
     m_molecularAfr = params.MolecularAfr;
+    m_burningEfficiencyRandomness = params.BurningEfficiencyRandomness;
+    m_maxBurningEfficiency = params.MaxBurningEfficiency;
+    m_maxDilutionEffect = params.MaxDilutionEffect;
+    m_maxTurbulenceEffect = params.MaxTurbulenceEffect;
+    m_lowEfficiencyAttenuation = params.LowEfficiencyAttenuation;
 }
 
 double Fuel::flameSpeed(
@@ -35,7 +44,7 @@ double Fuel::flameSpeed(
 {
     const double S_L = laminarBurningVelocity(molecularAfr, T, P);
     const double p_adjustment = 1.0;
-    //const double S_L = units::distance(30, units::cm);
+
     return m_turbulenceToFlameSpeedRatio->sampleTriangle((turbulence / S_L) * p_adjustment) * S_L;
 }
 

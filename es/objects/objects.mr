@@ -8,6 +8,7 @@ private import "../types/atomic_types.mr"
 private import "../types/conversions.mr"
 private import "../types/operations.mr"
 private import "../constants/units.mr"
+private import "../actions/actions.mr"
 
 units units()
 
@@ -25,43 +26,69 @@ public node intake_channel => __engine_sim__intake_channel { /* void */ }
 public node exhaust_system_channel => __engine_sim__exhaust_system_channel { /* void */ }
 public node ignition_module_channel => __engine_sim__ignition_module_channel { /* void */ }
 public node ignition_wire_channel => __engine_sim__ignition_wire_channel { /* void */ }
+public node fuel_channel => __engine_sim__fuel_channel { /* void */ }
+
+private node turbulence_to_flame_speed_ratio_default {
+    alias output __out:
+        function(5.0)
+            .add_sample(0.0, 3.0)
+            .add_sample(5.0, 1.5 * 5.0)
+            .add_sample(10.0, 1.5 * 10.0)
+            .add_sample(15.0, 1.5 * 15.0)
+            .add_sample(20.0, 1.5 * 20.0)
+            .add_sample(25.0, 1.5 * 25.0)
+            .add_sample(30.0, 1.5 * 30.0)
+            .add_sample(35.0, 1.5 * 35.0)
+            .add_sample(40.0, 1.5 * 40.0)
+            .add_sample(45.0, 1.5 * 45.0);
+}
+
+public node fuel => __engine_sim__fuel {
+    input name [string]: "Gasoline [Default]";
+    input molecular_mass [float]: 100 * units.g;
+    input energy_density [float]: 48.1 * units.kJ / units.g;
+    input density [float]: 0.755 * units.kg / units.L;
+    input molecular_afr [float]: 25 / 2.0;
+    input turbulence_to_flame_speed_ratio [function]:
+        turbulence_to_flame_speed_ratio_default();
+    input max_burning_efficiency [float]: 0.8;
+    input burning_efficiency_randomness [float]: 0.5;
+    input low_efficiency_attenuation [float]: 0.6;
+    input max_turbulence_effect [float]: 2.0;
+    input max_dilution_effect [float]: 10.0;
+    alias output __out [fuel_channel];
+}
 
 // Engine
-public node engine_parameter_defaults {
-    output name: "";
-    output redline: 6000 * units.rpm;
-    output starter_speed: 200 * units.rpm;
-    output starter_torque: 200 * units.lb_ft;
-    output fuel_molecular_mass: 100 * units.g;
-    output fuel_energy_density: 48.1 * units.kJ / units.g;
-    output fuel_density: 0.755 * units.kg / units.L;
+public node engine_parameters {
+    input name: "";
+    input redline: 6000 * units.rpm;
+    input starter_speed: 200 * units.rpm;
+    input starter_torque: 200 * units.lb_ft;
+    input fuel: fuel();
 }
 
 private node _engine => __engine_sim__engine {
-    input name [string]: "Engine";
+    input name [string];
     
-    input redline [float]: 0;
-    input starter_speed [float]: 0;
-    input starter_torque [float]: 0;
+    input redline [float];
+    input starter_speed [float];
+    input starter_torque [float];
 
-    input fuel_density [float]: 0;
-    input fuel_energy_density [float]: 0;
-    input fuel_molecular_mass [float]: 0;
+    input fuel [fuel];
 
     alias output __out [engine_channel];
 }
 
 public node engine {
-    input params: engine_parameter_defaults();
+    input params: engine_parameters();
     input name: params.name;
 
     input redline: params.redline;
     input starter_speed: params.starter_speed;
     input starter_torque: params.starter_torque;
 
-    input fuel_density: params.fuel_density;
-    input fuel_energy_density: params.fuel_energy_density;
-    input fuel_molecular_mass: params.fuel_molecular_mass;
+    input fuel: params.fuel;
 
     alias output __out [_engine]:
         _engine(
@@ -71,9 +98,7 @@ public node engine {
             starter_speed: starter_speed,
             starter_torque: starter_torque,
 
-            fuel_density: fuel_density,
-            fuel_energy_density: fuel_energy_density,
-            fuel_molecular_mass: fuel_molecular_mass
+            fuel: fuel
         );
 }
 
@@ -266,15 +291,13 @@ public node cylinder_friction_parameters {
 public node cylinder_head_parameters {
     input intake_port_flow: function();
     input exhaust_port_flow: function();
-    input chamber_volume: 0.0;
+    input chamber_volume: 118.0 * units.cc;
 
     input intake_runner_volume: 300.0 * units.cc;
-    input intake_runner_cross_section_area: 10 * units.cm2;
-    input intake_runner_velocity_decay: 0.5;
+    input intake_runner_cross_section_area: circle_area(0.75 * units.inch);
 
     input exhaust_runner_volume: 300.0 * units.cc;
-    input exhaust_runner_cross_section_area: 10 * units.cm2;
-    input exhaust_runner_velocity_decay: 0.5; 
+    input exhaust_runner_cross_section_area: circle_area(0.85 * units.inch);
 
     input flip_display: false;
 }
@@ -287,10 +310,8 @@ private node _cylinder_head => __engine_sim__cylinder_head {
     input chamber_volume [float];
     input intake_runner_volume [float];
     input intake_runner_cross_section_area [float];
-    input intake_runner_velocity_decay [float];
     input exhaust_runner_volume [float];
     input exhaust_runner_cross_section_area [float];
-    input exhaust_runner_velocity_decay [float]; 
     input flip_display [bool];
     alias output __out [cylinder_head_channel];
 }
@@ -308,11 +329,9 @@ public node cylinder_head {
 
     input intake_runner_volume: parameters.intake_runner_volume;
     input intake_runner_cross_section_area: parameters.intake_runner_cross_section_area;
-    input intake_runner_velocity_decay: parameters.intake_runner_velocity_decay;
 
     input exhaust_runner_volume: parameters.exhaust_runner_volume;
     input exhaust_runner_cross_section_area: parameters.exhaust_runner_cross_section_area;
-    input exhaust_runner_velocity_decay: parameters.exhaust_runner_velocity_decay;  
 
     input flip_display: parameters.flip_display;
 
@@ -323,10 +342,8 @@ public node cylinder_head {
             chamber_volume: chamber_volume,
             intake_runner_volume: intake_runner_volume,
             intake_runner_cross_section_area: intake_runner_cross_section_area,
-            intake_runner_velocity_decay: intake_runner_velocity_decay,
             exhaust_runner_volume: exhaust_runner_volume,
             exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
-            exhaust_runner_velocity_decay: exhaust_runner_velocity_decay,
             flip_display: flip_display,
             intake_camshaft: intake_camshaft,
             exhaust_camshaft: exhaust_camshaft
@@ -334,17 +351,10 @@ public node cylinder_head {
 }
 
 // Camshaft
-public node camshaft_parameter_defaults {
-    output advance: 0.0;
-    output base_radius: 0.0;
-    output lobe_profile: function();
-}
-
 public node camshaft_parameters {
-    input copy: camshaft_parameter_defaults();
-    input advance: copy.advance;
-    input base_radius: copy.base_radius;
-    input lobe_profile: copy.lobe_profile;
+    input advance: 0.0;
+    input base_radius: 0.0;
+    input lobe_profile: function();
 }
 
 private node _camshaft => __engine_sim__camshaft {
@@ -356,11 +366,14 @@ private node _camshaft => __engine_sim__camshaft {
 
 public node camshaft {
     input parameters: camshaft_parameters();
+    input advance: parameters.advance;
+    input base_radius: parameters.base_radius;
+    input lobe_profile: parameters.lobe_profile;
     alias output __out [_camshaft]:
         _camshaft(
-            advance: parameters.advance,
-            base_radius: parameters.base_radius,
-            lobe_profile: parameters.lobe_profile
+            advance: advance,
+            base_radius: base_radius,
+            lobe_profile: lobe_profile
         );
 }
 
@@ -373,7 +386,9 @@ public node intake_parameters {
     input molecular_afr: (25.0 / 2.0);
     input idle_throttle_plate_position: 0.975;
     input throttle_gamma: 2.0;
-    input runner_volume: 300.0 * units.cc;
+    input runner_length: 4.0 * units.inch;
+    input runner_flow_rate: k_carb(200.0);
+    input velocity_decay: 0.25;
 }
 
 private node _intake => __engine_sim__intake {
@@ -381,10 +396,12 @@ private node _intake => __engine_sim__intake {
     input plenum_cross_section_area [float];
     input intake_flow_rate [float];
     input idle_flow_rate [float];
+    input runner_flow_rate [float];
     input molecular_afr [float];
     input idle_throttle_plate_position [float];
     input throttle_gamma [float];
-    input runner_volume [float];
+    input runner_length [float];
+    input velocity_decay [float];
     alias output __out [intake_channel];
 }
 
@@ -394,32 +411,36 @@ public node intake {
     input plenum_cross_section_area: parameters.plenum_cross_section_area;
     input intake_flow_rate: parameters.intake_flow_rate;
     input idle_flow_rate: parameters.idle_flow_rate;
+    input runner_flow_rate: parameters.runner_flow_rate;
     input molecular_afr: parameters.molecular_afr;
     input idle_throttle_plate_position: parameters.idle_throttle_plate_position;
     input throttle_gamma: parameters.throttle_gamma;
-    input runner_volume: parameters.runner_volume;
+    input runner_length: parameters.runner_length;
+    input velocity_decay: parameters.velocity_decay;
     alias output __out [_intake]:
         _intake(
             plenum_volume: plenum_volume,
             plenum_cross_section_area: plenum_cross_section_area,
             intake_flow_rate: intake_flow_rate,
             idle_flow_rate: idle_flow_rate,
+            runner_flow_rate: runner_flow_rate,
             molecular_afr: molecular_afr,
             idle_throttle_plate_position: idle_throttle_plate_position,
             throttle_gamma: throttle_gamma,
-            runner_volume: runner_volume
+            runner_length: runner_length,
+            velocity_decay: velocity_decay
         );
 }
 
 // Exhaust System
 public node exhaust_system_parameters {
-    input volume: 0.0;
-    input collector_cross_section_area: 0.0;
-    input outlet_flow_rate: 0.0;
-    input primary_tube_length: 0.0;
-    input primary_flow_rate: 0.0;
-    input exhaust_flow_rate: 0.0;
-    input audio_volume: 0.0;
+    input volume: 100.0 * units.L;
+    input collector_cross_section_area: circle_area(2.0 * units.inch);
+    input outlet_flow_rate: k_carb(1000.0);
+    input primary_tube_length: 10.0 * units.inch;
+    input primary_flow_rate: k_carb(100.0);
+    input audio_volume: 1.0;
+    input velocity_decay: 1.0;
 }
 
 private node _exhaust_system => __engine_sim__exhaust_system {
@@ -429,6 +450,7 @@ private node _exhaust_system => __engine_sim__exhaust_system {
     input primary_tube_length [float];
     input primary_flow_rate [float];
     input audio_volume [float];
+    input velocity_decay [float];
     alias output __out [exhaust_system_channel];
 }
 
@@ -440,6 +462,7 @@ public node exhaust_system {
     input primary_tube_length: parameters.primary_tube_length;
     input primary_flow_rate: parameters.primary_flow_rate;
     input audio_volume: parameters.audio_volume;
+    input velocity_decay: parameters.velocity_decay;
     alias output __out [_exhaust_system]:
         _exhaust_system(
             volume: volume,
@@ -447,7 +470,8 @@ public node exhaust_system {
             outlet_flow_rate: outlet_flow_rate,
             primary_tube_length: primary_tube_length,
             primary_flow_rate: primary_flow_rate,
-            audio_volume: audio_volume
+            audio_volume: audio_volume,
+            velocity_decay: velocity_decay
         );
 }
 

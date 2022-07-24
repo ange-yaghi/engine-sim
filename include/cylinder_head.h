@@ -23,11 +23,8 @@ class CylinderHead : public Part {
 
             double IntakeRunnerVolume;
             double IntakeRunnerCrossSectionArea;
-            double IntakeRunnerVelocityDecay;
-
             double ExhaustRunnerVolume;
             double ExhaustRunnerCrossSectionArea;
-            double ExhaustRunnerVelocityDecay;
 
             bool FlipDisplay = false;
         };
@@ -56,6 +53,11 @@ class CylinderHead : public Part {
         inline double getCombustionChamberVolume() const { return m_combustionChamberVolume; }
         inline CylinderBank *getCylinderBank() const { return m_bank; }
 
+        double getIntakeRunnerVolume() const { return m_intakeRunnerVolume; }
+        double getIntakeRunnerCrossSectionArea() const { return m_intakeRunnerCrossSectionArea; }
+        double getExhaustRunnerVolume() const { return m_exhaustRunnerVolume; }
+        double getExhaustRunnerCrossSectionArea() const { return m_exhaustRunnerCrossSectionArea; }
+
         Camshaft *getExhaustCamshaft();
         Camshaft *getIntakeCamshaft();
 
@@ -72,11 +74,8 @@ class CylinderHead : public Part {
 
         double m_intakeRunnerVolume;
         double m_intakeRunnerCrossSectionArea;
-        double m_intakeRunnerVelocityDecay;
-
         double m_exhaustRunnerVolume;
         double m_exhaustRunnerCrossSectionArea;
-        double m_exhaustRunnerVelocityDecay;
 
         double m_combustionChamberVolume;
         bool m_flipDisplay;

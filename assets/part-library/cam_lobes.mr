@@ -1,4 +1,4 @@
-import "engine_sim.mr"
+private import "engine_sim.mr"
 
 units units()
 
@@ -13,17 +13,31 @@ private node add_sym_sample {
 }
 
 public node stock_454_lobe_profile {
-    alias output __out: lobe;
+    alias output __out:
+        harmonic_cam_lobe(
+            duration_at_50_thou: 200 * units.deg,
+            gamma: 1.0,
+            lift: 430 * units.thou,
+            steps: 100
+        );
+}
 
-    function lobe(10 * units.deg)
-    lobe
-        .add_sym_sample(0.0, 430.0)
-        .add_sym_sample(10.0, 410.0)
-        .add_sym_sample(20.0, 359.0)
-        .add_sym_sample(30.0, 250.0)
-        .add_sym_sample(40.0, 130.0)
-        .add_sym_sample(50.0, 50.0)
-        .add_sym_sample(60.0, 0.0)
-        .add_sym_sample(70.0, 0.0)
-        .add_sym_sample(80.0, 0.0)
+public node comp_cams_magnum_11_450_8_lobe_profile {
+    alias output __out:
+        harmonic_cam_lobe(
+            duration_at_50_thou: 232 * units.deg,
+            gamma: 0.75,
+            lift: 578 * units.thou,
+            steps: 100
+        );
+}
+
+public node comp_cams_magnum_11_470_8_lobe_profile {
+    alias output __out:
+        harmonic_cam_lobe(
+            duration_at_50_thou: 252 * units.deg,
+            gamma: 0.8,
+            lift: 612 * units.thou,
+            steps: 100
+        );
 }

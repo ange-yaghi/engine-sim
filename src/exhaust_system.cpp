@@ -6,6 +6,9 @@ ExhaustSystem::ExhaustSystem() {
     m_primaryFlowRate = 0;
     m_outletFlowRate = 0;
     m_collectorCrossSectionArea = 0;
+    m_primaryTubeLength = 0;
+    m_audioVolume = 0;
+    m_velocityDecay = 0;
     m_flow = 0;
     m_index = -1;
 }
@@ -41,6 +44,8 @@ void ExhaustSystem::initialize(const Parameters &params) {
     m_audioVolume = params.AudioVolume;
     m_outletFlowRate = params.OutletFlowRate;
     m_collectorCrossSectionArea = params.CollectorCrossSectionArea;
+    m_primaryTubeLength = params.PrimaryTubeLength;
+    m_velocityDecay = params.VelocityDecay;
 }
 
 void ExhaustSystem::destroy() {
@@ -67,5 +72,5 @@ void ExhaustSystem::process(double dt) {
     m_flow = m_system.flow(flowParams);
 
     m_system.dissipateExcessVelocity();
-    m_system.updateVelocity(dt);
+    m_system.updateVelocity(dt, m_velocityDecay);
 }

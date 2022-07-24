@@ -15,6 +15,7 @@ class ExhaustSystem : public Part {
             double OutletFlowRate;
             double PrimaryTubeLength;
             double PrimaryFlowRate;
+            double VelocityDecay;
             double AudioVolume;
         };
 
@@ -30,6 +31,10 @@ class ExhaustSystem : public Part {
         inline int getIndex() const { return m_index; }
         inline double getFlow() const { return m_flow; }
         inline double getAudioVolume() const { return m_audioVolume; }
+        inline double getPrimaryFlowRate() const { return m_primaryFlowRate; }
+        inline double getCollectorCrossSectionArea() const { return m_collectorCrossSectionArea; }
+        inline double getPrimaryTubeLength() const { return m_primaryTubeLength; }
+        inline double getVelocityDecay() const { return m_velocityDecay; }
 
         inline GasSystem *getSystem() { return &m_system; }
 
@@ -37,10 +42,12 @@ class ExhaustSystem : public Part {
         GasSystem m_atmosphere;
         GasSystem m_system;
 
+        double m_primaryTubeLength;
         double m_collectorCrossSectionArea;
         double m_primaryFlowRate;
         double m_outletFlowRate;
         double m_audioVolume;
+        double m_velocityDecay;
         int m_index;
 
         double m_flow;

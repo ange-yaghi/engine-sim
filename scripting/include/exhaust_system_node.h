@@ -33,6 +33,7 @@ namespace es_script {
             addInput("primary_tube_length", &m_parameters.PrimaryTubeLength);
             addInput("primary_flow_rate", &m_parameters.PrimaryFlowRate);
             addInput("audio_volume", &m_parameters.AudioVolume);
+            addInput("velocity_decay", &m_parameters.VelocityDecay);
 
             ObjectReferenceNode<ExhaustSystemNode>::registerInputs();
         }

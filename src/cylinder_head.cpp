@@ -17,6 +17,10 @@ CylinderHead::CylinderHead() {
     m_exhaustPortFlow = nullptr;
     m_intakePortFlow = nullptr;
 
+    m_intakeRunnerVolume = 0.0;
+    m_intakeRunnerCrossSectionArea = 0.0;
+    m_exhaustRunnerVolume = 0.0;
+    m_exhaustRunnerCrossSectionArea = 0.0;
     m_combustionChamberVolume = 0.0;
 }
 
@@ -35,6 +39,11 @@ void CylinderHead::initialize(const Parameters &params) {
     m_intakePortFlow = params.IntakePortFlow;
     m_combustionChamberVolume = params.CombustionChamberVolume;
     m_flipDisplay = params.FlipDisplay;
+
+    m_intakeRunnerVolume = params.IntakeRunnerVolume;
+    m_intakeRunnerCrossSectionArea = params.IntakeRunnerCrossSectionArea;
+    m_exhaustRunnerVolume = params.ExhaustRunnerVolume;
+    m_exhaustRunnerCrossSectionArea = params.ExhaustRunnerCrossSectionArea;
 
     memset(m_exhaustSystems, 0, sizeof(ExhaustSystem *) * params.Bank->getCylinderCount());
     memset(m_intakes, 0, sizeof(Intake *) * params.Bank->getCylinderCount());

@@ -4,6 +4,7 @@
 #include "../include/ui_utilities.h"
 
 #include <sstream>
+#include <iomanip>
 
 LoadSimulationCluster::LoadSimulationCluster() {
     m_torqueGauge = nullptr;
@@ -14,6 +15,8 @@ LoadSimulationCluster::LoadSimulationCluster() {
     m_filteredTorque = 0.0;
     m_peakHorsepower = 0.0;
     m_peakTorque = 0.0;
+    m_peakHorsepowerRpm = 0.0;
+    m_peakTorqueRpm = 0.0;
     memset(m_systemStatusLights, 0, sizeof(double) * 3);
 }
 
@@ -122,6 +125,15 @@ void LoadSimulationCluster::update(float dt) {
             ? 1.0f
             : 0.01f;
         m_systemStatusLights[i] = (1 - alpha) * m_systemStatusLights[i] + alpha * next;
+    }
+
+    if (m_app->getEngine()->ProcessKeyDown(ysKey::Code::I)) {
+        std::stringstream ss;
+        ss << std::setprecision(0) << std::fixed;
+        ss << m_peakHorsepower << "HP @ " << m_peakHorsepowerRpm << "rpm"
+            << " | "
+            << m_peakTorque << "lb-ft @ " << m_peakTorqueRpm << "rpm";
+        m_app->getInfoCluster()->setLogMessage(ss.str());
     }
 
     updateHpAndTorque(dt);
@@ -242,6 +254,13 @@ void LoadSimulationCluster::updateHpAndTorque(float dt) {
     m_filteredTorque = (1 - alpha) * m_filteredTorque + alpha * torque;
     m_filteredHorsepower = (1 - alpha) * m_filteredHorsepower + alpha * hp;
 
-    m_peakTorque = std::fmax(m_peakTorque, m_filteredTorque);
-    m_peakHorsepower = std::fmax(m_peakHorsepower, m_filteredHorsepower);
+    if (m_filteredTorque > m_peakTorque) {
+        m_peakTorque = m_filteredTorque;
+        m_peakTorqueRpm = m_simulator->getEngine()->getRpm();
+    }
+
+    if (m_filteredHorsepower > m_peakHorsepower) {
+        m_peakHorsepower = std::fmax(m_peakHorsepower, m_filteredHorsepower);
+        m_peakHorsepowerRpm = m_simulator->getEngine()->getRpm();
+    }
 }

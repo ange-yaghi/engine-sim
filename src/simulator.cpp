@@ -263,7 +263,8 @@ void Simulator::startFrame(double dt) {
         ++i_steps;
     }
     else if (m_synthesizer.getLatency() > targetLatency) {
-        --i_steps;
+        if (m_synthesizer.getLatency() > 2 * targetLatency) i_steps -= 2;
+        else --i_steps;
         if (i_steps < 0) {
             i_steps = 0;
         }
@@ -429,7 +430,7 @@ void Simulator::writeToSynthesizer() {
     for (int i = 0; i < exhaustSystemCount; ++i) {
         ExhaustSystem *exhaustSystem = m_engine->getExhaustSystem(i);
         m_exhaustFlowStagingBuffer[i] +=
-            attenuation_3 * 100 * (
+            attenuation_3 * 0 * (
                 1.0 * (exhaustSystem->getSystem()->pressure() - units::pressure(1.0, units::atm))
                 + 0.1 * exhaustSystem->getSystem()->dynamicPressure(1.0, 0.0)
                 + 0.1 * exhaustSystem->getSystem()->dynamicPressure(-1.0, 0.0));
@@ -444,9 +445,9 @@ void Simulator::writeToSynthesizer() {
 
         const double exhaustFlow =
             attenuation_3 * 1600 * (
-                1.0 * (m_engine->getChamber(i)->m_exhaustRunner.pressure() - units::pressure(1.0, units::atm))
-                + 0.1 * m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(1.0, 0.0)
-                + 0.1 * m_engine->getChamber(i)->m_exhaustRunner.dynamicPressure(-1.0, 0.0));
+                1.0 * (m_engine->getChamber(i)->m_exhaustRunnerAndPrimary.pressure() - units::pressure(1.0, units::atm))
+                + 0.1 * m_engine->getChamber(i)->m_exhaustRunnerAndPrimary.dynamicPressure(1.0, 0.0)
+                + 0.1 * m_engine->getChamber(i)->m_exhaustRunnerAndPrimary.dynamicPressure(-1.0, 0.0));
 
         ExhaustSystem *exhaustSystem = head->getExhaustSystem(piston->getCylinderIndex());
         m_exhaustFlowStagingBuffer[exhaustSystem->getIndex()] +=

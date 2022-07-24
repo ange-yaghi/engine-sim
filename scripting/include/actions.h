@@ -386,6 +386,58 @@ namespace es_script {
         EngineNode *m_engine = nullptr;
     };
 
+    class GenerateHarmonicCamLobe : public Node {
+    public:
+        GenerateHarmonicCamLobe() { /* void */ }
+        virtual ~GenerateHarmonicCamLobe() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("duration_at_50_thou", &m_durationAt50Thou);
+            addInput("gamma", &m_gamma);
+            addInput("lift", &m_lift);
+            addInput("steps", &m_steps);
+            addInput("function", &m_function, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            const double angle = m_durationAt50Thou / 4;
+            const double s = std::pow(2 * units::distance(50, units::thou) / m_lift, 1 / m_gamma) - 1;
+            const double k = std::acos(s) / angle;
+            const double extents = constants::pi / k;
+
+            // pi / 2 = k * x
+
+            const double step = extents / (m_steps - 5.0);
+            for (int i = 0; i < m_steps; ++i) {
+                if (i == 0) {
+                    m_function->addSample(0.0, m_lift);
+                }
+                else {
+                    const double x = i * step;
+                    const double lift = (x >= extents)
+                        ? 0.0
+                        : m_lift * std::pow(0.5 + 0.5 * std::cos(k * x), m_gamma);
+                    m_function->addSample(x, lift);
+                    m_function->addSample(-x, lift);
+                }
+            }
+
+            m_function->setFilterRadius(step);
+        }
+
+    protected:
+        double m_durationAt50Thou = 0.0;
+        double m_gamma = 1.0;
+        double m_lift = 300.0;
+        int m_steps = 100;
+        FunctionNode *m_function = nullptr;
+    };
+
 } /* namespace es_script */
 
 #endif /* ATG_ENGINE_SIM_ACTIONS_H */

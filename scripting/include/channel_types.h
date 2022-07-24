@@ -19,6 +19,7 @@ namespace es_script {
         static const piranha::ChannelType CamshaftChannel;
         static const piranha::ChannelType IgnitionModuleChannel;
         static const piranha::ChannelType IgnitionWireChannel;
+        static const piranha::ChannelType FuelChannel;
     };
 
     template <typename Type>
@@ -40,6 +41,7 @@ namespace es_script {
     class CamshaftNode;
     class IgnitionModuleNode;
     class IgnitionWireNode;
+    class FuelNode;
 
 #define ASSIGN_CHANNEL_TYPE(type, channel) \
     template <> extern inline const piranha::ChannelType *LookupChannelType<type>() { \
@@ -60,6 +62,7 @@ namespace es_script {
     ASSIGN_CHANNEL_TYPE(CamshaftNode, CamshaftChannel);
     ASSIGN_CHANNEL_TYPE(IgnitionModuleNode, IgnitionModuleChannel);
     ASSIGN_CHANNEL_TYPE(IgnitionWireNode, IgnitionWireChannel);
+    ASSIGN_CHANNEL_TYPE(FuelNode, FuelChannel);
 
 } /* namespace es_script */
 

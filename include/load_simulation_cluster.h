@@ -33,7 +33,10 @@ class LoadSimulationCluster : public UiElement {
 
         double m_filteredHorsepower;
         double m_filteredTorque;
+
+        double m_peakHorsepowerRpm;
         double m_peakHorsepower;
+        double m_peakTorqueRpm;
         double m_peakTorque;
 
         Simulator *m_simulator;

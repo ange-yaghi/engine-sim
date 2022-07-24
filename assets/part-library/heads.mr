@@ -1,4 +1,4 @@
-import "engine_sim.mr"
+private import "engine_sim.mr"
 
 units units()
 
@@ -55,6 +55,64 @@ public node chevy_bbc_peanut_port_head {
 
     cylinder_head head(
         chamber_volume: 118.0 * units.cc,
+        intake_runner_volume: 189.0 * units.cc,
+        intake_runner_cross_section_area: 37.8 * units.cm2,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        intake_camshaft: intake_camshaft,
+        exhaust_camshaft: exhaust_camshaft,
+        flip_display: flip_display
+    )
+}
+
+public node edelbrock_6055_rectangle_port {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0, 0)
+        .add_flow_sample(50, 25)
+        .add_flow_sample(100, 76)
+        .add_flow_sample(150, 100)
+        .add_flow_sample(200, 146)
+        .add_flow_sample(250, 175)
+        .add_flow_sample(300, 212)
+        .add_flow_sample(350, 230)
+        .add_flow_sample(400, 255)
+        .add_flow_sample(450, 275)
+        .add_flow_sample(500, 294)
+        .add_flow_sample(550, 300)
+        .add_flow_sample(600, 314)
+        .add_flow_sample(650, 314)
+        .add_flow_sample(700, 314)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0, 0)
+        .add_flow_sample(50, 25)
+        .add_flow_sample(100, 70)
+        .add_flow_sample(150, 100)
+        .add_flow_sample(200, 132)
+        .add_flow_sample(250, 140)
+        .add_flow_sample(300, 156)
+        .add_flow_sample(350, 170)
+        .add_flow_sample(400, 181)
+        .add_flow_sample(450, 191)
+        .add_flow_sample(500, 207)
+        .add_flow_sample(550, 214)
+        .add_flow_sample(600, 228)
+        .add_flow_sample(650, 228)
+        .add_flow_sample(700, 228)
+
+    cylinder_head head(
+        chamber_volume: 118.0 * units.cc,
+        intake_runner_volume: 315.0 * units.cc,
+        intake_runner_cross_section_area: 78.75 * units.cm2,
+
         intake_port_flow: intake_flow,
         exhaust_port_flow: exhaust_flow,
         intake_camshaft: intake_camshaft,

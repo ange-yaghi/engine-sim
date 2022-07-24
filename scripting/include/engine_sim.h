@@ -10,5 +10,6 @@
 #include "../../include/vehicle.h"
 #include "../../include/transmission.h"
 #include "../../include/simulator.h"
+#include "../../include/fuel.h"
 
 #endif /* ATG_ENGINE_SIM_ENGINE_SIM_H */

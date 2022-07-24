@@ -56,6 +56,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__ignition_module_channel", &es_script::ObjectChannel::IgnitionModuleChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__ignition_wire_channel", &es_script::ObjectChannel::IgnitionWireChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__fuel_channel", &es_script::ObjectChannel::FuelChannel);
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -123,6 +125,7 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<AddIgnitionModuleNode>("__engine_sim__add_ignition_module");
     registerBuiltinType<k_28inH2ONode>("__engine_sim__k_28inH2O");
     registerBuiltinType<k_CarbNode>("__engine_sim__k_carb");
+    registerBuiltinType<GenerateHarmonicCamLobe>("__engine_sim__generate_harmonic_cam_lobe");
 
     // Objects
     registerBuiltinType<EngineNode>("__engine_sim__engine");
@@ -138,6 +141,7 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<IntakeNode>("__engine_sim__intake");
     registerBuiltinType<IgnitionModuleNode>("__engine_sim__ignition_module");
     registerBuiltinType<IgnitionWireNode>("__engine_sim__ignition_wire");
+    registerBuiltinType<FuelNode>("__engine_sim__fuel");
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<

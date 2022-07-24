@@ -68,6 +68,8 @@ class EngineSimApplication {
         int getScreenWidth() const { return m_screenWidth; }
         int getScreenHeight() const { return m_screenHeight; }
 
+        InfoCluster *getInfoCluster() { return m_infoCluster; }
+
     protected:
         void renderScene();
 

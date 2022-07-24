@@ -15,7 +15,7 @@ Intake::Intake() {
     m_totalFuelInjected = 0;
     m_molecularAfr = 0;
     m_throttleGamma = 1.0;
-    m_runnerVolume = 0;
+    m_runnerLength = 0;
 }
 
 Intake::~Intake() {
@@ -49,8 +49,10 @@ void Intake::initialize(Parameters &params) {
     m_idleFlowK = params.IdleFlowK;
     m_idleThrottlePlatePosition = params.IdleThrottlePlatePosition;
     m_throttleGamma = params.ThrottleGamma;
-    m_runnerVolume = params.RunnerVolume;
+    m_runnerLength = params.RunnerLength;
     m_crossSectionArea = params.CrossSectionArea;
+    m_velocityDecay = params.VelocityDecay;
+    m_runnerFlowRate = params.RunnerFlowRate;
 }
 
 void Intake::destroy() {
@@ -78,8 +80,8 @@ void Intake::process(double dt) {
     const double flowAttenuation = std::pow(std::cos(throttle * constants::pi / 2), m_throttleGamma);
 
     GasSystem::FlowParameters flowParams;
-    flowParams.crossSectionArea_0 = units::area(100, units::cm2) * flowAttenuation;
-    flowParams.crossSectionArea_1 = units::area(100, units::cm2) * flowAttenuation;
+    flowParams.crossSectionArea_0 = units::area(10, units::m2);
+    flowParams.crossSectionArea_1 = m_crossSectionArea;
     flowParams.direction_x = 0.0;
     flowParams.direction_y = -1.0;
     flowParams.dt = dt;
@@ -97,7 +99,7 @@ void Intake::process(double dt) {
     const double idleCircuitFlow = m_system.flow(flowParams);
 
     m_system.dissipateExcessVelocity();
-    m_system.updateVelocity(dt);
+    m_system.updateVelocity(dt, m_velocityDecay);
 
     if (m_flow > 0) {
         m_totalFuelInjected += fuelAirMix.p_fuel * m_flow;

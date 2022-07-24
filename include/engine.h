@@ -18,14 +18,14 @@
 
 class Engine : public Part {
     public:
-        struct FuelParameters {
+        /*struct FuelParameters {
             double MolecularMass =
                 units::mass(100.0, units::g);
             double EnergyDensity =
                 units::energy(48.1, units::kJ) / units::mass(1.0, units::g);
             double Density =
                 units::mass(0.755, units::kg) / units::volume(1.0, units::L);
-        };
+        };*/
 
         struct Parameters {
             int CylinderBanks;
@@ -40,7 +40,7 @@ class Engine : public Part {
             double StarterSpeed = units::rpm(200);
             double Redline = units::rpm(6500);
 
-            FuelParameters Fuel;
+            //FuelParameters Fuel;
         };
 
     public:
@@ -88,7 +88,8 @@ class Engine : public Part {
         Intake *getIntake(int i) const { return &m_intakes[i]; }
         CombustionChamber *getChamber(int i) const { return &m_combustionChambers[i]; }
 
-        const FuelParameters &getFuel() const { return m_fuel; }
+        //const FuelParameters &getFuel() const { return m_fuel; }
+        Fuel *getFuel() { return &m_fuel; }
 
     protected:
         std::string m_name;
@@ -117,7 +118,8 @@ class Engine : public Part {
 
         IgnitionModule m_ignitionModule;
 
-        FuelParameters m_fuel;
+        //FuelParameters m_fuel;
+        Fuel m_fuel;
 
         double m_throttle;
 };

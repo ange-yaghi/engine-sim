@@ -7,6 +7,7 @@
 #include "cylinder_bank_node.h"
 #include "ignition_module_node.h"
 #include "engine_context.h"
+#include "fuel_node.h"
 
 #include "engine_sim.h"
 
@@ -95,18 +96,8 @@ namespace es_script {
             m_ignitionModule->generate(engine, &context);
             
             // TEMP
+            /*
             Function *turbulenceToFlameSpeedRatio = new Function;
-            Function *equivalenceRatioToLaminarFlameSpeed = new Function;
-
-            equivalenceRatioToLaminarFlameSpeed->initialize(12, 0.1);
-            equivalenceRatioToLaminarFlameSpeed->addSample(0.8, units::distance(22, units::cm) / units::sec);
-            equivalenceRatioToLaminarFlameSpeed->addSample(0.9, units::distance(27, units::cm) / units::sec);
-            equivalenceRatioToLaminarFlameSpeed->addSample(1.0, units::distance(32, units::cm) / units::sec);
-            equivalenceRatioToLaminarFlameSpeed->addSample(1.1, units::distance(35, units::cm) / units::sec);
-            equivalenceRatioToLaminarFlameSpeed->addSample(1.2, units::distance(33, units::cm) / units::sec);
-            equivalenceRatioToLaminarFlameSpeed->addSample(1.3, units::distance(30, units::cm) / units::sec);
-            equivalenceRatioToLaminarFlameSpeed->addSample(1.4, units::distance(25, units::cm) / units::sec);
-
             turbulenceToFlameSpeedRatio->initialize(10, 10.0);
             turbulenceToFlameSpeedRatio->addSample(0.0, 1.0);
             turbulenceToFlameSpeedRatio->addSample(5.0, 1.5 * 5.0);
@@ -118,11 +109,12 @@ namespace es_script {
             turbulenceToFlameSpeedRatio->addSample(35.0, 1.5 * 35.0);
             turbulenceToFlameSpeedRatio->addSample(40.0, 1.5 * 40.0);
             turbulenceToFlameSpeedRatio->addSample(45.0, 1.5 * 45.0);
-
+            
             Fuel::Parameters fParams;
             fParams.TurbulenceToFlameSpeedRatio = turbulenceToFlameSpeedRatio;
             Fuel *fuel = new Fuel;
             fuel->initialize(fParams);
+            */
 
             Function *meanPistonSpeedToTurbulence = new Function;
             meanPistonSpeedToTurbulence->initialize(30, 1);
@@ -130,6 +122,9 @@ namespace es_script {
                 const double s = (double)i;
                 meanPistonSpeedToTurbulence->addSample(s, s * 0.5);
             }
+
+            Fuel *fuel = engine->getFuel();
+            m_fuel->generate(fuel, &context);
 
             CombustionChamber::Parameters ccParams;
             ccParams.CrankcasePressure = units::pressure(1.0, units::atm);
@@ -169,10 +164,11 @@ namespace es_script {
             addInput("starter_torque", &m_parameters.StarterTorque);
             addInput("starter_speed", &m_parameters.StarterSpeed);
             addInput("redline", &m_parameters.Redline);
+            addInput("fuel", &m_fuel, InputTarget::Type::Object);
 
-            addInput("fuel_molecular_mass", &m_parameters.Fuel.MolecularMass);
-            addInput("fuel_energy_density", &m_parameters.Fuel.EnergyDensity);
-            addInput("fuel_density", &m_parameters.Fuel.Density);
+            //addInput("fuel_molecular_mass", &m_parameters.Fuel.MolecularMass);
+            //addInput("fuel_energy_density", &m_parameters.Fuel.EnergyDensity);
+            //addInput("fuel_density", &m_parameters.Fuel.Density);
 
             ObjectReferenceNode<EngineNode>::registerInputs();
         }
@@ -185,6 +181,7 @@ namespace es_script {
         }
 
         IgnitionModuleNode *m_ignitionModule = nullptr;
+        FuelNode *m_fuel = nullptr;
 
         Engine::Parameters m_parameters;
         std::vector<CrankshaftNode *> m_crankshafts;

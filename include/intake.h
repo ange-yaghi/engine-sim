@@ -20,6 +20,9 @@ class Intake : public Part {
             // Idle-circuit flow constant
             double IdleFlowK;
 
+            // Flow rate from plenum to runner
+            double RunnerFlowRate;
+
             // Molecular air fuel ratio (defaults to ideal for octane)
             double MolecularAfr = (25.0 / 2.0);
 
@@ -30,7 +33,10 @@ class Intake : public Part {
             double ThrottleGamma = 2.0;
 
             // Runner volume
-            double RunnerVolume = units::volume(300, units::cc);
+            double RunnerLength = units::distance(4.0, units::inch);
+
+            // Velocity decay factor
+            double VelocityDecay = 0.5;
         };
 
     public:
@@ -42,7 +48,11 @@ class Intake : public Part {
 
         void process(double dt);
 
+        inline double getRunnerFlowRate() const { return m_runnerFlowRate; }
         inline double getThrottlePlatePosition() const { return m_idleThrottlePlatePosition * m_throttle; }
+        inline double getRunnerLength() const { return m_runnerLength; }
+        inline double getPlenumCrossSectionArea() const { return m_crossSectionArea; }
+        inline double getVelocityDecay() const { return m_velocityDecay; }
 
         GasSystem m_system;
         double m_throttle;
@@ -55,10 +65,12 @@ class Intake : public Part {
         double m_crossSectionArea;
         double m_inputFlowK;
         double m_idleFlowK;
+        double m_runnerFlowRate;
         double m_molecularAfr;
         double m_idleThrottlePlatePosition;
         double m_throttleGamma;
-        double m_runnerVolume;
+        double m_runnerLength;
+        double m_velocityDecay;
 
         GasSystem m_atmosphere;
 };

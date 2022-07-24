@@ -6,8 +6,13 @@ module {
 
 private import "../types/atomic_types.mr"
 private import "../types/conversions.mr"
-
+private import "../types/operations.mr"
+private import "../constants/constants.mr"
+private import "../constants/units.mr"
 private import "../objects/objects.mr"
+
+constants constants()
+units units()
 
 public node set_engine => __engine_sim__set_engine {
     input engine [engine];
@@ -133,6 +138,12 @@ public node k_carb => __engine_sim__k_carb {
     alias output __out [float];
 }
 
+public node circle_area {
+    input radius;
+    alias output __out:
+        constants.pi * radius * radius;
+}
+
 public node _connect_wire => __engine_sim__connect_ignition_wire {
     input wire [ignition_wire];
     input ignition_module [ignition_module];
@@ -159,4 +170,29 @@ public node add_ignition_module {
     alias output __out: this;
 
     _add_ignition_module(ignition_module: ignition_module, engine: this)
+}
+
+public node _generate_harmonic_cam_lobe => __engine_sim__generate_harmonic_cam_lobe {
+    input duration_at_50_thou [float];
+    input gamma [float];
+    input lift [float];
+    input steps [int];
+    input function [function];
+}
+
+public node harmonic_cam_lobe {
+    input duration_at_50_thou: 0.0;
+    input gamma: 1.0;
+    input lift: 300 * units.thou;
+    input steps: 100;
+    alias output __out: generated_function;
+
+    function generated_function()
+    _generate_harmonic_cam_lobe(
+        duration_at_50_thou: duration_at_50_thou,
+        gamma: gamma,
+        lift: lift,
+        steps: steps,
+        function: generated_function
+    )    
 }

@@ -1,6 +1,5 @@
 import "engine_sim.mr"
-import "part-library/cam_lobes.mr"
-import "part-library/heads.mr"
+import "part-library/part_library.mr"
 
 units units()
 constants constants()
@@ -11,7 +10,7 @@ engine engine(
 )
 
 crankshaft c0(
-    throw: 2.0 * units.inch,
+    throw: 2.0 * units.inch + 0.25 * units.inch / 2,
     flywheel_mass: 29 * 2 * units.lb,
     mass: 75 * units.lb,
     friction_torque: 10.0 * units.lb_ft,
@@ -44,37 +43,50 @@ connecting_rod_parameters cr_params(
     mass: 785.0 * units.g,
     moment_of_inertia: 0.0015884918028487504,
     center_of_mass: 0.0,
-    length: 6.135 * units.inch
+    length: 6.135 * units.inch - 0.25 * units.inch / 2
 )
 
 cylinder_bank_parameters bank_params(
-    bore: 4.25 * units.inch,
+    bore: 4.25 * units.inch + 30 * units.thou,
     deck_height: 9.8 * units.inch
 )
 
-intake intake(
-    plenum_volume: 5.0 * units.L,
-    intake_flow_rate: k_carb(500.0),
-    idle_flow_rate: 0.0000015,
-    idle_throttle_plate_position: 0.945
+/*
+performer_rpm_intake intake(
+    carburetor_cfm: 950.0, //650
+    idle_flow_rate_cfm: 0.05, //0.05
+    idle_throttle_plate_position: 0.997,//0.992
+    throttle_gamma: 1.0
+)*/
+
+chevy_bbc_stock_intake intake(
+    carburetor_cfm: 650.0, //650
+    idle_flow_rate_cfm: 0.05, //0.05
+    idle_throttle_plate_position: 0.995,//0.992
+    throttle_gamma: 1.0
 )
 
 exhaust_system_parameters es_params(
-    exhaust_flow_rate: k_carb(500.0),
-    volume: 100.0 * units.L
+    outlet_flow_rate: k_carb(500.0), //700
+    primary_tube_length: 10.0 * units.inch,
+    primary_flow_rate: k_carb(100.0), //500
+    velocity_decay: 1.0, //0.5
+    volume: 50.0 * units.L
 )
 
 exhaust_system exhaust0(es_params, audio_volume: 1.0)
-exhaust_system exhaust1(es_params, audio_volume: 0.0)
+exhaust_system exhaust1(es_params, audio_volume: 0.1)
 
-ignition_wire wire1()
-ignition_wire wire2()
-ignition_wire wire3()
-ignition_wire wire4()
-ignition_wire wire5()
-ignition_wire wire6()
-ignition_wire wire7()
-ignition_wire wire8()
+auto node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+}
 
 cylinder_bank b0(bank_params, angle: -45 * units.deg)
 b0
@@ -84,7 +96,7 @@ b0
         rod_journal: rj0,
         intake: intake,
         exhaust_system: exhaust0,
-        ignition_wire: wire1
+        ignition_wire: wires.wire1
     )
     .add_cylinder(
         piston: piston(piston_params),
@@ -92,7 +104,7 @@ b0
         rod_journal: rj1,
         intake: intake,
         exhaust_system: exhaust0,
-        ignition_wire: wire3
+        ignition_wire: wires.wire3
     )
     .add_cylinder(
         piston: piston(piston_params),
@@ -100,7 +112,7 @@ b0
         rod_journal: rj2,
         intake: intake,
         exhaust_system: exhaust0,
-        ignition_wire: wire5
+        ignition_wire: wires.wire5
     )
     .add_cylinder(
         piston: piston(piston_params),
@@ -108,7 +120,7 @@ b0
         rod_journal: rj3,
         intake: intake,
         exhaust_system: exhaust0,
-        ignition_wire: wire7
+        ignition_wire: wires.wire7
     )
 
 cylinder_bank b1(bank_params, angle: 45.0 * units.deg)
@@ -119,7 +131,7 @@ b1
         rod_journal: rj0,
         intake: intake,
         exhaust_system: exhaust1,
-        ignition_wire: wire2
+        ignition_wire: wires.wire2
     )
     .add_cylinder(
         piston: piston(piston_params),
@@ -127,7 +139,7 @@ b1
         rod_journal: rj1,
         intake: intake,
         exhaust_system: exhaust1,
-        ignition_wire: wire4
+        ignition_wire: wires.wire4
     )
     .add_cylinder(
         piston: piston(piston_params),
@@ -135,7 +147,7 @@ b1
         rod_journal: rj2,
         intake: intake,
         exhaust_system: exhaust1,
-        ignition_wire: wire6
+        ignition_wire: wires.wire6
     )
     .add_cylinder(
         piston: piston(piston_params),
@@ -143,7 +155,7 @@ b1
         rod_journal: rj3,
         intake: intake,
         exhaust_system: exhaust1,
-        ignition_wire: wire8
+        ignition_wire: wires.wire8
     )
 
 engine
@@ -152,106 +164,18 @@ engine
 
 engine.add_crankshaft(c0)
 
-function cam_lift(10 * units.deg)
-cam_lift.add_sample(0.0 * units.deg, 578.0 * units.thou)
-cam_lift.add_sample(10.0 * units.deg, 560.0 * units.thou)
-cam_lift.add_sample(-10.0 * units.deg, 560.0 * units.thou)
-cam_lift.add_sample(20.0 * units.deg, 510.0 * units.thou)
-cam_lift.add_sample(-20.0 * units.deg, 510.0 * units.thou)
-cam_lift.add_sample(30.0 * units.deg, 430.0 * units.thou)
-cam_lift.add_sample(-30.0 * units.deg, 430.0 * units.thou)
-cam_lift.add_sample(40.0 * units.deg, 350.0 * units.thou)
-cam_lift.add_sample(-40.0 * units.deg, 350.0 * units.thou)
-cam_lift.add_sample(50.0 * units.deg, 220.0 * units.thou)
-cam_lift.add_sample(-50.0 * units.deg, 220.0 * units.thou)
-cam_lift.add_sample(60.0 * units.deg, 75.0 * units.thou)
-cam_lift.add_sample(-60.0 * units.deg, 75.0 * units.thou)
-cam_lift.add_sample(70.0 * units.deg, 0.0 * units.thou)
-cam_lift.add_sample(-70.0 * units.deg, 0.0 * units.thou)
-cam_lift.add_sample(80.0 * units.deg, 0.0 * units.thou)
-cam_lift.add_sample(-80.0 * units.deg, 0.0 * units.thou)
-
-camshaft_parameters cam_params(
-    advance: 3.0 * units.deg,
-    base_radius: 1.0 * units.inch,
-    lobe_profile: stock_454_lobe_profile()
-)
-camshaft exhaust_cam_0(cam_params)
-camshaft exhaust_cam_1(cam_params)
-camshaft intake_cam_0(cam_params)
-camshaft intake_cam_1(cam_params)
-
-label lobe_separation(114 * units.deg)
-label advance(lobe_separation - 114 * units.deg)
-label rot90(90 * units.deg)
-label rot360(360 * units.deg)
-
-exhaust_cam_0
-    .add_lobe(rot360 - lobe_separation)
-    .add_lobe(rot360 - lobe_separation + 3 * rot90)
-    .add_lobe(rot360 - lobe_separation + 5 * rot90)
-    .add_lobe(rot360 - lobe_separation + 6 * rot90)
-
-exhaust_cam_1
-    .add_lobe(rot360 - lobe_separation + 7 * rot90)
-    .add_lobe(rot360 - lobe_separation + 2 * rot90)
-    .add_lobe(rot360 - lobe_separation + 4 * rot90)
-    .add_lobe(rot360 - lobe_separation + 1 * rot90)
-
-intake_cam_0
-    .add_lobe(rot360 + lobe_separation)
-    .add_lobe(rot360 + lobe_separation + 3 * rot90)
-    .add_lobe(rot360 + lobe_separation + 5 * rot90)
-    .add_lobe(rot360 + lobe_separation + 6 * rot90)
-
-intake_cam_1
-    .add_lobe(rot360 + lobe_separation + 7 * rot90)
-    .add_lobe(rot360 + lobe_separation + 2 * rot90)
-    .add_lobe(rot360 + lobe_separation + 4 * rot90)
-    .add_lobe(rot360 + lobe_separation + 1 * rot90)
-
-function head_flow_intake(filter_radius: 50 * units.thou)
-head_flow_intake
-    .add_sample(0 * units.thou, 0.0)
-    .add_sample(50 * units.thou, k_28inH2O(10.0))
-    .add_sample(100 * units.thou, k_28inH2O(76.0))
-    .add_sample(150 * units.thou, k_28inH2O(100.0))
-    .add_sample(200 * units.thou, k_28inH2O(146.0))
-    .add_sample(250 * units.thou, k_28inH2O(175.0))
-    .add_sample(300 * units.thou, k_28inH2O(212.0))
-    .add_sample(350 * units.thou, k_28inH2O(230.0))
-    .add_sample(400 * units.thou, k_28inH2O(255.0))
-    .add_sample(450 * units.thou, k_28inH2O(275.0))
-    .add_sample(500 * units.thou, k_28inH2O(294.0))
-    .add_sample(550 * units.thou, k_28inH2O(300.0))
-    .add_sample(600 * units.thou, k_28inH2O(314.0))
-
-function head_flow_exhaust(filter_radius: 50 * units.thou)
-head_flow_exhaust
-    .add_sample(0 * units.thou, 0.0)
-    .add_sample(50 * units.thou, k_28inH2O(10.0))
-    .add_sample(100 * units.thou, k_28inH2O(70.0))
-    .add_sample(150 * units.thou, k_28inH2O(100.0))
-    .add_sample(200 * units.thou, k_28inH2O(132.0))
-    .add_sample(250 * units.thou, k_28inH2O(140.0))
-    .add_sample(300 * units.thou, k_28inH2O(156.0))
-    .add_sample(350 * units.thou, k_28inH2O(170.0))
-    .add_sample(400 * units.thou, k_28inH2O(181.0))
-    .add_sample(450 * units.thou, k_28inH2O(191.0))
-    .add_sample(500 * units.thou, k_28inH2O(207.0))
-    .add_sample(550 * units.thou, k_28inH2O(214.0))
-    .add_sample(600 * units.thou, k_28inH2O(228.0))
+chevy_454_stock_camshaft camshaft()
 
 b0.set_cylinder_head (
     chevy_bbc_peanut_port_head(
-        intake_camshaft: intake_cam_0,
-        exhaust_camshaft: exhaust_cam_0
+        intake_camshaft: camshaft.intake_cam_0,
+        exhaust_camshaft: camshaft.exhaust_cam_0
     )
 )
 b1.set_cylinder_head (
     chevy_bbc_peanut_port_head(
-        intake_camshaft: intake_cam_1,
-        exhaust_camshaft: exhaust_cam_1,
+        intake_camshaft: camshaft.intake_cam_1,
+        exhaust_camshaft: camshaft.exhaust_cam_1,
         flip_display: true
     )
 )
@@ -266,23 +190,12 @@ timing_curve
     .add_sample(5000 * units.rpm, 38 * units.deg)
     .add_sample(6000 * units.rpm, 38 * units.deg)
 
-ignition_module ignition_module(
-    timing_curve: timing_curve,
-    rev_limit: 6500 * units.rpm
-)
-
-label cycle(2 * 360 * units.deg)
-ignition_module
-    .connect_wire(wire1, (0.0 / 8.0) * cycle)
-    .connect_wire(wire8, (1.0 / 8.0) * cycle)
-    .connect_wire(wire4, (2.0 / 8.0) * cycle)
-    .connect_wire(wire3, (3.0 / 8.0) * cycle)
-    .connect_wire(wire6, (4.0 / 8.0) * cycle)
-    .connect_wire(wire5, (5.0 / 8.0) * cycle)
-    .connect_wire(wire7, (6.0 / 8.0) * cycle)
-    .connect_wire(wire2, (7.0 / 8.0) * cycle)
-
-engine.add_ignition_module(ignition_module)
+engine.add_ignition_module(
+    chevy_bbc_distributor(
+        wires: wires,
+        timing_curve: timing_curve,
+        rev_limit: 7000 * units.rpm
+    ))
 
 set_engine(
     engine: engine

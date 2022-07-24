@@ -80,8 +80,8 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         Function *m_meanPistonSpeedToTurbulence;
         GasSystem m_system;
-        GasSystem m_intakeRunner;
-        GasSystem m_exhaustRunner;
+        GasSystem m_intakeRunnerAndManifold;
+        GasSystem m_exhaustRunnerAndPrimary;
         FlameEvent m_flameEvent;
         bool m_lit;
 
@@ -96,6 +96,11 @@ class CombustionChamber : public atg_scs::ForceGenerator {
 
         double m_intakeFlowRate;
         double m_exhaustFlowRate;
+
+        double m_manifoldToRunnerFlowRate;
+        double m_primaryToCollectorFlowRate;
+        double m_cylinderCrossSectionSurfaceArea;
+        double m_cylinderWidthApproximation;
 
         double m_lastTimestepTotalExhaustFlow;
         double m_lastTimestepTotalIntakeFlow;

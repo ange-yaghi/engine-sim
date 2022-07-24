@@ -77,10 +77,8 @@ namespace es_script {
             addInput("flip_display", &m_parameters.FlipDisplay);
             addInput("intake_runner_volume", &m_parameters.IntakeRunnerVolume);
             addInput("intake_runner_cross_section_area", &m_parameters.IntakeRunnerCrossSectionArea);
-            addInput("intake_runner_velocity_decay", &m_parameters.IntakeRunnerVelocityDecay);
             addInput("exhaust_runner_volume", &m_parameters.ExhaustRunnerVolume);
             addInput("exhaust_runner_cross_section_area", &m_parameters.ExhaustRunnerCrossSectionArea);
-            addInput("exhaust_runner_velocity_decay", &m_parameters.ExhaustRunnerVelocityDecay);
 
             ObjectReferenceNode<CylinderHeadNode>::registerInputs();
         }

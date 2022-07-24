@@ -570,7 +570,7 @@ void EngineSimApplication::initialize() {
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    //frame_dt = clamp(frame_dt, 1 / 100.0f, 1 / 30.0f);
+    frame_dt = clamp(frame_dt, 1 / 100.0f, 1 / 30.0f);
 
     double speed = 1.0 / 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::N1)) {
@@ -596,8 +596,6 @@ void EngineSimApplication::process(float frame_dt) {
     auto proc_t0 = std::chrono::steady_clock::now();
     const int iterationCount = m_simulator.getFrameIterationCount();
     while (m_simulator.simulateStep()) {
-        const double runnerPressure = m_simulator.getEngine()->getChamber(0)->m_intakeRunner.pressure()
-            + m_simulator.getEngine()->getChamber(0)->m_intakeRunner.dynamicPressure(1.0, 0.0);
         const double cylinderPressure = m_simulator.getEngine()->getChamber(0)->m_system.pressure()
             + m_simulator.getEngine()->getChamber(0)->m_system.dynamicPressure(-1.0, 0.0);
 

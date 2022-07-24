@@ -2,6 +2,7 @@
 
 #include "../include/constants.h"
 #include "../include/units.h"
+#include "../include/fuel.h"
 
 #include <cmath>
 #include <assert.h>
@@ -51,8 +52,6 @@ void Engine::initialize(const Parameters &params) {
     m_starterSpeed = params.StarterSpeed;
     m_redline = params.Redline;
     m_name = params.Name;
-
-    m_fuel = params.Fuel;
 
     m_crankshafts = new Crankshaft[m_crankshaftCount];
     m_cylinderBanks = new CylinderBank[m_cylinderBankCount];
@@ -223,11 +222,11 @@ double Engine::getTotalFuelMassConsumed() const {
         n_fuelConsumed += m_intakes[i].m_totalFuelInjected;
     }
 
-    return n_fuelConsumed * m_fuel.MolecularMass;
+    return n_fuelConsumed * m_fuel.getMolecularMass();
 }
 
 double Engine::getTotalVolumeFuelConsumed() const {
-    return getTotalFuelMassConsumed() / m_fuel.Density;
+    return getTotalFuelMassConsumed() / m_fuel.getDensity();
 }
 
 double Engine::getRpm() const {
