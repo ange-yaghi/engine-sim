@@ -191,23 +191,13 @@ public node connecting_rod {
 }
 
 // Piston
-private node piston_parameter_defaults {
+public node piston_parameters {
     input blowby: 0.0;
     input compression_height: 0.0;
     input wrist_pin_position: 0.0;
     input wrist_pin_location: 0.0;
     input displacement: 0.0;
     input mass: 0.0;
-}
-
-public node piston_parameters {
-    input copy: piston_parameter_defaults();
-    input blowby: copy.blowby;
-    input compression_height: copy.compression_height;
-    input wrist_pin_position: copy.wrist_pin_position;
-    input wrist_pin_location: copy.wrist_pin_location;
-    input displacement: copy.displacement;
-    input mass: copy.mass;
 }
 
 private node _piston => __engine_sim__piston {
@@ -221,10 +211,11 @@ private node _piston => __engine_sim__piston {
 
 public node piston {
     input params: piston_parameters();
+    input blowby: params.blowby;
     alias output __out [_piston]:
         _piston(
             mass: params.mass,
-            blowby: params.blowby,
+            blowby: blowby,
             compression_height: params.compression_height,
             wrist_pin_position: params.wrist_pin_position,
             displacement: params.displacement

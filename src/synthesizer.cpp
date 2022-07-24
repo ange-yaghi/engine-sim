@@ -88,16 +88,20 @@ void Synthesizer::initialize(const Parameters &p) {
     const unsigned int sampleCount1 = std::min((unsigned int)10000, waveFile1.GetSampleCount());
 
     if (sampleCount0 != 0 && sampleCount1 != 0) {
-        m_filters[0].Convolution.initialize(sampleCount0);
-        for (unsigned int i = 0; i < sampleCount0; ++i) {
-            m_filters[0].Convolution.getImpulseResponse()[i] =
-                2 * 0.025 * ((int16_t *)waveFile0.GetBuffer())[i] / INT16_MAX;
+        if (p.InputChannelCount > 0) {
+            m_filters[0].Convolution.initialize(sampleCount0);
+            for (unsigned int i = 0; i < sampleCount0; ++i) {
+                m_filters[0].Convolution.getImpulseResponse()[i] =
+                    2 * 0.025 * ((int16_t *)waveFile0.GetBuffer())[i] / INT16_MAX;
+            }
         }
 
-        m_filters[1].Convolution.initialize(sampleCount1);
-        for (unsigned int i = 0; i < sampleCount1; ++i) {
-            m_filters[1].Convolution.getImpulseResponse()[i] =
-                2 * 0.025 * ((int16_t *)waveFile1.GetBuffer())[i] / INT16_MAX;
+        if (p.InputChannelCount > 1) {
+            m_filters[1].Convolution.initialize(sampleCount1);
+            for (unsigned int i = 0; i < sampleCount1; ++i) {
+                m_filters[1].Convolution.getImpulseResponse()[i] =
+                    2 * 0.025 * ((int16_t *)waveFile1.GetBuffer())[i] / INT16_MAX;
+            }
         }
     }
     else {

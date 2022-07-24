@@ -854,7 +854,7 @@ void EngineSimApplication::run() {
         }
 
         if (m_simulator.m_dyno.m_enabled) {
-            if (m_simulator.getFilteredDynoTorque() > units::torque(50.0, units::ft_lb)) {
+            if (m_simulator.getFilteredDynoTorque() > units::torque(1.0, units::ft_lb)) {
                 m_dynoSpeed += units::rpm(500) * dt;
             }
             else {

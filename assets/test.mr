@@ -198,5 +198,5 @@ engine.add_ignition_module(
     ))
 
 set_engine(
-    engine: engine
+    engine: kohler_ch750()
 )

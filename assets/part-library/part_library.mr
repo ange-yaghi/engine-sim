@@ -1,5 +1,7 @@
-public import "cam_lobes.mr"
-public import "camshafts.mr"
-public import "heads.mr"
-public import "intakes.mr"
-public import "ignition_modules.mr"
+public import "parts/cam_lobes.mr"
+public import "parts/camshafts.mr"
+public import "parts/heads.mr"
+public import "parts/intakes.mr"
+public import "parts/ignition_modules.mr"
+
+public import "engines/engines.mr"

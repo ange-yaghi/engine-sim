@@ -120,3 +120,68 @@ public node edelbrock_6055_rectangle_port {
         flip_display: flip_display
     )
 }
+
+public node generic_small_engine_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 100.0 * units.cc;
+    input intake_runner_volume: 100.0 * units.cc;
+    input intake_runner_cross_section_area: 30.0 * units.cm2;
+    input exhaust_runner_volume: 100.0 * units.cc;
+    input exhaust_runner_cross_section_area: 30.0 * units.cm2;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 25 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 75 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 100 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 130 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 180 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 190 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 220 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 240 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 250 * flow_attenuation)
+        .add_flow_sample(500 * lift_scale, 260 * flow_attenuation)
+        .add_flow_sample(550 * lift_scale, 260 * flow_attenuation)
+        .add_flow_sample(600 * lift_scale, 260 * flow_attenuation)
+        .add_flow_sample(650 * lift_scale, 255 * flow_attenuation)
+        .add_flow_sample(700 * lift_scale, 250 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 25 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 50 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 75 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 100 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 125 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 160 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 175 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 180 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 190 * flow_attenuation)
+        .add_flow_sample(500 * lift_scale, 200 * flow_attenuation)
+        .add_flow_sample(550 * lift_scale, 205 * flow_attenuation)
+        .add_flow_sample(600 * lift_scale, 210 * flow_attenuation)
+        .add_flow_sample(650 * lift_scale, 210 * flow_attenuation)
+        .add_flow_sample(700 * lift_scale, 210 * flow_attenuation)
+
+    cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        intake_camshaft: intake_camshaft,
+        exhaust_camshaft: exhaust_camshaft,
+        flip_display: flip_display
+    )
+}

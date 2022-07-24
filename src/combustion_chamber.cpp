@@ -393,7 +393,11 @@ double CombustionChamber::calculateFrictionForce(double v_s) const {
 }
 
 void CombustionChamber::updateCycleStates() {
-    const double crankAngle = m_engine->getOutputCrankshaft()->getCycleAngle();
+    double crankAngle = m_engine->getOutputCrankshaft()->getCycleAngle();
+    if (std::isnan(crankAngle) || std::isinf(crankAngle)) {
+        crankAngle = 0.0;
+    }
+
     const int i = (int)std::round((crankAngle / (4 * constants::pi)) * (StateSamples - 1.0));
 
     m_pistonSpeed[i] = std::abs(pistonSpeed());
