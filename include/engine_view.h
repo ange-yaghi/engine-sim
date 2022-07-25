@@ -14,6 +14,7 @@ class EngineView : public UiElement {
         virtual void onDrag(const Point &p0, const Point &mouse0, const Point &mouse);
         virtual void onMouseScroll(int scroll);
 
+        void setDrawFrame(bool drawFrame) { m_drawFrame = drawFrame; }
         void setBounds(const Bounds &bounds);
 
         Point getCenter() const;
@@ -25,6 +26,7 @@ class EngineView : public UiElement {
         Point m_pan;
         Point m_dragStart;
         int m_lastScroll;
+        bool m_drawFrame;
 };
 
 #endif /* ATG_ENGINE_SIM_ENGINE_VIEW_H */

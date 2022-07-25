@@ -3,7 +3,7 @@
 #include "../include/engine_sim_application.h"
 
 EngineView::EngineView() {
-    m_pan = { 0, 0 };
+    m_pan = { 0, units::distance(-6, units::inch) };
     m_checkMouse = true;
     m_lastScroll = 0;
     m_zoom = 1.0f;
@@ -18,7 +18,9 @@ void EngineView::update(float dt) {
 }
 
 void EngineView::render() {
-    drawFrame(m_bounds, 1.0f, ysMath::Constants::One, m_app->getBackgroundColor(), false);
+    if (m_drawFrame) {
+        drawFrame(m_bounds, 1.0f, ysMath::Constants::One, m_app->getBackgroundColor(), false);
+    }
 }
 
 void EngineView::onMouseDown(const Point &mouseLocal) {
@@ -51,21 +53,6 @@ void EngineView::onMouseScroll(int scroll) {
 
 void EngineView::setBounds(const Bounds &bounds) {
     m_bounds = bounds;
-    return;
-
-    if (m_bounds.width() == 0 || m_bounds.height() == 0) {
-        m_bounds = bounds;
-        return;
-    }
-
-    if (m_bounds.width() == bounds.width() && m_bounds.height() == bounds.height()) return;
-
-    const Point prevCenter = getCameraPosition();
-    m_bounds = bounds;
-    const Point newCenter = getCameraPosition();
-
-    Point diff = newCenter - prevCenter;
-    m_pan += unitsToPixels(diff) * m_zoom;
 }
 
 Point EngineView::getCenter() const {

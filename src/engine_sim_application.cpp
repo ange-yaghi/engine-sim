@@ -536,7 +536,7 @@ void EngineSimApplication::initialize() {
     simulatorParams.SystemType = Simulator::SystemType::NsvOptimized;
     simulatorParams.Transmission = transmission;
     simulatorParams.Vehicle = vehicle;
-    simulatorParams.SimulationFrequency = 11000;
+    simulatorParams.SimulationFrequency = 40000;
     m_simulator.initialize(simulatorParams);
     m_simulator.startAudioRenderingThread();
     createObjects(m_iceEngine);
@@ -1081,6 +1081,7 @@ void EngineSimApplication::renderScene() {
         Grid grid3x3;
         grid3x3.v_cells = 3;
         grid3x3.h_cells = 3;
+        m_engineView->setDrawFrame(true);
         m_engineView->setBounds(grid.get(windowBounds, 1, 0, 1, 1));
         m_engineView->setLocalPosition({ 0, 0 });
 
@@ -1107,6 +1108,7 @@ void EngineSimApplication::renderScene() {
     }
     else if (m_screen == 1) {
         Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
+        m_engineView->setDrawFrame(false);
         m_engineView->setBounds(windowBounds);
         m_engineView->setLocalPosition({ 0, 0 });
         m_engineView->activate();
@@ -1124,6 +1126,7 @@ void EngineSimApplication::renderScene() {
         Grid grid;
         grid.v_cells = 1;
         grid.h_cells = 3;
+        m_engineView->setDrawFrame(true);
         m_engineView->setBounds(grid.get(windowBounds, 0, 0, 2, 1));
         m_engineView->setLocalPosition({ 0, 0 });
         m_engineView->activate();

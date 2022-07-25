@@ -70,9 +70,16 @@ void InfoCluster::render() {
         Bounds::lm);
 
     std::stringstream ss;
-    ss << std::fixed
-        << std::setprecision(1) << units::convert(m_engine->getDisplacement(), units::L) << " L -- "
-        << std::setprecision(0) << units::convert(m_engine->getDisplacement(), units::cubic_inches) << " CI";
+    ss << std::fixed;
+
+    if (m_engine->getDisplacement() < units::volume(1.0, units::L)) {
+        ss << std::setprecision(0) << units::convert(m_engine->getDisplacement(), units::cc) << " cc -- ";
+    }
+    else {
+        ss << std::setprecision(1) << units::convert(m_engine->getDisplacement(), units::L) << " L -- ";
+    }
+
+    ss << std::setprecision(0) << units::convert(m_engine->getDisplacement(), units::cubic_inches) << " CI";
 
     drawAlignedText(
         ss.str(),

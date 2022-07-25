@@ -10,7 +10,7 @@ engine engine(
 )
 
 crankshaft c0(
-    throw: 2.0 * units.inch + 0.25 * units.inch / 2,
+    throw: 2.0 * units.inch,
     flywheel_mass: 29 * 2 * units.lb,
     mass: 75 * units.lb,
     friction_torque: 10.0 * units.lb_ft,
@@ -43,11 +43,11 @@ connecting_rod_parameters cr_params(
     mass: 785.0 * units.g,
     moment_of_inertia: 0.0015884918028487504,
     center_of_mass: 0.0,
-    length: 6.135 * units.inch - 0.25 * units.inch / 2
+    length: 6.135 * units.inch
 )
 
 cylinder_bank_parameters bank_params(
-    bore: 4.25 * units.inch + 30 * units.thou,
+    bore: 4.25 * units.inch,
     deck_height: 9.8 * units.inch
 )
 
@@ -61,8 +61,8 @@ performer_rpm_intake intake(
 
 chevy_bbc_stock_intake intake(
     carburetor_cfm: 650.0, //650
-    idle_flow_rate_cfm: 0.05, //0.05
-    idle_throttle_plate_position: 0.995,//0.992
+    idle_flow_rate_cfm: 0.01, //0.05
+    idle_throttle_plate_position: 0.992,//0.992
     throttle_gamma: 1.0
 )
 
@@ -198,5 +198,5 @@ engine.add_ignition_module(
     ))
 
 set_engine(
-    engine: engine
+    engine: kohler_ch750()
 )
