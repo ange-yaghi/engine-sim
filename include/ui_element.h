@@ -59,6 +59,9 @@ class UiElement {
         Point worldToLocal(const Point &wp) const { return wp - getWorldPosition(); }
         Point localToWorld(const Point &lp) const { return lp + getWorldPosition(); }
 
+        void setVisible(bool visible) { m_visible = visible; }
+        bool isVisible() const { return m_visible; }
+
         size_t getChildCount() const { return m_children.size(); }
 
         void bringToFront(UiElement *element);
@@ -122,6 +125,7 @@ class UiElement {
         bool m_draggable;
         bool m_mouseOver;
         bool m_mouseHeld;
+        bool m_visible;
 
     protected:
         EngineSimApplication *m_app;

@@ -3,6 +3,8 @@
 
 #include "delta.h"
 
+#include "ui_math.h"
+
 class Shaders : public dbasic::ShaderBase {
     public:
         Shaders();
@@ -10,7 +12,8 @@ class Shaders : public dbasic::ShaderBase {
 
         ysError Initialize(
                 dbasic::ShaderSet *shaderSet,
-                ysRenderTarget *renderTarget,
+                ysRenderTarget *mainRenderTarget,
+                ysRenderTarget *uiRenderTarget,
                 ysShaderProgram *shaderProgram,
                 ysInputLayout *inputLayout);
         virtual ysError UseMaterial(dbasic::Material *material);
@@ -23,7 +26,12 @@ class Shaders : public dbasic::ShaderBase {
         dbasic::StageEnableFlags GetRegularFlags() const;
         dbasic::StageEnableFlags GetUiFlags() const;
 
-        void CalculateCamera(float width, float height);
+        void CalculateCamera(
+            float width,
+            float height,
+            const Bounds &cameraBounds,
+            float screenWidth,
+            float screenHeight);
         void CalculateUiCamera(float screenWidth, float screenHeight);
 
         void SetClearColor(const ysVector &col);

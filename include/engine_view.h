@@ -14,6 +14,8 @@ class EngineView : public UiElement {
         virtual void onDrag(const Point &p0, const Point &mouse0, const Point &mouse);
         virtual void onMouseScroll(int scroll);
 
+        void setBounds(const Bounds &bounds);
+
         Point getCenter() const;
 
         Point getCameraPosition() const;

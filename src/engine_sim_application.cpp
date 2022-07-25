@@ -62,10 +62,13 @@ EngineSimApplication::EngineSimApplication() {
     m_infoCluster = nullptr;
     m_iceEngine = nullptr;
 
+    m_mainRenderTarget = nullptr;
+
     m_oscillatorSampleOffset = 0;
     m_gameWindowHeight = 256;
     m_screenWidth = 256;
     m_screenHeight = 256;
+    m_screen = 0;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -107,9 +110,18 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
 
     m_engine.CreateGameWindow(settings);
 
+    m_engine.GetDevice()->CreateSubRenderTarget(
+        &m_mainRenderTarget,
+        m_engine.GetScreenRenderTarget(),
+        0,
+        0,
+        0,
+        0);
+
     m_engine.InitializeShaderSet(&m_shaderSet);
     m_shaders.Initialize(
         &m_shaderSet,
+        m_mainRenderTarget,
         m_engine.GetScreenRenderTarget(),
         m_engine.GetDefaultShaderProgram(),
         m_engine.GetDefaultInputLayout());
@@ -709,12 +721,12 @@ void EngineSimApplication::render() {
 }
 
 float EngineSimApplication::pixelsToUnits(float pixels) const {
-    const float f = m_displayHeight / m_gameWindowHeight;
+    const float f = m_displayHeight / m_engineView->m_bounds.height();
     return pixels * f;
 }
 
 float EngineSimApplication::unitsToPixels(float units) const {
-    const float f = m_gameWindowHeight / m_displayHeight;
+    const float f = m_engineView->m_bounds.height() / m_displayHeight;
     return units * f;
 }
 
@@ -922,6 +934,11 @@ void EngineSimApplication::run() {
             clutchRC = 1.0;
         }
 
+        if (m_engine.ProcessKeyDown(ysKey::Code::Tab)) {
+            m_screen++;
+            if (m_screen > 2) m_screen = 0;
+        }
+
         const double clutch_s = dt / (dt + clutchRC);
         clutchPressure = clutchPressure * (1 - clutch_s) + newClutchPressure * clutch_s;
         m_simulator.getTransmission()->setClutchPressure(clutchPressure);
@@ -975,10 +992,17 @@ void EngineSimApplication::destroy() {
 }
 
 void EngineSimApplication::drawGenerated(
-        const GeometryGenerator::GeometryIndices &indices,
-        int layer)
+    const GeometryGenerator::GeometryIndices &indices,
+    int layer)
 {
     drawGenerated(indices, layer, m_shaders.GetRegularFlags());
+}
+
+void EngineSimApplication::drawGeneratedUi(
+    const GeometryGenerator::GeometryIndices &indices,
+    int layer)
+{
+    drawGenerated(indices, layer, m_shaders.GetUiFlags());
 }
 
 void EngineSimApplication::drawGenerated(
@@ -1047,31 +1071,94 @@ void EngineSimApplication::renderScene() {
     const Point cameraPos = m_engineView->getCameraPosition();
     m_shaders.m_cameraPosition = ysMath::LoadVector(cameraPos.x, cameraPos.y);
 
+    m_shaders.CalculateUiCamera(screenWidth, screenHeight);
+
+    if (m_screen == 0) {
+        Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
+        Grid grid;
+        grid.v_cells = 2;
+        grid.h_cells = 3;
+        Grid grid3x3;
+        grid3x3.v_cells = 3;
+        grid3x3.h_cells = 3;
+        m_engineView->setBounds(grid.get(windowBounds, 1, 0, 1, 1));
+        m_engineView->setLocalPosition({ 0, 0 });
+
+        m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 2);
+        m_oscCluster->m_bounds = grid.get(windowBounds, 1, 1);
+        m_performanceCluster->m_bounds = grid3x3.get(windowBounds, 0, 1);
+        m_loadSimulationCluster->m_bounds = grid3x3.get(windowBounds, 0, 2);
+
+        Grid grid1x3;
+        grid1x3.v_cells = 3;
+        grid1x3.h_cells = 1;
+        m_mixerCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 2);
+        m_infoCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 0, 1, 2);
+
+        m_engineView->setVisible(true);
+        m_rightGaugeCluster->setVisible(true);
+        m_oscCluster->setVisible(true);
+        m_performanceCluster->setVisible(true);
+        m_loadSimulationCluster->setVisible(true);
+        m_mixerCluster->setVisible(true);
+        m_infoCluster->setVisible(true);
+
+        m_oscCluster->activate();
+    }
+    else if (m_screen == 1) {
+        Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
+        m_engineView->setBounds(windowBounds);
+        m_engineView->setLocalPosition({ 0, 0 });
+        m_engineView->activate();
+
+        m_engineView->setVisible(true);
+        m_rightGaugeCluster->setVisible(false);
+        m_oscCluster->setVisible(false);
+        m_performanceCluster->setVisible(false);
+        m_loadSimulationCluster->setVisible(false);
+        m_mixerCluster->setVisible(false);
+        m_infoCluster->setVisible(false);
+    }
+    else if (m_screen == 2) {
+        Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
+        Grid grid;
+        grid.v_cells = 1;
+        grid.h_cells = 3;
+        m_engineView->setBounds(grid.get(windowBounds, 0, 0, 2, 1));
+        m_engineView->setLocalPosition({ 0, 0 });
+        m_engineView->activate();
+
+        m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 1);
+
+        m_engineView->setVisible(true);
+        m_rightGaugeCluster->setVisible(true);
+        m_oscCluster->setVisible(false);
+        m_performanceCluster->setVisible(false);
+        m_loadSimulationCluster->setVisible(false);
+        m_mixerCluster->setVisible(false);
+        m_infoCluster->setVisible(false);
+    }
+
+    const float cameraAspectRatio =
+        m_engineView->m_bounds.width() / m_engineView->m_bounds.height();
+    m_engine.GetDevice()->ResizeRenderTarget(
+        m_mainRenderTarget,
+        m_engineView->m_bounds.width(),
+        m_engineView->m_bounds.height(),
+        m_engineView->m_bounds.width(),
+        m_engineView->m_bounds.height()
+    );
+    m_engine.GetDevice()->RepositionRenderTarget(
+        m_mainRenderTarget,
+        m_engineView->m_bounds.getPosition(Bounds::tl).x,
+        screenHeight - m_engineView->m_bounds.getPosition(Bounds::tl).y
+    );
     m_shaders.CalculateCamera(
-        aspectRatio * m_displayHeight / m_engineView->m_zoom,
-        m_displayHeight / m_engineView->m_zoom);
-    m_shaders.CalculateUiCamera(aspectRatio * m_displayHeight, m_displayHeight);
-
-    Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
-    Grid grid;
-    grid.v_cells = 2;
-    grid.h_cells = 3;
-    Grid grid3x3;
-    grid3x3.v_cells = 3;
-    grid3x3.h_cells = 3;
-    m_engineView->m_bounds = grid.get(windowBounds, 1, 0, 1, 1);
-    m_engineView->setLocalPosition({ 0, 0 });
-
-    m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 2);
-    m_oscCluster->m_bounds = grid.get(windowBounds, 1, 1);
-    m_performanceCluster->m_bounds = grid3x3.get(windowBounds, 0, 1);
-    m_loadSimulationCluster->m_bounds = grid3x3.get(windowBounds, 0, 2);
-
-    Grid grid1x3;
-    grid1x3.v_cells = 3;
-    grid1x3.h_cells = 1;
-    m_mixerCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 2);
-    m_infoCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 0, 1, 2);
+        cameraAspectRatio * m_displayHeight / m_engineView->m_zoom,
+        m_displayHeight / m_engineView->m_zoom,
+        m_engineView->m_bounds,
+        m_screenWidth,
+        m_screenHeight);
 
     m_geometryGenerator.reset();
 

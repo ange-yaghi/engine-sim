@@ -38,6 +38,9 @@ class EngineSimApplication {
         void drawGenerated(
                 const GeometryGenerator::GeometryIndices &indices,
                 int layer = 0);
+        void drawGeneratedUi(
+                const GeometryGenerator::GeometryIndices &indices,
+                int layer = 0);
         void drawGenerated(
                 const GeometryGenerator::GeometryIndices &indices,
                 int layer,
@@ -91,6 +94,7 @@ class EngineSimApplication {
 
         std::string m_assetPath;
 
+        ysRenderTarget *m_mainRenderTarget;
         ysGPUBuffer *m_geometryVertexBuffer;
         ysGPUBuffer *m_geometryIndexBuffer;
 
@@ -146,6 +150,7 @@ class EngineSimApplication {
         ysAudioSource *m_audioSource;
 
         int m_oscillatorSampleOffset;
+        int m_screen;
 
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
         atg_dtv::Encoder m_encoder;

@@ -20,7 +20,8 @@ Shaders::~Shaders() {
 
 ysError Shaders::Initialize(
         dbasic::ShaderSet *shaderSet,
-        ysRenderTarget *renderTarget,
+        ysRenderTarget *mainRenderTarget,
+        ysRenderTarget *uiRenderTarget,
         ysShaderProgram *shaderProgram,
         ysInputLayout *inputLayout)
 {
@@ -30,7 +31,7 @@ ysError Shaders::Initialize(
     YDS_NESTED_ERROR_CALL(shaderSet->NewStage("ShaderStage::UI", &m_uiStage));
 
     m_mainStage->SetInputLayout(inputLayout);
-    m_mainStage->SetRenderTarget(renderTarget);
+    m_mainStage->SetRenderTarget(mainRenderTarget);
     m_mainStage->SetShaderProgram(shaderProgram);
     m_mainStage->SetFlagBit(0);
     m_mainStage->SetType(dbasic::ShaderStage::Type::FullPass);
@@ -53,7 +54,7 @@ ysError Shaders::Initialize(
 
     // UI Stage
     m_uiStage->SetInputLayout(inputLayout);
-    m_uiStage->SetRenderTarget(renderTarget);
+    m_uiStage->SetRenderTarget(uiRenderTarget);
     m_uiStage->SetShaderProgram(shaderProgram);
     m_uiStage->SetFlagBit(1);
     m_uiStage->SetClearTarget(false);
@@ -107,13 +108,37 @@ dbasic::StageEnableFlags Shaders::GetUiFlags() const {
     return m_uiStage->GetFlags();
 }
 
-void Shaders::CalculateCamera(float width, float height) {
+void Shaders::CalculateCamera(
+    float width,
+    float height,
+    const Bounds &cameraBounds,
+    float screenWidth,
+    float screenHeight)
+{
+    const ysMatrix projection = ysMath::OrthographicProjection(
+        width,
+        height,
+        0.001f,
+        500.0f);
+    const Point scale = Point(screenWidth, screenHeight);
+    const Point center =
+        (cameraBounds.getPosition() - Point(screenWidth / 2, screenHeight / 2))
+        / scale;
+
     m_screenVariables.Projection = ysMath::Transpose(
-        ysMath::OrthographicProjection(
-            width,
-            height,
-            0.001f,
-            500.0f));
+        ysMath::MatMult(
+            projection,
+            ysMath::MatMult(
+                ysMath::ScaleTransform(ysMath::LoadVector(
+                    cameraBounds.width() / screenWidth,
+                    cameraBounds.height() / screenHeight,
+                    1.0f)),
+                ysMath::TranslationTransform(ysMath::LoadVector(center.x, center.y, 0.0f))
+            )
+        )
+    );
+
+    m_screenVariables.Projection = ysMath::Transpose(projection);
 
     const ysVector cameraEye =
         ysMath::Add(

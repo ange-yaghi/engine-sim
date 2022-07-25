@@ -27,7 +27,13 @@ void EngineView::onMouseDown(const Point &mouseLocal) {
 }
 
 void EngineView::onDrag(const Point &p0, const Point &mouse0, const Point &mouse) {
-    m_pan = m_dragStart + (mouse - mouse0);
+    const Point delta = mouse - mouse0;
+    const Point deltaUnits = {
+        m_app->pixelsToUnits(delta.x),
+        m_app->pixelsToUnits(delta.y)
+    };
+
+    m_pan = m_dragStart + deltaUnits;
 }
 
 void EngineView::onMouseScroll(int scroll) {
@@ -39,18 +45,33 @@ void EngineView::onMouseScroll(int scroll) {
     const Point newCenter = getCenter();
 
     Point diff = newCenter - prevCenter;
-    m_pan += unitsToPixels(diff) * m_zoom;
-    m_dragStart += unitsToPixels(diff) * m_zoom;
+    m_pan += diff * m_zoom;
+    m_dragStart += diff * m_zoom;
+}
 
-    const Point test = getRenderPoint(m_bounds.getPosition(Bounds::center));
-    const Point finalCenter = getCenter();
+void EngineView::setBounds(const Bounds &bounds) {
+    m_bounds = bounds;
+    return;
+
+    if (m_bounds.width() == 0 || m_bounds.height() == 0) {
+        m_bounds = bounds;
+        return;
+    }
+
+    if (m_bounds.width() == bounds.width() && m_bounds.height() == bounds.height()) return;
+
+    const Point prevCenter = getCameraPosition();
+    m_bounds = bounds;
+    const Point newCenter = getCameraPosition();
+
+    Point diff = newCenter - prevCenter;
+    m_pan += unitsToPixels(diff) * m_zoom;
 }
 
 Point EngineView::getCenter() const {
-    return getCameraPosition() +
-        getRenderPoint(m_bounds.getPosition(Bounds::center)) / m_zoom;
+    return getCameraPosition();
 }
 
 Point EngineView::getCameraPosition() const {
-    return pixelsToUnits(-m_pan / m_zoom);
+    return Point(-m_pan / m_zoom);
 }

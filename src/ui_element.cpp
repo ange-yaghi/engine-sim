@@ -15,6 +15,7 @@ UiElement::UiElement() {
     m_draggable = false;
     m_mouseOver = false;
     m_mouseHeld = false;
+    m_visible = true;
 }
 
 UiElement::~UiElement() {
@@ -37,7 +38,7 @@ void UiElement::update(float dt) {
 
 void UiElement::render() {
     for (UiElement *child : m_children) {
-        child->render();
+        if (child->isVisible()) child->render();
     }
 }
 
@@ -108,6 +109,11 @@ void UiElement::bringToFront(UiElement *element) {
 
     m_children.erase(m_children.begin() + element->m_index);
     m_children.push_back(element);
+
+    int i = 0;
+    for (UiElement *element : m_children) {
+        element->m_index = i++;
+    }
 }
 
 void UiElement::activate() {
@@ -124,7 +130,7 @@ void UiElement::signal(Event event) {
 }
 
 float UiElement::pixelsToUnits(float length) const {
-    return m_app->pixelsToUnits(length);
+    return length;// m_app->pixelsToUnits(length);
 }
 
 Point UiElement::pixelsToUnits(const Point &p) const {
@@ -132,7 +138,7 @@ Point UiElement::pixelsToUnits(const Point &p) const {
 }
 
 float UiElement::unitsToPixels(float x) const {
-    return m_app->unitsToPixels(x);
+    return x; // m_app->unitsToPixels(x);
 }
 
 Point UiElement::unitsToPixels(const Point &p) const {
