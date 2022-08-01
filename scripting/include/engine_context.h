@@ -15,6 +15,7 @@ namespace es_script {
     class IntakeNode;
     class RodJournalNode;
     class CamshaftNode;
+    class ImpulseResponseNode;
 
     class EngineContext {
     public:
@@ -37,7 +38,10 @@ namespace es_script {
         ExhaustSystem *getExhaust(ExhaustSystemNode *exhaust) const;
 
         void addFunction(FunctionNode *node, Function *function);
-        Function *getFunction(FunctionNode *exhaust) const;
+        Function *getFunction(FunctionNode *node) const;
+
+        void addImpulseResponse(ImpulseResponseNode *node, ImpulseResponse *impulse);
+        ImpulseResponse *getImpulseResponse(ImpulseResponseNode *node) const;
 
         void addCrankshaft(CrankshaftNode *node, Crankshaft *crankshaft);
         Crankshaft *getCrankshaft(CrankshaftNode *node) const;
@@ -58,6 +62,7 @@ namespace es_script {
         std::map<ExhaustSystemNode *, ExhaustSystem *> m_exhaustSystems;
         std::map<IntakeNode *, Intake *> m_intakes;
         std::map<FunctionNode *, Function *> m_functions;
+        std::map<ImpulseResponseNode *, ImpulseResponse *> m_impulseResponses;
         std::map<RodJournalNode *, int> m_rodJournals;
         std::map<CrankshaftNode *, Crankshaft *> m_crankshafts;
         std::map<CamshaftNode *, Camshaft *> m_camshafts;

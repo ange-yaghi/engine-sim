@@ -11,6 +11,7 @@ ExhaustSystem::ExhaustSystem() {
     m_velocityDecay = 0;
     m_flow = 0;
     m_index = -1;
+    m_impulseResponse = nullptr;
 }
 
 ExhaustSystem::~ExhaustSystem() {
@@ -46,6 +47,7 @@ void ExhaustSystem::initialize(const Parameters &params) {
     m_collectorCrossSectionArea = params.CollectorCrossSectionArea;
     m_primaryTubeLength = params.PrimaryTubeLength;
     m_velocityDecay = params.VelocityDecay;
+    m_impulseResponse = params.ImpulseResponse;
 }
 
 void ExhaustSystem::destroy() {

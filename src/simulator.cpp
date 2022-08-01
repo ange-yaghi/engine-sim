@@ -205,7 +205,6 @@ void Simulator::placeAndInitialize() {
         rod->getCrankshaft()->getRodJournalPositionLocal(rod->getJournal(), &p_x, &p_y);
 
         // (bank->m_dx * s - p_x)^2 + (bank->m_dy * s - p_y)^2 = rod->m_length * rod->m_length
-
         const double a = bank->getDx() * bank->getDx() + bank->getDy() * bank->getDy();
         const double b = -2 * bank->getDx() * p_x - 2 * bank->getDy() * p_y;
         const double c = p_x * p_x + p_y * p_y - rod->getLength() * rod->getLength();

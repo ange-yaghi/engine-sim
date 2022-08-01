@@ -7,6 +7,7 @@
 #include "../include/camshaft_node.h"
 #include "../include/cylinder_head_node.h"
 #include "../include/ignition_module_node.h"
+#include "../include/impulse_response_node.h"
 
 es_script::LanguageRules::LanguageRules() {
     /* void */
@@ -58,6 +59,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__ignition_wire_channel", &es_script::ObjectChannel::IgnitionWireChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__fuel_channel", &es_script::ObjectChannel::FuelChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__impulse_response_channel", &es_script::ObjectChannel::ImpulseResponseChannel);
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -142,6 +145,7 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<IgnitionModuleNode>("__engine_sim__ignition_module");
     registerBuiltinType<IgnitionWireNode>("__engine_sim__ignition_wire");
     registerBuiltinType<FuelNode>("__engine_sim__fuel");
+    registerBuiltinType<ImpulseResponseNode>("__engine_sim__impulse_response");
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<

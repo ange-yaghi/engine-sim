@@ -60,8 +60,8 @@ ysVector SimulationObject::tintByLayer(const ysVector &col, int layers) const {
     ysVector result = col;
     for (int i = 0; i < layers; ++i) {
         result = ysMath::Add(
-            ysMath::Mul(result, ysMath::LoadScalar(0.1f)),
-            ysMath::Mul(m_app->getBackgroundColor(), ysMath::LoadScalar(0.9f))
+            ysMath::Mul(result, ysMath::LoadScalar(0.3f)),
+            ysMath::Mul(m_app->getBackgroundColor(), ysMath::LoadScalar(0.7f))
         );
     }
 

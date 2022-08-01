@@ -4,6 +4,7 @@
 #include "part.h"
 
 #include "gas_system.h"
+#include "impulse_response.h"
 
 class ExhaustSystem : public Part {
     friend class Engine;
@@ -17,6 +18,7 @@ class ExhaustSystem : public Part {
             double PrimaryFlowRate;
             double VelocityDecay;
             double AudioVolume;
+            ImpulseResponse *ImpulseResponse;
         };
 
     public:
@@ -35,12 +37,15 @@ class ExhaustSystem : public Part {
         inline double getCollectorCrossSectionArea() const { return m_collectorCrossSectionArea; }
         inline double getPrimaryTubeLength() const { return m_primaryTubeLength; }
         inline double getVelocityDecay() const { return m_velocityDecay; }
+        inline ImpulseResponse *getImpulseResponse() const { return m_impulseResponse; }
 
         inline GasSystem *getSystem() { return &m_system; }
 
     protected:
         GasSystem m_atmosphere;
         GasSystem m_system;
+
+        ImpulseResponse *m_impulseResponse;
 
         double m_primaryTubeLength;
         double m_collectorCrossSectionArea;

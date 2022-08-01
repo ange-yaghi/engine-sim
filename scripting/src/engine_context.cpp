@@ -85,6 +85,23 @@ Function *es_script::EngineContext::getFunction(FunctionNode *exhaust) const {
     else return nullptr;
 }
 
+void es_script::EngineContext::addImpulseResponse(
+    ImpulseResponseNode *node,
+    ImpulseResponse *impulse)
+{
+    m_impulseResponses[node] = impulse;
+}
+
+ImpulseResponse *es_script::EngineContext::getImpulseResponse(
+    ImpulseResponseNode *node) const
+{
+    auto it = m_impulseResponses.find(node);
+    if (it != m_impulseResponses.end()) {
+        return it->second;
+    }
+    else return nullptr;
+}
+
 void es_script::EngineContext::addCrankshaft(
     CrankshaftNode *node,
     Crankshaft *crankshaft)

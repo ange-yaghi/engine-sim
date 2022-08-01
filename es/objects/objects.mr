@@ -27,6 +27,7 @@ public node exhaust_system_channel => __engine_sim__exhaust_system_channel { /* 
 public node ignition_module_channel => __engine_sim__ignition_module_channel { /* void */ }
 public node ignition_wire_channel => __engine_sim__ignition_wire_channel { /* void */ }
 public node fuel_channel => __engine_sim__fuel_channel { /* void */ }
+public node impulse_response_channel => __engine_sim__impulse_response_channel { /* void */ }
 
 private node turbulence_to_flame_speed_ratio_default {
     alias output __out:
@@ -424,6 +425,12 @@ public node intake {
 }
 
 // Exhaust System
+public node impulse_response => __engine_sim__impulse_response {
+    input filename [string];
+    input volume [float]: 1.0;
+    alias output __out [impulse_response_channel];
+}
+
 public node exhaust_system_parameters {
     input volume: 100.0 * units.L;
     input collector_cross_section_area: circle_area(2.0 * units.inch);
@@ -442,6 +449,7 @@ private node _exhaust_system => __engine_sim__exhaust_system {
     input primary_flow_rate [float];
     input audio_volume [float];
     input velocity_decay [float];
+    input impulse_response [impulse_response];
     alias output __out [exhaust_system_channel];
 }
 
@@ -454,6 +462,7 @@ public node exhaust_system {
     input primary_flow_rate: parameters.primary_flow_rate;
     input audio_volume: parameters.audio_volume;
     input velocity_decay: parameters.velocity_decay;
+    input impulse_response;
     alias output __out [_exhaust_system]:
         _exhaust_system(
             volume: volume,
@@ -462,7 +471,8 @@ public node exhaust_system {
             primary_tube_length: primary_tube_length,
             primary_flow_rate: primary_flow_rate,
             audio_volume: audio_volume,
-            velocity_decay: velocity_decay
+            velocity_decay: velocity_decay,
+            impulse_response: impulse_response
         );
 }
 

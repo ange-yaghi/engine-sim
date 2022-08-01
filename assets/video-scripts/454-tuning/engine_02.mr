@@ -1,0 +1,205 @@
+import "engine_sim.mr"
+import "../../part-library/part_library.mr"
+
+units units()
+constants constants()
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+}
+
+public node video_engine_454_02 {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Chev. 454 V8",
+        starter_torque: 200 * units.lb_ft,
+        redline: 5500 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.0,
+            burning_efficiency_randomness: 0.5,
+            max_burning_efficiency: 0.85)
+    )
+
+    crankshaft c0(
+        throw: 2.0 * units.inch,
+        flywheel_mass: 29 * 2 * units.lb,
+        mass: 75 * units.lb,
+        friction_torque: 10.0 * units.lb_ft,
+        moment_of_inertia: 0.22986844776863666 * 2,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: constants.pi / 4 - 2 * constants.pi
+    )
+
+    rod_journal rj0(angle: 0.0)
+    rod_journal rj1(angle: -constants.pi / 2)
+    rod_journal rj2(angle: -3.0 * constants.pi / 2)
+    rod_journal rj3(angle: constants.pi)
+
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 880 * units.g,
+        blowby: 0,
+        compression_height: 1.640 * units.inch,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: 785.0 * units.g,
+        moment_of_inertia: 0.0015884918028487504,
+        center_of_mass: 0.0,
+        length: 6.135 * units.inch
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: 4.25 * units.inch,
+        deck_height: 9.8 * units.inch
+    )
+
+    chevy_bbc_stock_intake intake(
+        carburetor_cfm: 950.0,
+        idle_flow_rate_cfm: 0.007,
+        idle_throttle_plate_position: 0.963,
+        throttle_gamma: 1.5
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(550.0),
+        primary_tube_length: 10.0 * units.inch,
+        primary_flow_rate: k_carb(90.0),
+        velocity_decay: 1.0, //0.5
+        volume: 50.0 * units.L
+    )
+
+    impulse_response ir0(filename: "../../smooth_39.wav", volume: 0.001)
+    impulse_response ir1(filename: "../../smooth_39.wav", volume: 0.01)
+
+    exhaust_system exhaust0(es_params, audio_volume: 1.0, impulse_response: ir0)
+    exhaust_system exhaust1(es_params, audio_volume: 1.0, impulse_response: ir1)
+
+    cylinder_bank b0(bank_params, angle: -45 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.2)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.6)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.6)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.4)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire7
+        )
+
+    cylinder_bank b1(bank_params, angle: 45.0 * units.deg)
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.2)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.2)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.6)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.6)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    chevy_454_stock_camshaft camshaft()
+
+    b0.set_cylinder_head (
+        chevy_bbc_peanut_port_head(
+            intake_camshaft: camshaft.intake_cam_0,
+            exhaust_camshaft: camshaft.exhaust_cam_0
+        )
+    )
+    b1.set_cylinder_head (
+        chevy_bbc_peanut_port_head(
+            intake_camshaft: camshaft.intake_cam_1,
+            exhaust_camshaft: camshaft.exhaust_cam_1,
+            flip_display: true
+        )
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 12 * units.deg)
+        .add_sample(1000 * units.rpm, 12 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 30 * units.deg)
+        .add_sample(4000 * units.rpm, 38 * units.deg)
+        .add_sample(5000 * units.rpm, 38 * units.deg)
+        .add_sample(6000 * units.rpm, 38 * units.deg)
+
+    engine.add_ignition_module(
+        chevy_bbc_distributor(
+            wires: wires,
+            timing_curve: timing_curve,
+            rev_limit: 7000 * units.rpm
+        )
+    )
+}

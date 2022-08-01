@@ -48,9 +48,6 @@ void Synthesizer::initialize(const Parameters &p) {
     m_audioBuffer.initialize(p.AudioBufferSize);
     m_inputChannels = new InputChannel[p.InputChannelCount];
     for (int i = 0; i < p.InputChannelCount; ++i) {
-        //m_inputChannels[i].Data = new double[p.InputBufferSize];
-        //memset(m_inputChannels[i].Data, 0, sizeof(double) * p.InputBufferSize);
-
         m_inputChannels[i].TransferBuffer = new double[p.InputBufferSize];
         m_inputChannels[i].Data.initialize(p.InputBufferSize);
     }
@@ -72,6 +69,7 @@ void Synthesizer::initialize(const Parameters &p) {
     }
 
     // temp
+    /*
     ysWindowsAudioWaveFile waveFile0;
     waveFile0.OpenFile("../assets/test_engine_14_eq_adjusted_16.wav"); // test_engine_14_eq_adjusted_16.wav
     waveFile0.InitializeInternalBuffer(waveFile0.GetSampleCount());
@@ -104,19 +102,28 @@ void Synthesizer::initialize(const Parameters &p) {
             }
         }
     }
-    else {
-        for (int i = 0; i < p.InputChannelCount; ++i) {
-            m_filters[i].Convolution.initialize(17);
-            m_filters[i].Convolution.getImpulseResponse()[16] = 10;
-        }
-    }
+    */
 
     m_levelingFilter.p_target = m_audioParameters.LevelerTarget;
     m_levelingFilter.p_maxLevel = m_audioParameters.LevelerMaxGain;
     m_levelingFilter.p_minLevel = m_audioParameters.LevelerMinGain;
 
-    for (int i = 0; i < 44100; ++i) {
+    for (int i = 0; i < m_audioBufferSize; ++i) {
         m_audioBuffer.write(0);
+    }
+}
+
+void Synthesizer::initializeImpulseResponse(
+    const int16_t *impulseResponse,
+    unsigned int samples,
+    double volume,
+    int index)
+{
+    const unsigned int sampleCount = std::min((unsigned int)10000, samples);
+    m_filters[index].Convolution.initialize(sampleCount);
+    for (unsigned int i = 0; i < sampleCount; ++i) {
+        m_filters[index].Convolution.getImpulseResponse()[i] =
+            volume * impulseResponse[i] / INT16_MAX;
     }
 }
 
@@ -139,7 +146,6 @@ void Synthesizer::destroy() {
     m_audioBuffer.destroy();
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
-        //delete[] m_inputChannels[i].Data;
         m_inputChannels[i].Data.destroy();
         m_filters[i].Convolution.destroy();
     }
@@ -180,39 +186,6 @@ void Synthesizer::waitProcessed() {
 }
 
 void Synthesizer::writeInput(const double *data) {
-    /*
-    const double filterRadius = (double)m_audioSampleRate / m_inputSampleRate;
-    const int filterRadiusSteps = (int)std::ceil(filterRadius);
-    int baseIndex = (int)std::round(m_inputWriteOffset);
-    if (baseIndex >= m_inputWriteOffset) {
-        baseIndex -= m_inputWriteOffset;
-    }
-
-    for (int i = 0; i < m_inputChannelCount; ++i) {
-        for (int j = -filterRadiusSteps; j <= filterRadiusSteps; ++j) {
-            const int index = m_inputChannels[i].Data.index(i, j);
-
-            const double delta = (j < 0)
-                ? inputDistance(index, m_inputWriteOffset)
-                : inputDistance(m_inputWriteOffset, index);
-            const double s = 1.0 - std::abs(clamp(delta / filterRadius, -1.0, 1.0));
-
-            if (j >= 0) {
-                m_inputChannels[i].Data.write(s * data[])
-            }
-            else {
-
-            }
-            //m_inputChannels[i].Data[index] += data[i] * s;
-        }
-    }
-
-    m_inputWriteOffset += filterRadius;
-    if (m_inputWriteOffset > (double)m_inputBufferSize) {
-        m_inputWriteOffset -= (double)m_inputBufferSize;
-    }
-    */
-
     m_inputWriteOffset += (double)m_audioSampleRate / m_inputSampleRate;
     if (m_inputWriteOffset >= (double)m_inputBufferSize) {
         m_inputWriteOffset -= (double)m_inputBufferSize;
@@ -233,7 +206,7 @@ void Synthesizer::writeInput(const double *data) {
             const double r = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
             const double r_filtered = m_filters[i].SampleNoiseLowPass.f(r);
             const double r_s = m_audioParameters.InputSampleNoise * r_filtered;
-            const double s_aug = f + r_s;// std::fmax(std::fmin(s + r_s, 1.0), 0.0);
+            const double s_aug = f + r_s;
 
             buffer.write(lastInputSample * (1 - s_aug) + data[i] * s_aug);
         }
@@ -280,7 +253,6 @@ void Synthesizer::renderAudio() {
     const int n = std::min(
         std::max(0, 2000 - (int)m_audioBuffer.size()),
         (int)m_inputChannels[0].Data.size());
-    //const int n = (int)m_inputChannels[0].Data.size();
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
         m_inputChannels[i].Data.read(n, m_inputChannels[i].TransferBuffer);
@@ -304,26 +276,6 @@ void Synthesizer::renderAudio() {
 
     m_cv0.notify_one();
 }
-
-/*
-double Synthesizer::sampleInput(double timeOffset, int channel) const {
-    const double index = timeOffsetToInputSample(timeOffset);
-
-    const int index0 = (int)std::floor(index);
-    const int index1 = (int)std::ceil(index);
-    const double s = index - index0;
-
-    const double *data = m_inputChannels[channel].Data;
-    const double v0 = data[index0];
-    const double v1 = data[index1];
-
-    const double r = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-    const double r_filtered = m_filters[channel].SampleNoiseLowPass.f(r);
-    const double r_s = m_audioParameters.InputSampleNoise * r_filtered;
-    const double s_aug = s + r_s;// std::fmax(std::fmin(s + r_s, 1.0), 0.0);
-
-    return (1 - s_aug) * data[index0] + s_aug * data[index1];
-}*/
 
 double Synthesizer::getLatency() const {
     return (double)m_latency / m_audioSampleRate;
@@ -351,9 +303,6 @@ void Synthesizer::setInputSampleRate(double sampleRate) {
 #undef max
 
 int16_t Synthesizer::renderAudio(int inputSample) {
-    //const double f_in = m_inputChannels[1].TransferBuffer[inputSample];
-    //return m_filters[1].InputDcFilter.fast_f(f_in) * 0.01;
-
     const double airNoise = m_audioParameters.AirNoise;
     const double dF_F_mix = m_audioParameters.dF_F_mix;
     const double convAmount = m_audioParameters.Convolution;
@@ -362,7 +311,7 @@ int16_t Synthesizer::renderAudio(int inputSample) {
     double dc[2] = { 0.0, 0.0 };
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
-        const double f_in = m_inputChannels[i].TransferBuffer[inputSample];// Data[inputSample];
+        const double f_in = m_inputChannels[i].TransferBuffer[inputSample];
         const double f_dc = m_filters[i].InputDcFilter.fast_f(f_in);
         const double f = f_in - f_dc;
         const double f_p = m_filters[i].Derivative.f(f);

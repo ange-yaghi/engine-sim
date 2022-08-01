@@ -536,10 +536,29 @@ void EngineSimApplication::initialize() {
     simulatorParams.SystemType = Simulator::SystemType::NsvOptimized;
     simulatorParams.Transmission = transmission;
     simulatorParams.Vehicle = vehicle;
-    simulatorParams.SimulationFrequency = 40000;
+    simulatorParams.SimulationFrequency = 10000;
     m_simulator.initialize(simulatorParams);
     m_simulator.startAudioRenderingThread();
     createObjects(m_iceEngine);
+
+    for (int i = 0; i < m_iceEngine->getExhaustSystemCount(); ++i) {
+        ImpulseResponse *response = m_iceEngine->getExhaustSystem(i)->getImpulseResponse();
+
+        ysWindowsAudioWaveFile waveFile;
+        waveFile.OpenFile(response->getFilename().c_str());
+        waveFile.InitializeInternalBuffer(waveFile.GetSampleCount());
+        waveFile.FillBuffer(0);
+        waveFile.CloseFile();
+
+        m_simulator.getSynthesizer()->initializeImpulseResponse(
+            reinterpret_cast<const int16_t *>(waveFile.GetBuffer()),
+            waveFile.GetSampleCount(),
+            response->getVolume(),
+            i
+        );
+
+        waveFile.DestroyInternalBuffer();
+    }
 
     m_uiManager.initialize(this);
 
@@ -763,6 +782,7 @@ void EngineSimApplication::run() {
             m_infoCluster->setLogMessage("Entered fullscreen mode");
         }
 
+        double newClutchPressure = 1.0;
         bool fineControlInUse = false;
         if (m_engine.IsKeyDown(ysKey::Code::Z)) {
             const double rate = fineControlMode
@@ -922,7 +942,6 @@ void EngineSimApplication::run() {
                 "DOWNSHIFTED TO " + std::to_string(m_simulator.getTransmission()->getGear()));
         }
 
-        double newClutchPressure = 1.0;
         if (m_engine.IsKeyDown(ysKey::Code::Shift)) {
             newClutchPressure = 0.0;
 

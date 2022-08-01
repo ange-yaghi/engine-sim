@@ -57,6 +57,11 @@ class Synthesizer {
         ~Synthesizer();
 
         void initialize(const Parameters &p);
+        void initializeImpulseResponse(
+            const int16_t *impulseResponse,
+            unsigned int samples,
+            double volume,
+            int index);
         void startAudioRenderingThread();
         void endAudioRenderingThread();
         void destroy();
@@ -71,7 +76,6 @@ class Synthesizer {
         void audioRenderingThread();
         void renderAudio();
 
-        //double sampleInput(double timeOffset, int channel) const;
         double getLatency() const;
 
         int inputDelta(int s1, int s0) const;

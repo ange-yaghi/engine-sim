@@ -37,5 +37,5 @@ public node vtwin90_distributor {
     alias output __out:
         ignition_module(timing_curve: timing_curve, rev_limit: rev_limit)
             .connect_wire(wires.wire1, (0.0 / 8.0) * cycle)
-            .connect_wire(wires.wire2, (7.0 / 8.0) * cycle);
+            .connect_wire(wires.wire2, (3.0 / 8.0) * cycle);
 }

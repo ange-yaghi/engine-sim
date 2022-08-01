@@ -15,7 +15,8 @@ public node kohler_ch750 {
     engine engine(
         name: "Kohler CH750",
         starter_torque: 50 * units.lb_ft,
-        starter_speed: 500 * units.rpm
+        starter_speed: 500 * units.rpm,
+        redline: 3600 * units.rpm
     )
 
     wires wires()
@@ -58,9 +59,9 @@ public node kohler_ch750 {
     intake intake(
         plenum_volume: 1.0 * units.L,
         plenum_cross_section_area: 10.0 * units.cm2,
-        intake_flow_rate: k_carb(100.0),
+        intake_flow_rate: k_carb(50.0),
         idle_flow_rate: k_carb(0.0),
-        idle_throttle_plate_position: 0.98,
+        idle_throttle_plate_position: 0.96,
         throttle_gamma: 1.0
     )
 
@@ -72,8 +73,8 @@ public node kohler_ch750 {
         volume: 20.0 * units.L
     )
 
-    exhaust_system exhaust0(es_params, audio_volume: 1.0)
-    exhaust_system exhaust1(es_params, audio_volume: 0.0)
+    impulse_response ir0(filename: "../../smooth_39.wav", volume: 0.001)
+    exhaust_system exhaust0(es_params, audio_volume: 1.0, impulse_response: ir0)
 
     cylinder_bank b0(bank_params, angle: -45 * units.deg)
     b0

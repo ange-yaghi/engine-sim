@@ -4,6 +4,7 @@
 #include "object_reference_node.h"
 
 #include "engine_context.h"
+#include "impulse_response_node.h"
 
 #include "engine_sim.h"
 
@@ -20,6 +21,8 @@ namespace es_script {
         ExhaustSystem *generate(EngineContext *context) {
             ExhaustSystem *exhaust = context->getExhaust(this);
             ExhaustSystem::Parameters parameters = m_parameters;
+            parameters.ImpulseResponse = m_impulseResponse->generate(context);
+
             exhaust->initialize(parameters);
 
             return exhaust;
@@ -34,6 +37,7 @@ namespace es_script {
             addInput("primary_flow_rate", &m_parameters.PrimaryFlowRate);
             addInput("audio_volume", &m_parameters.AudioVolume);
             addInput("velocity_decay", &m_parameters.VelocityDecay);
+            addInput("impulse_response", &m_impulseResponse, InputTarget::Type::Object);
 
             ObjectReferenceNode<ExhaustSystemNode>::registerInputs();
         }
@@ -45,6 +49,7 @@ namespace es_script {
             readAllInputs();
         }
 
+        ImpulseResponseNode *m_impulseResponse = nullptr;
         ExhaustSystem::Parameters m_parameters;
     };
 

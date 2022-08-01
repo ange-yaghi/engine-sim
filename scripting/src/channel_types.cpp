@@ -28,3 +28,5 @@ const piranha::ChannelType
     es_script::ObjectChannel::IgnitionWireChannel("IgnitionWireChannel");
 const piranha::ChannelType
     es_script::ObjectChannel::FuelChannel("FuelChannel");
+const piranha::ChannelType
+    es_script::ObjectChannel::ImpulseResponseChannel("ImpulseResponseChannel");

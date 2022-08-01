@@ -194,8 +194,7 @@ void CylinderHeadObject::render(const ViewParameters *view) {
             ysMath::Constants::ZAxis,
             (float)(
                 -exhaustCam->getAngle()
-                + exhaustCam->getLobeCenterline(layer)
-                - exhaustCam->getAdvance() / 2)));
+                + exhaustCam->getLobeCenterline(layer))));
 
     m_app->getShaders()->SetObjectTransform(T_exhaustCam);
     m_app->getShaders()->SetBaseColor(m_app->getYellow());
@@ -216,8 +215,7 @@ void CylinderHeadObject::render(const ViewParameters *view) {
             ysMath::Constants::ZAxis,
             (float)(
                 -intakeCam->getAngle()
-                + intakeCam->getLobeCenterline(layer)
-                - intakeCam->getAdvance() / 2)));
+                + intakeCam->getLobeCenterline(layer))));
 
     m_app->getShaders()->SetObjectTransform(T_intakeCam);
     m_app->getShaders()->SetBaseColor(m_app->getBackgroundColor());
