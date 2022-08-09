@@ -103,7 +103,7 @@ void Oscilloscope::render(const Bounds &bounds) {
 
         const bool detached =
             prev.x > p_i.x
-            || std::abs(p_i.x - prev.x) > pixelsToUnits(0.5) * (m_xMax - m_xMin);
+            || std::abs(p_i.x - prev.x) > pixelsToUnits(20.0f);
         m_app->getGeometryGenerator()->generatePathSegment(
             params,
             (detached || lastDetached) && !m_drawReverse);

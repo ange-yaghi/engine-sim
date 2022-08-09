@@ -173,6 +173,10 @@ void Simulator::initialize(const Parameters &params) {
         m_system->addForceGenerator(m_engine->getChamber(i));
     }
 
+    atg_scs::GravityForceGenerator *gravity = new atg_scs::GravityForceGenerator;
+    //gravity->m_g = 10.0;
+    //m_system->addForceGenerator(gravity);
+
     m_dyno.connectCrankshaft(m_engine->getOutputCrankshaft());
     m_system->addConstraint(&m_dyno);
 
@@ -256,17 +260,12 @@ void Simulator::startFrame(double dt) {
     const double timestep = getTimestep();
     i_steps = (int)std::round((dt * m_simulationSpeed) / timestep);
 
-    const double targetLatency = getSynthesizerInputLatencyTarget();
-    
+    const double targetLatency = getSynthesizerInputLatencyTarget(); 
     if (m_synthesizer.getLatency() < targetLatency) {
-        ++i_steps;
+        i_steps *= 1.1;
     }
     else if (m_synthesizer.getLatency() > targetLatency) {
-        if (m_synthesizer.getLatency() > 2 * targetLatency) i_steps -= 2;
-        else --i_steps;
-        if (i_steps < 0) {
-            i_steps = 0;
-        }
+        i_steps *= 0.1;
     }
 
     if (i_steps > 0) {

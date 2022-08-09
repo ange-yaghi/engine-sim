@@ -20,7 +20,7 @@ void CrankshaftObject::render(const ViewParameters *view) {
 
     for (int i = 0; i < journalCount; ++i) {
         const int layer = i;
-        if (layer > view->Layer1 || layer < view->Layer0) return;
+        if (layer > view->Layer1 || layer < view->Layer0) continue;
 
         const ysVector col = tintByLayer(ysColor::srgbiToLinear(0xAAAAAA), i);
 
@@ -45,13 +45,13 @@ void CrankshaftObject::render(const ViewParameters *view) {
         0.0f,
         0.0f,
         0.0f);
-    m_app->getShaders()->SetBaseColor(tintByLayer(ysColor::srgbiToLinear(0x999999), 0));
+    m_app->getShaders()->SetBaseColor(tintByLayer(ysColor::srgbiToLinear(0xFFFFFF), 1));
     m_app->getEngine()->DrawModel(
         m_app->getShaders()->GetRegularFlags(),
         m_app->getAssetManager()->GetModelAsset("CrankSnout"),
         0x10);
 
-    m_app->getShaders()->SetBaseColor(tintByLayer(ysColor::srgbiToLinear(0xFFFFFF), 1));
+    m_app->getShaders()->SetBaseColor(tintByLayer(ysColor::srgbiToLinear(0xAAAAAA), 1));
     m_app->getEngine()->DrawModel(
         m_app->getShaders()->GetRegularFlags(),
         m_app->getAssetManager()->GetModelAsset("CrankSnoutThreads"),

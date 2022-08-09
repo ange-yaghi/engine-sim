@@ -221,7 +221,7 @@ void CombustionChamber::ignite() {
             units::pressure(160, units::psi));
 
         if (rand() % 32 == 0) {
-            m_flameEvent.efficiency = maxBurningEfficiency;
+            //m_flameEvent.efficiency = maxBurningEfficiency;
         }
     }
 }

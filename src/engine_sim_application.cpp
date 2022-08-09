@@ -537,6 +537,7 @@ void EngineSimApplication::initialize() {
     simulatorParams.Transmission = transmission;
     simulatorParams.Vehicle = vehicle;
     simulatorParams.SimulationFrequency = 10000;
+    simulatorParams.FluidSimulationSteps = 16;
     m_simulator.initialize(simulatorParams);
     m_simulator.startAudioRenderingThread();
     createObjects(m_iceEngine);
@@ -729,7 +730,7 @@ void EngineSimApplication::process(float frame_dt) {
 void EngineSimApplication::render() {
     SimulationObject::ViewParameters view;
     view.Layer0 = 0;
-    view.Layer1 = 3;
+    view.Layer1 = 10;
 
     for (SimulationObject *object : m_objects) {
         object->generateGeometry();
@@ -933,13 +934,18 @@ void EngineSimApplication::run() {
             m_simulator.getTransmission()->changeGear(m_simulator.getTransmission()->getGear() + 1);
 
             m_infoCluster->setLogMessage(
-                "UPSHIFTED TO " + std::to_string(m_simulator.getTransmission()->getGear()));
+                "UPSHIFTED TO " + std::to_string(m_simulator.getTransmission()->getGear() + 1));
         }
         else if (m_engine.ProcessKeyDown(ysKey::Code::Down)) {
             m_simulator.getTransmission()->changeGear(m_simulator.getTransmission()->getGear() - 1);
 
-            m_infoCluster->setLogMessage(
-                "DOWNSHIFTED TO " + std::to_string(m_simulator.getTransmission()->getGear()));
+            if (m_simulator.getTransmission()->getGear() != -1) {
+                m_infoCluster->setLogMessage(
+                    "DOWNSHIFTED TO " + std::to_string(m_simulator.getTransmission()->getGear() + 1));
+            }
+            else {
+                m_infoCluster->setLogMessage("SHIFTED TO NEUTRAL");
+            }
         }
 
         if (m_engine.IsKeyDown(ysKey::Code::Shift)) {

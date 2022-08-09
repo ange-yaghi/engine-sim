@@ -1,6 +1,6 @@
 import "engine_sim.mr"
 import "part-library/part_library.mr"
-import "video-scripts/454-tuning/engine_03.mr"
+import "video-scripts/454-tuning/engine_04.mr"
 
 set_engine(
     engine: kohler_ch750()

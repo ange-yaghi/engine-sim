@@ -29,7 +29,7 @@ public node kohler_ch750 {
         moment_of_inertia: 0.22986844776863666 * 0.5,
         position_x: 0.0,
         position_y: 0.0,
-        tdc: constants.pi / 4 - 2 * constants.pi
+        tdc: -constants.pi / 4
     )
 
     rod_journal rj0(angle: 0.0)

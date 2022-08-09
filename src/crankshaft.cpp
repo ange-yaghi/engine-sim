@@ -58,7 +58,7 @@ void Crankshaft::setRodJournalAngle(int i, double angle) {
 }
 
 double Crankshaft::getAngle() const {
-    return -(m_body.theta - m_tdc);
+    return -m_body.theta - m_tdc;
 }
 
 double Crankshaft::getCycleAngle(double offset) {
