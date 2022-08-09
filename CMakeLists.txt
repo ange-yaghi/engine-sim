@@ -72,6 +72,8 @@ add_library(engine-sim STATIC
     src/derivative_filter.cpp
     src/low_pass_filter.cpp
     src/vehicle_drag_constraint.cpp
+    src/impulse_response.cpp
+
 
     # Include files
     include/crankshaft.h
@@ -106,6 +108,8 @@ add_library(engine-sim STATIC
     include/derivative_filter.h
     include/low_pass_filter.h
     include/vehicle_drag_constraint.h
+    include/impulse_response.h
+
 )
 
 target_link_libraries(engine-sim
@@ -123,6 +127,7 @@ if (PIRANHA_ENABLED)
         scripting/src/compiler.cpp
         scripting/src/engine_context.cpp
         scripting/src/language_rules.cpp
+
 
         # Include files
         scripting/include/actions.h
