@@ -69,6 +69,8 @@ EngineSimApplication::EngineSimApplication() {
     m_screenWidth = 256;
     m_screenHeight = 256;
     m_screen = 0;
+    m_view.Layer0 = 0;
+    m_view.Layer1 = 10;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -728,10 +730,8 @@ void EngineSimApplication::process(float frame_dt) {
 }
 
 void EngineSimApplication::render() {
-    SimulationObject::ViewParameters view;
-    view.Layer0 = 0;
-    view.Layer1 = 10;
 
+    SimulationObject::ViewParameters view = GetViewParameter();
     for (SimulationObject *object : m_objects) {
         object->generateGeometry();
         object->render(&view);
@@ -886,6 +886,15 @@ void EngineSimApplication::run() {
         throttle = targetThrottle * 0.5 + 0.5 * throttle;
 
         m_iceEngine->setThrottle(throttle);
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::M)) {
+            SetViewLayer(GetViewParameter().Layer0 + 1);
+            m_infoCluster->setLogMessage("[M] - Set render layer to" + std::to_string(GetViewParameter().Layer0));
+        }
+        if (m_engine.ProcessKeyDown(ysKey::Code::OEM_Comma)) {
+            SetViewLayer(GetViewParameter().Layer0 - 1);
+            m_infoCluster->setLogMessage("[,] - Set render layer to" + std::to_string(GetViewParameter().Layer0));
+        }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
             m_simulator.m_dyno.m_enabled = !m_simulator.m_dyno.m_enabled;
