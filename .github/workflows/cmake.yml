@@ -9,6 +9,8 @@ on:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
+  BOOST_VERSION: 1.78.0
+
 
 jobs:
   build:
@@ -37,6 +39,9 @@ jobs:
     - name: Install boost
       if: steps.cache-boost.outputs.cache-hit != 'true'
       uses: MarkusJx/install-boost@v2.3.0
+      with:
+        # Set the boost version (required)
+        boost_version: ${{BOOST_VERSION}}
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
