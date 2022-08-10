@@ -31,7 +31,6 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | V + Scroll | Low freq noise |
 | B + Scroll | High freq noise |
 | N + Scroll | Simulation freq |
-
 | Escape | Exit the program |
 | Q, W, E, R | Change throttle position |
 | 1, 2, 3, 4, 5 | Simulation time warp |
