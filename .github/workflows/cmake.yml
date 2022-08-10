@@ -1,10 +1,10 @@
 name: CMake
-
 on:
   push:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -19,19 +19,33 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+  
+    - name: Checkout submodules
+      uses: textbook/git-checkout-submodule-action@2.1.1
+    
+    # Retrieve the cache, uses cache@v2
+    - name: Cache boost
+      uses: actions/cache@v2
+      id: cache-boost
+      with:
+        # Set the default path as the path to cache
+        path: ${{github.workspace}}/boost/boost
+        # Use the version as the key to only cache the correct version
+        key: boost-${{BOOST_VERSION}}
+
+    # Actual install step (only runs if the cache is empty)
+    - name: Install boost
+      if: steps.cache-boost.outputs.cache-hit != 'true'
+      uses: MarkusJx/install-boost@v2.3.0
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      env:
+        BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+
 
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C ${{env.BUILD_TYPE}}
-      
