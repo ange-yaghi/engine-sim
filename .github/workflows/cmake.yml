@@ -22,7 +22,7 @@ jobs:
       # Set your boost version
       BOOST_VERSION: 1.78.0
       # Set you boost path to the default one (I don't know if you can use variables here)
-      BOOST_PATH: ${{github.workspace}}/boost/boost
+      BOOST_PATH: ${{github.workspace}}/boost/
       
     steps:
     - uses: actions/checkout@v3
