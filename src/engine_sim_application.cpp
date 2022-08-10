@@ -888,11 +888,14 @@ void EngineSimApplication::run() {
         m_iceEngine->setThrottle(throttle);
 
         if (m_engine.ProcessKeyDown(ysKey::Code::M)) {
-            SetViewLayer(GetViewParameter().Layer0 + 1);
+            if(GetViewParameter().Layer0 + 1 < m_iceEngine->getCylinderCount() / m_iceEngine->getCylinderBankCount())
+                SetViewLayer(GetViewParameter().Layer0 + 1);
             m_infoCluster->setLogMessage("[M] - Set render layer to" + std::to_string(GetViewParameter().Layer0));
         }
         if (m_engine.ProcessKeyDown(ysKey::Code::OEM_Comma)) {
-            SetViewLayer(GetViewParameter().Layer0 - 1);
+            if (GetViewParameter().Layer0 - 1 >= 0)
+                SetViewLayer(GetViewParameter().Layer0 - 1);
+
             m_infoCluster->setLogMessage("[,] - Set render layer to" + std::to_string(GetViewParameter().Layer0));
         }
 
