@@ -22,6 +22,15 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | S | Hold for starter |
 | D | Enable dyno |
 | F | Enter fullscreen mode |
+| Shift | Clutch |
+| Up Arrow | Up Gear | 
+| Down Arrow | Down Gear | 
+| Z + Scroll | Volume |
+| X + Scroll | Convolution Level |
+| C + Scroll | High freq gain |
+| V + Scroll | Low freq noise |
+| B + Scroll | High freq noise |
+| N + Scroll | Simulation freq |
 | Escape | Exit the program |
 | Q, W, E, R | Change throttle position |
 | 1, 2, 3, 4, 5 | Simulation time warp |
