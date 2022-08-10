@@ -1,0 +1,67 @@
+name: CMake
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+
+
+jobs:
+  build:
+    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
+    # You can convert this to a matrix build if you need cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: windows-latest
+    env:
+      # Set your boost version
+      BOOST_VERSION: 1.78.0
+      # Set you boost path to the default one (I don't know if you can use variables here)
+      BOOST_PATH: ${{github.workspace}}/boost/
+      
+    steps:
+    - uses: actions/checkout@v3
+  
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+    
+# Retrieve the cache, uses cache@v2
+    - name: Cache boost
+      uses: actions/cache@v2
+      id: cache-boost
+      with:
+        # Set the path to cache
+        path: ${{env.BOOST_PATH}}
+        # Use the version as the key to only cache the correct version
+        key: boost-${{env.BOOST_VERSION}}
+
+    # Actual install step (only runs if the cache is empty)
+    - name: Install boost
+      if: steps.cache-boost.outputs.cache-hit != 'true'
+      uses: MarkusJx/install-boost@v2.3.0
+      with:
+        # Set the boost version (required)
+        boost_version: ${{env.BOOST_VERSION}}
+        # Set the install directory
+        boost_install_dir: ${{env.BOOST_PATH}}
+        # Set your platform version
+        platform_version: 2022
+        # Set the toolset
+        toolset: msvc
+
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      env:
+        BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+
+
+    - name: Build
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}

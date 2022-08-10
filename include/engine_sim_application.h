@@ -66,6 +66,10 @@ class EngineSimApplication {
         ysVector getOrange() const { return m_orange; }
         ysVector getBlue() const { return m_blue; }
 
+        SimulationObject::ViewParameters GetViewParameter() const { return m_view; }
+
+        void SetViewLayer(int view) { m_view.Layer0 = view; }
+
         dbasic::AssetManager *getAssetManager() { return &m_assetManager; }
 
         int getScreenWidth() const { return m_screenWidth; }
@@ -116,6 +120,7 @@ class EngineSimApplication {
         LoadSimulationCluster *m_loadSimulationCluster;
         MixerCluster *m_mixerCluster;
         InfoCluster *m_infoCluster;
+        SimulationObject::ViewParameters m_view;
 
         bool m_paused;
 
