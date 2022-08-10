@@ -1,3 +1,4 @@
+#include "..\include\engine.h"
 #include "../include/engine.h"
 
 #include "../include/constants.h"
@@ -227,6 +228,15 @@ double Engine::getTotalFuelMassConsumed() const {
 
 double Engine::getTotalVolumeFuelConsumed() const {
     return getTotalFuelMassConsumed() / m_fuel.getDensity();
+}
+
+int Engine::getMaxDepth() const {
+    int maxDepth = 0;
+    for (int i = 0; i < m_cylinderBankCount; ++i) {
+        maxDepth = std::max(m_cylinderBanks[i].getCylinderCount(), maxDepth);
+    }
+
+    return maxDepth;
 }
 
 double Engine::getRpm() const {

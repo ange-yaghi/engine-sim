@@ -69,8 +69,8 @@ EngineSimApplication::EngineSimApplication() {
     m_screenWidth = 256;
     m_screenHeight = 256;
     m_screen = 0;
-    m_view.Layer0 = 0;
-    m_view.Layer1 = 10;
+    m_viewParameters.Layer0 = 0;
+    m_viewParameters.Layer1 = 10;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -730,11 +730,9 @@ void EngineSimApplication::process(float frame_dt) {
 }
 
 void EngineSimApplication::render() {
-
-    SimulationObject::ViewParameters view = GetViewParameter();
     for (SimulationObject *object : m_objects) {
         object->generateGeometry();
-        object->render(&view);
+        object->render(&getViewParameters());
     }
 
     m_uiManager.render();
@@ -888,15 +886,19 @@ void EngineSimApplication::run() {
         m_iceEngine->setThrottle(throttle);
 
         if (m_engine.ProcessKeyDown(ysKey::Code::M)) {
-            if(GetViewParameter().Layer0 + 1 < m_iceEngine->getCylinderCount() / m_iceEngine->getCylinderBankCount())
-                SetViewLayer(GetViewParameter().Layer0 + 1);
-            m_infoCluster->setLogMessage("[M] - Set render layer to" + std::to_string(GetViewParameter().Layer0));
-        }
-        if (m_engine.ProcessKeyDown(ysKey::Code::OEM_Comma)) {
-            if (GetViewParameter().Layer0 - 1 >= 0)
-                SetViewLayer(GetViewParameter().Layer0 - 1);
+            const int currentLayer = getViewParameters().Layer0;
+            if (currentLayer + 1 < m_iceEngine->getMaxDepth()) {
+                setViewLayer(currentLayer + 1);
+            }
 
-            m_infoCluster->setLogMessage("[,] - Set render layer to" + std::to_string(GetViewParameter().Layer0));
+            m_infoCluster->setLogMessage("[M] - Set render layer to " + std::to_string(getViewParameters().Layer0));
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::OEM_Comma)) {
+            if (getViewParameters().Layer0 - 1 >= 0)
+                setViewLayer(getViewParameters().Layer0 - 1);
+
+            m_infoCluster->setLogMessage("[,] - Set render layer to " + std::to_string(getViewParameters().Layer0));
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
@@ -1106,6 +1108,12 @@ void EngineSimApplication::createObjects(Engine *engine) {
         chObject->m_head = engine->getHead(i);
         m_objects.push_back(chObject);
     }
+}
+
+const SimulationObject::ViewParameters &EngineSimApplication
+        ::getViewParameters() const
+{
+    return m_viewParameters;
 }
 
 void EngineSimApplication::renderScene() {

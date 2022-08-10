@@ -32,7 +32,7 @@ void ConnectingRodObject::render(const ViewParameters *view) {
     ysVector col = m_connectingRod->getPiston()->getCylinderBank()->getIndex() % 2 == 0
         ? ysColor::srgbiToLinear(0xEEEEEE)
         : ysColor::srgbiToLinear(0xDDDDDD);
-    col = tintByLayer(col, layer);
+    col = tintByLayer(col, layer - view->Layer0);
 
     resetShader();
     setTransform(

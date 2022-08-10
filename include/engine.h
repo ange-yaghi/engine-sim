@@ -77,6 +77,7 @@ class Engine : public Part {
         int getCrankshaftCount() const { return m_crankshaftCount; }
         int getExhaustSystemCount() const { return m_exhaustSystemCount; }
         int getIntakeCount() const { return m_intakeCount; }
+        int getMaxDepth() const;
 
         Crankshaft *getCrankshaft(int i) const { return &m_crankshafts[i]; }
         CylinderBank *getCylinderBank(int i) const { return &m_cylinderBanks[i]; }

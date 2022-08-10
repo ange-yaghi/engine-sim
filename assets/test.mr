@@ -1,7 +1,8 @@
 import "engine_sim.mr"
 import "part-library/part_library.mr"
 import "video-scripts/454-tuning/engine_04.mr"
+import "i5.mr"
 
 set_engine(
-    engine: kohler_ch750()
+    engine: vems()
 )
