@@ -850,6 +850,16 @@ void EngineSimApplication::run() {
 
             m_infoCluster->setLogMessage("[B] - Set high freq. noise to " + std::to_string(audioParams.InputSampleNoise));
         }
+        else if (m_engine.IsKeyDown(ysKey::Code::N)) {
+            const double rate = fineControlMode
+                ? 10.0
+                : 100.0;
+
+            m_simulator.setSimulationFrequency(m_simulator.getSimulationFrequency() + mouseWheelDelta * rate * dt);
+            fineControlInUse = true;
+
+            m_infoCluster->setLogMessage("[N] - Set simulation freq to " + std::to_string(m_simulator.getSimulationFrequency()));
+        }
 
         const double prevTargetThrottle = targetThrottle;
         targetThrottle = fineControlMode ? targetThrottle : 1.0;
