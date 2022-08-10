@@ -33,7 +33,6 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | N + Scroll | Simulation freq |
 | M | Increase View Layer |
 | , | Decrease View Layer |
-
 | Escape | Exit the program |
 | Q, W, E, R | Change throttle position |
 | 1, 2, 3, 4, 5 | Simulation time warp |
