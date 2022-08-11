@@ -22,7 +22,7 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | S | Hold for starter |
 | D | Enable dyno |
 | F | Enter fullscreen mode |
-| Shift | Clutch |
+| Shift | Clutch (hold spacebar to slowly engage/disengage) |
 | Up Arrow | Up Gear | 
 | Down Arrow | Down Gear | 
 | Z + Scroll | Volume |
