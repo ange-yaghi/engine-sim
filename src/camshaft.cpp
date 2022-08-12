@@ -39,7 +39,7 @@ void Camshaft::destroy() {
 }
 
 double Camshaft::valveLift(int lobe) const {
-    return sampleLobe(getAngle() - m_lobeAngles[lobe]);
+    return sampleLobe(getAngle() + m_lobeAngles[lobe]);
 }
 
 double Camshaft::sampleLobe(double theta) const {

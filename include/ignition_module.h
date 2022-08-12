@@ -14,6 +14,7 @@ class IgnitionModule : public Part {
             Crankshaft *Crankshaft;
             Function *TimingCurve;
             double RevLimit = units::rpm(6000.0);
+            double LimiterDuration = 0.5 * units::sec;
         };
 
         struct SparkPlug {
@@ -50,7 +51,8 @@ class IgnitionModule : public Part {
 
         double m_lastCrankshaftAngle;
         double m_revLimit;
-        double m_revLimiterDecay;
+        double m_revLimitTimer;
+        double m_limiterDuration;
 };
 
 #endif /* ATG_ENGINE_SIM_IGNITION_MODULE_H */

@@ -193,7 +193,7 @@ void CylinderHeadObject::render(const ViewParameters *view) {
         ysMath::RotationTransform(
             ysMath::Constants::ZAxis,
             (float)(
-                -exhaustCam->getAngle()
+                exhaustCam->getAngle()
                 + exhaustCam->getLobeCenterline(layer))));
 
     m_app->getShaders()->SetObjectTransform(T_exhaustCam);
@@ -214,7 +214,7 @@ void CylinderHeadObject::render(const ViewParameters *view) {
         ysMath::RotationTransform(
             ysMath::Constants::ZAxis,
             (float)(
-                -intakeCam->getAngle()
+                intakeCam->getAngle()
                 + intakeCam->getLobeCenterline(layer))));
 
     m_app->getShaders()->SetObjectTransform(T_intakeCam);

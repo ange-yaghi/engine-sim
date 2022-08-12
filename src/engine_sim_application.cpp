@@ -158,7 +158,7 @@ void EngineSimApplication::initialize() {
 
     es_script::Compiler compiler;
     compiler.initialize();
-    const bool compiled = compiler.compile("../assets/test.mr");
+    const bool compiled = compiler.compile("../assets/main.mr");
     if (compiled) {
         const es_script::Compiler::Output output = compiler.execute();
         m_iceEngine = output.engine;
@@ -195,7 +195,7 @@ void EngineSimApplication::initialize() {
     simulatorParams.Transmission = transmission;
     simulatorParams.Vehicle = vehicle;
     simulatorParams.SimulationFrequency = 10000;
-    simulatorParams.FluidSimulationSteps = 16;
+    simulatorParams.FluidSimulationSteps = 8;
     m_simulator.initialize(simulatorParams);
     m_simulator.startAudioRenderingThread();
     createObjects(m_iceEngine);

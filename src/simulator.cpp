@@ -45,6 +45,10 @@ Simulator::~Simulator() {
 }
 
 void Simulator::initialize(const Parameters &params) {
+    if (params.Engine == nullptr) {
+        return;
+    }
+
     if (params.SystemType == SystemType::NsvOptimized) {
         atg_scs::OptimizedNsvRigidBodySystem *system =
             new atg_scs::OptimizedNsvRigidBodySystem;
@@ -271,10 +275,16 @@ void Simulator::startFrame(double dt) {
 
     const double targetLatency = getSynthesizerInputLatencyTarget(); 
     if (m_synthesizer.getLatency() < targetLatency) {
+        ++i_steps;
         i_steps *= 1.1;
     }
     else if (m_synthesizer.getLatency() > targetLatency) {
-        i_steps *= 0.1;
+        --i_steps;
+        i_steps *= 0.9;
+
+        if (i_steps < 0) {
+            i_steps = 0;
+        }
     }
 
     if (i_steps > 0) {

@@ -30,6 +30,7 @@ namespace es_script {
             params.RevLimit = m_revLimit;
             params.TimingCurve = m_timingCurve->generate(context);
             params.CylinderCount = engine->getCylinderCount();
+            params.LimiterDuration = m_limiterDuration;
             engine->getIgnitionModule()->initialize(params);
 
             for (const Post &post : m_posts) {
@@ -54,6 +55,7 @@ namespace es_script {
         virtual void registerInputs() {
             addInput("timing_curve", &m_timingCurve);
             addInput("rev_limit", &m_revLimit);
+            addInput("limiter_duration", &m_limiterDuration);
 
             ObjectReferenceNode<IgnitionModuleNode>::registerInputs();
         }
@@ -67,6 +69,7 @@ namespace es_script {
 
         double m_revLimit = 0.0;
         FunctionNode *m_timingCurve = nullptr;
+        double m_limiterDuration = 0.0;
         std::vector<Post> m_posts;
     };
 

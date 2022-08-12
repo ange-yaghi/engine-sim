@@ -480,6 +480,7 @@ public node exhaust_system {
 public node ignition_module => __engine_sim__ignition_module {
     input timing_curve [function];
     input rev_limit [float]: 7000.0 * units.rpm;
+    input limiter_duration [float]: 0.5 * units.sec;
     alias output __out [ignition_module_channel];
 }
 

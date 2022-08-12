@@ -13,8 +13,9 @@ IgnitionModule::IgnitionModule() {
     m_cylinderCount = 0;
     m_lastCrankshaftAngle = 0.0;
     m_enabled = false;
-    m_revLimiterDecay = 0.0;
+    m_revLimitTimer = 0.0;
     m_revLimit = 0;
+    m_limiterDuration = 0;
 }
 
 IgnitionModule::~IgnitionModule() {
@@ -34,6 +35,7 @@ void IgnitionModule::initialize(const Parameters &params) {
     m_crankshaft = params.Crankshaft;
     m_timingCurve = params.TimingCurve;
     m_revLimit = params.RevLimit;
+    m_limiterDuration = params.LimiterDuration;
 }
 
 void IgnitionModule::setFiringOrder(int cylinderIndex, double angle) {
@@ -51,7 +53,7 @@ void IgnitionModule::reset() {
 void IgnitionModule::update(double dt) {
     const double cycleAngle = m_crankshaft->getCycleAngle();
 
-    if (m_crankshaft->m_body.v_theta < 0 && m_enabled && m_revLimiterDecay < 0.5) {
+    if (m_crankshaft->m_body.v_theta < 0 && m_enabled && m_revLimitTimer == 0) {
         const double fourPi = 4 * constants::pi;
         const double advance = getTimingAdvance();
 
@@ -71,11 +73,13 @@ void IgnitionModule::update(double dt) {
         }
     }
 
-    const double alpha = 1 - dt / (1.0 + dt);
-    m_revLimiterDecay = alpha * m_revLimiterDecay;
-
+    m_revLimitTimer -= dt;
     if (std::fabs(m_crankshaft->m_body.v_theta) > m_revLimit) {
-        m_revLimiterDecay = 1.0;
+        m_revLimitTimer = m_limiterDuration;
+    }
+
+    if (m_revLimitTimer < 0) {
+        m_revLimitTimer = 0;
     }
 
     m_lastCrankshaftAngle = cycleAngle;

@@ -1,6 +1,7 @@
 import "engine_sim.mr"
 import "part-library/part_library.mr"
+import "engines/chevrolet/chev_truck_454.mr"
 
 set_engine(
-    engine: kohler_ch750()
+    engine: chev_truck_454()
 )

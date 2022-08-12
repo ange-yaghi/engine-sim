@@ -15,7 +15,7 @@ private node wires {
     output wire8: ignition_wire();
 }
 
-public node video_engine_454_01 {
+public node chev_truck_454 {
     alias output __out: engine;
 
     wires wires()
@@ -38,7 +38,7 @@ public node video_engine_454_01 {
         moment_of_inertia: 0.22986844776863666 * 2,
         position_x: 0.0,
         position_y: 0.0,
-        tdc: - constants.pi / 4
+        tdc: constants.pi / 4
     )
 
     rod_journal rj0(angle: 0.0)
@@ -87,8 +87,8 @@ public node video_engine_454_01 {
         volume: 50.0 * units.L
     )
 
-    impulse_response ir0(filename: "../../smooth_39.wav", volume: 0.001)
-    impulse_response ir1(filename: "../../smooth_39.wav", volume: 0.01)
+    impulse_response ir0(filename: "../../sound-library/smooth/smooth_39.wav", volume: 0.001)
+    impulse_response ir1(filename: "../../sound-library/smooth/smooth_39.wav", volume: 0.01)
 
     exhaust_system exhaust0(es_params, audio_volume: 1.0, impulse_response: ir0)
     exhaust_system exhaust1(es_params, audio_volume: 1.0, impulse_response: ir1)

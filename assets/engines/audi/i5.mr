@@ -1,10 +1,8 @@
 import "engine_sim.mr"
-import "part-library/part_library.mr"
+import "../../part-library/part_library.mr"
 
 units units()
 constants constants()
-
-label cycle(2 * 360 * units.deg)
 
 private node wires {
     output wire1: ignition_wire();
@@ -14,6 +12,7 @@ private node wires {
     output wire5: ignition_wire();
 }
 
+label cycle(2 * 360 * units.deg)
 public node vemsign {
     input wires;
     input timing_curve;
@@ -22,9 +21,9 @@ public node vemsign {
         ignition_module(timing_curve: timing_curve, rev_limit: rev_limit)
             .connect_wire(wires.wire1, (0.0 / 5.0) * cycle)
             .connect_wire(wires.wire2, (1.0 / 5.0) * cycle)
-            .connect_wire(wires.wire3, (4.0 / 5.0) * cycle)
             .connect_wire(wires.wire4, (2.0 / 5.0) * cycle)
-            .connect_wire(wires.wire5, (3.0 / 5.0) * cycle);
+            .connect_wire(wires.wire5, (3.0 / 5.0) * cycle)
+            .connect_wire(wires.wire3, (4.0 / 5.0) * cycle);
 }
 
 public node i5_camshaft_builder {
@@ -53,10 +52,10 @@ public node i5_camshaft_builder {
 
     _exhaust_cam
         .add_lobe(rot360 - exhaust_lobe_center)
-        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot)
-        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot)
-        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot)
-        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 1 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 4 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 2 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 3 * rot)
 
     _intake_cam
         .add_lobe(rot360 + intake_lobe_center)
@@ -66,7 +65,7 @@ public node i5_camshaft_builder {
         .add_lobe(rot360 + intake_lobe_center + 3 * rot)
 }
 
-public node vems {
+public node audi_i5_2_2L {
     alias output __out: engine;
 
     wires wires()
@@ -89,7 +88,7 @@ public node vems {
         moment_of_inertia: 0.22986844776863666 * 0.9,
         position_x: 0.0,
         position_y: 0.0,
-        tdc: -constants.pi / 2
+        tdc: constants.pi / 2
     )
 
     rod_journal rj0(angle: (0.0 / 5.0) * 360 * units.deg)
@@ -142,8 +141,8 @@ public node vems {
         volume: 50.0 * units.L
     )
 
-    impulse_response ir0(filename: "smooth_39.wav", volume: 0.01)
-    impulse_response ir1(filename: "smooth_39.wav", volume: 0.01)
+    impulse_response ir0(filename: "../../sound-library/smooth/smooth_39.wav", volume: 0.01)
+    impulse_response ir1(filename: "../../sound-library/smooth/smooth_39.wav", volume: 0.01)
 
     exhaust_system exhaust0(es_params, audio_volume: 10.0, impulse_response: ir0)
     exhaust_system exhaust1(es_params, audio_volume: 8.0, impulse_response: ir1)

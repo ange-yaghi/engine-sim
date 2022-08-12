@@ -141,6 +141,10 @@ if (PIRANHA_ENABLED)
         scripting/include/exhaust_system_node.h
         scripting/include/intake_node.h
         scripting/include/function_node.h
+        scripting/include/ignition_module_node.h
+        scripting/include/ignition_wire_node.h
+        scripting/include/impulse_response_node.h
+        scripting/include/intake_node.h
         scripting/include/language_rules.h
         scripting/include/node.h
         scripting/include/object_reference_node.h
