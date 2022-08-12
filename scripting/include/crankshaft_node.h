@@ -20,6 +20,7 @@ namespace es_script {
 
         void addRodJournal(RodJournalNode *rodJournal) {
             m_rodJournals.push_back(rodJournal);
+            rodJournal->m_crankshaft = this;
         }
 
         void generate(Crankshaft *crankshaft, EngineContext *context) {

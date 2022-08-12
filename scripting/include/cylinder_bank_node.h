@@ -48,6 +48,7 @@ namespace es_script {
             for (int i = 0; i < n; ++i) {
                 Piston *piston = engine->getPiston(cylinderBaseIndex + i);
                 ConnectingRod *rod = engine->getConnectingRod(cylinderBaseIndex + i);
+                Crankshaft *crankshaft = context->getCrankshaft(m_cylinders[i].rodJournal->getCrankshaft());
 
                 context->setCylinderIndex(
                     this,

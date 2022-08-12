@@ -23,6 +23,7 @@ Simulator::Simulator() {
     m_cylinderWallConstraints = nullptr;
     m_linkConstraints = nullptr;
     m_crankshaftFrictionConstraints = nullptr;
+    m_crankshaftLinks = nullptr;
     m_system = nullptr;
 
     m_physicsProcessingTime = 0.0;
@@ -70,15 +71,19 @@ void Simulator::initialize(const Parameters &params) {
     const int cylinderCount = m_engine->getCylinderCount();
     const int linkCount = cylinderCount * 2;
 
+    if (crankCount <= 0) return;
+
     m_crankConstraints = new atg_scs::FixedPositionConstraint[crankCount];
     m_cylinderWallConstraints = new atg_scs::LineConstraint[cylinderCount];
     m_linkConstraints = new atg_scs::LinkConstraint[linkCount];
     m_crankshaftFrictionConstraints = new atg_scs::RotationFrictionConstraint[crankCount];
+    m_crankshaftLinks = new atg_scs::ClutchConstraint[crankCount - 1];
 
     const double ks = 5000;
     const double kd = 10;
 
     for (int i = 0; i < crankCount; ++i) {
+        Crankshaft *outputShaft = m_engine->getCrankshaft(0);
         Crankshaft *crankshaft = m_engine->getCrankshaft(i);
 
         m_crankConstraints[i].setBody(&crankshaft->m_body);
@@ -103,6 +108,14 @@ void Simulator::initialize(const Parameters &params) {
         m_system->addRigidBody(&m_engine->getCrankshaft(i)->m_body);
         m_system->addConstraint(&m_crankConstraints[i]);
         m_system->addConstraint(&m_crankshaftFrictionConstraints[i]);
+
+        if (crankshaft != outputShaft) {
+            atg_scs::ClutchConstraint *crankLink = &m_crankshaftLinks[i - 1];
+            crankLink->setBody1(&outputShaft->m_body);
+            crankLink->setBody2(&crankshaft->m_body);
+
+            m_system->addConstraint(crankLink);
+        }
     }
 
     m_transmission->addToSystem(m_system, &m_vehicleMass, m_vehicle, m_engine);
@@ -172,10 +185,6 @@ void Simulator::initialize(const Parameters &params) {
         m_system->addConstraint(&m_cylinderWallConstraints[i]);
         m_system->addForceGenerator(m_engine->getChamber(i));
     }
-
-    atg_scs::GravityForceGenerator *gravity = new atg_scs::GravityForceGenerator;
-    //gravity->m_g = 10.0;
-    //m_system->addForceGenerator(gravity);
 
     m_dyno.connectCrankshaft(m_engine->getOutputCrankshaft());
     m_system->addConstraint(&m_dyno);

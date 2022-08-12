@@ -9,14 +9,20 @@
 
 namespace es_script {
 
-    class ConnectingRodNode;
+    class CrankshaftNode;
     class RodJournalNode : public ObjectReferenceNode<RodJournalNode> {
+        friend CrankshaftNode;
+
     public:
         RodJournalNode() { /* void */ }
         virtual ~RodJournalNode() { /* void */ }
 
         double getAngle() const {
             return m_angle;
+        }
+
+        CrankshaftNode *getCrankshaft() const {
+            return m_crankshaft;
         }
 
     protected:
@@ -33,6 +39,7 @@ namespace es_script {
             readAllInputs();
         }
 
+        CrankshaftNode *m_crankshaft = nullptr;
         double m_angle = 0.0;
     };
 

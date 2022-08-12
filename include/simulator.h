@@ -98,6 +98,7 @@ class Simulator {
         Synthesizer m_synthesizer;
 
         atg_scs::FixedPositionConstraint *m_crankConstraints;
+        atg_scs::ClutchConstraint *m_crankshaftLinks;
         atg_scs::RotationFrictionConstraint *m_crankshaftFrictionConstraints;
         atg_scs::LineConstraint *m_cylinderWallConstraints;
         atg_scs::LinkConstraint *m_linkConstraints;

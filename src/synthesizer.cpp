@@ -7,6 +7,7 @@
 #include <cmath>
 
 #undef min
+#undef max
 
 Synthesizer::Synthesizer() {
     m_inputChannels = nullptr;
@@ -67,42 +68,6 @@ void Synthesizer::initialize(const Parameters &p) {
         m_filters[i].InputDcFilter.setCutoffFrequency(10.0);
         m_filters[i].InputDcFilter.m_dt = 1 / m_audioSampleRate;
     }
-
-    // temp
-    /*
-    ysWindowsAudioWaveFile waveFile0;
-    waveFile0.OpenFile("../assets/test_engine_14_eq_adjusted_16.wav"); // test_engine_14_eq_adjusted_16.wav
-    waveFile0.InitializeInternalBuffer(waveFile0.GetSampleCount());
-    waveFile0.FillBuffer(0);
-    waveFile0.CloseFile();
-
-    ysWindowsAudioWaveFile waveFile1;
-    waveFile1.OpenFile("../assets/test_engine_15_eq_adjusted_16.wav"); // ../assets/test_engine_16.wav
-    waveFile1.InitializeInternalBuffer(waveFile1.GetSampleCount());
-    waveFile1.FillBuffer(0);
-    waveFile1.CloseFile();
-
-    const unsigned int sampleCount0 = std::min((unsigned int)10000, waveFile0.GetSampleCount());
-    const unsigned int sampleCount1 = std::min((unsigned int)10000, waveFile1.GetSampleCount());
-
-    if (sampleCount0 != 0 && sampleCount1 != 0) {
-        if (p.InputChannelCount > 0) {
-            m_filters[0].Convolution.initialize(sampleCount0);
-            for (unsigned int i = 0; i < sampleCount0; ++i) {
-                m_filters[0].Convolution.getImpulseResponse()[i] =
-                    2 * 0.025 * ((int16_t *)waveFile0.GetBuffer())[i] / INT16_MAX;
-            }
-        }
-
-        if (p.InputChannelCount > 1) {
-            m_filters[1].Convolution.initialize(sampleCount1);
-            for (unsigned int i = 0; i < sampleCount1; ++i) {
-                m_filters[1].Convolution.getImpulseResponse()[i] =
-                    2 * 0.025 * ((int16_t *)waveFile1.GetBuffer())[i] / INT16_MAX;
-            }
-        }
-    }
-    */
 
     m_levelingFilter.p_target = m_audioParameters.LevelerTarget;
     m_levelingFilter.p_maxLevel = m_audioParameters.LevelerMaxGain;
@@ -300,16 +265,12 @@ void Synthesizer::setInputSampleRate(double sampleRate) {
     }
 }
 
-#undef max
-
 int16_t Synthesizer::renderAudio(int inputSample) {
     const double airNoise = m_audioParameters.AirNoise;
     const double dF_F_mix = m_audioParameters.dF_F_mix;
     const double convAmount = m_audioParameters.Convolution;
+
     double signal = 0;
-
-    double dc[2] = { 0.0, 0.0 };
-
     for (int i = 0; i < m_inputChannelCount; ++i) {
         const double f_in = m_inputChannels[i].TransferBuffer[inputSample];
         const double f_dc = m_filters[i].InputDcFilter.fast_f(f_in);
@@ -339,7 +300,7 @@ int16_t Synthesizer::renderAudio(int inputSample) {
         r_int = INT16_MIN;
     }
 
-    return (int16_t)r_int;
+    return static_cast<int16_t>(r_int);
 }
 
 double Synthesizer::getLevelerGain() {

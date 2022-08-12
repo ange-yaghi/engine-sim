@@ -95,27 +95,6 @@ namespace es_script {
 
             m_ignitionModule->generate(engine, &context);
             
-            // TEMP
-            /*
-            Function *turbulenceToFlameSpeedRatio = new Function;
-            turbulenceToFlameSpeedRatio->initialize(10, 10.0);
-            turbulenceToFlameSpeedRatio->addSample(0.0, 1.0);
-            turbulenceToFlameSpeedRatio->addSample(5.0, 1.5 * 5.0);
-            turbulenceToFlameSpeedRatio->addSample(10.0, 1.5 * 10.0);
-            turbulenceToFlameSpeedRatio->addSample(15.0, 1.5 * 15.0);
-            turbulenceToFlameSpeedRatio->addSample(20.0, 1.5 * 20.0);
-            turbulenceToFlameSpeedRatio->addSample(25.0, 1.5 * 25.0);
-            turbulenceToFlameSpeedRatio->addSample(30.0, 1.5 * 30.0);
-            turbulenceToFlameSpeedRatio->addSample(35.0, 1.5 * 35.0);
-            turbulenceToFlameSpeedRatio->addSample(40.0, 1.5 * 40.0);
-            turbulenceToFlameSpeedRatio->addSample(45.0, 1.5 * 45.0);
-            
-            Fuel::Parameters fParams;
-            fParams.TurbulenceToFlameSpeedRatio = turbulenceToFlameSpeedRatio;
-            Fuel *fuel = new Fuel;
-            fuel->initialize(fParams);
-            */
-
             Function *meanPistonSpeedToTurbulence = new Function;
             meanPistonSpeedToTurbulence->initialize(30, 1);
             for (int i = 0; i < 30; ++i) {
@@ -165,10 +144,6 @@ namespace es_script {
             addInput("starter_speed", &m_parameters.StarterSpeed);
             addInput("redline", &m_parameters.Redline);
             addInput("fuel", &m_fuel, InputTarget::Type::Object);
-
-            //addInput("fuel_molecular_mass", &m_parameters.Fuel.MolecularMass);
-            //addInput("fuel_energy_density", &m_parameters.Fuel.EnergyDensity);
-            //addInput("fuel_density", &m_parameters.Fuel.Density);
 
             ObjectReferenceNode<EngineNode>::registerInputs();
         }

@@ -17,7 +17,7 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
 
 project(engine-sim)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # ========================================================
 # GTEST
@@ -74,7 +74,6 @@ add_library(engine-sim STATIC
     src/vehicle_drag_constraint.cpp
     src/impulse_response.cpp
 
-
     # Include files
     include/crankshaft.h
     include/cylinder_bank.h
@@ -109,7 +108,6 @@ add_library(engine-sim STATIC
     include/low_pass_filter.h
     include/vehicle_drag_constraint.h
     include/impulse_response.h
-
 )
 
 target_link_libraries(engine-sim
@@ -127,7 +125,6 @@ if (PIRANHA_ENABLED)
         scripting/src/compiler.cpp
         scripting/src/engine_context.cpp
         scripting/src/language_rules.cpp
-
 
         # Include files
         scripting/include/actions.h
