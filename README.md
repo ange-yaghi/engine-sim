@@ -53,6 +53,7 @@ You will need to install the following dependencies and CMake will need to be ab
     1. SDL2
     2. SDL2_image
     3. Boost (make sure to build the optional dependencies)
+    4. Flex and Bison
 
 ### Step 4 - Build and Run
 From the root directory of the project, run the following commands:
