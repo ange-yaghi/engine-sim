@@ -5,6 +5,8 @@
 #include <sstream>
 #include <iomanip>
 
+std::string EngineSimApplication::buildVersion;
+
 InfoCluster::InfoCluster() {
     m_engine = nullptr;
     m_logMessage = "Started";
@@ -45,16 +47,22 @@ void InfoCluster::render() {
 
     Grid titleSplit;
     titleSplit.h_cells = 1;
-    titleSplit.v_cells = 2;
+    titleSplit.v_cells = 3;
     drawAlignedText(
         "ENGINE SIMULATOR",
-        titleSplit.get(titleBounds, 0, 0).inset(10.0f).move({ 0.0f, -10.0f }),
+        titleSplit.get(titleBounds, 0, 0).inset(10.0f).move({ 0.0f, -21.0f }),
         42.0f,
         Bounds::bl,
         Bounds::bl);
     drawAlignedText(
         "YOUTUBE/ANGETHEGREAT",
         titleSplit.get(titleBounds, 0, 1).inset(10.0f).move({ 0.0f, 10.0f }),
+        24.0f,
+        Bounds::tl,
+        Bounds::tl);
+    drawAlignedText(
+        "BUILD: v" + EngineSimApplication::buildVersion,
+        titleSplit.get(titleBounds, 0, 2).inset(10.0f).move({ 0.0f, 10.0f }),
         24.0f,
         Bounds::tl,
         Bounds::tl);

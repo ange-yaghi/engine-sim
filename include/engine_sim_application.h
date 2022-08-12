@@ -75,6 +75,7 @@ class EngineSimApplication {
         int getScreenHeight() const { return m_screenHeight; }
 
         InfoCluster *getInfoCluster() { return m_infoCluster; }
+        static std::string buildVersion;
 
     protected:
         void renderScene();
