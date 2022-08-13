@@ -3,8 +3,9 @@
 #include "../include/engine_sim_application.h"
 #include "../include/ui_utilities.h"
 
-#include <sstream>
+#include <climits>
 #include <iomanip>
+#include <sstream>
 
 LoadSimulationCluster::LoadSimulationCluster() {
     m_torqueGauge = nullptr;

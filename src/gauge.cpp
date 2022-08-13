@@ -3,6 +3,8 @@
 #include "../include/engine_sim_application.h"
 #include "../include/constants.h"
 
+#include <climits>
+
 Gauge::Gauge() {
     m_thetaMin = (float)constants::pi;
     m_thetaMax = 0.0f;
