@@ -13,7 +13,7 @@ int WINAPI WinMain(
     (void)hPrevInstance;
 
     EngineSimApplication application;
-    application.initialize((void *)&hInstance, ysContextObject::DeviceAPI::DirectX11);
+    application.initialize((void *)&hInstance, ysContextObject::DeviceAPI::OpenGL4_0);
     application.run();
     application.destroy();
 

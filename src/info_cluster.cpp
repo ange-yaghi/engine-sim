@@ -56,14 +56,14 @@ void InfoCluster::render() {
         Bounds::bl);
     drawAlignedText(
         "YOUTUBE/ANGETHEGREAT",
-        titleSplit.get(titleBounds, 0, 1).inset(10.0f).move({ 0.0f, 10.0f }),
+        titleSplit.get(titleBounds, 0, 1).inset(10.0f).move({ 0.0f, 5.0f }),
         24.0f,
         Bounds::tl,
         Bounds::tl);
     drawAlignedText(
-        "BUILD: v" + EngineSimApplication::buildVersion,
+        "BUILD: v" + EngineSimApplication::buildVersion + " // " __DATE__,
         titleSplit.get(titleBounds, 0, 2).inset(10.0f).move({ 0.0f, 10.0f }),
-        24.0f,
+        16.0f,
         Bounds::tl,
         Bounds::tl);
 

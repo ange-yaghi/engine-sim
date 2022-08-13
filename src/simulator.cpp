@@ -275,13 +275,10 @@ void Simulator::startFrame(double dt) {
 
     const double targetLatency = getSynthesizerInputLatencyTarget(); 
     if (m_synthesizer.getLatency() < targetLatency) {
-        ++i_steps;
-        i_steps *= 1.1;
+        i_steps = (i_steps + 1) * 1.1;
     }
     else if (m_synthesizer.getLatency() > targetLatency) {
-        --i_steps;
-        i_steps *= 0.9;
-
+        i_steps = (i_steps - 1) * 0.9;
         if (i_steps < 0) {
             i_steps = 0;
         }

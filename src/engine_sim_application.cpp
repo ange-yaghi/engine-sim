@@ -261,7 +261,7 @@ void EngineSimApplication::initialize() {
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    frame_dt = clamp(frame_dt, 1 / 100.0f, 1 / 30.0f);
+    frame_dt = clamp(frame_dt, 1 / 200.0f, 1 / 30.0f);
 
     double speed = 1.0 / 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::N1)) {
@@ -282,7 +282,7 @@ void EngineSimApplication::process(float frame_dt) {
 
     m_simulator.setSimulationSpeed(speed);
 
-    m_simulator.startFrame(frame_dt);
+    m_simulator.startFrame(1 / m_engine.GetAverageFramerate());
 
     auto proc_t0 = std::chrono::steady_clock::now();
     const int iterationCount = m_simulator.getFrameIterationCount();
@@ -434,8 +434,14 @@ void EngineSimApplication::run() {
         updateScreenSizeStability();
 
         if (m_engine.ProcessKeyDown(ysKey::Code::F)) {
-            m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
-            m_infoCluster->setLogMessage("Entered fullscreen mode");
+            if (m_engine.GetGameWindow()->GetWindowStyle() != ysWindow::WindowStyle::Fullscreen) {
+                m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
+                m_infoCluster->setLogMessage("Entered fullscreen mode");
+            }
+            else {
+                m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Windowed);
+                m_infoCluster->setLogMessage("Exited fullscreen mode");
+            }
         }
 
         double newClutchPressure = 1.0;

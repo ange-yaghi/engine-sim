@@ -1,7 +1,7 @@
 import "engine_sim.mr"
 import "part-library/part_library.mr"
-import "engines/chevrolet/chev_truck_454.mr"
+import "engines/bmw/M52B28.mr"
 
 set_engine(
-    engine: chev_truck_454()
+    engine: M52B28()
 )
