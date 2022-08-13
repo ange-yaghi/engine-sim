@@ -230,6 +230,7 @@ void EngineSimApplication::initialize() {
 
     m_oscCluster = m_uiManager.getRoot()->addElement<OscilloscopeCluster>();
     m_oscCluster->m_simulator = &m_simulator;
+    m_oscCluster->setDynoMaxRange(units::toRpm(m_iceEngine->getRedline()));
 
     m_performanceCluster = m_uiManager.getRoot()->addElement<PerformanceCluster>();
     m_performanceCluster->setSimulator(&m_simulator);
