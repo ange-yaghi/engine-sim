@@ -72,7 +72,7 @@ EngineSimApplication::EngineSimApplication() {
     m_viewParameters.Layer0 = 0;
     m_viewParameters.Layer1 = 10;
 
-    buildVersion = "0.1.3a";
+    buildVersion = "0.1.4a";
 }
 
 EngineSimApplication::~EngineSimApplication() {
