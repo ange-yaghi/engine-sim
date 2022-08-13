@@ -45,10 +45,10 @@ bool GeometryGenerator::generateFilledCircle(
     // edge_length = (sin(theta) * radius) * 2
     // theta = arcsin(edge_length / (2 * radius))
 
-    const float angle = std::asinf(maxEdgeLength / (2 * radius));
+    const float angle = std::asin(maxEdgeLength / (2 * radius));
     const float steps = ysMath::Constants::TWO_PI / angle;
 
-    int wholeSteps = (int)std::ceilf(steps);
+    int wholeSteps = (int)std::ceil(steps);
     wholeSteps = (wholeSteps < 3)
         ? 3
         : wholeSteps;
@@ -101,8 +101,8 @@ bool GeometryGenerator::generateFilledFanPolygon(
 
     for (int i = 0; i < segmentCount; ++i) {
         const float angle0 = angleStep * i + rotation;
-        const float x0 = std::cosf(angle0);
-        const float y0 = std::sinf(angle0);
+        const float x0 = std::cos(angle0);
+        const float y0 = std::sin(angle0);
 
         const ysVector pos = ysMath::LoadVector(x0 * radius, y0 * radius, 0.0f, 1.0f);
 
@@ -132,10 +132,10 @@ bool GeometryGenerator::generateLineRing(
 
     const float maxOuterRadius = params.radius + (params.patternHeight / 2);
 
-    const float angle = std::asinf(params.maxEdgeLength / (2 * maxOuterRadius));
+    const float angle = std::asin(params.maxEdgeLength / (2 * maxOuterRadius));
     const float steps = (actualEndAngle - actualStartAngle) / angle;
 
-    int segmentCount = (int)std::ceilf(steps);
+    int segmentCount = (int)std::ceil(steps);
     segmentCount = (segmentCount < 3)
         ? 3
         : segmentCount;
@@ -166,8 +166,8 @@ bool GeometryGenerator::generateLineRing(
 
     for (int i = 0; i <= segmentCount; ++i) {
         float angle0 = angleStep * i + actualStartAngle;
-        const float x0 = std::cosf(angle0);
-        const float y0 = std::sinf(angle0);
+        const float x0 = std::cos(angle0);
+        const float y0 = std::sin(angle0);
 
         if (angle0 >= actualEndAngle) angle0 = actualEndAngle;
         else if (angle0 <= actualStartAngle) angle0 = actualStartAngle;
@@ -480,10 +480,10 @@ bool GeometryGenerator::generateRing2d(const Ring2dParameters &params) {
 
     startSubshape();
 
-    const float angle = std::asinf(params.maxEdgeLength / (2 * params.outerRadius));
+    const float angle = std::asin(params.maxEdgeLength / (2 * params.outerRadius));
     const float steps = (params.endAngle - params.startAngle) / angle;
 
-    int segmentCount = (int)std::ceilf(steps);
+    int segmentCount = (int)std::ceil(steps);
     segmentCount = (segmentCount < 3)
         ? 3
         : segmentCount;
@@ -515,14 +515,14 @@ bool GeometryGenerator::generateRing2d(const Ring2dParameters &params) {
     const float fullWidth = params.outerRadius - params.innerRadius;
     for (int i = 0; i <= segmentCount; ++i) {
         float angle0 = angleStep * i + params.startAngle;
-        const float x0 = std::cosf(angle0);
-        const float y0 = std::sinf(angle0);
+        const float x0 = std::cos(angle0);
+        const float y0 = std::sin(angle0);
 
         const float s = (params.drawArrow)
             ? (angle0 - arrowStart) / (arrowEnd - arrowStart)
             : 0.0f;
 
-        const float width = fullWidth * (1 - std::fminf(1.0, std::fmaxf(s, 0.0)));
+        const float width = fullWidth * (1 - std::fmin(1.0, std::fmax(s, 0.0)));
         const float innerRadius = midRadius - width / 2;
         const float outerRadius = midRadius + width / 2;
 
@@ -567,12 +567,12 @@ bool GeometryGenerator::generateCircle2d(const Circle2dParameters &params) {
 
     startSubshape();
 
-    float angle = std::asinf(params.maxEdgeLength / (2 * params.radius)) * 2;
-    angle = std::fminf(angle, ysMath::Constants::PI - params.smallestAngle);
+    float angle = std::asin(params.maxEdgeLength / (2 * params.radius)) * 2;
+    angle = std::fmin(angle, ysMath::Constants::PI - params.smallestAngle);
 
     const float steps = ysMath::Constants::TWO_PI / angle;
 
-    int segmentCount = (int)std::ceilf(steps);
+    int segmentCount = (int)std::ceil(steps);
     segmentCount = (segmentCount < 3)
         ? 3
         : segmentCount;
@@ -595,8 +595,8 @@ bool GeometryGenerator::generateCircle2d(const Circle2dParameters &params) {
 
     for (int i = 0; i < segmentCount; ++i) {
         const float angle0 = angleStep * i;
-        const float x = std::cosf(angle0);
-        const float y = std::sinf(angle0);
+        const float x = std::cos(angle0);
+        const float y = std::sin(angle0);
 
         const float pos_x = params.center_x + x * params.radius;
         const float pos_y = params.center_y + y * params.radius;
@@ -622,12 +622,12 @@ bool GeometryGenerator::generateCam(const Cam2dParameters &params) {
 
     startSubshape();
 
-    float angle = std::asinf(params.maxEdgeLength / (2 * params.baseRadius)) * 2;
-    angle = std::fminf(angle, ysMath::Constants::PI - params.smallestAngle);
+    float angle = std::asin(params.maxEdgeLength / (2 * params.baseRadius)) * 2;
+    angle = std::fmin(angle, ysMath::Constants::PI - params.smallestAngle);
 
     const float steps = ysMath::Constants::TWO_PI / angle;
 
-    int segmentCount = (int)std::ceilf(steps);
+    int segmentCount = (int)std::ceil(steps);
     segmentCount = (segmentCount < 3)
         ? 3
         : segmentCount;
@@ -657,8 +657,8 @@ bool GeometryGenerator::generateCam(const Cam2dParameters &params) {
 
     for (int i = 0; i < segmentCount; ++i) {
         const float angle0 = angleStep * i;
-        const float x = std::cosf(angle0 + ysMath::Constants::PI / 2);
-        const float y = std::sinf(angle0 + ysMath::Constants::PI / 2);
+        const float x = std::cos(angle0 + ysMath::Constants::PI / 2);
+        const float y = std::sin(angle0 + ysMath::Constants::PI / 2);
 
         const float lift = (params.lift == nullptr)
             ? 0.0f

@@ -40,7 +40,7 @@ void EngineView::onDrag(const Point &p0, const Point &mouse0, const Point &mouse
 }
 
 void EngineView::onMouseScroll(int scroll) {
-    const float f = std::powf(2.0, (float)scroll / 500.0f);
+    const float f = std::pow(2.0f, (float)scroll / 500.0f);
 
     const Point prevCenter = getCenter();
 
