@@ -71,6 +71,8 @@ EngineSimApplication::EngineSimApplication() {
     m_screen = 0;
     m_viewParameters.Layer0 = 0;
     m_viewParameters.Layer1 = 10;
+
+    buildVersion = "0.1.3a";
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -97,13 +99,13 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     m_engine.GetConsole()->SetDefaultFontDirectory(enginePath + "/fonts/");
 
     const std::string shaderPath = enginePath + "/shaders/";
-
+    std::string winTitle = "Engine Sim | AngeTheGreat | v" + buildVersion;
     dbasic::DeltaEngine::GameEngineSettings settings;
     settings.API = api;
     settings.DepthBuffer = false;
     settings.Instance = instance;
     settings.ShaderDirectory = shaderPath.c_str();
-    settings.WindowTitle = "Engine Sim | AngeTheGreat";
+    settings.WindowTitle = winTitle.c_str();
     settings.WindowPositionX = 0;
     settings.WindowPositionY = 0;
     settings.WindowStyle = ysWindow::WindowStyle::Windowed;
