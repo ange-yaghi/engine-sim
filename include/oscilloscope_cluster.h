@@ -33,6 +33,7 @@ class OscilloscopeCluster : public UiElement {
         Oscilloscope *getSparkAdvanceScope() const { return m_sparkAdvanceScope; }
         Oscilloscope *getCylinderMoleculesScope() const { return m_cylinderMoleculesScope; }
         Oscilloscope *getPvScope() const { return m_pvScope; }
+        void setDynoMaxRange(double redline) { m_torqueScope->m_xMax = redline + 500; m_hpScope->m_xMax = redline + 500; }
 
     protected:
         void renderScope(

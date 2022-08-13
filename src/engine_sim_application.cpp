@@ -72,7 +72,7 @@ EngineSimApplication::EngineSimApplication() {
     m_viewParameters.Layer0 = 0;
     m_viewParameters.Layer1 = 10;
 
-    buildVersion = "0.1.3a";
+    buildVersion = "0.1.4a";
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -230,6 +230,7 @@ void EngineSimApplication::initialize() {
 
     m_oscCluster = m_uiManager.getRoot()->addElement<OscilloscopeCluster>();
     m_oscCluster->m_simulator = &m_simulator;
+    m_oscCluster->setDynoMaxRange(units::toRpm(m_iceEngine->getRedline()));
 
     m_performanceCluster = m_uiManager.getRoot()->addElement<PerformanceCluster>();
     m_performanceCluster->setSimulator(&m_simulator);
