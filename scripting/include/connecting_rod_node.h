@@ -40,9 +40,9 @@ namespace es_script {
             int rodJournal) const
         {
             ConnectingRod::Parameters params = m_parameters;
-            params.Crankshaft = crankshaft;
+            params.crankshaft = crankshaft;
             params.Journal = rodJournal;
-            params.Piston = piston;
+            params.piston = piston;
             params.RodJournals = static_cast<int>(m_rodJournals.size());
             params.Master = nullptr;
 
@@ -70,8 +70,8 @@ namespace es_script {
             // Read inputs
             readAllInputs();
 
-            m_parameters.Crankshaft = nullptr;
-            m_parameters.Piston = nullptr;
+            m_parameters.crankshaft = nullptr;
+            m_parameters.piston = nullptr;
         }
 
         ConnectingRod::Parameters m_parameters;

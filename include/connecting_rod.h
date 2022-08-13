@@ -17,9 +17,9 @@ class ConnectingRod : public Part {
             int RodJournals = 0;
             double SlaveThrow = 0;
 
-            Piston *Piston = nullptr;
+            Piston *piston = nullptr;
 
-            Crankshaft *Crankshaft = nullptr;
+            Crankshaft *crankshaft = nullptr;
             ConnectingRod *Master = nullptr;
             int Journal = 0;
         };

@@ -522,7 +522,7 @@ bool GeometryGenerator::generateRing2d(const Ring2dParameters &params) {
             ? (angle0 - arrowStart) / (arrowEnd - arrowStart)
             : 0.0f;
 
-        const float width = fullWidth * (1 - std::fmin(1.0, std::fmax(s, 0.0)));
+        const float width = fullWidth * (1 - std::fmin(1.f, std::fmax(s, 0.f)));
         const float innerRadius = midRadius - width / 2;
         const float outerRadius = midRadius + width / 2;
 

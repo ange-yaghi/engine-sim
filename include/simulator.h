@@ -24,7 +24,7 @@ class Simulator {
         };
 
         struct Parameters {
-            SystemType SystemType = SystemType::NsvOptimized;
+            SystemType systemType = SystemType::NsvOptimized;
         };
 
         static constexpr int DynoTorqueSamples = 512;

@@ -25,7 +25,7 @@ namespace es_script {
 
         void generate(Engine *engine, EngineContext *context) const {
             IgnitionModule::Parameters params;
-            params.Crankshaft = engine->getCrankshaft(0);
+            params.crankshaft = engine->getCrankshaft(0);
             params.CylinderCount = engine->getCylinderCount();
             params.RevLimit = m_revLimit;
             params.TimingCurve = m_timingCurve->generate(context);

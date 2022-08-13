@@ -53,7 +53,7 @@ Simulator::~Simulator() {
 }
 
 void Simulator::initialize(const Parameters &params) {
-    if (params.SystemType == SystemType::NsvOptimized) {
+    if (params.systemType == SystemType::NsvOptimized) {
         atg_scs::OptimizedNsvRigidBodySystem *system =
             new atg_scs::OptimizedNsvRigidBodySystem;
         system->initialize(
