@@ -43,7 +43,9 @@ jobs:
     # Actual install step (only runs if the cache is empty)
     - name: Install boost
       if: steps.cache-boost.outputs.cache-hit != 'true'
-      uses: MarkusJx/install-boost@v2.3.0
+      # uses: MarkusJx/install-boost@latest
+      # fix to upstream repo has been merged, but no release exists for it yet. In the mean time, use a mirror with an up-to-date release:
+      uses: NexusXe/install-boost@v2.3.2
       with:
         # Set the boost version (required)
         boost_version: ${{env.BOOST_VERSION}}
