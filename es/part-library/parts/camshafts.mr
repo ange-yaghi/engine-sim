@@ -1,0 +1,124 @@
+private import "cam_lobes.mr"
+
+private import "engine_sim.mr"
+
+units units()
+
+public node chevy_bbc_camshaft_builder {
+    input lobe_profile: stock_454_intake_lobe_profile();
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0.0 * units.deg;
+    input base_radius: 0.75 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_0: _exhaust_cam_0;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot90(90 * units.deg)
+    label rot360(360 * units.deg)
+
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center)
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot90)
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot90)
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot90)
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot90)
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot90)
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot90)
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot90)
+
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center)
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot90)
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot90)
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot90)
+
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot90)
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot90)
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot90)
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot90)
+}
+
+public node vtwin90_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0.0 * units.deg;
+    input base_radius: 0.75 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_0: _exhaust_cam_0;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot90(90 * units.deg)
+    label rot360(360 * units.deg)
+
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center)
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot90)
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center)
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot90)
+}
+
+public node chevy_454_stock_camshaft {
+    alias output __out:
+        chevy_bbc_camshaft_builder(
+            advance: 0 * units.deg,
+            intake_lobe_profile: stock_454_intake_lobe_profile(),
+            exhaust_lobe_profile: stock_454_exhaust_lobe_profile(),
+            intake_lobe_center: 108 * units.deg,
+            exhaust_lobe_center: 113 * units.deg);
+}
+
+public node comp_cams_magnum_11_450_8 {
+    alias output __out:
+        chevy_bbc_camshaft_builder(
+            lobe_profile: comp_cams_magnum_11_450_8_lobe_profile(),
+            lobe_separation: 110 * units.deg,
+            advance: 4.0 * units.deg,
+            base_radius: 1000.0 * units.thou);
+}
+
+public node comp_cams_magnum_11_470_8 {
+    alias output __out:
+        chevy_bbc_camshaft_builder(
+            lobe_profile: comp_cams_magnum_11_470_8_lobe_profile(),
+            lobe_separation: 110 * units.deg,
+            advance: 4.0 * units.deg,
+            base_radius: 1000.0 * units.thou);
+}

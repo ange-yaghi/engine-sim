@@ -203,6 +203,10 @@ double Function::triangle(double x) const {
 }
 
 int Function::closestSample(double x) const {
+    if (std::isnan(x)) {
+        return 0;
+    }
+
     int l = 0;
     int r = m_size - 1;
 

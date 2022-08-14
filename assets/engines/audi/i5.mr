@@ -1,8 +1,8 @@
 import "engine_sim.mr"
-import "../../part-library/part_library.mr"
 
 units units()
 constants constants()
+impulse_response_library ir_lib()
 
 private node wires {
     output wire1: ignition_wire();
@@ -141,11 +141,8 @@ public node audi_i5_2_2L {
         volume: 50.0 * units.L
     )
 
-    impulse_response ir0(filename: "../../sound-library/smooth/smooth_39.wav", volume: 0.01)
-    impulse_response ir1(filename: "../../sound-library/smooth/smooth_39.wav", volume: 0.01)
-
-    exhaust_system exhaust0(es_params, audio_volume: 10.0, impulse_response: ir0)
-    exhaust_system exhaust1(es_params, audio_volume: 8.0, impulse_response: ir1)
+    exhaust_system exhaust0(es_params, audio_volume: 1.0, impulse_response: ir_lib.default_0)
+    exhaust_system exhaust1(es_params, audio_volume: 0.8, impulse_response: ir_lib.default_0)
 
     cylinder_bank b0(bank_params, angle: 0)
     b0

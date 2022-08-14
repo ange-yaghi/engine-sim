@@ -1,0 +1,45 @@
+private import "engine_sim.mr"
+
+units units()
+
+public node chevy_bbc_stock_intake {
+    input carburetor_cfm: 650.0;
+    input idle_flow_rate_cfm: 1.0;
+    input idle_throttle_plate_position: 0.975;
+    input throttle_gamma: 2.0;
+
+    alias output __out: intake;
+
+    intake intake(
+        plenum_volume: 2.0 * units.L,
+        plenum_cross_section_area: 100.0 * units.cm2,
+        intake_flow_rate: k_carb(carburetor_cfm),
+        idle_flow_rate: k_carb(idle_flow_rate_cfm),
+        idle_throttle_plate_position: idle_throttle_plate_position,
+        throttle_gamma: throttle_gamma,
+        runner_flow_rate: k_carb(300.0),
+        runner_length: 6.0 * units.inch,
+        velocity_decay: 1.0
+    )
+}
+
+public node performer_rpm_intake {
+    input carburetor_cfm: 650.0;
+    input idle_flow_rate_cfm: 1.0;
+    input idle_throttle_plate_position: 0.975;
+    input throttle_gamma: 2.0;
+
+    alias output __out: intake;
+
+    intake intake(
+        plenum_volume: 2.0 * units.L,
+        plenum_cross_section_area: 100.0 * units.cm2,
+        intake_flow_rate: k_carb(carburetor_cfm),
+        idle_flow_rate: k_carb(idle_flow_rate_cfm),
+        idle_throttle_plate_position: idle_throttle_plate_position,
+        throttle_gamma: throttle_gamma,
+        runner_flow_rate: k_carb(500.0),
+        runner_length: 6.0 * units.inch,
+        velocity_decay: 0.1
+    )
+}

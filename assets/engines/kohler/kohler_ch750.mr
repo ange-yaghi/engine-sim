@@ -1,8 +1,8 @@
 import "engine_sim.mr"
-import "../../part-library/part_library.mr"
 
 units units()
 constants constants()
+impulse_response_library ir_lib()
 
 private node wires {
     output wire1: ignition_wire();
@@ -73,8 +73,11 @@ public node kohler_ch750 {
         volume: 20.0 * units.L
     )
 
-    impulse_response ir0(filename: "../../smooth_39.wav", volume: 0.001)
-    exhaust_system exhaust0(es_params, audio_volume: 1.0, impulse_response: ir0)
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 1.0,
+        impulse_response: ir_lib.default_0
+    )
 
     cylinder_bank b0(bank_params, angle: -45 * units.deg)
     b0

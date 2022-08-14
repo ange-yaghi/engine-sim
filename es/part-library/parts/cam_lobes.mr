@@ -1,0 +1,53 @@
+private import "engine_sim.mr"
+
+units units()
+
+private node add_sym_sample {
+    input angle;
+    input lift;
+    input this;
+    alias output __out: this;
+
+    this.add_sample(angle * units.deg, lift * units.thou)
+    this.add_sample(-angle * units.deg, lift * units.thou)
+}
+
+public node stock_454_intake_lobe_profile {
+    alias output __out:
+        harmonic_cam_lobe(
+            duration_at_50_thou: 194 * units.deg,
+            gamma: 0.8,
+            lift: 390 * units.thou,
+            steps: 100
+        );
+}
+
+public node stock_454_exhaust_lobe_profile {
+    alias output __out:
+        harmonic_cam_lobe(
+            duration_at_50_thou: 202 * units.deg,
+            gamma: 0.8,
+            lift: 409 * units.thou,
+            steps: 100
+        );
+}
+
+public node comp_cams_magnum_11_450_8_lobe_profile {
+    alias output __out:
+        harmonic_cam_lobe(
+            duration_at_50_thou: 232 * units.deg,
+            gamma: 0.75,
+            lift: 578 * units.thou,
+            steps: 100
+        );
+}
+
+public node comp_cams_magnum_11_470_8_lobe_profile {
+    alias output __out:
+        harmonic_cam_lobe(
+            duration_at_50_thou: 252 * units.deg,
+            gamma: 0.8,
+            lift: 612 * units.thou,
+            steps: 100
+        );
+}

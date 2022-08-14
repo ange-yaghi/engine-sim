@@ -282,7 +282,8 @@ void EngineSimApplication::process(float frame_dt) {
 
     m_simulator.setSimulationSpeed(speed);
 
-    m_simulator.startFrame(1 / m_engine.GetAverageFramerate());
+    const double avgFramerate = clamp(m_engine.GetAverageFramerate(), 30.0f, 1000.0f);
+    m_simulator.startFrame(1 / avgFramerate);
 
     auto proc_t0 = std::chrono::steady_clock::now();
     const int iterationCount = m_simulator.getFrameIterationCount();
@@ -516,10 +517,27 @@ void EngineSimApplication::run() {
                 ? 10.0
                 : 100.0;
 
-            m_simulator.setSimulationFrequency(m_simulator.getSimulationFrequency() + mouseWheelDelta * rate * dt);
+            const double newSimulationFrequency = clamp(
+                m_simulator.getSimulationFrequency() + mouseWheelDelta * rate * dt,
+                400.0, 400000.0);
+            
+            m_simulator.setSimulationFrequency(newSimulationFrequency);
             fineControlInUse = true;
 
             m_infoCluster->setLogMessage("[N] - Set simulation freq to " + std::to_string(m_simulator.getSimulationFrequency()));
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::G) && m_simulator.m_dyno.m_hold) {
+            if (mouseWheelDelta > 0) {
+                m_dynoSpeed += units::rpm(100.0);
+            }
+            else if (mouseWheelDelta < 0) {
+                m_dynoSpeed -= units::rpm(100.0);
+            }
+
+            m_dynoSpeed = clamp(m_dynoSpeed, units::rpm(0), DBL_MAX);
+
+            m_infoCluster->setLogMessage("[G] - Set dyno speed to " + std::to_string(m_dynoSpeed));
+            fineControlInUse = true;
         }
 
         const double prevTargetThrottle = targetThrottle;
@@ -573,21 +591,34 @@ void EngineSimApplication::run() {
             m_infoCluster->setLogMessage(msg);
         }
 
-        if (m_simulator.m_dyno.m_enabled) {
-            if (m_simulator.getFilteredDynoTorque() > units::torque(1.0, units::ft_lb)) {
-                m_dynoSpeed += units::rpm(500) * dt;
-            }
-            else {
-                m_dynoSpeed *= (1 / (1 + dt));
-            }
+        if (m_engine.ProcessKeyDown(ysKey::Code::H)) {
+            m_simulator.m_dyno.m_hold = !m_simulator.m_dyno.m_hold;
 
-            if ((m_dynoSpeed + units::rpm(1000)) > m_iceEngine->getRedline()) {
-                m_simulator.m_dyno.m_enabled = false;
-                m_dynoSpeed = units::rpm(0);
+            const std::string msg = m_simulator.m_dyno.m_hold
+                ? m_simulator.m_dyno.m_enabled ? "HOLD ENABLED" : "HOLD ON STANDBY [ENABLE DYNO. FOR HOLD]"
+                : "HOLD DISABLED";
+            m_infoCluster->setLogMessage(msg);
+        }
+
+        if (m_simulator.m_dyno.m_enabled) {
+            if (!m_simulator.m_dyno.m_hold) {
+                if (m_simulator.getFilteredDynoTorque() > units::torque(1.0, units::ft_lb)) {
+                    m_dynoSpeed += units::rpm(500) * dt;
+                }
+                else {
+                    m_dynoSpeed *= (1 / (1 + dt));
+                }
+
+                if ((m_dynoSpeed + units::rpm(1000)) > m_iceEngine->getRedline()) {
+                    m_simulator.m_dyno.m_enabled = false;
+                    m_dynoSpeed = units::rpm(0);
+                }
             }
         }
         else {
-            m_dynoSpeed = units::rpm(0);
+            if (!m_simulator.m_dyno.m_hold) {
+                m_dynoSpeed = units::rpm(0);
+            }
         }
 
         m_simulator.m_dyno.m_rotationSpeed = m_dynoSpeed + units::rpm(1000);

@@ -21,3 +21,7 @@ public import "constants/units.mr"
 
 // Infrastructure
 public import "infrastructure/infrastructure.mr"
+
+// Library
+public import "part-library/part_library.mr"
+public import "sound-library/impulse_responses.mr"

@@ -15,7 +15,7 @@ private node wires {
     output wire8: ignition_wire();
 }
 
-public node chev_truck_454 {
+public node engine_03_for_e1 {
     alias output __out: engine;
 
     wires wires()
@@ -73,9 +73,9 @@ public node chev_truck_454 {
     )
 
     chevy_bbc_stock_intake intake(
-        carburetor_cfm: 650.0,
+        carburetor_cfm: 950.0,
         idle_flow_rate_cfm: 0.007,
-        idle_throttle_plate_position: 0.963,
+        idle_throttle_plate_position: 0.98, // start at 0.963, go to -> 0.97
         throttle_gamma: 1.5
     )
 
@@ -166,7 +166,7 @@ public node chev_truck_454 {
 
     engine.add_crankshaft(c0)
 
-    chevy_454_stock_camshaft camshaft()
+    comp_cams_magnum_11_450_8 camshaft()
 
     b0.set_cylinder_head (
         chevy_bbc_peanut_port_head(

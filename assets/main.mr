@@ -1,7 +1,6 @@
 import "engine_sim.mr"
-import "part-library/part_library.mr"
-import "engines/bmw/M52B28.mr"
+import "engines/kohler/kohler_ch750.mr"
 
 set_engine(
-    engine: M52B28()
+    engine: kohler_ch750()
 )

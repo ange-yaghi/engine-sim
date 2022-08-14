@@ -1,0 +1,12 @@
+private import "engine_sim.mr"
+
+public node impulse_response_library {
+    output default_0: impulse_response(filename: "smooth/smooth_39.wav", volume: 0.001);
+
+    output real_engine_0:
+        impulse_response(filename: "archive/test_engine_14_eq_adjusted_16.wav", volume: 0.001);
+    output real_engine_1:
+        impulse_response(filename: "archive/test_engine_15_eq_adjusted_16.wav", volume: 0.001);
+    output real_engine_2:
+        impulse_response(filename: "archive/test_engine_16_eq_adjusted_16.wav", volume: 0.001);
+}

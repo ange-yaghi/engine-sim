@@ -1,8 +1,8 @@
 import "engine_sim.mr"
-import "../../part-library/part_library.mr"
 
 units units()
 constants constants()
+impulse_response_library ir_lib()
 
 label cycle(2 * 360 * units.deg)
 
@@ -246,11 +246,8 @@ public node M52B28 {
         volume: 50.0 * units.L
     )
 
-    impulse_response ir0(filename: "../../sound-library/smooth/smooth_39.wav", volume: 0.02)
-    impulse_response ir1(filename: "../../sound-library/smooth/smooth_39.wav", volume: 0.01)
-
-    exhaust_system exhaust0(es_params, audio_volume: 1.0, impulse_response: ir0)
-    exhaust_system exhaust1(es_params, audio_volume: 1.0, impulse_response: ir1)
+    exhaust_system exhaust0(es_params, audio_volume: 0.5, impulse_response: ir_lib.default_0)
+    exhaust_system exhaust1(es_params, audio_volume: 1.0, impulse_response: ir_lib.default_0)
  
     cylinder_bank b0(bank_params, angle: 0 * units.deg)
     b0

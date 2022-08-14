@@ -17,7 +17,7 @@ LoadSimulationCluster::LoadSimulationCluster() {
     m_peakTorque = 0.0;
     m_peakHorsepowerRpm = 0.0;
     m_peakTorqueRpm = 0.0;
-    memset(m_systemStatusLights, 0, sizeof(double) * 3);
+    memset(m_systemStatusLights, 0, sizeof(double) * 4);
 }
 
 LoadSimulationCluster::~LoadSimulationCluster() {
@@ -111,19 +111,18 @@ void LoadSimulationCluster::destroy() {
 void LoadSimulationCluster::update(float dt) {
     UiElement::update(dt);
 
-    const bool systemStatuses[] = {
-        m_simulator->getEngine()->getIgnitionModule()->m_enabled,
-        m_simulator->m_starterMotor.m_enabled,
-        m_simulator->m_dyno.m_enabled
+    const float systemStatuses[] = {
+        m_simulator->getEngine()->getIgnitionModule()->m_enabled ? 1.0f : 0.01f,
+        m_simulator->m_starterMotor.m_enabled ? 1.0f : 0.01f,
+        m_simulator->m_dyno.m_enabled ? 1.0f : 0.01f,
+        m_simulator->m_dyno.m_hold ? (m_simulator->m_dyno.m_enabled ? 1.0f : 0.25f) : 0.01f
     };
 
     constexpr float RC = 0.08f;
     const float alpha = dt / (dt + RC);
 
-    for (int i = 0; i < 3; ++i) {
-        const float next = systemStatuses[i]
-            ? 1.0f
-            : 0.01f;
+    for (int i = 0; i < 4; ++i) {
+        const float next = systemStatuses[i];
         m_systemStatusLights[i] = (1 - alpha) * m_systemStatusLights[i] + alpha * next;
     }
 
@@ -211,7 +210,7 @@ void LoadSimulationCluster::drawSystemStatus(const Bounds &bounds) {
     drawFrame(bounds, 1.0f, m_app->getWhite(), m_app->getBackgroundColor());
 
     Grid grid;
-    grid.v_cells = 3;
+    grid.v_cells = 4;
     grid.h_cells = 1;
 
     drawText(
@@ -229,8 +228,13 @@ void LoadSimulationCluster::drawSystemStatus(const Bounds &bounds) {
         grid.get(left, 0, 2).inset(10.0f),
         20.0,
         Bounds::lm);
+    drawText(
+        "Hold",
+        grid.get(left, 0, 3).inset(10.0f),
+        20.0,
+        Bounds::lm);
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         const Bounds rawBounds = grid.get(right, 0, i);
         const float width = std::fmax(rawBounds.width(), rawBounds.height());
         const Bounds squareBounds(width - 20.0f, 5.0f, rawBounds.getPosition(Bounds::center), Bounds::center);
