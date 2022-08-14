@@ -10,8 +10,8 @@ Shaders::Shaders() {
     m_objectVariables.Lit = 0;
     m_objectVariables.Transform = ysMath::LoadIdentity();
 
-    m_screenVariables.FogNear = m_uiScreenVariables.FogNear = 2000.0f;
-    m_screenVariables.FogFar = m_uiScreenVariables.FogFar = 2001.0f;
+    m_screenVariables.FogNear = m_uiScreenVariables.FogNear = 16000.0f;
+    m_screenVariables.FogFar = m_uiScreenVariables.FogFar = 16001.0f;
 }
 
 Shaders::~Shaders() {

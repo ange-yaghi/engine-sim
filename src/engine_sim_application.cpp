@@ -110,7 +110,7 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     settings.WindowPositionY = 0;
     settings.WindowStyle = ysWindow::WindowStyle::Windowed;
     settings.WindowWidth = 1920;
-    settings.WindowHeight = 1081;
+    settings.WindowHeight = 1080;
 
     m_engine.CreateGameWindow(settings);
 
