@@ -24,6 +24,7 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | H | Enable RPM hold (see below for instructions) |
 | G + Scroll | Change hold speed |
 | F | Enter fullscreen mode |
+| I | Display dyno stats in the information panel |
 | Shift | Clutch (hold spacebar to slowly engage/disengage) |
 | Up Arrow | Up Gear | 
 | Down Arrow | Down Gear | 
