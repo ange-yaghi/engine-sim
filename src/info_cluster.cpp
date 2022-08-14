@@ -5,8 +5,6 @@
 #include <sstream>
 #include <iomanip>
 
-std::string EngineSimApplication::buildVersion;
-
 InfoCluster::InfoCluster() {
     m_engine = nullptr;
     m_logMessage = "Started";
@@ -61,7 +59,7 @@ void InfoCluster::render() {
         Bounds::tl,
         Bounds::tl);
     drawAlignedText(
-        "BUILD: v" + EngineSimApplication::buildVersion + " // " __DATE__,
+        "BUILD: v" + EngineSimApplication::getBuildVersion() + " // " __DATE__,
         titleSplit.get(titleBounds, 0, 2).inset(10.0f).move({ 0.0f, 10.0f }),
         16.0f,
         Bounds::tl,

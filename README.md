@@ -12,6 +12,10 @@ This is a real-time internal combustion engine simulation **designed specificall
 
 I wrote this to demo in a [YouTube video](https://youtu.be/RKT-sKtR970), not as a real product. If you would like it to become a usable product please reach out to me or join my Discord (link can be found in the description of the aforementioned YouTube video). I use this codebase for my own purposes and so it might change frequently and without warning.
 
+## How do I install it?
+
+This is a code repository and might not look like other software that you're used to downloading and installing (if you're not familiar with programming). To download a ready-to-use version of the application, navigate to the [releases page](https://github.com/ange-yaghi/engine-sim/releases), find the most recent release (ex. `v0.1.5a`), click "Assets" and download the .zip file with a name that starts with `engine-sim-build`. Unzip this file, then run `bin/engine-sim-app.exe`. The simulator should then start normally.
+
 ## How do I use it?
 
 The UI is extremely minimalistic and there are only a few controls used to interact with the engine:
@@ -21,22 +25,27 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | A | Toggle ignition |
 | S | Hold for starter |
 | D | Enable dyno |
+| H | Enable RPM hold (see below for instructions) |
+| G + Scroll | Change hold speed |
 | F | Enter fullscreen mode |
 | Shift | Clutch (hold spacebar to slowly engage/disengage) |
 | Up Arrow | Up Gear | 
 | Down Arrow | Down Gear | 
 | Z + Scroll | Volume |
 | X + Scroll | Convolution Level |
-| C + Scroll | High freq gain |
-| V + Scroll | Low freq noise |
-| B + Scroll | High freq noise |
-| N + Scroll | Simulation freq |
+| C + Scroll | High frequency gain |
+| V + Scroll | Low frequency noise |
+| B + Scroll | High frequency noise |
+| N + Scroll | Simulation frequency |
 | M | Increase View Layer |
 | , | Decrease View Layer |
 | Escape | Exit the program |
 | Q, W, E, R | Change throttle position |
 | 1, 2, 3, 4, 5 | Simulation time warp |
-| Tab | Change screen | 
+| Tab | Change screen |
+
+### Using the RPM hold
+The RPM hold feature will hold the engine at a specific RPM and also measure the engine's horsepower and torque at that RPM. You can enable RPM hold by pressing the `H` key. **You must then enable the dynomometer** (press the `S` key) in order for the RPM hold to take effect. To change the hold speed, hold the `G` key and scroll with the mouse wheel. The RPM hold will be shown on the `DYNO. SPEED` gauge in the lower left of the screen.
 
 ## How do I build it?
 **Note: this project currently only builds on Windows!**

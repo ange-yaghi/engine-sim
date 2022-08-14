@@ -34,6 +34,8 @@ class EngineSimApplication {
         EngineSimApplication();
         virtual ~EngineSimApplication();
 
+        static std::string getBuildVersion() { return s_buildVersion; }
+
         void initialize(void *instance, ysContextObject::DeviceAPI api);
         void run();
         void destroy();
