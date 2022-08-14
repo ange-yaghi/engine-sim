@@ -27,6 +27,9 @@
 #include <vector>
 
 class EngineSimApplication {
+    private:
+        static std::string s_buildVersion;
+
     public:
         EngineSimApplication();
         virtual ~EngineSimApplication();
@@ -75,7 +78,6 @@ class EngineSimApplication {
         int getScreenHeight() const { return m_screenHeight; }
 
         InfoCluster *getInfoCluster() { return m_infoCluster; }
-        static std::string buildVersion;
 
     protected:
         void renderScene();

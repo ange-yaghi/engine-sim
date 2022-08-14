@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <sstream>
 
+std::string EngineSimApplication::s_buildVersion = "0.1.5a";
+
 EngineSimApplication::EngineSimApplication() {
     m_assetPath = "";
 
@@ -71,8 +73,6 @@ EngineSimApplication::EngineSimApplication() {
     m_screen = 0;
     m_viewParameters.Layer0 = 0;
     m_viewParameters.Layer1 = 10;
-
-    buildVersion = "0.1.4a";
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -99,7 +99,7 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     m_engine.GetConsole()->SetDefaultFontDirectory(enginePath + "/fonts/");
 
     const std::string shaderPath = enginePath + "/shaders/";
-    std::string winTitle = "Engine Sim | AngeTheGreat | v" + buildVersion;
+    std::string winTitle = "Engine Sim | AngeTheGreat | v" + s_buildVersion;
     dbasic::DeltaEngine::GameEngineSettings settings;
     settings.API = api;
     settings.DepthBuffer = false;
