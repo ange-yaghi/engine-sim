@@ -43,11 +43,11 @@ void PistonObject::render(const ViewParameters *view) {
     m_app->getEngine()->DrawModel(
         m_app->getShaders()->GetRegularFlags(),
         m_app->getAssetManager()->GetModelAsset("Piston"),
-        0x10 - layer);
+        0x32 - layer);
 
     setTransform(&m_piston->m_body);
     m_app->getShaders()->SetBaseColor(holeCol);
-    m_app->drawGenerated(m_wristPinHole, 0x10 - layer);
+    m_app->drawGenerated(m_wristPinHole, 0x32 - layer);
 }
 
 void PistonObject::process(float dt) {

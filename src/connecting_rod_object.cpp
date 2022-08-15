@@ -45,10 +45,10 @@ void ConnectingRodObject::render(const ViewParameters *view) {
     m_app->getEngine()->DrawModel(
         m_app->getShaders()->GetRegularFlags(),
         m_app->getAssetManager()->GetModelAsset("ConnectingRod"),
-        0x10 - layer);
+        0x32 - layer);
 
     setTransform(&m_connectingRod->m_body);
-    m_app->drawGenerated(m_connectingRodBody, 0x10 - layer);
+    m_app->drawGenerated(m_connectingRodBody, 0x32 - layer);
 }
 
 void ConnectingRodObject::process(float dt) {
