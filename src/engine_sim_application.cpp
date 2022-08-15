@@ -20,7 +20,13 @@
 #include <stdlib.h>
 #include <sstream>
 
+
+#if ATG_ENGINE_DISCORD_ENABLED
+#include "../discord/Discord.h"
+#endif
+
 std::string EngineSimApplication::s_buildVersion = "0.1.6a";
+
 
 EngineSimApplication::EngineSimApplication() {
     m_assetPath = "";
@@ -261,6 +267,16 @@ void EngineSimApplication::initialize() {
     m_audioSource->SetMode(ysAudioSource::Mode::Loop);
     m_audioSource->SetPan(0.0f);
     m_audioSource->SetVolume(1.0f);
+
+#ifdef ATG_ENGINE_DISCORD_ENABLED
+    //Create a global instance of discord-rpc
+    CDiscord::CreateInstance();
+    //Enable it, this needs to be set via a config file of some sort. 
+    GetDiscordManager()->SetUseDiscord(true);
+    DiscordRichPresence passMe = { 0 };
+    GetDiscordManager()->SetStatus(passMe, m_iceEngine->getName(), s_buildVersion);
+#endif
+
 }
 
 void EngineSimApplication::process(float frame_dt) {
