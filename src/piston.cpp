@@ -2,6 +2,7 @@
 
 #include "../include/connecting_rod.h"
 #include "../include/crankshaft.h"
+#include "../include/cylinder_bank.h"
 
 #include <cmath>
 
@@ -37,11 +38,11 @@ void Piston::destroy() {
 }
 
 double Piston::relativeX() const {
-    return m_body.p_x - m_rod->getCrankshaft()->getPosX();
+    return m_body.p_x - m_bank->getX();
 }
 
 double Piston::relativeY() const {
-    return m_body.p_y - m_rod->getCrankshaft()->getPosY();
+    return m_body.p_y - m_bank->getY();
 }
 
 double Piston::calculateCylinderWallForce() const {

@@ -3,9 +3,14 @@
 
 #include "part.h"
 
+#include "crankshaft.h"
+
 class CylinderBank {
     public:
         struct Parameters {
+            Crankshaft *Crankshaft;
+            double PositionX;
+            double PositionY;
             double Angle;
             double Bore;
             double DeckHeight;
@@ -30,6 +35,8 @@ class CylinderBank {
         inline int getIndex() const { return m_index; }
         inline double getDx() const { return m_dx; }
         inline double getDy() const { return m_dy; }
+        inline double getX() const { return m_x; }
+        inline double getY() const { return m_y; }
 
     protected:
         double m_angle;
@@ -40,6 +47,8 @@ class CylinderBank {
 
         double m_dx;
         double m_dy;
+        double m_x;
+        double m_y;
 };
 
 #endif /* ATG_ENGINE_SIM_CYLINDER_BANK_H */

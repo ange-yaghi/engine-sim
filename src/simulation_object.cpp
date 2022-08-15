@@ -1,5 +1,8 @@
 #include "../include/simulation_object.h"
 
+#include "../include/piston.h"
+#include "../include/cylinder_bank.h"
+
 #include "../include/engine_sim_application.h"
 
 SimulationObject::SimulationObject() {
@@ -28,6 +31,25 @@ void SimulationObject::process(float dt) {
 
 void SimulationObject::destroy() {
     /* void */
+}
+
+Piston *SimulationObject::getForemostPiston(CylinderBank *bank, int layer) {
+    Engine *engine = m_app->getSimulator()->getEngine();
+    Piston *frontmostPiston = nullptr;
+    const int cylinderCount = engine->getCylinderCount();
+    for (int i = 0; i < cylinderCount; ++i) {
+        Piston *piston = engine->getPiston(i);
+        if (piston->getCylinderBank() == bank) {
+            if (piston->getRod()->getJournal() >= layer) {
+                if (frontmostPiston == nullptr
+                    || piston->getRod()->getJournal() < frontmostPiston->getRod()->getJournal()) {
+                    frontmostPiston = piston;
+                }
+            }
+        }
+    }
+
+    return frontmostPiston;
 }
 
 void SimulationObject::resetShader() {

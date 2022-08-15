@@ -132,7 +132,55 @@ double Engine::getThrottlePlateAngle() const {
     return (1 - m_intakes[0].getThrottlePlatePosition()) * (constants::pi / 2);
 }
 
-double Engine::getDisplacement() const {
+void Engine::calculateDisplacement() {
+    // There is a closed-form/correct way to do this which I really
+    // don't feel like deriving right now, so I'm just going with this
+    // numerical approximation.
+    constexpr int Resolution = 1000;
+
+    double *min_s = new double[m_cylinderCount];
+    double *max_s = new double[m_cylinderCount];
+
+    for (int i = 0; i < m_cylinderCount; ++i) {
+        min_s[i] = DBL_MAX;
+        max_s[i] = -DBL_MAX;
+    }
+
+    for (int j = 0; j < Resolution; ++j) {
+        const double theta = 2 * (j / static_cast<double>(Resolution)) * constants::pi;
+
+        for (int i = 0; i < m_cylinderCount; ++i) {
+            const Piston &piston = m_pistons[i];
+            const CylinderBank &bank = *piston.getCylinderBank();
+            const ConnectingRod &rod = *piston.getRod();
+            const Crankshaft &shaft = *rod.getCrankshaft();
+
+            const double p_x = rod.getCrankshaft()->getThrow() * std::cos(theta) + rod.getCrankshaft()->getPosX();
+            const double p_y = rod.getCrankshaft()->getThrow() * std::sin(theta) + rod.getCrankshaft()->getPosY();
+
+            // (bank->m_x + bank->m_dx * s - p_x)^2 + (bank->m_y + bank->m_dy * s - p_y)^2 = (rod->m_length)^2
+            const double a = bank.getDx() * bank.getDx() + bank.getDy() * bank.getDy();
+            const double b = -2 * bank.getDx() * (p_x - bank.getX()) - 2 * bank.getDy() * (p_y - bank.getY());
+            const double c =
+                (p_x - bank.getX()) * (p_x - bank.getX())
+                + (p_y - bank.getY()) * (p_y - bank.getY())
+                - rod.getLength() * rod.getLength();
+
+            const double det = b * b - 4 * a * c;
+            if (det < 0) continue;
+
+            const double sqrt_det = std::sqrt(det);
+            const double s0 = (-b + sqrt_det) / (2 * a);
+            const double s1 = (-b - sqrt_det) / (2 * a);
+
+            const double s = std::max(s0, s1);
+            if (s < 0) continue;
+
+            min_s[i] = std::min(min_s[i], s);
+            max_s[i] = std::max(max_s[i], s);
+        }
+    }
+
     double displacement = 0;
     for (int i = 0; i < m_cylinderCount; ++i) {
         const Piston &piston = m_pistons[i];
@@ -140,13 +188,13 @@ double Engine::getDisplacement() const {
         const ConnectingRod &rod = *piston.getRod();
         const Crankshaft &shaft = *rod.getCrankshaft();
 
-        const double r = bank.getBore() / 2.0;
-        const double V = constants::pi * r * r * (2.0 * shaft.getThrow());
-
-        displacement += V;
+        if (min_s[i] < max_s[i]) {
+            const double r = bank.getBore() / 2.0;
+            displacement += constants::pi * r * r * (max_s[i] - min_s[i]);
+        }
     }
 
-    return displacement;
+    m_displacement = displacement;
 }
 
 double Engine::getIntakeFlowRate() const {
@@ -232,8 +280,8 @@ double Engine::getTotalVolumeFuelConsumed() const {
 
 int Engine::getMaxDepth() const {
     int maxDepth = 0;
-    for (int i = 0; i < m_cylinderBankCount; ++i) {
-        maxDepth = std::max(m_cylinderBanks[i].getCylinderCount(), maxDepth);
+    for (int i = 0; i < m_crankshaftCount; ++i) {
+        maxDepth = std::max(m_crankshafts[i].getRodJournalCount(), maxDepth);
     }
 
     return maxDepth;

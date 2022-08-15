@@ -18,15 +18,6 @@
 
 class Engine : public Part {
     public:
-        /*struct FuelParameters {
-            double MolecularMass =
-                units::mass(100.0, units::g);
-            double EnergyDensity =
-                units::energy(48.1, units::kJ) / units::mass(1.0, units::g);
-            double Density =
-                units::mass(0.755, units::kg) / units::volume(1.0, units::L);
-        };*/
-
         struct Parameters {
             int CylinderBanks;
             int CylinderCount;
@@ -39,8 +30,6 @@ class Engine : public Part {
             double StarterTorque = units::torque(90.0, units::ft_lb);
             double StarterSpeed = units::rpm(200);
             double Redline = units::rpm(6500);
-
-            //FuelParameters Fuel;
         };
 
     public:
@@ -56,7 +45,8 @@ class Engine : public Part {
         virtual void setThrottle(double throttle);
         virtual double getThrottle() const;
         virtual double getThrottlePlateAngle() const;
-        virtual double getDisplacement() const;
+        virtual void calculateDisplacement();
+        double getDisplacement() const { return m_displacement; }
         virtual double getIntakeFlowRate() const;
 
         virtual double getManifoldPressure() const;
@@ -88,8 +78,6 @@ class Engine : public Part {
         ExhaustSystem *getExhaustSystem(int i) const { return &m_exhaustSystems[i]; }
         Intake *getIntake(int i) const { return &m_intakes[i]; }
         CombustionChamber *getChamber(int i) const { return &m_combustionChambers[i]; }
-
-        //const FuelParameters &getFuel() const { return m_fuel; }
         Fuel *getFuel() { return &m_fuel; }
 
     protected:
@@ -118,11 +106,10 @@ class Engine : public Part {
         int m_intakeCount;
 
         IgnitionModule m_ignitionModule;
-
-        //FuelParameters m_fuel;
         Fuel m_fuel;
 
         double m_throttle;
+        double m_displacement;
 };
 
 #endif /* ATG_ENGINE_SIM_ENGINE_H */

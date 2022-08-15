@@ -6,6 +6,7 @@
 
 CylinderHeadObject::CylinderHeadObject() {
     m_head = nullptr;
+    m_engine = nullptr;
 }
 
 CylinderHeadObject::~CylinderHeadObject() {
@@ -24,6 +25,9 @@ void CylinderHeadObject::render(const ViewParameters *view) {
     const double boreSurfaceArea =
         constants::pi * bank->getBore() * bank->getBore() / 4.0;
     const double chamberHeight = m_head->getCombustionChamberVolume() / boreSurfaceArea;
+
+    Piston *frontmostPiston = getForemostPiston(bank, view->Layer0);
+    if (frontmostPiston == nullptr) return;
 
     const double theta = bank->getAngle();
     double x, y;
@@ -127,7 +131,8 @@ void CylinderHeadObject::render(const ViewParameters *view) {
         ? 0.5f
         : -0.5f;
 
-    const int layer = view->Layer0;
+    const int layer = frontmostPiston->getCylinderIndex();
+
     const float intakeLift = (float)m_head->intakeValveLift(layer);
     const ysMatrix T_intakeValve = ysMath::MatMult(
             T_head,

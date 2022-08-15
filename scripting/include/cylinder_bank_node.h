@@ -41,6 +41,7 @@ namespace es_script {
             CylinderBank::Parameters params = m_parameters;
             params.CylinderCount = (int)m_cylinders.size();
             params.Index = index;
+            params.Crankshaft = crankshaft;
 
             cylinderBank->initialize(params);
 
@@ -123,6 +124,8 @@ namespace es_script {
             addInput("angle", &m_parameters.Angle);
             addInput("bore", &m_parameters.Bore);
             addInput("deck_height", &m_parameters.DeckHeight);
+            addInput("position_x", &m_parameters.PositionX);
+            addInput("position_y", &m_parameters.PositionY);
 
             ObjectReferenceNode<CylinderBankNode>::registerInputs();
         }

@@ -146,8 +146,8 @@ void Simulator::initialize(const Parameters &params) {
         m_cylinderWallConstraints[i].m_dy = dy;
         m_cylinderWallConstraints[i].m_local_x = 0.0;
         m_cylinderWallConstraints[i].m_local_y = piston->getWristPinLocation();
-        m_cylinderWallConstraints[i].m_p0_x = crankshaft->getPosX();
-        m_cylinderWallConstraints[i].m_p0_y = crankshaft->getPosY();
+        m_cylinderWallConstraints[i].m_p0_x = bank->getX();
+        m_cylinderWallConstraints[i].m_p0_y = bank->getY();
         m_cylinderWallConstraints[i].m_ks = ks;
         m_cylinderWallConstraints[i].m_kd = kd;
 
@@ -221,10 +221,16 @@ void Simulator::placeAndInitialize() {
         double p_x, p_y;
         rod->getCrankshaft()->getRodJournalPositionLocal(rod->getJournal(), &p_x, &p_y);
 
-        // (bank->m_dx * s - p_x)^2 + (bank->m_dy * s - p_y)^2 = rod->m_length * rod->m_length
+        p_x += rod->getCrankshaft()->getPosX();
+        p_y += rod->getCrankshaft()->getPosY();
+
+        // (bank->m_x + bank->m_dx * s - p_x)^2 + (bank->m_y + bank->m_dy * s - p_y)^2 = (rod->m_length)^2
         const double a = bank->getDx() * bank->getDx() + bank->getDy() * bank->getDy();
-        const double b = -2 * bank->getDx() * p_x - 2 * bank->getDy() * p_y;
-        const double c = p_x * p_x + p_y * p_y - rod->getLength() * rod->getLength();
+        const double b = -2 * bank->getDx() * (p_x - bank->getX()) - 2 * bank->getDy() * (p_y - bank->getY());
+        const double c =
+            (p_x - bank->getX()) * (p_x - bank->getX())
+            + (p_y - bank->getY()) * (p_y - bank->getY())
+            - rod->getLength() * rod->getLength();
 
         const double det = b * b - 4 * a * c;
         if (det < 0) continue;
@@ -236,8 +242,8 @@ void Simulator::placeAndInitialize() {
         const double s = std::max(s0, s1);
         if (s < 0) continue;
 
-        const double e_x = s * bank->getDx();
-        const double e_y = s * bank->getDy();
+        const double e_x = s * bank->getDx() + bank->getX();
+        const double e_y = s * bank->getDy() + bank->getY();
 
         const double theta = ((e_y - p_y) > 0)
             ? std::acos((e_x - p_x) / rod->getLength())
@@ -246,11 +252,11 @@ void Simulator::placeAndInitialize() {
 
         double cl_x, cl_y;
         rod->m_body.localToWorld(0, rod->getBigEndLocal(), &cl_x, &cl_y);
-        rod->m_body.p_x += p_x + rod->getCrankshaft()->getPosX() - cl_x;
-        rod->m_body.p_y += p_y + rod->getCrankshaft()->getPosY() - cl_y;
+        rod->m_body.p_x += p_x - cl_x;
+        rod->m_body.p_y += p_y - cl_y;
 
-        piston->m_body.p_x = e_x + rod->getCrankshaft()->getPosX();
-        piston->m_body.p_y = e_y + rod->getCrankshaft()->getPosY();
+        piston->m_body.p_x = e_x;
+        piston->m_body.p_y = e_y;
         piston->m_body.theta = bank->getAngle() + constants::pi;
     }
 

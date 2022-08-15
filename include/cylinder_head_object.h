@@ -5,6 +5,7 @@
 
 #include "cylinder_head.h"
 #include "geometry_generator.h"
+#include "engine.h"
 
 class CylinderHeadObject : public SimulationObject {
     public:
@@ -17,6 +18,7 @@ class CylinderHeadObject : public SimulationObject {
         virtual void destroy();
 
         CylinderHead *m_head;
+        Engine *m_engine;
 
     protected:
         void generateCamshaft(

@@ -224,23 +224,20 @@ public node piston {
 }
 
 // Cylinder Bank
-public node cylinder_bank_parameter_defaults {
+public node cylinder_bank_parameters {
     input angle: 0.0;
     input bore: 0.0;
     input deck_height: 0.0;
-}
-
-public node cylinder_bank_parameters {
-    input copy: cylinder_bank_parameter_defaults();
-    input angle: copy.angle;
-    input bore: copy.bore;
-    input deck_height: copy.deck_height;
+    input position_x: 0.0;
+    input position_y: 0.0;
 }
 
 private node _cylinder_bank => __engine_sim__cylinder_bank {
     input angle [float]: 0.0;
     input bore [float]: 0.0;
     input deck_height [float]: 0.0;
+    input position_x [float]: 0.0;
+    input position_y [float]: 0.0;
     alias output __out [cylinder_bank_channel];
 }
 
@@ -249,11 +246,15 @@ public node cylinder_bank {
     input angle: parameters.angle;
     input bore: parameters.bore;
     input deck_height: parameters.deck_height;
+    input position_x: parameters.position_x;
+    input position_y: parameters.position_y;
     alias output __out [_cylinder_bank]:
         _cylinder_bank(
             angle: angle,
             bore: bore,
-            deck_height: deck_height
+            deck_height: deck_height,
+            position_x: position_x,
+            position_y: position_y
         );
 }
 

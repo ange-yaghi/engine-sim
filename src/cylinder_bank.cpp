@@ -12,6 +12,7 @@ CylinderBank::CylinderBank() {
     m_index = -1;
 
     m_dx = m_dy = 0;
+    m_x = m_y = 0;
 }
 
 CylinderBank::~CylinderBank() {
@@ -27,6 +28,9 @@ void CylinderBank::initialize(const Parameters &params) {
     m_dx = std::cos(m_angle + constants::pi / 2);
     m_dy = std::sin(m_angle + constants::pi / 2);
 
+    m_x = params.PositionX;
+    m_y = params.PositionY;
+
     m_index = params.Index;
 }
 
@@ -35,8 +39,8 @@ void CylinderBank::destroy() {
 }
 
 void CylinderBank::getPositionAboveDeck(double h, double *x, double *y) const {
-    *x = m_dx * (m_deckHeight + h);
-    *y = m_dy * (m_deckHeight + h);
+    *x = m_dx * (m_deckHeight + h) + m_x;
+    *y = m_dy * (m_deckHeight + h) + m_y;
 }
 
 double CylinderBank::boreSurfaceArea() const {

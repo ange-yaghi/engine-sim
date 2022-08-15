@@ -4,6 +4,8 @@
 #include "scs.h"
 #include "delta.h"
 
+class Piston;
+class CylinderBank;
 class EngineSimApplication;
 class SimulationObject {
     public:
@@ -21,6 +23,8 @@ class SimulationObject {
         virtual void render(const ViewParameters *settings);
         virtual void process(float dt);
         virtual void destroy();
+
+        Piston *getForemostPiston(CylinderBank *bank, int layer);
 
     protected:
         void resetShader();

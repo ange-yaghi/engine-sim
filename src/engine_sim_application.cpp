@@ -72,7 +72,7 @@ EngineSimApplication::EngineSimApplication() {
     m_screenHeight = 256;
     m_screen = 0;
     m_viewParameters.Layer0 = 0;
-    m_viewParameters.Layer1 = 10;
+    m_viewParameters.Layer1 = 0;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -201,6 +201,9 @@ void EngineSimApplication::initialize() {
     m_simulator.initialize(simulatorParams);
     m_simulator.startAudioRenderingThread();
     createObjects(m_iceEngine);
+
+    m_viewParameters.Layer1 = m_iceEngine->getMaxDepth();
+    m_iceEngine->calculateDisplacement();
 
     for (int i = 0; i < m_iceEngine->getExhaustSystemCount(); ++i) {
         ImpulseResponse *response = m_iceEngine->getExhaustSystem(i)->getImpulseResponse();
@@ -770,6 +773,7 @@ void EngineSimApplication::createObjects(Engine *engine) {
         CylinderHeadObject *chObject = new CylinderHeadObject;
         chObject->initialize(this);
         chObject->m_head = engine->getHead(i);
+        chObject->m_engine = engine;
         m_objects.push_back(chObject);
     }
 }
