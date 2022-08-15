@@ -179,6 +179,10 @@ void RightGaugeCluster::render() {
     UiElement::render();
 }
 
+void RightGaugeCluster::setEngine(Engine *engine) {
+    m_engine = engine;
+}
+
 void RightGaugeCluster::renderTachSpeedCluster(const Bounds &bounds) {
     const Bounds left = bounds.horizontalSplit(0.0f, 0.5f);
     const Bounds right = bounds.horizontalSplit(0.5f, 1.0f);

@@ -21,7 +21,8 @@ class OscilloscopeCluster : public UiElement {
         virtual void update(float dt);
         virtual void render();
 
-        Simulator *m_simulator;
+        void sample();
+        void setSimulator(Simulator *simulator);
 
         Oscilloscope *getTotalExhaustFlowOscilloscope() const { return m_totalExhaustFlowScope; }
         Oscilloscope *getExhaustFlowOscilloscope() const { return m_exhaustFlowScope; }
@@ -42,6 +43,7 @@ class OscilloscopeCluster : public UiElement {
             const std::string &title,
             bool overlay=false);
 
+        Simulator *m_simulator;
         Oscilloscope
             *m_torqueScope,
             *m_hpScope,

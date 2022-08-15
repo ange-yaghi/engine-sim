@@ -53,29 +53,29 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     // Torque
     m_torqueScope->setBufferSize(100);
     m_torqueScope->m_xMin = 0.0f;
-    m_torqueScope->m_xMax = 9000.0f;
-    m_torqueScope->m_yMin = -100.0;
-    m_torqueScope->m_yMax = 1000.0;
+    m_torqueScope->m_yMin = 0.0f;
+    m_torqueScope->m_yMax = 0.0f;
     m_torqueScope->m_lineWidth = 2.0f;
     m_torqueScope->m_drawReverse = false;
+    m_torqueScope->m_dynamicallyResizeX = true;
     m_torqueScope->i_color = m_app->getOrange();
 
     // Horsepower
     m_hpScope->setBufferSize(100);
     m_hpScope->m_xMin = 0.0f;
-    m_hpScope->m_xMax = 9000.0f;
-    m_hpScope->m_yMin = -100.0f;
-    m_hpScope->m_yMax = 1000.0f;
+    m_hpScope->m_yMin = 0.0f;
+    m_hpScope->m_yMax = 0.0f;
     m_hpScope->m_lineWidth = 2.0f;
     m_hpScope->m_drawReverse = false;
+    m_hpScope->m_dynamicallyResizeX = true;
     m_hpScope->i_color = m_app->getPink();
 
     // Total exhaust flow
     m_totalExhaustFlowScope->setBufferSize(1024);
     m_totalExhaustFlowScope->m_xMin = 0.0f;
     m_totalExhaustFlowScope->m_xMax = constants::pi * 4;
-    m_totalExhaustFlowScope->m_yMin = -units::flow(500, units::scfm);
-    m_totalExhaustFlowScope->m_yMax = units::flow(1500, units::scfm);
+    m_totalExhaustFlowScope->m_yMin = -units::flow(10, units::scfm);
+    m_totalExhaustFlowScope->m_yMax = units::flow(10, units::scfm);
     m_totalExhaustFlowScope->m_lineWidth = 2.0f;
     m_totalExhaustFlowScope->m_drawReverse = false;
     m_totalExhaustFlowScope->i_color = m_app->getOrange();
@@ -84,8 +84,8 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_exhaustFlowScope->setBufferSize(1024);
     m_exhaustFlowScope->m_xMin = 0.0f;
     m_exhaustFlowScope->m_xMax = constants::pi * 4;
-    m_exhaustFlowScope->m_yMin = -units::flow(1000.0, units::scfm);
-    m_exhaustFlowScope->m_yMax = units::flow(1000.0, units::scfm);
+    m_exhaustFlowScope->m_yMin = -units::flow(10.0, units::scfm);
+    m_exhaustFlowScope->m_yMax = units::flow(10.0, units::scfm);
     m_exhaustFlowScope->m_lineWidth = 2.0f;
     m_exhaustFlowScope->m_drawReverse = false;
     m_exhaustFlowScope->i_color = m_app->getOrange();
@@ -94,8 +94,8 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_intakeFlowScope->setBufferSize(1024);
     m_intakeFlowScope->m_xMin = 0.0f;
     m_intakeFlowScope->m_xMax = constants::pi * 4;
-    m_intakeFlowScope->m_yMin = -units::flow(1000.0, units::scfm);
-    m_intakeFlowScope->m_yMax = units::flow(1000.0, units::scfm);
+    m_intakeFlowScope->m_yMin = -units::flow(10.0, units::scfm);
+    m_intakeFlowScope->m_yMax = units::flow(10.0, units::scfm);
     m_intakeFlowScope->m_lineWidth = 2.0f;
     m_intakeFlowScope->m_drawReverse = false;
     m_intakeFlowScope->i_color = m_app->getBlue();
@@ -124,8 +124,8 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_exhaustValveLiftScope->setBufferSize(1024);
     m_exhaustValveLiftScope->m_xMin = 0.0f;
     m_exhaustValveLiftScope->m_xMax = constants::pi * 4;
-    m_exhaustValveLiftScope->m_yMin = (float)units::distance(-500, units::thou);
-    m_exhaustValveLiftScope->m_yMax = (float)units::distance(1000, units::thou);
+    m_exhaustValveLiftScope->m_yMin = (float)units::distance(-10, units::thou);
+    m_exhaustValveLiftScope->m_yMax = (float)units::distance(10, units::thou);
     m_exhaustValveLiftScope->m_lineWidth = 2.0f;
     m_exhaustValveLiftScope->m_drawReverse = false;
     m_exhaustValveLiftScope->i_color = m_app->getOrange();
@@ -133,8 +133,8 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_intakeValveLiftScope->setBufferSize(1024);
     m_intakeValveLiftScope->m_xMin = 0.0f;
     m_intakeValveLiftScope->m_xMax = constants::pi * 4;
-    m_intakeValveLiftScope->m_yMin = (float)units::distance(-500, units::thou);
-    m_intakeValveLiftScope->m_yMax = (float)units::distance(1000, units::thou);
+    m_intakeValveLiftScope->m_yMin = (float)units::distance(-10, units::thou);
+    m_intakeValveLiftScope->m_yMax = (float)units::distance(10, units::thou);
     m_intakeValveLiftScope->m_lineWidth = 2.0f;
     m_intakeValveLiftScope->m_drawReverse = false;
     m_intakeValveLiftScope->i_color = m_app->getBlue();
@@ -143,8 +143,8 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_cylinderPressureScope->setBufferSize(1024);
     m_cylinderPressureScope->m_xMin = 0.0f;
     m_cylinderPressureScope->m_xMax = constants::pi * 4;
-    m_cylinderPressureScope->m_yMin = -(float)std::sqrt(units::pressure(50, units::psi));
-    m_cylinderPressureScope->m_yMax = (float)std::sqrt(units::pressure(1000, units::psi));
+    m_cylinderPressureScope->m_yMin = -(float)std::sqrt(units::pressure(1, units::psi));
+    m_cylinderPressureScope->m_yMax = (float)std::sqrt(units::pressure(1, units::psi));
     m_cylinderPressureScope->m_lineWidth = 2.0f;
     m_cylinderPressureScope->m_drawReverse = false;
     m_cylinderPressureScope->i_color = m_app->getOrange();
@@ -152,12 +152,13 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     // Pressure volume scope
     m_pvScope->setBufferSize(1024);
     m_pvScope->m_xMin = 0.0f;
-    m_pvScope->m_xMax = units::volume(1.5, units::L);
-    m_pvScope->m_yMin = -(float)std::sqrt(units::pressure(50, units::psi));
-    m_pvScope->m_yMax = (float)std::sqrt(units::pressure(1000, units::psi));
+    m_pvScope->m_xMax = units::volume(0.1, units::L);
+    m_pvScope->m_yMin = -(float)std::sqrt(units::pressure(1, units::psi));
+    m_pvScope->m_yMax = (float)std::sqrt(units::pressure(1, units::psi));
     m_pvScope->m_lineWidth = 2.0f;
     m_pvScope->m_drawReverse = true;
     m_pvScope->i_color = m_app->getOrange();
+    m_pvScope->m_dynamicallyResizeX = true;
 
     // Spark advance scope
     m_sparkAdvanceScope->setBufferSize(1024);
@@ -296,6 +297,58 @@ void OscilloscopeCluster::render() {
     }
 
     UiElement::render();
+}
+
+void OscilloscopeCluster::sample() {
+    const double cylinderPressure = m_simulator->getEngine()->getChamber(0)->m_system.pressure()
+        + m_simulator->getEngine()->getChamber(0)->m_system.dynamicPressure(-1.0, 0.0);
+
+    if (m_simulator->getCurrentIteration() % 2 == 0) {
+        getTotalExhaustFlowOscilloscope()->addDataPoint(
+            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator->getTotalExhaustFlow() / m_simulator->getTimestep());
+        getCylinderPressureScope()->addDataPoint(
+            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
+            std::sqrt(cylinderPressure));
+        getExhaustFlowOscilloscope()->addDataPoint(
+            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator->getEngine()->getChamber(0)->getLastTimestepExhaustFlow() / m_simulator->getTimestep());
+        getIntakeFlowOscilloscope()->addDataPoint(
+            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator->getEngine()->getChamber(0)->getLastTimestepIntakeFlow() / m_simulator->getTimestep());
+        getCylinderMoleculesScope()->addDataPoint(
+            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator->getEngine()->getChamber(0)->m_system.n());
+        getExhaustValveLiftOscilloscope()->addDataPoint(
+            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator->getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(
+                m_simulator->getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
+        getIntakeValveLiftOscilloscope()->addDataPoint(
+            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            m_simulator->getEngine()->getChamber(0)->getCylinderHead()->intakeValveLift(
+                m_simulator->getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
+        getPvScope()->addDataPoint(
+            m_simulator->getEngine()->getChamber(0)->getVolume(),
+            std::sqrt(m_simulator->getEngine()->getChamber(0)->m_system.pressure()));
+    }
+
+    m_exhaustFlowScope->m_yMin = m_intakeFlowScope->m_yMin =
+        std::fmin(m_intakeFlowScope->m_yMin, m_exhaustFlowScope->m_yMin);
+    m_exhaustFlowScope->m_yMax = m_intakeFlowScope->m_yMax =
+        std::fmax(m_intakeFlowScope->m_yMax, m_exhaustFlowScope->m_yMax);
+
+    m_torqueScope->m_yMin = m_hpScope->m_yMin =
+        std::fmin(m_torqueScope->m_yMin, m_hpScope->m_yMin);
+    m_torqueScope->m_yMax = m_hpScope->m_yMax =
+        std::fmax(m_torqueScope->m_yMax, m_hpScope->m_yMax);
+}
+
+void OscilloscopeCluster::setSimulator(Simulator *simulator) {
+    m_simulator = simulator;
+    Engine *engine = m_simulator->getEngine();
+
+    m_hpScope->m_xMax = m_torqueScope->m_xMax =
+        units::toRpm(engine->getRedline());
 }
 
 void OscilloscopeCluster::renderScope(

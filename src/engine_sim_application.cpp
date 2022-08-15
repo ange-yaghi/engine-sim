@@ -225,12 +225,12 @@ void EngineSimApplication::initialize() {
 
     m_engineView = m_uiManager.getRoot()->addElement<EngineView>();
     m_rightGaugeCluster = m_uiManager.getRoot()->addElement<RightGaugeCluster>();
-    m_rightGaugeCluster->m_engine = m_iceEngine;
+    m_rightGaugeCluster->setEngine(m_iceEngine);
     m_rightGaugeCluster->m_simulator = &m_simulator;
 
     m_oscCluster = m_uiManager.getRoot()->addElement<OscilloscopeCluster>();
-    m_oscCluster->m_simulator = &m_simulator;
     m_oscCluster->setDynoMaxRange(units::toRpm(m_iceEngine->getRedline()));
+    m_oscCluster->setSimulator(&m_simulator);
 
     m_performanceCluster = m_uiManager.getRoot()->addElement<PerformanceCluster>();
     m_performanceCluster->setSimulator(&m_simulator);
@@ -288,37 +288,7 @@ void EngineSimApplication::process(float frame_dt) {
     auto proc_t0 = std::chrono::steady_clock::now();
     const int iterationCount = m_simulator.getFrameIterationCount();
     while (m_simulator.simulateStep()) {
-        const double cylinderPressure = m_simulator.getEngine()->getChamber(0)->m_system.pressure()
-            + m_simulator.getEngine()->getChamber(0)->m_system.dynamicPressure(-1.0, 0.0);
-
-        if (m_simulator.getCurrentIteration() % 2 == 0) {
-            m_oscCluster->getTotalExhaustFlowOscilloscope()->addDataPoint(
-                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-                m_simulator.getTotalExhaustFlow() / m_simulator.getTimestep());
-            m_oscCluster->getCylinderPressureScope()->addDataPoint(
-                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
-                std::sqrt(cylinderPressure));
-            m_oscCluster->getExhaustFlowOscilloscope()->addDataPoint(
-                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-                m_simulator.getEngine()->getChamber(0)->getLastTimestepExhaustFlow() / m_simulator.getTimestep());
-            m_oscCluster->getIntakeFlowOscilloscope()->addDataPoint(
-                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-                m_simulator.getEngine()->getChamber(0)->getLastTimestepIntakeFlow() / m_simulator.getTimestep());
-            m_oscCluster->getCylinderMoleculesScope()->addDataPoint(
-                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-                m_simulator.getEngine()->getChamber(0)->m_system.n());
-            m_oscCluster->getExhaustValveLiftOscilloscope()->addDataPoint(
-                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-                m_simulator.getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(
-                    m_simulator.getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
-            m_oscCluster->getIntakeValveLiftOscilloscope()->addDataPoint(
-                m_simulator.getEngine()->getCrankshaft(0)->getCycleAngle(),
-                m_simulator.getEngine()->getChamber(0)->getCylinderHead()->intakeValveLift(
-                    m_simulator.getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
-            m_oscCluster->getPvScope()->addDataPoint(
-                m_simulator.getEngine()->getChamber(0)->getVolume(),
-                std::sqrt(m_simulator.getEngine()->getChamber(0)->m_system.pressure()));
-        }
+        m_oscCluster->sample();
     }
 
     auto proc_t1 = std::chrono::steady_clock::now();

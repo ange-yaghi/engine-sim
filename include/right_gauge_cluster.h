@@ -23,10 +23,13 @@ class RightGaugeCluster : public UiElement {
         virtual void update(float dt);
         virtual void render();
 
-        Engine *m_engine;
+        void setEngine(Engine *engine);
+
         Simulator *m_simulator;
 
     protected:
+        Engine *m_engine;
+
         void renderTachSpeedCluster(const Bounds &bounds);
         void renderFuelAirCluster(const Bounds &bounds);
 

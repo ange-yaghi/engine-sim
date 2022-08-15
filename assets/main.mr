@@ -1,5 +1,5 @@
 import "engine_sim.mr"
-import "engines/kohler/kohler_ch750.mr"
+import "engines/chevrolet/kohler_ch750.mr"
 
 set_engine(
     engine: kohler_ch750()

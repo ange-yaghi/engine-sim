@@ -17,6 +17,8 @@ Oscilloscope::Oscilloscope() {
     m_drawReverse = true;
     m_checkMouse = true;
     m_drawZero = true;
+    m_dynamicallyResizeX = false;
+    m_dynamicallyResizeY = true;
 
     i_color = ysMath::Constants::One;
 }
@@ -103,7 +105,7 @@ void Oscilloscope::render(const Bounds &bounds) {
 
         const bool detached =
             prev.x > p_i.x
-            || std::abs(p_i.x - prev.x) > pixelsToUnits(20.0f);
+            || std::abs(p_i.x - prev.x) > pixelsToUnits(100.0f);
         m_app->getGeometryGenerator()->generatePathSegment(
             params,
             (detached || lastDetached) && !m_drawReverse);
@@ -162,6 +164,23 @@ void Oscilloscope::addDataPoint(double x, double y) {
     m_pointCount = (m_pointCount >= m_bufferSize)
         ? m_bufferSize
         : m_pointCount + 1;
+
+    if (m_dynamicallyResizeY) {
+        if (y + std::abs(0.1 * y) >= m_yMax) {
+            m_yMax = y + std::abs(0.1 * y);
+        }
+        else if (y - std::abs(0.1 * y) <= m_yMin) {
+            m_yMin = y - std::abs(0.1 * y);
+        }
+    }
+    if (m_dynamicallyResizeX) {
+        if (x + std::abs(0.1 * x) >= m_xMax) {
+            m_xMax = x + std::abs(0.1 * x);
+        }
+        else if (x - std::abs(0.1 * x) <= m_xMin) {
+            m_xMin = x - std::abs(0.1 * x);
+        }
+    }
 }
 
 void Oscilloscope::setBufferSize(int n) {

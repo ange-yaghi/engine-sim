@@ -35,6 +35,9 @@ class Oscilloscope : public UiElement {
         double m_yMin;
         double m_yMax;
 
+        double m_dynamicallyResizeX;
+        double m_dynamicallyResizeY;
+
         double m_lineWidth;
         bool m_drawReverse;
         bool m_drawZero;
