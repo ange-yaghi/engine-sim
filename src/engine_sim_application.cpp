@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <sstream>
 
-std::string EngineSimApplication::s_buildVersion = "0.1.5a";
+std::string EngineSimApplication::s_buildVersion = "0.1.6a";
 
 EngineSimApplication::EngineSimApplication() {
     m_assetPath = "";
