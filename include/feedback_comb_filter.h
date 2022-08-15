@@ -9,13 +9,13 @@ class FeedbackCombFilter : public Filter {
         virtual ~FeedbackCombFilter();
 
         void initialize(int M);
-        virtual double f(double sample);
+        virtual float f(float sample) override;
         virtual void destroy();
 
-        double a_M;
+        float a_M;
 
     protected:
-        double *m_y;
+        float *m_y;
         int m_offset;
 
     protected:

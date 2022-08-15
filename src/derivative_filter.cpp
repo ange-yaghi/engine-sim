@@ -9,8 +9,8 @@ DerivativeFilter::~DerivativeFilter() {
     /* void */
 }
 
-double DerivativeFilter::f(double sample) {
-    const double temp = m_previous;
+float DerivativeFilter::f(float sample) {
+    const float temp = m_previous;
     m_previous = sample;
 
     return (sample - temp) / m_dt;

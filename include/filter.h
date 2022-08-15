@@ -6,7 +6,7 @@ class Filter {
         Filter();
         virtual ~Filter();
 
-        virtual double f(double sample);
+        virtual float f(float sample);
         virtual void destroy();
 };
 

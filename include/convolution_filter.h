@@ -9,17 +9,17 @@ class ConvolutionFilter : public Filter {
         virtual ~ConvolutionFilter();
 
         void initialize(int samples);
-        virtual double f(double sample);
+        virtual float f(float sample) override;
         virtual void destroy();
 
         int getSampleCount() const { return m_sampleCount; }
-        double *getImpulseResponse() { return m_impulseResponse; }
+        float *getImpulseResponse() { return m_impulseResponse; }
 
     protected:
-        double *m_shiftRegister;
+        float *m_shiftRegister;
         int m_shiftOffset;
 
-        double *m_impulseResponse;
+        float *m_impulseResponse;
         int m_sampleCount;
 };
 

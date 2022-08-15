@@ -49,7 +49,7 @@ void Synthesizer::initialize(const Parameters &p) {
     m_audioBuffer.initialize(p.AudioBufferSize);
     m_inputChannels = new InputChannel[p.InputChannelCount];
     for (int i = 0; i < p.InputChannelCount; ++i) {
-        m_inputChannels[i].TransferBuffer = new double[p.InputBufferSize];
+        m_inputChannels[i].TransferBuffer = new float[p.InputBufferSize];
         m_inputChannels[i].Data.initialize(p.InputBufferSize);
     }
 
@@ -81,10 +81,17 @@ void Synthesizer::initialize(const Parameters &p) {
 void Synthesizer::initializeImpulseResponse(
     const int16_t *impulseResponse,
     unsigned int samples,
-    double volume,
+    float volume,
     int index)
 {
-    const unsigned int sampleCount = std::min((unsigned int)10000, samples);
+    unsigned int clippedLength = 0;
+    for (unsigned int i = 0; i < samples; ++i) {
+        if (std::abs(impulseResponse[i]) > 100) {
+            clippedLength = i + 1;
+        }
+    }
+
+    const unsigned int sampleCount = std::min(10000U, clippedLength);
     m_filters[index].Convolution.initialize(sampleCount);
     for (unsigned int i = 0; i < sampleCount; ++i) {
         m_filters[index].Convolution.getImpulseResponse()[i] =
@@ -157,7 +164,7 @@ void Synthesizer::writeInput(const double *data) {
     }
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
-        RingBuffer<double> &buffer = m_inputChannels[i].Data;
+        RingBuffer<float> &buffer = m_inputChannels[i].Data;
         const double lastInputSample = m_inputChannels[i].LastInputSample;
         const size_t baseIndex = buffer.writeIndex();
         const double distance =
@@ -230,9 +237,9 @@ void Synthesizer::renderAudio() {
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
         m_filters[i].AirNoiseLowPass.setCutoffFrequency(
-            m_audioParameters.AirNoiseFrequencyCutoff);
+            static_cast<float>(m_audioParameters.AirNoiseFrequencyCutoff));
         m_filters[i].SampleNoiseLowPass.setCutoffFrequency(
-            m_audioParameters.InputSampleNoiseFrequencyCutoff);
+            static_cast<float>(m_audioParameters.InputSampleNoiseFrequencyCutoff));
     }
 
     for (int i = 0; i < n; ++i) {
@@ -266,32 +273,32 @@ void Synthesizer::setInputSampleRate(double sampleRate) {
 }
 
 int16_t Synthesizer::renderAudio(int inputSample) {
-    const double airNoise = m_audioParameters.AirNoise;
-    const double dF_F_mix = m_audioParameters.dF_F_mix;
-    const double convAmount = m_audioParameters.Convolution;
+    const float airNoise = m_audioParameters.AirNoise;
+    const float dF_F_mix = m_audioParameters.dF_F_mix;
+    const float convAmount = m_audioParameters.Convolution;
 
-    double signal = 0;
+    float signal = 0;
     for (int i = 0; i < m_inputChannelCount; ++i) {
-        const double f_in = m_inputChannels[i].TransferBuffer[inputSample];
-        const double f_dc = m_filters[i].InputDcFilter.fast_f(f_in);
-        const double f = f_in - f_dc;
-        const double f_p = m_filters[i].Derivative.f(f);
+        const float f_in = m_inputChannels[i].TransferBuffer[inputSample];
+        const float f_dc = m_filters[i].InputDcFilter.fast_f(f_in);
+        const float f = f_in - f_dc;
+        const float f_p = m_filters[i].Derivative.f(f);
 
-        const double noise = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-        const double r =
+        const float noise = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
+        const float r =
             m_filters->AirNoiseLowPass.fast_f(noise);
-        const double r_mixed =
+        const float r_mixed =
             airNoise * r + (1 - airNoise);
 
-        const double v_in = f_p * dF_F_mix + f * r_mixed * (1 - dF_F_mix);
-        const double v =
+        const float v_in = f_p * dF_F_mix + f * r_mixed * (1 - dF_F_mix);
+        const float v =
             convAmount * m_filters[i].Convolution.f(v_in) + (1 - convAmount) * v_in;
 
         signal += v;
     }
 
     m_levelingFilter.p_target = m_audioParameters.LevelerTarget;
-    const double v_leveled = m_levelingFilter.f(signal) * m_audioParameters.Volume;
+    const float v_leveled = m_levelingFilter.f(signal) * m_audioParameters.Volume;
     int r_int = std::lround(v_leveled);
     if (r_int > INT16_MAX) {
         r_int = INT16_MAX;

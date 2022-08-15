@@ -8,17 +8,17 @@ class LevelingFilter : public Filter {
         LevelingFilter();
         virtual ~LevelingFilter();
 
-        virtual double f(double sample);
-        double getAttenuation() const { return m_attenuation; }
+        virtual float f(float sample);
+        float getAttenuation() const { return m_attenuation; }
 
     protected:
-        double m_peak;
-        double m_attenuation;
+        float m_peak;
+        float m_attenuation;
 
     public:
-        double p_maxLevel;
-        double p_minLevel;
-        double p_target;
+        float p_maxLevel;
+        float p_minLevel;
+        float p_target;
 };
 
 #endif /* ATG_ENGINE_SIM_LEVELING_FILTER_H */

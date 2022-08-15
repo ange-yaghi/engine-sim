@@ -10,25 +10,24 @@ class LowPassFilter : public Filter {
         LowPassFilter();
         virtual ~LowPassFilter();
 
-        virtual double f(double sample);
+        virtual float f(float sample) override;
 
-        __forceinline double fast_f(double sample) {
-            const double alpha = m_dt / (m_rc + m_dt);
+        __forceinline float fast_f(float sample) {
+            const float alpha = m_dt / (m_rc + m_dt);
             m_y = alpha * sample + (1 - alpha) * m_y;
 
             return m_y;
         }
 
-        inline void setCutoffFrequency(double f) {
-            m_rc = 1 / (f * 2 * constants::pi);
+        inline void setCutoffFrequency(float f) {
+            m_rc = 1.0f / (f * 2.0f * static_cast<float>(constants::pi));
         }
 
-        double m_dt;
+        float m_dt;
 
     protected:
-        double m_y;
-        double m_rc;
+        float m_y;
+        float m_rc;
 };
 
 #endif /* ATG_ENGINE_SIM_LOW_PASS_FILTER_H */
-

@@ -8,7 +8,7 @@ Filter::~Filter() {
     /* void */
 }
 
-double Filter::f(double sample) {
+float Filter::f(float sample) {
     return sample;
 }
 

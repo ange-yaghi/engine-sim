@@ -8,12 +8,12 @@ class DerivativeFilter : public Filter {
         DerivativeFilter();
         virtual ~DerivativeFilter();
 
-        virtual double f(double sample);
+        virtual float f(float sample) override;
 
-        double m_dt;
+        float m_dt;
 
     protected:
-        double m_previous;
+        float m_previous;
 };
 
 #endif /* ATG_ENGINE_SIM_DERIVATIVE_FILTER_H */

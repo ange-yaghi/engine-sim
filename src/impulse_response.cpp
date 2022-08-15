@@ -1,7 +1,7 @@
 #include "../include/impulse_response.h"
 
 ImpulseResponse::ImpulseResponse() {
-    /* void */
+    m_volume = 1.0;
 }
 
 ImpulseResponse::~ImpulseResponse() {

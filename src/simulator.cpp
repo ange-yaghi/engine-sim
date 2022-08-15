@@ -275,10 +275,10 @@ void Simulator::startFrame(double dt) {
 
     const double targetLatency = getSynthesizerInputLatencyTarget(); 
     if (m_synthesizer.getLatency() < targetLatency) {
-        i_steps = (i_steps + 1) * 1.1;
+        i_steps = (i_steps + 1) * 1.1f;
     }
     else if (m_synthesizer.getLatency() > targetLatency) {
-        i_steps = (i_steps - 1) * 0.9;
+        i_steps = (i_steps - 1) * 0.9f;
         if (i_steps < 0) {
             i_steps = 0;
         }
@@ -421,7 +421,7 @@ void Simulator::initializeSynthesizer() {
     synthParams.AudioSampleRate = 44100;
     synthParams.InputBufferSize = 44100;
     synthParams.InputChannelCount = m_engine->getExhaustSystemCount();
-    synthParams.InputSampleRate = (double)m_simulationFrequency;
+    synthParams.InputSampleRate = static_cast<float>(m_simulationFrequency);
     m_synthesizer.initialize(synthParams);
 
     m_exhaustFlowStagingBuffer = new double[m_engine->getExhaustSystemCount()];

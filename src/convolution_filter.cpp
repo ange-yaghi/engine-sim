@@ -19,11 +19,11 @@ ConvolutionFilter::~ConvolutionFilter() {
 void ConvolutionFilter::initialize(int samples) {
     m_sampleCount = samples;
     m_shiftOffset = 0;
-    m_shiftRegister = new double[samples];
-    m_impulseResponse = new double[samples];
+    m_shiftRegister = new float[samples];
+    m_impulseResponse = new float[samples];
 
-    memset(m_shiftRegister, 0, sizeof(double) * samples);
-    memset(m_impulseResponse, 0, sizeof(double) * samples);
+    memset(m_shiftRegister, 0, sizeof(float) * samples);
+    memset(m_impulseResponse, 0, sizeof(float) * samples);
 }
 
 void ConvolutionFilter::destroy() {
@@ -34,10 +34,10 @@ void ConvolutionFilter::destroy() {
     m_impulseResponse = nullptr;
 }
 
-double ConvolutionFilter::f(double sample) {
+float ConvolutionFilter::f(float sample) {
     m_shiftRegister[m_shiftOffset] = sample;
 
-    double result = 0;
+    float result = 0;
     for (int i = 0; i < m_sampleCount - m_shiftOffset; ++i) {
         result += m_impulseResponse[i] * m_shiftRegister[i + m_shiftOffset];
     }

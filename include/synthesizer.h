@@ -16,32 +16,31 @@
 class Synthesizer {
     public:
         struct AudioParameters {
-            double Volume = 1.0;
-            double Convolution = 1.0;
-            double dF_F_mix = 0.01; //0.00990099
-            double InputSampleNoise = 0.5; //0.125
-            double InputSampleNoiseFrequencyCutoff = 80000.0;
-            double AirNoise = 1.0;
-            double AirNoiseFrequencyCutoff = 10000.0;
-            double LevelerTarget = 30000;
-            double LevelerMaxGain = 1.9;
-            double LevelerMinGain = 0.00001;
+            float Volume = 1.0f;
+            float Convolution = 1.0f;
+            float dF_F_mix = 0.01f;
+            float InputSampleNoise = 0.5f;
+            float InputSampleNoiseFrequencyCutoff = 80000.0f;
+            float AirNoise = 1.0f;
+            float AirNoiseFrequencyCutoff = 10000.0f;
+            float LevelerTarget = 30000.0f;
+            float LevelerMaxGain = 1.9f;
+            float LevelerMinGain = 0.00001f;
         };
 
         struct Parameters {
             int InputChannelCount = 1;
             int InputBufferSize = 1024;
             int AudioBufferSize = 44100;
-            double InputSampleRate = 10000;
-            double AudioSampleRate = 44100;
+            float InputSampleRate = 10000;
+            float AudioSampleRate = 44100;
             AudioParameters InitialAudioParameters;
         };
 
         struct InputChannel {
-            RingBuffer<double> Data;
-            double *TransferBuffer = nullptr;
-
-            double LastInputSample = 0.0;
+            RingBuffer<float> Data;
+            float *TransferBuffer = nullptr;
+            float LastInputSample = 0.0f;
         };
 
         struct ProcessingFilters {
@@ -60,7 +59,7 @@ class Synthesizer {
         void initializeImpulseResponse(
             const int16_t *impulseResponse,
             unsigned int samples,
-            double volume,
+            float volume,
             int index);
         void startAudioRenderingThread();
         void endAudioRenderingThread();
@@ -104,8 +103,8 @@ class Synthesizer {
         RingBuffer<int16_t> m_audioBuffer;
         int m_audioBufferSize;
 
-        double m_inputSampleRate;
-        double m_audioSampleRate;
+        float m_inputSampleRate;
+        float m_audioSampleRate;
 
         std::thread *m_thread;
         std::atomic<bool> m_run;

@@ -14,15 +14,15 @@ LevelingFilter::~LevelingFilter() {
     /* void */
 }
 
-double LevelingFilter::f(double sample) {
-    m_peak = 0.999 * m_peak;
+float LevelingFilter::f(float sample) {
+    m_peak = 0.999f * m_peak;
     if (std::abs(sample) > m_peak) {
         m_peak = std::abs(sample);
     }
 
-    const double raw_attenuation = p_target / m_peak;
+    const float raw_attenuation = p_target / m_peak;
 
-    double attenuation = raw_attenuation;
+    float attenuation = raw_attenuation;
     if (attenuation < p_minLevel) attenuation = p_minLevel;
     else if (attenuation > p_maxLevel) attenuation = p_maxLevel;
 

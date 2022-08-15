@@ -15,14 +15,14 @@ FeedbackCombFilter::~FeedbackCombFilter() {
 
 void FeedbackCombFilter::initialize(int M) {
     this->M = M;
-    m_y = new double[M];
+    m_y = new float[M];
     m_offset = 0;
 }
 
-double FeedbackCombFilter::f(double sample) {
-    const double y_n_min_M = m_y[m_offset];
+float FeedbackCombFilter::f(float sample) {
+    const float y_n_min_M = m_y[m_offset];
 
-    const double y_n = sample + a_M * y_n_min_M;
+    const float y_n = sample + a_M * y_n_min_M;
 
     m_y[m_offset] = y_n;
     m_offset = (m_offset + 1) % M;
