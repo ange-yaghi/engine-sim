@@ -52,7 +52,7 @@ void CombustionChamberObject::render(const ViewParameters *view) {
                 ysMath::Mul(
                     m_app->getOrange(),
                     ysMath::LoadVector(1.0f, 1.0f, 1.0f, 0.6f)));
-            m_app->drawGenerated(m_indices, 0x12);
+            m_app->drawGenerated(m_indices, 0x35);
         }
     }
 }

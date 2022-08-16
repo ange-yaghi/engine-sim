@@ -59,7 +59,7 @@ void CylinderHeadObject::render(const ViewParameters *view) {
     GeometryGenerator::Line2dParameters params;
 
     gen->startShape();
-    params.lineWidth = 0.1f + m_app->pixelsToUnits(5.0f) / (float)s;
+    params.lineWidth = 0.2f;
     params.x0 = -0.689352f;
     params.y0 = 0.085f;
     params.x1 = -0.88632f;
@@ -80,7 +80,7 @@ void CylinderHeadObject::render(const ViewParameters *view) {
 
     params.lineWidth = 0.0917f + m_app->pixelsToUnits(5.0f) / (float)s;
     params.x0 = -0.5f;
-    params.y0 = 0.5f;
+    params.y0 = 0.2f;
     params.x1 = -0.5f;
     params.y1 = 1.5f;
     gen->generateLine2d(params);
@@ -122,10 +122,10 @@ void CylinderHeadObject::render(const ViewParameters *view) {
     m_app->getEngine()->DrawModel(
         m_app->getShaders()->GetRegularFlags(),
         m_app->getAssetManager()->GetModelAsset("CylinderHead"),
-        0x10);
+        0x0);
     m_app->getShaders()->SetObjectTransform(T_head);
     m_app->getShaders()->SetBaseColor(m_app->getBackgroundColor());
-    m_app->drawGenerated(valveShadow, 0x11);
+    m_app->drawGenerated(valveShadow, 0x1);
 
     const double intakeValvePosition = (m_head->getFlipDisplay())
         ? 0.5f
@@ -148,13 +148,13 @@ void CylinderHeadObject::render(const ViewParameters *view) {
     m_app->getEngine()->DrawModel(
         m_app->getShaders()->GetRegularFlags(),
         m_app->getAssetManager()->GetModelAsset("Valve"),
-        0x11);
+        0x33);
     m_app->getShaders()->SetBaseColor(m_app->getBackgroundColor());
-    m_app->drawGenerated(valveRollerShadow, 0x11);
+    m_app->drawGenerated(valveRollerShadow, 0x33);
     m_app->getShaders()->SetBaseColor(m_app->getBlue());
-    m_app->drawGenerated(valveRoller, 0x11);
+    m_app->drawGenerated(valveRoller, 0x33);
     m_app->getShaders()->SetBaseColor(m_app->getBackgroundColor());
-    m_app->drawGenerated(valveRollerPin, 0x11);
+    m_app->drawGenerated(valveRollerPin, 0x33);
 
     const double exhaustLift = (float)m_head->exhaustValveLift(layer);
     const ysMatrix T_exhaustValve = ysMath::MatMult(
@@ -171,13 +171,13 @@ void CylinderHeadObject::render(const ViewParameters *view) {
     m_app->getEngine()->DrawModel(
         m_app->getShaders()->GetRegularFlags(),
         m_app->getAssetManager()->GetModelAsset("Valve"),
-        0x11);
+        0x33);
     m_app->getShaders()->SetBaseColor(m_app->getBackgroundColor());
-    m_app->drawGenerated(valveRollerShadow, 0x11);
+    m_app->drawGenerated(valveRollerShadow, 0x33);
     m_app->getShaders()->SetBaseColor(m_app->getYellow());
-    m_app->drawGenerated(valveRoller, 0x11);
+    m_app->drawGenerated(valveRoller, 0x33);
     m_app->getShaders()->SetBaseColor(m_app->getBackgroundColor());
-    m_app->drawGenerated(valveRollerPin, 0x11);
+    m_app->drawGenerated(valveRollerPin, 0x33);
 
     Camshaft *intakeCam = m_head->getIntakeCamshaft();
     Camshaft *exhaustCam = m_head->getExhaustCamshaft();
