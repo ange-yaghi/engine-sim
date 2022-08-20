@@ -53,7 +53,7 @@ void IgnitionModule::reset() {
 void IgnitionModule::update(double dt) {
     const double cycleAngle = m_crankshaft->getCycleAngle();
 
-    if (m_crankshaft->m_body.v_theta < 0 && m_enabled && m_revLimitTimer == 0) {
+    if (m_enabled && m_revLimitTimer == 0) {
         const double fourPi = 4 * constants::pi;
         const double advance = getTimingAdvance();
 
@@ -62,13 +62,25 @@ void IgnitionModule::update(double dt) {
             const double r0 = m_lastCrankshaftAngle;
             double r1 = cycleAngle;
 
-            if (cycleAngle < r0) {
-                r1 += fourPi;
-                adjustedAngle += fourPi;
-            }
+            if (m_crankshaft->m_body.v_theta < 0) {
+                if (r1 < r0) {
+                    r1 += fourPi;
+                    adjustedAngle += fourPi;
+                }
 
-            if (adjustedAngle >= r0 && adjustedAngle < r1) {
-                m_plugs[i].IgnitionEvent = m_plugs[i].Enabled;
+                if (adjustedAngle >= r0 && adjustedAngle < r1) {
+                    m_plugs[i].IgnitionEvent = m_plugs[i].Enabled;
+                }
+            }
+            else {
+                if (r1 > r0) {
+                    r1 -= fourPi;
+                    adjustedAngle -= fourPi;
+                }
+
+                if (adjustedAngle >= r1 && adjustedAngle < r0) {
+                    m_plugs[i].IgnitionEvent = m_plugs[i].Enabled;
+                }
             }
         }
     }
