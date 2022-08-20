@@ -320,16 +320,15 @@ void EngineSimApplication::process(float frame_dt) {
             (duration.count() / 1E9) / iterationCount);
     }
 
-    const SampleOffset currentAudioPosition = m_audioSource->GetCurrentPosition();
     const SampleOffset safeWritePosition = m_audioSource->GetCurrentWritePosition();
     const SampleOffset writePosition = m_audioBuffer.m_writePointer;
 
     SampleOffset targetWritePosition =
-        m_audioBuffer.getBufferIndex(currentAudioPosition, (int)(44100 * 0.1));
+        m_audioBuffer.getBufferIndex(safeWritePosition, (int)(44100 * 0.1));
     SampleOffset maxWrite = m_audioBuffer.offsetDelta(writePosition, targetWritePosition);
 
-    SampleOffset currentLead = m_audioBuffer.offsetDelta(currentAudioPosition, writePosition);
-    SampleOffset newLead = m_audioBuffer.offsetDelta(currentAudioPosition, targetWritePosition);
+    SampleOffset currentLead = m_audioBuffer.offsetDelta(safeWritePosition, writePosition);
+    SampleOffset newLead = m_audioBuffer.offsetDelta(safeWritePosition, targetWritePosition);
 
     if (currentLead > newLead) {
         maxWrite = 0;
@@ -371,7 +370,7 @@ void EngineSimApplication::process(float frame_dt) {
     }
 
     m_performanceCluster->addAudioLatencySample(
-        m_audioBuffer.offsetDelta(m_audioSource->GetCurrentPosition(), m_audioBuffer.m_writePointer) / (44100 * 0.1));
+        m_audioBuffer.offsetDelta(m_audioSource->GetCurrentWritePosition(), m_audioBuffer.m_writePointer) / (44100 * 0.1));
     m_performanceCluster->addInputBufferUsageSample(
         (double)m_simulator.getSynthesizerInputLatency() / m_simulator.getSynthesizerInputLatencyTarget());
 }
