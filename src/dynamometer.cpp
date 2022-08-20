@@ -36,12 +36,20 @@ void Dynamometer::calculate(Output *output, atg_scs::SystemState *state) {
 
     output->C[0] = 0;
 
-    output->v_bias[0] = m_rotationSpeed;
-
-    output->limits[0][0] = (m_hold && m_enabled) ? -m_maxTorque : 0.0;
-    output->limits[0][1] = m_enabled ? m_maxTorque : 0.0;
+    if (m_bodies[0]->v_theta < 0) {
+        output->v_bias[0] = m_rotationSpeed;
+        output->limits[0][0] = (m_hold && m_enabled) ? -m_maxTorque : 0.0;
+        output->limits[0][1] = m_enabled ? m_maxTorque : 0.0;
+    }
+    else {
+        output->v_bias[0] = -m_rotationSpeed;
+        output->limits[0][0] = m_enabled ? -m_maxTorque : 0.0;
+        output->limits[0][1] = (m_hold && m_enabled) ? m_maxTorque : 0.0;
+    }
 }
 
 double Dynamometer::getTorque() const {
-    return atg_scs::Constraint::F_t[0][0];
+    return (m_bodies[0]->v_theta > 0)
+        ? -atg_scs::Constraint::F_t[0][0]
+        : atg_scs::Constraint::F_t[0][0];
 }

@@ -154,7 +154,7 @@ void LoadSimulationCluster::render() {
 
     const Bounds dynoSpeedBounds = grid.get(m_bounds, 0, 1);
     m_dynoSpeedGauge->m_gauge->m_value = 
-       (float)units::toRpm(m_simulator->m_dyno.m_rotationSpeed);
+       (float)units::toRpm(std::abs(m_simulator->m_dyno.m_rotationSpeed));
     m_dynoSpeedGauge->m_bounds = dynoSpeedBounds;
 
     constexpr float shortenAngle = (float)units::angle(1.0, units::deg);

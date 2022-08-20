@@ -304,27 +304,32 @@ void OscilloscopeCluster::sample() {
         + m_simulator->getEngine()->getChamber(0)->m_system.dynamicPressure(-1.0, 0.0);
 
     if (m_simulator->getCurrentIteration() % 2 == 0) {
+        double cycleAngle = m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle();
+        if (!m_simulator->getEngine()->isSpinningCw()) {
+            cycleAngle = 4 * constants::pi - cycleAngle;
+        }
+
         getTotalExhaustFlowOscilloscope()->addDataPoint(
-            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            cycleAngle,
             m_simulator->getTotalExhaustFlow() / m_simulator->getTimestep());
         getCylinderPressureScope()->addDataPoint(
             m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(constants::pi),
             std::sqrt(cylinderPressure));
         getExhaustFlowOscilloscope()->addDataPoint(
-            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            cycleAngle,
             m_simulator->getEngine()->getChamber(0)->getLastTimestepExhaustFlow() / m_simulator->getTimestep());
         getIntakeFlowOscilloscope()->addDataPoint(
-            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            cycleAngle,
             m_simulator->getEngine()->getChamber(0)->getLastTimestepIntakeFlow() / m_simulator->getTimestep());
         getCylinderMoleculesScope()->addDataPoint(
-            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            cycleAngle,
             m_simulator->getEngine()->getChamber(0)->m_system.n());
         getExhaustValveLiftOscilloscope()->addDataPoint(
-            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            cycleAngle,
             m_simulator->getEngine()->getChamber(0)->getCylinderHead()->exhaustValveLift(
                 m_simulator->getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
         getIntakeValveLiftOscilloscope()->addDataPoint(
-            m_simulator->getEngine()->getCrankshaft(0)->getCycleAngle(),
+            cycleAngle,
             m_simulator->getEngine()->getChamber(0)->getCylinderHead()->intakeValveLift(
                 m_simulator->getEngine()->getChamber(0)->getPiston()->getCylinderIndex()));
         getPvScope()->addDataPoint(

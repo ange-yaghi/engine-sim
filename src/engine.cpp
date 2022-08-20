@@ -289,5 +289,9 @@ int Engine::getMaxDepth() const {
 
 double Engine::getRpm() const {
     if (m_crankshaftCount == 0) return 0;
-    else return -units::toRpm(getCrankshaft(0)->m_body.v_theta);
+    else return std::abs(units::toRpm(getCrankshaft(0)->m_body.v_theta));
+}
+
+bool Engine::isSpinningCw() const {
+    return getOutputCrankshaft()->m_body.v_theta <= 0;
 }
