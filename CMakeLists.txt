@@ -46,73 +46,75 @@ set_property(TARGET gtest_main PROPERTY FOLDER "gtest")
 
 add_library(engine-sim STATIC
     # Source files
-    src/crankshaft.cpp
-    src/cylinder_bank.cpp
-    src/connecting_rod.cpp
-    src/piston.cpp
-    src/part.cpp
-    src/engine.cpp
-    src/simulator.cpp
-    src/combustion_chamber.cpp
-    src/gas_system.cpp
-    src/function.cpp
-    src/camshaft.cpp
-    src/cylinder_head.cpp
-    src/dynamometer.cpp
-    src/ignition_module.cpp
-    src/utilities.cpp
     src/audio_buffer.cpp
-    src/filter.cpp
+    src/camshaft.cpp
+    src/crankshaft.cpp
+    src/combustion_chamber.cpp
+    src/connecting_rod.cpp
     src/convolution_filter.cpp
-    src/exhaust_system.cpp
-    src/intake.cpp
-    src/feedback_comb_filter.cpp
-    src/synthesizer.cpp
-    src/leveling_filter.cpp
-    src/fuel.cpp
-    src/gaussian_filter.cpp
-    src/starter_motor.cpp
-    src/transmission.cpp
-    src/vehicle.cpp
+    src/cylinder_bank.cpp
+    src/cylinder_head.cpp
     src/derivative_filter.cpp
-    src/low_pass_filter.cpp
-    src/vehicle_drag_constraint.cpp
+    src/dynamometer.cpp
+    src/engine.cpp
+    src/exhaust_system.cpp
+    src/feedback_comb_filter.cpp
+    src/filter.cpp
+    src/fuel.cpp
+    src/function.cpp
+    src/gas_system.cpp
+    src/gaussian_filter.cpp
+    src/ignition_module.cpp
     src/impulse_response.cpp
+    src/intake.cpp
+    src/jitter_filter.cpp
+    src/leveling_filter.cpp
+    src/low_pass_filter.cpp
+    src/part.cpp
+    src/piston.cpp
+    src/simulator.cpp
+    src/starter_motor.cpp
+    src/synthesizer.cpp
+    src/transmission.cpp
+    src/utilities.cpp
+    src/vehicle.cpp
+    src/vehicle_drag_constraint.cpp
 
     # Include files
-    include/crankshaft.h
-    include/cylinder_bank.h
-    include/connecting_rod.h
-    include/piston.h
-    include/part.h
-    include/engine.h
-    include/simulator.h
-    include/combustion_chamber.h
-    include/units.h
-    include/gas_system.h
-    include/function.h
-    include/camshaft.h
-    include/cylinder_head.h
-    include/dynamometer.h
-    include/ignition_module.h
-    include/utilities.h
     include/audio_buffer.h
-    include/filter.h
+    include/camshaft.h
+    include/crankshaft.h
+    include/combustion_chamber.h
+    include/connecting_rod.h
     include/convolution_filter.h
-    include/exhaust_system.h
-    include/intake.h
-    include/feedback_comb_filter.h
-    include/synthesizer.h
-    include/leveling_filter.h
-    include/fuel.h
-    include/gaussian_filter.h
-    include/starter_motor.h
-    include/transmission.h
-    include/vehicle.h
+    include/cylinder_bank.h
+    include/cylinder_head.h
     include/derivative_filter.h
-    include/low_pass_filter.h
-    include/vehicle_drag_constraint.h
+    include/dynamometer.h
+    include/engine.h
+    include/exhaust_system.h
+    include/feedback_comb_filter.h
+    include/filter.h
+    include/fuel.h
+    include/function.h
+    include/gas_system.h
+    include/gaussian_filter.h
+    include/ignition_module.h
     include/impulse_response.h
+    include/intake.h
+    include/jitter_filter.h
+    include/leveling_filter.h
+    include/low_pass_filter.h
+    include/part.h
+    include/piston.h
+    include/simulator.h
+    include/starter_motor.h
+    include/synthesizer.h
+    include/transmission.h
+    include/units.h
+    include/utilities.h
+    include/vehicle.h
+    include/vehicle_drag_constraint.h
 )
 
 target_link_libraries(engine-sim

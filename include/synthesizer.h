@@ -5,6 +5,7 @@
 #include "leveling_filter.h"
 #include "derivative_filter.h"
 #include "low_pass_filter.h"
+#include "jitter_filter.h"
 #include "ring_buffer.h"
 
 #include <cinttypes>
@@ -46,8 +47,8 @@ class Synthesizer {
         struct ProcessingFilters {
             ConvolutionFilter Convolution;
             DerivativeFilter Derivative;
+            JitterFilter JitterFilter;
             LowPassFilter AirNoiseLowPass;
-            LowPassFilter SampleNoiseLowPass;
             LowPassFilter InputDcFilter;
         };
 

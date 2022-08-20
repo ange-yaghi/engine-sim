@@ -39,3 +39,12 @@ public node vtwin90_distributor {
             .connect_wire(wires.wire1, (0.0 / 8.0) * cycle)
             .connect_wire(wires.wire2, (3.0 / 8.0) * cycle);
 }
+
+public node single_cylinder_distributor {
+    input wires;
+    input timing_curve;
+    input rev_limit: 5500 * units.rpm;
+    alias output __out:
+        ignition_module(timing_curve: timing_curve, rev_limit: rev_limit)
+            .connect_wire(wires.wire1, (0.0 / 8.0) * cycle);
+}
