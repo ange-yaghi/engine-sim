@@ -25,7 +25,7 @@
 #include "../discord/Discord.h"
 #endif
 
-std::string EngineSimApplication::s_buildVersion = "0.1.7a";
+std::string EngineSimApplication::s_buildVersion = "0.1.8a";
 
 
 EngineSimApplication::EngineSimApplication() {
