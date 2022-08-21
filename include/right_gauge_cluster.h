@@ -42,6 +42,7 @@ class RightGaugeCluster : public UiElement {
         ThrottleDisplay *m_throttleDisplay;
         AfrCluster *m_afrCluster;
         FiringOrderDisplay *m_combusionChamberStatus;
+        std::string m_speedUnits;
 };
 
 #endif /* ATG_ENGINE_SIM_GAUGE_CLUSTER_H */

@@ -17,6 +17,12 @@ namespace es_script {
     protected:
         virtual void registerInputs() {
             addInput("start_fullscreen", &m_settings.startFullscreen);
+            addInput("power_units", &m_settings.powerUnits);
+            addInput("torque_units", &m_settings.torqueUnits);
+            addInput("speed_units", &m_settings.speedUnits);
+            addInput("pressure_units", &m_settings.pressureUnits);
+            addInput("boost_units", &m_settings.boostUnits);
+
 
             Node::registerInputs();
         }

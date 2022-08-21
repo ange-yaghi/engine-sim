@@ -69,7 +69,6 @@ EngineSimApplication::EngineSimApplication() {
     m_mixerCluster = nullptr;
     m_infoCluster = nullptr;
     m_iceEngine = nullptr;
-
     m_mainRenderTarget = nullptr;
 
     m_oscillatorSampleOffset = 0;
@@ -756,6 +755,9 @@ void EngineSimApplication::drawGenerated(
 }
 
 void EngineSimApplication::configure(const ApplicationSettings &settings) {
+    //Assign to the application so we can grab it in other classes.
+    m_appSettings = settings;
+
     if (settings.startFullscreen) {
         m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
     }

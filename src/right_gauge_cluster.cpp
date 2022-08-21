@@ -40,6 +40,7 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_afrCluster = addElement<AfrCluster>();
     m_fuelCluster = addElement<FuelCluster>();
 
+    m_speedUnits = app->getAppSettings()->speedUnits;
     m_combusionChamberStatus->m_engine = m_engine;
 
     constexpr float shortenAngle = (float)units::angle(1.0, units::deg);
@@ -68,7 +69,11 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
         { m_app->getRed(), 5500, 7000, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 2);
 
     m_speedometer->m_title = "VEHICLE SPEED";
-    m_speedometer->m_unit = "MPH";
+    if(m_speedUnits == "MPH")
+        m_speedometer->m_unit = "MPH";
+    else
+        m_speedometer->m_unit = "KMH";
+
     m_speedometer->m_precision = 0;
     m_speedometer->setLocalPosition({ 0, 0 });
     m_speedometer->m_gauge->m_min = 0;
@@ -209,8 +214,16 @@ void RightGaugeCluster::renderTachSpeedCluster(const Bounds &bounds) {
 
     const Bounds speed = left.verticalSplit(0.0f, 0.5f);
     m_speedometer->m_bounds = speed;
-    m_speedometer->m_gauge->m_value =
-        (float)units::convert(std::abs(m_simulator->getVehicle()->getSpeed()), units::mile / units::hour);
+    if (m_speedUnits == "MPH")
+    {
+        m_speedometer->m_gauge->m_value =
+            (float)units::convert(std::abs(m_simulator->getVehicle()->getSpeed()), units::mile / units::hour);
+    }
+    else
+    { 
+        m_speedometer->m_gauge->m_value =
+            (float)units::convert(std::abs(m_simulator->getVehicle()->getSpeed()), units::km / units::hour);
+    }
 
     m_combusionChamberStatus->m_bounds = right;
 }
