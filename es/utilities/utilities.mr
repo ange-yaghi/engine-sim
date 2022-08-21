@@ -1,0 +1,15 @@
+private import "engine_sim.mr"
+
+node rod_moment_of_inertia {
+    input mass;
+    input length;
+    alias output __moment:
+        (1 / 12.0) * mass * length * length;
+}
+
+node disk_moment_of_inertia {
+    input mass;
+    input radius;
+    alias output __moment:
+        (1 / 2.0) * mass * radius * radius;
+}
