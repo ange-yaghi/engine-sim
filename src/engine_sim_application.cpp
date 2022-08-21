@@ -761,6 +761,18 @@ void EngineSimApplication::configure(const ApplicationSettings &settings) {
     if (settings.startFullscreen) {
         m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
     }
+
+    m_background = ysColor::srgbiToLinear(m_appSettings.colorBackground);
+    m_foreground = ysColor::srgbiToLinear(m_appSettings.colorForeground);
+    m_shadow = ysColor::srgbiToLinear(m_appSettings.colorShadow);
+    m_highlight1 = ysColor::srgbiToLinear(m_appSettings.colorHighlight1);
+    m_highlight2 = ysColor::srgbiToLinear(m_appSettings.colorHighlight2);
+    m_pink = ysColor::srgbiToLinear(m_appSettings.colorPink);
+    m_red = ysColor::srgbiToLinear(m_appSettings.colorRed);
+    m_orange = ysColor::srgbiToLinear(m_appSettings.colorOrange);
+    m_yellow = ysColor::srgbiToLinear(m_appSettings.colorYellow);
+    m_blue = ysColor::srgbiToLinear(m_appSettings.colorBlue);
+    m_green = ysColor::srgbiToLinear(m_appSettings.colorGreen);
 }
 
 void EngineSimApplication::createObjects(Engine *engine) {
