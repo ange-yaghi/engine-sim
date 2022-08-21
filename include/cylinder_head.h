@@ -8,16 +8,17 @@
 #include "exhaust_system.h"
 #include "intake.h"
 
+class Valvetrain;
 class CylinderBank;
 class CylinderHead : public Part {
     public:
         struct Parameters {
             CylinderBank *Bank;
-            Camshaft *ExhaustCam;
-            Camshaft *IntakeCam;
 
             Function *ExhaustPortFlow;
             Function *IntakePortFlow;
+
+            Valvetrain *Valvetrain;
 
             double CombustionChamberVolume;
 
@@ -66,8 +67,7 @@ class CylinderHead : public Part {
         Intake **m_intakes;
 
         CylinderBank *m_bank;
-        Camshaft *m_exhaustCamshaft;
-        Camshaft *m_intakeCamshaft;
+        Valvetrain *m_valvetrain;
 
         Function *m_exhaustPortFlow;
         Function *m_intakePortFlow;

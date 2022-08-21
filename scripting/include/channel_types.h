@@ -21,6 +21,7 @@ namespace es_script {
         static const piranha::ChannelType IgnitionWireChannel;
         static const piranha::ChannelType FuelChannel;
         static const piranha::ChannelType ImpulseResponseChannel;
+        static const piranha::ChannelType ValvetrainChannel;
     };
 
     template <typename Type>
@@ -29,23 +30,8 @@ namespace es_script {
         return nullptr;
     }
 
-    class EngineNode;
-    class RodJournalNode;
-    class CrankshaftNode;
-    class ConnectingRodNode;
-    class CylinderBankNode;
-    class PistonNode;
-    class FunctionNode;
-    class IntakeNode;
-    class ExhaustSystemNode;
-    class CylinderHeadNode;
-    class CamshaftNode;
-    class IgnitionModuleNode;
-    class IgnitionWireNode;
-    class FuelNode;
-    class ImpulseResponseNode;
-
 #define ASSIGN_CHANNEL_TYPE(type, channel) \
+    class type; \
     template <> extern inline const piranha::ChannelType *LookupChannelType<type>() { \
         return &ObjectChannel::channel; \
     }
@@ -66,6 +52,7 @@ namespace es_script {
     ASSIGN_CHANNEL_TYPE(IgnitionWireNode, IgnitionWireChannel);
     ASSIGN_CHANNEL_TYPE(FuelNode, FuelChannel);
     ASSIGN_CHANNEL_TYPE(ImpulseResponseNode, ImpulseResponseChannel);
+    ASSIGN_CHANNEL_TYPE(ValvetrainNode, ValvetrainChannel);
 
 } /* namespace es_script */
 

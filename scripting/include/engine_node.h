@@ -38,6 +38,8 @@ namespace es_script {
             }
 
             EngineContext context;
+            context.setEngine(engine);
+
             Engine::Parameters parameters = m_parameters;
             parameters.CrankshaftCount = (int)m_crankshafts.size();
             parameters.CylinderBanks = (int)m_cylinderBanks.size();

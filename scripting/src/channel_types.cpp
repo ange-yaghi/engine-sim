@@ -1,32 +1,20 @@
 #include "../include/channel_types.h"
 
-const piranha::ChannelType
-    es_script::ObjectChannel::EngineChannel("EngineChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::CrankshaftChannel("CrankshaftChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::RodJournalChannel("RodJournalChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::ConnectingRodChannel("ConnectingRodChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::CylinderBankChannel("CylinderBankChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::PistonChannel("PistonChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::FunctionChannel("FunctionChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::IntakeChannel("IntakeChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::ExhaustSystemChannel("ExhaustChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::CylinderHeadChannel("CylinderHeadChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::CamshaftChannel("CamshaftChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::IgnitionModuleChannel("IgnitionModuleChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::IgnitionWireChannel("IgnitionWireChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::FuelChannel("FuelChannel");
-const piranha::ChannelType
-    es_script::ObjectChannel::ImpulseResponseChannel("ImpulseResponseChannel");
+#define DEFINE_CHANNEL(channel_type) const piranha::ChannelType es_script::ObjectChannel::channel_type(#channel_type);
+
+DEFINE_CHANNEL(EngineChannel);
+DEFINE_CHANNEL(CrankshaftChannel);
+DEFINE_CHANNEL(RodJournalChannel);
+DEFINE_CHANNEL(ConnectingRodChannel);
+DEFINE_CHANNEL(CylinderBankChannel);
+DEFINE_CHANNEL(PistonChannel);
+DEFINE_CHANNEL(FunctionChannel);
+DEFINE_CHANNEL(IntakeChannel);
+DEFINE_CHANNEL(ExhaustSystemChannel);
+DEFINE_CHANNEL(CylinderHeadChannel);
+DEFINE_CHANNEL(CamshaftChannel);
+DEFINE_CHANNEL(IgnitionModuleChannel);
+DEFINE_CHANNEL(IgnitionWireChannel);
+DEFINE_CHANNEL(FuelChannel);
+DEFINE_CHANNEL(ImpulseResponseChannel);
+DEFINE_CHANNEL(ValvetrainChannel);

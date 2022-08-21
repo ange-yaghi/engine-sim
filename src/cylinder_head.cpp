@@ -1,6 +1,7 @@
 #include "../include/cylinder_head.h"
 
 #include "../include/cylinder_bank.h"
+#include "../include/valvetrain.h"
 
 #include <assert.h>
 
@@ -11,8 +12,7 @@ CylinderHead::CylinderHead() {
     m_flipDisplay = false;
 
     m_bank = nullptr;
-    m_exhaustCamshaft = nullptr;
-    m_intakeCamshaft = nullptr;
+    m_valvetrain = nullptr;
 
     m_exhaustPortFlow = nullptr;
     m_intakePortFlow = nullptr;
@@ -33,8 +33,7 @@ void CylinderHead::initialize(const Parameters &params) {
     m_intakes = new Intake *[params.Bank->getCylinderCount()];
 
     m_bank = params.Bank;
-    m_exhaustCamshaft = params.ExhaustCam;
-    m_intakeCamshaft = params.IntakeCam;
+    m_valvetrain = params.Valvetrain;
     m_exhaustPortFlow = params.ExhaustPortFlow;
     m_intakePortFlow = params.IntakePortFlow;
     m_combustionChamberVolume = params.CombustionChamberVolume;
@@ -68,11 +67,11 @@ double CylinderHead::exhaustFlowRate(int cylinder) const {
 }
 
 double CylinderHead::intakeValveLift(int cylinder) const {
-    return m_intakeCamshaft->valveLift(cylinder);
+    return m_valvetrain->intakeValveLift(cylinder);
 }
 
 double CylinderHead::exhaustValveLift(int cylinder) const {
-    return m_exhaustCamshaft->valveLift(cylinder);
+    return m_valvetrain->exhaustValveLift(cylinder);
 }
 
 void CylinderHead::setAllExhaustSystems(ExhaustSystem *system) {
@@ -96,9 +95,9 @@ void CylinderHead::setIntake(int i, Intake *intake) {
 }
 
 Camshaft *CylinderHead::getExhaustCamshaft() {
-    return m_exhaustCamshaft;
+    return m_valvetrain->getActiveExhaustCamshaft();
 }
 
 Camshaft *CylinderHead::getIntakeCamshaft() {
-    return m_intakeCamshaft;
+    return m_valvetrain->getActiveIntakeCamshaft();
 }

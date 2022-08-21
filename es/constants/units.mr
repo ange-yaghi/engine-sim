@@ -95,4 +95,7 @@ public node units {
 
     // RPM
     output rpm: 0.104719755;
+
+    // Speed
+    output mph: mile / hour;
 }

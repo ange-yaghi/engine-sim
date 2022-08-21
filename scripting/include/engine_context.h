@@ -16,6 +16,7 @@ namespace es_script {
     class RodJournalNode;
     class CamshaftNode;
     class ImpulseResponseNode;
+    class ValvetrainNode;
 
     class EngineContext {
     public:
@@ -46,9 +47,6 @@ namespace es_script {
         void addCrankshaft(CrankshaftNode *node, Crankshaft *crankshaft);
         Crankshaft *getCrankshaft(CrankshaftNode *node) const;
 
-        void addCamshaft(CamshaftNode *node, Camshaft *camshaft);
-        Camshaft *getCamshaft(CamshaftNode *node) const;
-
         void setEngine(Engine *engine) { m_engine = engine; }
         Engine *getEngine() const { return m_engine; }
 
@@ -65,7 +63,6 @@ namespace es_script {
         std::map<ImpulseResponseNode *, ImpulseResponse *> m_impulseResponses;
         std::map<RodJournalNode *, int> m_rodJournals;
         std::map<CrankshaftNode *, Crankshaft *> m_crankshafts;
-        std::map<CamshaftNode *, Camshaft *> m_camshafts;
         std::map<std::pair<const CylinderBankNode *, int>, int> m_cylinderIndices;
     };
 

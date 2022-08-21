@@ -28,6 +28,7 @@ public node ignition_module_channel => __engine_sim__ignition_module_channel { /
 public node ignition_wire_channel => __engine_sim__ignition_wire_channel { /* void */ }
 public node fuel_channel => __engine_sim__fuel_channel { /* void */ }
 public node impulse_response_channel => __engine_sim__impulse_response_channel { /* void */ }
+public node valvetrain_channel => __engine_sim__valvetrain_channel { /* void */ }
 
 private node turbulence_to_flame_speed_ratio_default {
     alias output __out:
@@ -280,6 +281,27 @@ public node cylinder_friction_parameters {
     input viscous_friction_coefficient: copy.viscous_friction_coefficient;
 }
 
+// Valvetrain
+public node standard_valvetrain => __engine_sim__standard_valvetrain {
+    input intake_camshaft [camshaft];
+    input exhaust_camshaft [camshaft];
+    alias output __out [valvetrain_channel];
+}
+
+public node vtec_valvetrain => __engine_sim__vtec_valvetrain {
+    input vtec_intake_camshaft [camshaft];
+    input vtec_exhaust_camshaft [camshaft];
+    input intake_camshaft [camshaft];
+    input exhaust_camshaft [camshaft];
+
+    input min_rpm [float]: 5800 * units.rpm;
+    input min_speed [float]: 10 * units.mph;
+    input manifold_vacuum [float]: 1.0 * units.atm - 5.0 * units.inHg;
+    input min_throttle_position [float]: 0.3;
+
+    alias output __out [valvetrain_channel];
+}
+
 // Cylinder Head
 public node cylinder_head_parameters {
     input intake_port_flow: function();
@@ -298,8 +320,7 @@ public node cylinder_head_parameters {
 private node _cylinder_head => __engine_sim__cylinder_head {
     input intake_port_flow [function];
     input exhaust_port_flow [function];
-    input intake_camshaft [camshaft];
-    input exhaust_camshaft [camshaft];
+    input valvetrain [valvetrain_channel];
     input chamber_volume [float];
     input intake_runner_volume [float];
     input intake_runner_cross_section_area [float];
@@ -309,11 +330,9 @@ private node _cylinder_head => __engine_sim__cylinder_head {
     alias output __out [cylinder_head_channel];
 }
 
-public node cylinder_head {
+public node generic_cylinder_head {
     input parameters: cylinder_head_parameters();
-
-    input intake_camshaft;
-    input exhaust_camshaft;
+    input valvetrain;
 
     input intake_port_flow: parameters.intake_port_flow;
     input exhaust_port_flow: parameters.exhaust_port_flow;
@@ -338,8 +357,43 @@ public node cylinder_head {
             exhaust_runner_volume: exhaust_runner_volume,
             exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
             flip_display: flip_display,
-            intake_camshaft: intake_camshaft,
-            exhaust_camshaft: exhaust_camshaft
+            valvetrain: valvetrain
+        );
+}
+
+public node cylinder_head {
+    input parameters: cylinder_head_parameters();
+
+    input intake_camshaft;
+    input exhaust_camshaft;
+
+    input intake_port_flow: parameters.intake_port_flow;
+    input exhaust_port_flow: parameters.exhaust_port_flow;
+
+    input chamber_volume: parameters.chamber_volume;
+
+    input intake_runner_volume: parameters.intake_runner_volume;
+    input intake_runner_cross_section_area: parameters.intake_runner_cross_section_area;
+
+    input exhaust_runner_volume: parameters.exhaust_runner_volume;
+    input exhaust_runner_cross_section_area: parameters.exhaust_runner_cross_section_area;
+
+    input flip_display: parameters.flip_display;
+
+    alias output __out [_cylinder_head]:
+        generic_cylinder_head(
+            intake_port_flow: intake_port_flow,
+            exhaust_port_flow: exhaust_port_flow,
+            chamber_volume: chamber_volume,
+            intake_runner_volume: intake_runner_volume,
+            intake_runner_cross_section_area: intake_runner_cross_section_area,
+            exhaust_runner_volume: exhaust_runner_volume,
+            exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+            flip_display: flip_display,
+            valvetrain: standard_valvetrain(
+                intake_camshaft: intake_camshaft,
+                exhaust_camshaft: exhaust_camshaft
+            )
         );
 }
 

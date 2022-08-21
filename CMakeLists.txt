@@ -73,12 +73,15 @@ add_library(engine-sim STATIC
     src/part.cpp
     src/piston.cpp
     src/simulator.cpp
+    src/standard_valvetrain.cpp
     src/starter_motor.cpp
     src/synthesizer.cpp
     src/transmission.cpp
     src/utilities.cpp
+    src/valvetrain.cpp
     src/vehicle.cpp
     src/vehicle_drag_constraint.cpp
+    src/vtec_valvetrain.cpp
 
     # Include files
     include/audio_buffer.h
@@ -108,13 +111,16 @@ add_library(engine-sim STATIC
     include/part.h
     include/piston.h
     include/simulator.h
+    include/standard_valvetrain.h
     include/starter_motor.h
     include/synthesizer.h
     include/transmission.h
     include/units.h
     include/utilities.h
+    include/valvetrain.h
     include/vehicle.h
     include/vehicle_drag_constraint.h
+    include/vtec_valvetrain.h
 )
 
 target_link_libraries(engine-sim
@@ -159,6 +165,9 @@ if (PIRANHA_ENABLED)
         scripting/include/piranha.h
         scripting/include/piston_node.h
         scripting/include/rod_journal_node.h
+        scripting/include/standard_valvetrain_node.h
+        scripting/include/valvetrain_node.h
+        scripting/include/vtec_valvetrain_node.h
     )
 
     target_include_directories(engine-sim-script-interpreter

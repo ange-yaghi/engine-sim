@@ -292,6 +292,11 @@ double Engine::getRpm() const {
     else return std::abs(units::toRpm(getCrankshaft(0)->m_body.v_theta));
 }
 
+double Engine::getSpeed() const {
+    if (m_crankshaftCount == 0) return 0;
+    else return std::abs(getCrankshaft(0)->m_body.v_theta);
+}
+
 bool Engine::isSpinningCw() const {
     return getOutputCrankshaft()->m_body.v_theta <= 0;
 }

@@ -53,6 +53,7 @@ class Engine : public Part {
         virtual double getIntakeAfr() const;
         virtual double getExhaustO2() const;
         virtual double getRpm() const;
+        virtual double getSpeed() const;
         virtual bool isSpinningCw() const;
 
         virtual void resetFuelConsumption();

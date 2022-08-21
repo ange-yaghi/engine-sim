@@ -12,5 +12,7 @@
 #include "../../include/simulator.h"
 #include "../../include/fuel.h"
 #include "../../include/impulse_response.h"
+#include "../../include/standard_valvetrain.h"
+#include "../../include/vtec_valvetrain.h"
 
 #endif /* ATG_ENGINE_SIM_ENGINE_SIM_H */

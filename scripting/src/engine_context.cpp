@@ -117,21 +117,6 @@ Crankshaft *es_script::EngineContext::getCrankshaft(CrankshaftNode *node) const 
     else return nullptr;
 }
 
-void es_script::EngineContext::addCamshaft(
-    CamshaftNode *node,
-    Camshaft *camshaft)
-{
-    m_camshafts[node] = camshaft;
-}
-
-Camshaft *es_script::EngineContext::getCamshaft(CamshaftNode *node) const {
-    auto it = m_camshafts.find(node);
-    if (it != m_camshafts.end()) {
-        return it->second;
-    }
-    else return nullptr;
-}
-
 void es_script::EngineContext::setCylinderIndex(
     const CylinderBankNode *bank,
     int localIndex,

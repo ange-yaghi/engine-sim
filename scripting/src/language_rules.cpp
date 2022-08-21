@@ -8,6 +8,8 @@
 #include "../include/cylinder_head_node.h"
 #include "../include/ignition_module_node.h"
 #include "../include/impulse_response_node.h"
+#include "../include/standard_valvetrain_node.h"
+#include "../include/vtec_valvetrain_node.h"
 
 es_script::LanguageRules::LanguageRules() {
     /* void */
@@ -61,6 +63,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__fuel_channel", &es_script::ObjectChannel::FuelChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__impulse_response_channel", &es_script::ObjectChannel::ImpulseResponseChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__valvetrain_channel", &es_script::ObjectChannel::ValvetrainChannel);
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -146,6 +150,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<IgnitionWireNode>("__engine_sim__ignition_wire");
     registerBuiltinType<FuelNode>("__engine_sim__fuel");
     registerBuiltinType<ImpulseResponseNode>("__engine_sim__impulse_response");
+    registerBuiltinType<StandardValvetrainNode>("__engine_sim__standard_valvetrain");
+    registerBuiltinType<VtecValvetrainNode>("__engine_sim__vtec_valvetrain");
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<
