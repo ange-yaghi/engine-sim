@@ -66,7 +66,7 @@ void LoadSimulationCluster::initialize(EngineSimApplication *app) {
     m_torqueGauge->m_gauge->setBandCount(0);
 
     m_hpGauge = addElement<LabeledGauge>();
-    m_hpGauge->m_title = "HORSEPOWER";
+    m_hpGauge->m_title = "POWER";
     m_hpGauge->m_unit = "HP";
     m_hpGauge->m_precision = 0;
     m_hpGauge->setLocalPosition({ 0, 0 });
@@ -323,7 +323,6 @@ void LoadSimulationCluster::setUnits(){
     //Then Power
     if (m_powerUnits == "HP")
     {
-        m_hpGauge->m_title = "HORSEPOWER";
         m_hpGauge->m_unit = "HP";
         m_hpGauge->m_precision = 0;
 
@@ -334,8 +333,6 @@ void LoadSimulationCluster::setUnits(){
     }
     else if (m_powerUnits == "KW")
     {
-        m_hpGauge->m_title = "KILOWATTS";
-
         m_hpGauge->m_unit = "Kw";
         m_hpGauge->m_precision = 1;
         m_hpGauge->m_gauge->m_min = 0;
@@ -343,6 +340,4 @@ void LoadSimulationCluster::setUnits(){
         m_hpGauge->m_gauge->m_minorStep = 50;
         m_hpGauge->m_gauge->m_majorStep = 100;
     }
-
-
 }
