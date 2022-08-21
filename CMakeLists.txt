@@ -85,6 +85,7 @@ add_library(engine-sim STATIC
 
     # Include files
     include/audio_buffer.h
+    include/application_settings.h
     include/camshaft.h
     include/crankshaft.h
     include/combustion_chamber.h
@@ -165,6 +166,7 @@ if (PIRANHA_ENABLED)
         scripting/include/piranha.h
         scripting/include/piston_node.h
         scripting/include/rod_journal_node.h
+        scripting/include/set_application_settings_node.h
         scripting/include/standard_valvetrain_node.h
         scripting/include/valvetrain_node.h
         scripting/include/vtec_valvetrain_node.h

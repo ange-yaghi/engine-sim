@@ -1,0 +1,7 @@
+private import "engine_sim.mr"
+
+units units()
+
+public node set_application_settings => __engine_sim__set_application_settings {
+    input start_fullscreen [bool]: false;
+}

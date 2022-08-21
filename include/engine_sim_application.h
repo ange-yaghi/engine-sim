@@ -20,6 +20,7 @@
 #include "load_simulation_cluster.h"
 #include "mixer_cluster.h"
 #include "info_cluster.h"
+#include "application_settings.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -50,6 +51,7 @@ class EngineSimApplication {
                 const GeometryGenerator::GeometryIndices &indices,
                 int layer,
                 dbasic::StageEnableFlags flags);
+        void configure(const ApplicationSettings &settings);
         GeometryGenerator *getGeometryGenerator() { return &m_geometryGenerator; }
 
         Shaders *getShaders() { return &m_shaders; }

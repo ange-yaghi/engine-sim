@@ -10,6 +10,7 @@
 #include "../include/impulse_response_node.h"
 #include "../include/standard_valvetrain_node.h"
 #include "../include/vtec_valvetrain_node.h"
+#include "../include/set_application_settings_node.h"
 
 es_script::LanguageRules::LanguageRules() {
     /* void */
@@ -133,6 +134,7 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<k_28inH2ONode>("__engine_sim__k_28inH2O");
     registerBuiltinType<k_CarbNode>("__engine_sim__k_carb");
     registerBuiltinType<GenerateHarmonicCamLobe>("__engine_sim__generate_harmonic_cam_lobe");
+    registerBuiltinType<SetApplicationSettings>("__engine_sim__set_application_settings");
 
     // Objects
     registerBuiltinType<EngineNode>("__engine_sim__engine");

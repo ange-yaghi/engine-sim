@@ -169,6 +169,8 @@ void EngineSimApplication::initialize() {
     const bool compiled = compiler.compile("../assets/main.mr");
     if (compiled) {
         const es_script::Compiler::Output output = compiler.execute();
+        configure(output.applicationSettings);
+
         m_iceEngine = output.engine;
     }
     else {
@@ -751,6 +753,12 @@ void EngineSimApplication::drawGenerated(
         indices.FaceCount,
         false,
         layer);
+}
+
+void EngineSimApplication::configure(const ApplicationSettings &settings) {
+    if (settings.startFullscreen) {
+        m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
+    }
 }
 
 void EngineSimApplication::createObjects(Engine *engine) {

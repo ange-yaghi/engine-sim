@@ -28,3 +28,6 @@ public import "sound-library/impulse_responses.mr"
 
 // Utilities
 public import "utilities/utilities.mr"
+
+// Application settings
+public import "settings/application_settings.mr"

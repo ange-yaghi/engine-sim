@@ -4,3 +4,7 @@ import "engines/kohler/kohler_ch750.mr"
 set_engine(
     engine: kohler_ch750()
 )
+
+set_application_settings(
+    start_fullscreen: false
+)
