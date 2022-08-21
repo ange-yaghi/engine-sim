@@ -1,5 +1,7 @@
 #include "../include/jitter_filter.h"
 
+#include <cstring>
+
 JitterFilter::JitterFilter() {
     m_history = nullptr;
     m_maxJitter = 0;

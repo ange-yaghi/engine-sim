@@ -28,7 +28,7 @@ namespace es_script {
         {
             CylinderHead::Parameters params = m_parameters;
             params.Bank = bank;
-            params.Valvetrain = m_valvetrain->generate(context, crankshaft);
+            params.valvetrain = m_valvetrain->generate(context, crankshaft);
             params.IntakePortFlow = m_intakePortFlow->generate(context);
             params.ExhaustPortFlow = m_exhaustPortFlow->generate(context);
 
@@ -69,7 +69,7 @@ namespace es_script {
             readAllInputs();
 
             m_parameters.Bank = nullptr;
-            m_parameters.Valvetrain = nullptr;
+            m_parameters.valvetrain = nullptr;
             m_parameters.IntakePortFlow = nullptr;
             m_parameters.ExhaustPortFlow = nullptr;
         }
