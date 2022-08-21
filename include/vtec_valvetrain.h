@@ -18,7 +18,7 @@ public:
         Camshaft *VtecIntakeCamshaft;
         Camshaft *VtexExhaustCamshaft;
 
-        Engine *Engine;
+        Engine *engine;
     };
 
 public:

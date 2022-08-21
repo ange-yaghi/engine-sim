@@ -48,7 +48,7 @@ class Synthesizer {
         struct ProcessingFilters {
             ConvolutionFilter Convolution;
             DerivativeFilter Derivative;
-            JitterFilter JitterFilter;
+            JitterFilter jitterFilter;
             ButterworthLowPassFilter<float> AirNoiseLowPass;
             LowPassFilter InputDcFilter;
             ButterworthLowPassFilter<double> antialiasing;

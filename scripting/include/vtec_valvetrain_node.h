@@ -39,7 +39,7 @@ namespace es_script {
             params.MinSpeed = m_parameters.MinSpeed;
             params.MinThrottlePosition = m_parameters.MinThrottlePosition;
             params.ManifoldVacuum = m_parameters.ManifoldVacuum;
-            params.Engine = context->getEngine();
+            params.engine = context->getEngine();
             valvetrain->initialize(params);
 
             return valvetrain;

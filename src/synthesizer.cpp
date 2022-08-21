@@ -65,7 +65,7 @@ void Synthesizer::initialize(const Parameters &p) {
         m_filters[i].InputDcFilter.setCutoffFrequency(10.0);
         m_filters[i].InputDcFilter.m_dt = 1 / m_audioSampleRate;
 
-        m_filters[i].JitterFilter.initialize(
+        m_filters[i].jitterFilter.initialize(
             10,
             m_audioParameters.InputSampleNoiseFrequencyCutoff,
             m_audioSampleRate);
@@ -245,7 +245,7 @@ void Synthesizer::renderAudio() {
     for (int i = 0; i < m_inputChannelCount; ++i) {
         m_filters[i].AirNoiseLowPass.setCutoffFrequency(
             static_cast<float>(m_audioParameters.AirNoiseFrequencyCutoff), m_audioSampleRate);
-        m_filters[i].JitterFilter.setJitterScale(m_audioParameters.InputSampleNoise);
+        m_filters[i].jitterFilter.setJitterScale(m_audioParameters.InputSampleNoise);
     }
 
     for (int i = 0; i < n; ++i) {
@@ -288,7 +288,7 @@ int16_t Synthesizer::renderAudio(int inputSample) {
         const float r_0 = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
 
         const float jitteredSample =
-            m_filters[i].JitterFilter.fast_f(m_inputChannels[i].TransferBuffer[inputSample]);
+            m_filters[i].jitterFilter.fast_f(m_inputChannels[i].TransferBuffer[inputSample]);
 
         const float f_in = jitteredSample;
         const float f_dc = m_filters[i].InputDcFilter.fast_f(f_in);

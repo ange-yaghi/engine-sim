@@ -31,7 +31,7 @@ void VtecValvetrain::initialize(const Parameters &parameters) {
     m_minSpeed = parameters.MinSpeed;
     m_minThrottlePosition = parameters.MinThrottlePosition;
     m_manifoldVacuum = parameters.ManifoldVacuum;
-    m_engine = parameters.Engine;
+    m_engine = parameters.engine;
 }
 
 double VtecValvetrain::intakeValveLift(int cylinder) {
