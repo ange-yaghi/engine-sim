@@ -16,6 +16,8 @@ class LoadSimulationCluster : public UiElement {
 
         virtual void update(float dt);
         virtual void render();
+        void   setUnits();
+        double getPower(double torque);
 
         void setSimulator(Simulator *simulator) { m_simulator = simulator; }
 
@@ -38,6 +40,9 @@ class LoadSimulationCluster : public UiElement {
         double m_peakHorsepower;
         double m_peakTorqueRpm;
         double m_peakTorque;
+        
+        std::string m_powerUnits;
+        std::string m_torqueUnits;
 
         Simulator *m_simulator;
 };

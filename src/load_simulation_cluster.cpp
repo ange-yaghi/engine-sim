@@ -102,6 +102,10 @@ void LoadSimulationCluster::initialize(EngineSimApplication *app) {
     m_clutchPressureGauge->m_gauge->m_needleKd = 5.0f;
     m_clutchPressureGauge->m_gauge->m_needleMaxVelocity = 10.0f;
     m_clutchPressureGauge->m_gauge->setBandCount(0);
+
+    m_torqueUnits = app->getAppSettings()->torqueUnits;
+    m_powerUnits = app->getAppSettings()->powerUnits;
+    setUnits();
 }
 
 void LoadSimulationCluster::destroy() {
@@ -129,9 +133,15 @@ void LoadSimulationCluster::update(float dt) {
     if (m_app->getEngine()->ProcessKeyDown(ysKey::Code::I)) {
         std::stringstream ss;
         ss << std::setprecision(0) << std::fixed;
-        ss << m_peakHorsepower << "HP @ " << m_peakHorsepowerRpm << "rpm"
-            << " | "
-            << m_peakTorque << "lb-ft @ " << m_peakTorqueRpm << "rpm";
+        if (m_powerUnits == "HP")
+            ss << m_peakHorsepower << "HP @ " << m_peakHorsepowerRpm << "rpm";
+        else
+            ss << m_peakHorsepower << "KW @ " << m_peakHorsepowerRpm << "rpm";
+        ss << " | ";
+        if (m_torqueUnits == "FTLBS")
+            ss << m_peakTorque << "lb-ft @ " << m_peakTorqueRpm << "rpm";
+        else
+            ss << m_peakTorque << "Nm. @ " << m_peakTorqueRpm << "rpm";
         m_app->getInfoCluster()->setLogMessage(ss.str());
     }
 
@@ -252,8 +262,8 @@ void LoadSimulationCluster::updateHpAndTorque(float dt) {
     constexpr double RC = 1.0;
     const double alpha = dt / (dt + RC);
 
-    const double torque = units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb);
-    const double hp = torque * m_simulator->getEngine()->getRpm() / 5252.0;
+    double torque = (m_torqueUnits == "NM") ? (units::convert(m_simulator->getFilteredDynoTorque(), units::Nm)) : (units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb));
+    const double hp = getPower(torque);
 
     m_filteredTorque = (1 - alpha) * m_filteredTorque + alpha * torque;
     m_filteredHorsepower = (1 - alpha) * m_filteredHorsepower + alpha * hp;
@@ -267,4 +277,72 @@ void LoadSimulationCluster::updateHpAndTorque(float dt) {
         m_peakHorsepower = std::fmax(m_peakHorsepower, m_filteredHorsepower);
         m_peakHorsepowerRpm = m_simulator->getEngine()->getRpm();
     }
+}
+
+
+double LoadSimulationCluster::getPower(double torque)
+{
+    double power = 0;
+    if (m_powerUnits == "HP")
+    {
+        if(m_torqueUnits == "NM")
+            power = torque * m_simulator->getEngine()->getRpm() / 7127.0;
+        else
+            power = torque * m_simulator->getEngine()->getRpm() / 5252.0;
+    }
+    else if (m_powerUnits == "KW")
+    {
+        if (m_torqueUnits == "NM")
+            power = torque * m_simulator->getEngine()->getRpm() / 9549.0;
+        else
+            power = torque * m_simulator->getEngine()->getRpm() / 7127.0;
+    }
+    return power;
+}
+void LoadSimulationCluster::setUnits(){
+    //Set Torque First
+    if (m_torqueUnits == "FTLBS")
+    {
+        m_torqueGauge->m_unit = "LB-FT";
+        m_torqueGauge->m_precision = 0;
+        m_torqueGauge->m_gauge->m_min = 0;
+        m_torqueGauge->m_gauge->m_max = 1000;
+        m_torqueGauge->m_gauge->m_minorStep = 50;
+        m_torqueGauge->m_gauge->m_majorStep = 100;
+    }
+    else if (m_torqueUnits == "NM")
+    {
+        m_torqueGauge->m_unit = "Nm";
+        m_torqueGauge->m_precision = 1;
+        m_torqueGauge->m_gauge->m_min = 0;
+        m_torqueGauge->m_gauge->m_max = 1000;
+        m_torqueGauge->m_gauge->m_minorStep = 50;
+        m_torqueGauge->m_gauge->m_majorStep = 100;
+    }
+
+    //Then Power
+    if (m_powerUnits == "HP")
+    {
+        m_hpGauge->m_title = "HORSEPOWER";
+        m_hpGauge->m_unit = "HP";
+        m_hpGauge->m_precision = 0;
+
+        m_hpGauge->m_gauge->m_min = 0;
+        m_hpGauge->m_gauge->m_max = 1000;
+        m_hpGauge->m_gauge->m_minorStep = 50;
+        m_hpGauge->m_gauge->m_majorStep = 100;
+    }
+    else if (m_powerUnits == "KW")
+    {
+        m_hpGauge->m_title = "KILOWATTS";
+
+        m_hpGauge->m_unit = "Kw";
+        m_hpGauge->m_precision = 1;
+        m_hpGauge->m_gauge->m_min = 0;
+        m_hpGauge->m_gauge->m_max = 1000;
+        m_hpGauge->m_gauge->m_minorStep = 50;
+        m_hpGauge->m_gauge->m_majorStep = 100;
+    }
+
+
 }
