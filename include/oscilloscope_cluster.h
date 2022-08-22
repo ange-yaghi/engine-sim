@@ -21,6 +21,8 @@ class OscilloscopeCluster : public UiElement {
         virtual void update(float dt);
         virtual void render();
 
+        double getPower(double torque);
+
         void sample();
         void setSimulator(Simulator *simulator);
 
@@ -63,6 +65,10 @@ class OscilloscopeCluster : public UiElement {
 
         double m_torque;
         double m_hp;
+
+        std::string m_powerUnits;
+        std::string m_torqueUnits;
+
 };
 
 #endif /* ATG_ENGINE_SIM_OSCILLOSCOPE_CLUSTER_H */

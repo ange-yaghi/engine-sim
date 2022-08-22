@@ -4,4 +4,21 @@ units units()
 
 public node set_application_settings => __engine_sim__set_application_settings {
     input start_fullscreen [bool]: false;
+	input power_units [string]: "HP";
+	input torque_units [string]: "FTLBS";
+	input speed_units [string]: "MPH";
+	input pressure_units [string]: "INHG";
+	input boost_units [string]: "PSI";
+	input color_background [int]: 0x0E1012;
+    input color_foreground [int]: 0xFFFFFF;
+    input color_shadow [int]: 0x0E1012;
+    input color_highlight1 [int]: 0xEF4545;
+    input color_highlight2 [int]: 0xFFFFFF;
+    input color_pink [int]: 0xF394BE;
+    input color_red [int]: 0xEE4445;
+    input color_orange [int]: 0xF4802A;
+    input color_yellow [int]: 0xFDBD2E;
+    input color_blue [int]: 0x77CEE0;
+    input color_green [int]: 0xBDD869;
+
 }

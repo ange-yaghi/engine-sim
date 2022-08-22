@@ -172,6 +172,9 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
 
     m_currentFocusScopes[0] = m_totalExhaustFlowScope;
     m_currentFocusScopes[1] = nullptr;
+
+    m_torqueUnits = app->getAppSettings()->torqueUnits;
+    m_powerUnits = app->getAppSettings()->powerUnits;
 }
 
 void OscilloscopeCluster::destroy() {
@@ -230,8 +233,9 @@ void OscilloscopeCluster::update(float dt) {
     Engine *engine = m_simulator->getEngine();
 
     const double torque =
-        units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb);
-    const double hp = torque * engine->getRpm() / 5252.0;
+        (m_torqueUnits == "NM") ? (units::convert(m_simulator->getFilteredDynoTorque(), units::Nm)) : (units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb));
+
+    const double hp = getPower(torque);
 
     m_torque = m_torque * 0.95 + 0.05 * torque;
     m_hp = m_hp * 0.95 + 0.05 * hp;
@@ -258,7 +262,7 @@ void OscilloscopeCluster::render() {
     grid.v_cells = 4;
 
     const Bounds &hpTorqueBounds = grid.get(m_bounds, 0, 3);
-    renderScope(m_torqueScope, hpTorqueBounds, "Torque/HP");
+    renderScope(m_torqueScope, hpTorqueBounds, "Torque/Power");
     renderScope(m_hpScope, hpTorqueBounds, "", true);
 
     const Bounds &valveLiftBounds = grid.get(m_bounds, 2, 2);
@@ -381,4 +385,24 @@ void OscilloscopeCluster::renderScope(
     }
 
     osc->m_bounds = bounds;
+}
+
+double OscilloscopeCluster::getPower(double torque)
+{
+    double power = 0;
+    if (m_powerUnits == "HP")
+    {
+        if (m_torqueUnits == "NM")
+            power = torque * m_simulator->getEngine()->getRpm() / 7127.0;
+        else
+            power = torque * m_simulator->getEngine()->getRpm() / 5252.0;
+    }
+    else if (m_powerUnits == "KW")
+    {
+        if (m_torqueUnits == "NM")
+            power = torque * m_simulator->getEngine()->getRpm() / 9549.0;
+        else
+            power = torque * m_simulator->getEngine()->getRpm() / 7127.0;
+    }
+    return power;
 }

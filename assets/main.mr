@@ -6,5 +6,23 @@ set_engine(
 )
 
 set_application_settings(
-    start_fullscreen: false
+    start_fullscreen: false,
+	speed_units: "MPH",		//MPH or KMH
+	pressure_units: "INGH",	//INHG, MBAR, BAR, KPA or PSI
+	torque_units: "FTLBS",	//FTLBS or NM
+	power_units: "HP",		//HP or KW
+	
+	//Default Color Settings
+    color_background: 0x0E1012,
+    color_foreground: 0xFFFFFF,
+    color_shadow: 0x0E1012,
+    color_highlight1: 0xEF4545,
+    color_highlight2: 0xFFFFFF,
+    color_pink: 0xF394BE,
+    color_red: 0xEE4445,
+    color_orange: 0xF4802A,
+    color_yellow: 0xFDBD2E,
+    color_blue: 0x77CEE0,
+    color_green: 0xBDD869
+
 )
