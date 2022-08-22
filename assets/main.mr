@@ -26,3 +26,14 @@ set_application_settings(
     color_green: 0xBDD869
 
 )
+
+set_vehicle(
+	vehicle: vehicle(
+		mass:1000,
+		drag_coefficient: 0.25,
+		cross_sectional_area: 4,
+		diff_ratio: 3.42,
+		tire_radius: 10* 0.0254,
+		rolling_resistance: 2000
+	)
+)
