@@ -11,7 +11,8 @@
 #include "../include/standard_valvetrain_node.h"
 #include "../include/vtec_valvetrain_node.h"
 #include "../include/set_application_settings_node.h"
-
+#include "../include/vehicle_node.h"
+#include "../include/set_vehicle_node.h"
 es_script::LanguageRules::LanguageRules() {
     /* void */
 }
@@ -66,6 +67,9 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__impulse_response_channel", &es_script::ObjectChannel::ImpulseResponseChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__valvetrain_channel", &es_script::ObjectChannel::ValvetrainChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__vehicle_channel", &es_script::ObjectChannel::VehicleChannel);
+
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -135,6 +139,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<k_CarbNode>("__engine_sim__k_carb");
     registerBuiltinType<GenerateHarmonicCamLobe>("__engine_sim__generate_harmonic_cam_lobe");
     registerBuiltinType<SetApplicationSettings>("__engine_sim__set_application_settings");
+    registerBuiltinType<SetVehicle>("__engine_sim__set_vehicle");
+
 
     // Objects
     registerBuiltinType<EngineNode>("__engine_sim__engine");
@@ -154,6 +160,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<ImpulseResponseNode>("__engine_sim__impulse_response");
     registerBuiltinType<StandardValvetrainNode>("__engine_sim__standard_valvetrain");
     registerBuiltinType<VtecValvetrainNode>("__engine_sim__vtec_valvetrain");
+    registerBuiltinType<VehicleNode>("__engine_sim__vehicle");
+
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<

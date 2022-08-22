@@ -171,25 +171,29 @@ void EngineSimApplication::initialize() {
         configure(output.applicationSettings);
 
         m_iceEngine = output.engine;
+        m_vehicle = output.vehicle;
     }
     else {
         m_iceEngine = nullptr;
+        m_vehicle = nullptr;
     }
 
     compiler.destroy();
 
 #endif /* PIRANHA_ENABLED */
 
-    Vehicle::Parameters vehParams;
-    vehParams.Mass = units::mass(1597, units::kg);
-    vehParams.DiffRatio = 3.42;
-    vehParams.TireRadius = units::distance(10, units::inch);
-    vehParams.DragCoefficient = 0.25;
-    vehParams.CrossSectionArea = units::distance(6.0, units::foot) * units::distance(6.0, units::foot);
-    vehParams.RollingResistance = 2000.0;
-    Vehicle *vehicle = new Vehicle;
-    vehicle->initialize(vehParams);
-
+    if (m_vehicle == nullptr)
+    {
+        Vehicle::Parameters vehParams;
+        vehParams.Mass = units::mass(1597, units::kg);
+        vehParams.DiffRatio = 3.42;
+        vehParams.TireRadius = units::distance(10, units::inch);
+        vehParams.DragCoefficient = 0.25;
+        vehParams.CrossSectionArea = units::distance(6.0, units::foot) * units::distance(6.0, units::foot);
+        vehParams.RollingResistance = 2000.0;
+        m_vehicle = new Vehicle;
+        m_vehicle->initialize(vehParams);
+    }
     const double gearRatios[] = { 2.97, 2.07, 1.43, 1.00, 0.84, 0.56 };
     Transmission::Parameters tParams;
     tParams.GearCount = 6;
@@ -202,7 +206,7 @@ void EngineSimApplication::initialize() {
     simulatorParams.Engine = m_iceEngine;
     simulatorParams.SystemType = Simulator::SystemType::NsvOptimized;
     simulatorParams.Transmission = transmission;
-    simulatorParams.Vehicle = vehicle;
+    simulatorParams.Vehicle = m_vehicle;
     simulatorParams.SimulationFrequency = 10000;
     simulatorParams.FluidSimulationSteps = 8;
     m_simulator.initialize(simulatorParams);
