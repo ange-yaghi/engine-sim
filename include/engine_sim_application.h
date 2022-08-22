@@ -116,6 +116,7 @@ class EngineSimApplication {
 
         std::vector<SimulationObject *> m_objects;
         Engine *m_iceEngine;
+        Vehicle *m_vehicle;
         Simulator m_simulator;
         double m_dynoSpeed;
         double m_torque;

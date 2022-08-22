@@ -1,0 +1,20 @@
+private import "engine_sim.mr"
+
+units units()
+
+public node vehicle_channel => __engine_sim__vehicle_channel { /* void */ }
+
+public node set_vehicle => __engine_sim__set_vehicle {
+	input vehicle [vehicle];
+}
+
+public node vehicle => __engine_sim__vehicle {
+	input mass [float]: 1000 * units.kg;
+	input drag_coefficient [float]: 0.25;
+	input cross_sectional_area [float]: (72 * units.inch) * (72 * units.inch);
+	input diff_ratio [float]: 3.42;
+	input tire_radius [float]: 10 * units.inch;
+	input rolling_resistance [float]: 2000;
+    
+	alias output __out [vehicle_channel];
+}

@@ -167,9 +167,11 @@ if (PIRANHA_ENABLED)
         scripting/include/piston_node.h
         scripting/include/rod_journal_node.h
         scripting/include/set_application_settings_node.h
+		scripting/include/set_vehicle_node.h
         scripting/include/standard_valvetrain_node.h
         scripting/include/valvetrain_node.h
         scripting/include/vtec_valvetrain_node.h
+		scripting/include/vehicle_node.h
     )
 
     target_include_directories(engine-sim-script-interpreter
