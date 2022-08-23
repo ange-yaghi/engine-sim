@@ -1,0 +1,343 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+
+label cycle(2 * 360 * units.deg)
+
+public node bmw_distributor {
+    input wires;
+    input timing_curve;
+    input rev_limit: 8000 * units.rpm;
+    alias output __out:
+        ignition_module(timing_curve: timing_curve, rev_limit: rev_limit)
+            .connect_wire(wires.wire1, (0.0/6.0) * cycle)
+            .connect_wire(wires.wire5, (1.0/6.0) * cycle)
+			.connect_wire(wires.wire3, (2.0/6.0) * cycle)
+			.connect_wire(wires.wire6, (3.0/6.0) * cycle)
+			.connect_wire(wires.wire2, (4.0/6.0) * cycle)
+			.connect_wire(wires.wire4, (5.0/6.0) * cycle);
+}
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+}
+
+private node add_sym_sample {
+    input angle;
+    input lift;
+    input this;
+    alias output __out: this;
+
+    this.add_sample(angle * units.deg, lift * units.thou)
+    this.add_sample(-angle * units.deg, lift * units.thou)
+}
+
+public node s54_lobe_profile_int {
+    alias output __out:
+        harmonic_cam_lobe(
+            duration_at_50_thou: 288 * units.deg,  //288
+            gamma: 0.8,
+            lift: 14 * units.mm,      //14.5
+            steps: 100
+        );
+}
+
+public node s54_lobe_profile_exh {
+    alias output __out:
+        harmonic_cam_lobe(
+            duration_at_50_thou: 280 * units.deg,    //280
+            gamma: 0.8,
+            lift: 14 * units.mm,        //14.5
+            steps: 100
+        );
+}
+
+public node bmw_camshaft_builder {
+    input lobe_profile: s54_lobe_profile_int();
+	input ex_lobe_profile: s54_lobe_profile_exh();
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: ex_lobe_profile;
+    input lobe_separation: 110.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: 105.0 * units.deg;
+    input advance: 0.0 * units.deg;
+    input base_radius: 0.6 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile)
+
+
+    label rot60(60 * units.deg)
+    label rot90(90 * units.deg)
+    label rot120(120 * units.deg)
+    label rot180(180 * units.deg)
+    label rot360(360 * units.deg)
+
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center)
+		.add_lobe(rot360 + intake_lobe_center + 4 * rot120)
+		.add_lobe(rot360 + intake_lobe_center + 2 * rot120)
+		.add_lobe(rot360 + intake_lobe_center + 5 * rot120)
+		.add_lobe(rot360 + intake_lobe_center + 1 * rot120)
+		.add_lobe(rot360 + intake_lobe_center + 3 * rot120)
+
+	_exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center)
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot120)
+		.add_lobe(rot360 - exhaust_lobe_center + 2 * rot120)
+		.add_lobe(rot360 - exhaust_lobe_center + 5 * rot120)
+		.add_lobe(rot360 - exhaust_lobe_center + 1 * rot120)
+		.add_lobe(rot360 - exhaust_lobe_center + 3 * rot120)
+}
+
+private node add_flow_sample {
+    input lift;
+    input flow;
+    input this;
+    alias output __out: this;
+
+    this.add_sample(lift * units.mm, k_28inH2O(flow))
+}
+
+public node bmw_s54_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 33.0 * units.cc;
+    input flip_display: false;
+	
+	input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    alias output __out: head;
+
+    function intake_flow(1 * units.mm)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(1 * lift_scale, 40 * flow_attenuation)
+        .add_flow_sample(2 * lift_scale, 100 * flow_attenuation)
+        .add_flow_sample(3 * lift_scale, 128 * flow_attenuation)
+        .add_flow_sample(4 * lift_scale, 166 * flow_attenuation)
+        .add_flow_sample(5 * lift_scale, 198 * flow_attenuation)
+        .add_flow_sample(6 * lift_scale, 244 * flow_attenuation)
+        .add_flow_sample(7 * lift_scale, 254 * flow_attenuation)
+        .add_flow_sample(8 * lift_scale, 265 * flow_attenuation)
+        .add_flow_sample(9 * lift_scale, 274 * flow_attenuation)
+        .add_flow_sample(10 * lift_scale, 290 * flow_attenuation)
+        .add_flow_sample(11 * lift_scale, 293 * flow_attenuation)
+        .add_flow_sample(12 * lift_scale, 305 * flow_attenuation)
+		.add_flow_sample(13 * lift_scale, 309 * flow_attenuation)
+		.add_flow_sample(14 * lift_scale, 311 * flow_attenuation)
+
+    function exhaust_flow(1 * units.mm)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(1 * lift_scale, 42 * flow_attenuation)
+        .add_flow_sample(2 * lift_scale, 90 * flow_attenuation)
+        .add_flow_sample(3 * lift_scale, 120 * flow_attenuation)
+        .add_flow_sample(4 * lift_scale, 150 * flow_attenuation)
+        .add_flow_sample(5 * lift_scale, 174 * flow_attenuation)
+        .add_flow_sample(6 * lift_scale, 188 * flow_attenuation)
+        .add_flow_sample(7 * lift_scale, 197 * flow_attenuation)
+        .add_flow_sample(8 * lift_scale, 223 * flow_attenuation)
+        .add_flow_sample(9 * lift_scale, 238 * flow_attenuation)
+        .add_flow_sample(10 * lift_scale, 252 * flow_attenuation)
+        .add_flow_sample(11 * lift_scale, 267 * flow_attenuation)
+        .add_flow_sample(12 * lift_scale, 273 * flow_attenuation)
+		.add_flow_sample(13 * lift_scale, 281 * flow_attenuation)
+		.add_flow_sample(14 * lift_scale, 285 * flow_attenuation)
+
+		
+    cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: 200.0 * units.cc,
+        intake_runner_cross_section_area: 2 * 18.6375 * units.cm2,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        intake_camshaft: intake_camshaft,
+        exhaust_camshaft: exhaust_camshaft,
+        flip_display: flip_display
+    )
+}
+
+public node S54 {
+    alias output __out: engine;
+
+    engine engine(
+        name: "BMW S54",
+        starter_torque: 250 * units.lb_ft,
+        starter_speed: 900 * units.rpm,
+        redline: 8000 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 4.0
+        )
+    )
+
+    wires wires()
+
+    crankshaft c0(
+        throw: 91 * units.mm / 2,
+        flywheel_mass: 5.5 * units.kg,
+        mass: 5 * units.kg,
+        friction_torque: 10.0 * units.lb_ft,
+        moment_of_inertia: 0.22986844776863666 * 0.9,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 120.0 * units.deg
+    )
+
+    rod_journal rj0(angle: 0.0)
+    rod_journal rj1(angle: 120*units.deg)
+    rod_journal rj2(angle: 240*units.deg)
+    rod_journal rj3(angle: 240*units.deg)
+    rod_journal rj4(angle: 120*units.deg)
+    rod_journal rj5(angle: 0*units.deg)
+	
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+        .add_rod_journal(rj5)
+
+    piston_parameters piston_params(
+        mass: 303 * units.g,
+        //blowby: k_28inH2O(0.1),
+        compression_height: 32.3 * units.mm,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: 280.0 * units.g,
+        moment_of_inertia: 0.0015884918028487504,
+        center_of_mass: 0.0,
+        length: 139.0 * units.mm
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: 87 * units.mm,
+        deck_height: (212.0 + 1) * units.mm
+    )
+
+    performer_rpm_intake intake(
+        carburetor_cfm: 800.0,
+        idle_flow_rate_cfm: 0.001,
+        idle_throttle_plate_position: 0.945, // start at 0.963, go to -> 0.97
+        throttle_gamma: 1.5
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(2500.0),
+        primary_tube_length: 30.0 * units.inch,
+        primary_flow_rate: k_carb(800.0),
+        velocity_decay: 1.0, //0.5
+        volume: 100.0 * units.L
+    )
+
+    exhaust_system exhaust0(es_params, audio_volume: 0.5, impulse_response: ir_lib.default_0)
+    exhaust_system exhaust1(es_params, audio_volume: 1.0, impulse_response: ir_lib.default_0)
+ 
+    cylinder_bank b0(bank_params, angle: 0 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire1
+        )
+		.add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2
+        )
+		.add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire3
+        )
+		.add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire4
+        )
+		.add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire5
+        )
+		.add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj5,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire6
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    bmw_camshaft_builder camshaft(
+	    lobe_profile: s54_lobe_profile_int(),
+		ex_lobe_profile: s54_lobe_profile_exh()
+	)
+
+    b0.set_cylinder_head (
+        bmw_s54_head(
+            intake_camshaft: camshaft.intake_cam_0,
+            exhaust_camshaft: camshaft.exhaust_cam_0
+        )
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 22 * units.deg)
+        .add_sample(2000 * units.rpm, 35 * units.deg)
+        .add_sample(3000 * units.rpm, 43 * units.deg)
+        .add_sample(4000 * units.rpm, 44 * units.deg)
+        .add_sample(5000 * units.rpm, 38 * units.deg)
+        .add_sample(6000 * units.rpm, 32 * units.deg)
+        .add_sample(7000 * units.rpm, 24 * units.deg)
+		.add_sample(8000 * units.rpm, 19 * units.deg)
+		.add_sample(9000 * units.rpm, 16 * units.deg)
+
+    engine.add_ignition_module(
+        bmw_distributor(
+            wires: wires,
+            timing_curve: timing_curve,
+            rev_limit: 8000 * units.rpm
+        ))
+}
