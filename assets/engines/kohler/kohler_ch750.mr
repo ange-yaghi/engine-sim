@@ -16,7 +16,7 @@ public node kohler_ch750 {
         name: "Kohler CH750",
         starter_torque: 50 * units.lb_ft,
         starter_speed: 500 * units.rpm,
-        redline: 3600 * units.rpm
+        redline: 12000 * units.rpm
     )
 
     wires wires()
@@ -148,6 +148,6 @@ public node kohler_ch750 {
         vtwin90_distributor(
             wires: wires,
             timing_curve: timing_curve,
-            rev_limit: 5000 * units.rpm
+            rev_limit: 12000 * units.rpm
         ))
 }
