@@ -6,12 +6,12 @@
 class Vehicle {
     public:
         struct Parameters {
-            double Mass;
-            double DragCoefficient;
-            double CrossSectionArea;
-            double DiffRatio;
-            double TireRadius;
-            double RollingResistance;
+            double mass;
+            double dragCoefficient;
+            double crossSectionArea;
+            double diffRatio;
+            double tireRadius;
+            double rollingResistance;
         };
 
     public:

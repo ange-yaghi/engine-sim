@@ -31,6 +31,19 @@ public node add_rod_journal {
     _add_rod_journal(rod_journal, this)
 }
 
+private node _add_slave_journal => __engine_sim__add_slave_journal {
+    input rod_journal [rod_journal];
+    input rod [connecting_rod];
+}
+
+public node add_slave_journal {
+    input rod_journal;
+    input this;
+    alias output out: this;
+
+    _add_slave_journal(rod_journal, this)
+}
+
 public node _add_crankshaft => __engine_sim__add_crankshaft {
     input crankshaft [crankshaft];
     input engine [engine];
@@ -65,6 +78,7 @@ private node _add_cylinder => __engine_sim__add_cylinder {
     input intake [intake];
     input cylinder_bank [cylinder_bank];
     input ignition_wire [ignition_wire];
+    input sound_attenuation [float];
 }
 
 public node add_cylinder {
@@ -74,6 +88,7 @@ public node add_cylinder {
     input connecting_rod;
     input rod_journal;
     input ignition_wire;
+    input sound_attenuation: 1.0;
     input this;
     alias output __out: this;
 
@@ -84,7 +99,8 @@ public node add_cylinder {
         exhaust_system: exhaust_system,
         intake: intake,
         ignition_wire: ignition_wire,
-        cylinder_bank: this
+        cylinder_bank: this,
+        sound_attenuation: sound_attenuation
     )
 }
 
@@ -195,4 +211,25 @@ public node harmonic_cam_lobe {
         steps: steps,
         function: generated_function
     )    
+}
+
+public node set_vehicle => __engine_sim__set_vehicle {
+    input vehicle [vehicle];
+}
+
+private node _add_gear => __engine_sim__add_gear {
+    input ratio [float];
+    input transmission [transmission];
+}
+
+public node add_gear {
+    input ratio;
+    input this;
+    alias output __out: this;
+
+    _add_gear(ratio, this)
+}
+
+public node set_transmission => __engine_sim__set_transmission {
+    input transmission [transmission];
 }

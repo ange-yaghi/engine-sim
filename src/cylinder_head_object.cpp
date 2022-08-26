@@ -18,6 +18,8 @@ void CylinderHeadObject::generateGeometry() {
 }
 
 void CylinderHeadObject::render(const ViewParameters *view) {
+    if (view->Sublayer != 0) return;
+
     resetShader();
 
     CylinderBank *bank = m_head->getCylinderBank();

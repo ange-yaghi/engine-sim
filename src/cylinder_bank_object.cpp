@@ -19,14 +19,19 @@ void CylinderBankObject::generateGeometry() {
 
     GeometryGenerator *gen = m_app->getGeometryGenerator();
 
+    const float displayDepth = 1.0f - static_cast<float>(m_bank->getDisplayDepth());
     const float lineWidth = (float)(m_bank->getBore() * 0.1);
     const float margin = lineWidth * 0.25f;
     const float dx = -(float)(m_bank->getDy() * (margin + m_bank->getBore() / 2 + lineWidth / 2));
     const float dy = (float)(m_bank->getDx() * (margin + m_bank->getBore() / 2 + lineWidth / 2));
-    const float top_x = (float)(m_bank->getX() + m_bank->getDx() * (m_bank->getDeckHeight() + chamberHeight));
-    const float top_y = (float)(m_bank->getY() + m_bank->getDy() * (m_bank->getDeckHeight() + chamberHeight));
-    const float bottom_x = (float)(m_bank->getX() + m_bank->getDx() * (0.4 * m_bank->getDeckHeight()));
-    const float bottom_y = (float)(m_bank->getY() + m_bank->getDy() * (0.4 * m_bank->getDeckHeight()));
+    const float top_x =
+        (float)(m_bank->getX() + m_bank->getDx() * (m_bank->getDeckHeight() + chamberHeight));
+    const float top_y =
+        (float)(m_bank->getY() + m_bank->getDy() * (m_bank->getDeckHeight() + chamberHeight));
+    const float bottom_x =
+        (float)(m_bank->getX() + m_bank->getDx() * (displayDepth * m_bank->getDeckHeight()));
+    const float bottom_y =
+        (float)(m_bank->getY() + m_bank->getDy() * (displayDepth * m_bank->getDeckHeight()));
 
     GeometryGenerator::Line2dParameters params;
     params.lineWidth = lineWidth;
@@ -61,6 +66,8 @@ void CylinderBankObject::generateGeometry() {
 }
 
 void CylinderBankObject::render(const ViewParameters *view) {
+    if (view->Sublayer != 0) return;
+
     resetShader();
 
     const ysVector col = ysMath::Add(
@@ -69,7 +76,7 @@ void CylinderBankObject::render(const ViewParameters *view) {
     );
 
     m_app->getShaders()->SetBaseColor(m_app->getPink());
-    m_app->drawGenerated(m_walls, 0x10);
+    m_app->drawGenerated(m_walls, 0x33);
 }
 
 void CylinderBankObject::process(float dt) {

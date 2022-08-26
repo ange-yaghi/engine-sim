@@ -12,6 +12,7 @@ class SimulationObject {
         struct ViewParameters {
             int Layer0;
             int Layer1;
+            int Sublayer;
         };
 
     public:

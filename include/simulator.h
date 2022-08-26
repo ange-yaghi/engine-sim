@@ -87,6 +87,7 @@ class Simulator {
 
     protected:
         void placeAndInitialize();
+        void placeCylinder(int i);
         void initializeSynthesizer();
         
     protected:

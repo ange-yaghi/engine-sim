@@ -23,7 +23,7 @@ namespace es_script {
         static const piranha::ChannelType ImpulseResponseChannel;
         static const piranha::ChannelType ValvetrainChannel;
         static const piranha::ChannelType VehicleChannel;
-
+        static const piranha::ChannelType TransmissionChannel;
     };
 
     template <typename Type>
@@ -56,7 +56,7 @@ namespace es_script {
     ASSIGN_CHANNEL_TYPE(ImpulseResponseNode, ImpulseResponseChannel);
     ASSIGN_CHANNEL_TYPE(ValvetrainNode, ValvetrainChannel);
     ASSIGN_CHANNEL_TYPE(VehicleNode, VehicleChannel);
-
+    ASSIGN_CHANNEL_TYPE(TransmissionNode, VehicleChannel);
 
 } /* namespace es_script */
 

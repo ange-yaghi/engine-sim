@@ -46,6 +46,9 @@ class CylinderHead : public Part {
         void setAllExhaustSystems(ExhaustSystem *system);
         void setExhaustSystem(int i, ExhaustSystem *system);
 
+        inline double getSoundAttenuation(int cylinderIndex) const { return m_soundAttenuation[cylinderIndex]; }
+        void setSoundAttenuation(int i, double soundAttenuation);
+
         inline Intake *getIntake(int cylinderIndex) const { return m_intakes[cylinderIndex]; }
         void setAllIntakes(Intake *intake);
         void setIntake(int i, Intake *intake);
@@ -65,6 +68,7 @@ class CylinderHead : public Part {
     protected:
         ExhaustSystem **m_exhaustSystems;
         Intake **m_intakes;
+        double *m_soundAttenuation;
 
         CylinderBank *m_bank;
         Valvetrain *m_valvetrain;

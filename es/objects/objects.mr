@@ -29,6 +29,8 @@ public node ignition_wire_channel => __engine_sim__ignition_wire_channel { /* vo
 public node fuel_channel => __engine_sim__fuel_channel { /* void */ }
 public node impulse_response_channel => __engine_sim__impulse_response_channel { /* void */ }
 public node valvetrain_channel => __engine_sim__valvetrain_channel { /* void */ }
+public node vehicle_channel => __engine_sim__vehicle_channel { /* void */ }
+public node transmission_channel => __engine_sim__transmission_channel { /* void */ }
 
 private node turbulence_to_flame_speed_ratio_default {
     alias output __out:
@@ -163,6 +165,7 @@ private node connecting_rod_parameter_defaults {
     input moment_of_inertia: 0.0;
     input center_of_mass: 0.0;
     input length: 0.0;
+    input slave_throw: 0.0;
 }
 
 public node connecting_rod_parameters {
@@ -171,6 +174,7 @@ public node connecting_rod_parameters {
     input moment_of_inertia: copy.moment_of_inertia;
     input center_of_mass: copy.center_of_mass;
     input length: copy.length;
+    input slave_throw: copy.slave_throw;
 }
 
 private node _connecting_rod => __engine_sim__connecting_rod {
@@ -178,6 +182,7 @@ private node _connecting_rod => __engine_sim__connecting_rod {
     input moment_of_inertia [float];
     input center_of_mass [float];
     input length [float];
+    input slave_throw [float];
     alias output __out [connecting_rod_channel];
 }
 
@@ -188,7 +193,8 @@ public node connecting_rod {
             mass: params.mass,
             moment_of_inertia: params.moment_of_inertia,
             center_of_mass: params.center_of_mass,
-            length: params.length
+            length: params.length,
+            slave_throw: params.slave_throw
         );
 }
 
@@ -231,6 +237,7 @@ public node cylinder_bank_parameters {
     input deck_height: 0.0;
     input position_x: 0.0;
     input position_y: 0.0;
+    input display_depth: 0.5;
 }
 
 private node _cylinder_bank => __engine_sim__cylinder_bank {
@@ -239,6 +246,7 @@ private node _cylinder_bank => __engine_sim__cylinder_bank {
     input deck_height [float]: 0.0;
     input position_x [float]: 0.0;
     input position_y [float]: 0.0;
+    input display_depth [float]: 0.6;
     alias output __out [cylinder_bank_channel];
 }
 
@@ -249,13 +257,15 @@ public node cylinder_bank {
     input deck_height: parameters.deck_height;
     input position_x: parameters.position_x;
     input position_y: parameters.position_y;
+    input display_depth: parameters.display_depth;
     alias output __out [_cylinder_bank]:
         _cylinder_bank(
             angle: angle,
             bore: bore,
             deck_height: deck_height,
             position_x: position_x,
-            position_y: position_y
+            position_y: position_y,
+            display_depth: display_depth
         );
 }
 
@@ -541,4 +551,20 @@ public node ignition_module => __engine_sim__ignition_module {
 
 public node ignition_wire => __engine_sim__ignition_wire {
     alias output __out [ignition_wire_channel];
+}
+
+public node vehicle => __engine_sim__vehicle {
+	input mass [float]: 1000 * units.kg;
+	input drag_coefficient [float]: 0.25;
+	input cross_sectional_area [float]: (72 * units.inch) * (72 * units.inch);
+	input diff_ratio [float]: 3.42;
+	input tire_radius [float]: 10 * units.inch;
+	input rolling_resistance [float]: 2000;
+    
+	alias output __out [vehicle_channel];
+}
+
+public node transmission => __engine_sim__transmission {
+    input max_clutch_torque [float]: 1000 * units.lb_ft;
+    alias output __out [transmission_channel];
 }

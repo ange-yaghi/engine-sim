@@ -21,6 +21,7 @@
 #include "mixer_cluster.h"
 #include "info_cluster.h"
 #include "application_settings.h"
+#include "transmission.h"
 
 #include "delta.h"
 #include "dtv.h"
@@ -117,6 +118,7 @@ class EngineSimApplication {
         std::vector<SimulationObject *> m_objects;
         Engine *m_iceEngine;
         Vehicle *m_vehicle;
+        Transmission *m_transmission;
         Simulator m_simulator;
         double m_dynoSpeed;
         double m_torque;

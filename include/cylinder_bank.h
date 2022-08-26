@@ -14,6 +14,7 @@ class CylinderBank {
             double Angle;
             double Bore;
             double DeckHeight;
+            double DisplayDepth;
             int CylinderCount;
             int Index;
         };
@@ -37,11 +38,13 @@ class CylinderBank {
         inline double getDy() const { return m_dy; }
         inline double getX() const { return m_x; }
         inline double getY() const { return m_y; }
+        inline double getDisplayDepth() const { return m_displayDepth; }
 
     protected:
         double m_angle;
         double m_bore;
         double m_deckHeight;
+        double m_displayDepth;
         int m_cylinderCount;
         int m_index;
 

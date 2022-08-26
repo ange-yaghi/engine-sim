@@ -47,6 +47,14 @@ void Crankshaft::getRodJournalPositionLocal(int i, double *x, double *y) {
     *y = std::sin(theta) * m_throw;
 }
 
+void Crankshaft::getRodJournalPositionGlobal(int i, double *x, double *y) {
+    double lx, ly;
+    getRodJournalPositionLocal(i, &lx, &ly);
+
+    *x = lx + m_body.p_x;
+    *y = ly + m_body.p_y;
+}
+
 void Crankshaft::resetAngle() {
     m_body.theta = std::fmod(m_body.theta, 4 * constants::pi);
 }

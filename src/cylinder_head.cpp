@@ -8,6 +8,7 @@
 CylinderHead::CylinderHead() {
     m_exhaustSystems = nullptr;
     m_intakes = nullptr;
+    m_soundAttenuation = nullptr;
 
     m_flipDisplay = false;
 
@@ -31,6 +32,7 @@ CylinderHead::~CylinderHead() {
 void CylinderHead::initialize(const Parameters &params) {
     m_exhaustSystems = new ExhaustSystem *[params.Bank->getCylinderCount()];
     m_intakes = new Intake *[params.Bank->getCylinderCount()];
+    m_soundAttenuation = new double[params.Bank->getCylinderCount()];
 
     m_bank = params.Bank;
     m_valvetrain = params.Valvetrain;
@@ -46,14 +48,20 @@ void CylinderHead::initialize(const Parameters &params) {
 
     memset(m_exhaustSystems, 0, sizeof(ExhaustSystem *) * params.Bank->getCylinderCount());
     memset(m_intakes, 0, sizeof(Intake *) * params.Bank->getCylinderCount());
+
+    for (int i = 0; i < params.Bank->getCylinderCount(); ++i) {
+        m_soundAttenuation[i] = 1.0;
+    }
 }
 
 void CylinderHead::destroy() {
     if (m_exhaustSystems != nullptr) delete[] m_exhaustSystems;
     if (m_intakes != nullptr) delete[] m_intakes;
+    if (m_soundAttenuation != nullptr) delete[] m_soundAttenuation;
 
     m_exhaustSystems = nullptr;
     m_intakes = nullptr;
+    m_soundAttenuation = nullptr;
 }
 
 double CylinderHead::intakeFlowRate(int cylinder) const {
@@ -82,6 +90,10 @@ void CylinderHead::setAllExhaustSystems(ExhaustSystem *system) {
 
 void CylinderHead::setExhaustSystem(int i, ExhaustSystem *system) {
     m_exhaustSystems[i] = system;
+}
+
+void CylinderHead::setSoundAttenuation(int i, double soundAttenuation) {
+    m_soundAttenuation[i] = soundAttenuation;
 }
 
 void CylinderHead::setAllIntakes(Intake *intake) {

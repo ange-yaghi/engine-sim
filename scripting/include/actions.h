@@ -14,6 +14,8 @@
 #include "cylinder_head_node.h"
 #include "cylinder_bank_node.h"
 #include "ignition_module_node.h"
+#include "transmission_node.h"
+#include "vehicle_node.h"
 
 namespace es_script {
 
@@ -60,6 +62,30 @@ namespace es_script {
 
     protected:
         CrankshaftNode *m_crankshaft = nullptr;
+        RodJournalNode *m_rodJournal = nullptr;
+    };
+
+    class AddSlaveJournalNode : public Node {
+    public:
+        AddSlaveJournalNode() { /* void */ }
+        virtual ~AddSlaveJournalNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("rod", &m_rod, InputTarget::Type::Object);
+            addInput("rod_journal", &m_rodJournal, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_rod->addRodJournal(m_rodJournal);
+        }
+
+    protected:
+        ConnectingRodNode *m_rod = nullptr;
         RodJournalNode *m_rodJournal = nullptr;
     };
 
@@ -125,6 +151,7 @@ namespace es_script {
             addInput("intake", &m_intake, InputTarget::Type::Object);
             addInput("cylinder_bank", &m_cylinderBank, InputTarget::Type::Object);
             addInput("ignition_wire", &m_ignitionWire, InputTarget::Type::Object);
+            addInput("sound_attenuation", &m_soundAttenuation);
 
             Node::registerInputs();
         }
@@ -138,7 +165,8 @@ namespace es_script {
                 m_rodJournal,
                 m_intake,
                 m_exhaustSystem,
-                m_ignitionWire
+                m_ignitionWire,
+                m_soundAttenuation
             );
         }
 
@@ -150,6 +178,7 @@ namespace es_script {
         ExhaustSystemNode *m_exhaustSystem = nullptr;
         IntakeNode *m_intake = nullptr;
         IgnitionWireNode *m_ignitionWire = nullptr;
+        double m_soundAttenuation = 1.0;
     };
 
     class AddSampleNode : public Node {
@@ -386,10 +415,10 @@ namespace es_script {
         EngineNode *m_engine = nullptr;
     };
 
-    class GenerateHarmonicCamLobe : public Node {
+    class GenerateHarmonicCamLobeNode : public Node {
     public:
-        GenerateHarmonicCamLobe() { /* void */ }
-        virtual ~GenerateHarmonicCamLobe() { /* void */ }
+        GenerateHarmonicCamLobeNode() { /* void */ }
+        virtual ~GenerateHarmonicCamLobeNode() { /* void */ }
 
     protected:
         virtual void registerInputs() {
@@ -436,6 +465,117 @@ namespace es_script {
         double m_lift = 300.0;
         int m_steps = 100;
         FunctionNode *m_function = nullptr;
+    };
+
+    class AddGearNode : public Node {
+    public:
+        AddGearNode() { /* void */ }
+        virtual ~AddGearNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("ratio", &m_ratio, InputTarget::Type::Object);
+            addInput("transmission", &m_transmission, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_transmission->addGear(m_ratio);
+        }
+
+    protected:
+        double m_ratio;
+        TransmissionNode *m_transmission = nullptr;
+    };
+
+    class SetTransmissionNode : public Node {
+    public:
+        SetTransmissionNode() { /* void */ }
+        virtual ~SetTransmissionNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() override {
+            addInput("transmission", &m_transmission, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            Transmission *transmission = new Transmission;
+            m_transmission->generate(transmission);
+            Compiler::output()->transmission = transmission;
+        }
+
+    protected:
+        TransmissionNode *m_transmission = nullptr;
+    };
+
+    class SetVehicleNode : public piranha::Node {
+    public:
+        SetVehicleNode() { /* void */ }
+        virtual ~SetVehicleNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            registerInput(&m_vehicle, "vehicle");
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            VehicleNode *vehicleNode = getObject<VehicleNode>(m_vehicle);
+
+            Vehicle *vehicle = new Vehicle;
+            vehicleNode->generate(vehicle);
+            Compiler::output()->vehicle = vehicle;
+        }
+
+    protected:
+        piranha::pNodeInput m_vehicle = nullptr;
+    };
+
+    class SetApplicationSettingsNode : public Node {
+    public:
+        SetApplicationSettingsNode() { /* void */ }
+        virtual ~SetApplicationSettingsNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("start_fullscreen", &m_settings.startFullscreen);
+            addInput("power_units", &m_settings.powerUnits);
+            addInput("torque_units", &m_settings.torqueUnits);
+            addInput("speed_units", &m_settings.speedUnits);
+            addInput("pressure_units", &m_settings.pressureUnits);
+            addInput("boost_units", &m_settings.boostUnits);
+
+            addInput("color_background", &m_settings.colorBackground);
+            addInput("color_foreground", &m_settings.colorForeground);
+            addInput("color_shadow", &m_settings.colorShadow);
+            addInput("color_highlight1", &m_settings.colorHighlight1);
+            addInput("color_highlight2", &m_settings.colorHighlight2);
+            addInput("color_pink", &m_settings.colorPink);
+            addInput("color_red", &m_settings.colorRed);
+            addInput("color_orange", &m_settings.colorOrange);
+            addInput("color_yellow", &m_settings.colorYellow);
+            addInput("color_blue", &m_settings.colorBlue);
+            addInput("color_green", &m_settings.colorGreen);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            Compiler::output()->applicationSettings = m_settings;
+        }
+
+    protected:
+        ApplicationSettings m_settings;
     };
 
 } /* namespace es_script */

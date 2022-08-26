@@ -165,8 +165,6 @@ void Synthesizer::writeInput(const double *data) {
     }
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
-        m_filters[i].JitterFilter.setJitterScale(m_audioParameters.InputSampleNoise);
-
         RingBuffer<float> &buffer = m_inputChannels[i].Data;
         const float lastInputSample = m_inputChannels[i].LastInputSample;
         const size_t baseIndex = buffer.writeIndex();
@@ -180,9 +178,7 @@ void Synthesizer::writeInput(const double *data) {
             const double f = s / distance;
             const double sample = lastInputSample * (1 - f) + data[i] * f;
 
-            const float jitteredSample =
-                m_filters[i].JitterFilter.fast_f(static_cast<float>(sample));
-            buffer.write(jitteredSample);
+            buffer.write(static_cast<float>(sample));
         }
 
         m_inputChannels[i].LastInputSample = data[i];
@@ -240,6 +236,7 @@ void Synthesizer::renderAudio() {
     for (int i = 0; i < m_inputChannelCount; ++i) {
         m_filters[i].AirNoiseLowPass.setCutoffFrequency(
             static_cast<float>(m_audioParameters.AirNoiseFrequencyCutoff));
+        m_filters[i].JitterFilter.setJitterScale(m_audioParameters.InputSampleNoise);
     }
 
     for (int i = 0; i < n; ++i) {
@@ -281,7 +278,10 @@ int16_t Synthesizer::renderAudio(int inputSample) {
     for (int i = 0; i < m_inputChannelCount; ++i) {
         const float r_0 = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
 
-        const float f_in = m_inputChannels[i].TransferBuffer[inputSample];
+        const float jitteredSample =
+            m_filters[i].JitterFilter.fast_f(m_inputChannels[i].TransferBuffer[inputSample]);
+
+        const float f_in = jitteredSample;
         const float f_dc = m_filters[i].InputDcFilter.fast_f(f_in);
         const float f = f_in - f_dc;
         const float f_p = m_filters[i].Derivative.f(f_in);

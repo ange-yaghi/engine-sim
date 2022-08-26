@@ -83,6 +83,10 @@ namespace es_script {
                 m_crankshafts[i]->generate(engine->getCrankshaft(i), &context);
             }
 
+            for (int i = 0; i < parameters.CylinderBanks; ++i) {
+                m_cylinderBanks[i]->indexSlaveJournals(&context);
+            }
+
             int cylinderIndex = 0;
             for (int i = 0; i < parameters.CylinderBanks; ++i) {
                 m_cylinderBanks[i]->generate(
@@ -93,6 +97,10 @@ namespace es_script {
                     engine,
                     &context);
                 cylinderIndex += m_cylinderBanks[i]->getCylinderCount();
+            }
+
+            for (int i = 0; i < parameters.CylinderBanks; ++i) {
+                m_cylinderBanks[i]->connectRodAssemblies(&context);
             }
 
             m_ignitionModule->generate(engine, &context);

@@ -20,7 +20,8 @@ class ConnectingRodObject : public SimulationObject {
 
     protected:
         GeometryGenerator::GeometryIndices
-            m_connectingRodBody;
+            m_connectingRodBody,
+            m_pins;
 };
 
 #endif /* ATG_ENGINE_SIM_CONNECTING_ROD_OBJECT_H */

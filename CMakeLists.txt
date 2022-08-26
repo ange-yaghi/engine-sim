@@ -166,9 +166,8 @@ if (PIRANHA_ENABLED)
         scripting/include/piranha.h
         scripting/include/piston_node.h
         scripting/include/rod_journal_node.h
-        scripting/include/set_application_settings_node.h
-		scripting/include/set_vehicle_node.h
         scripting/include/standard_valvetrain_node.h
+        scripting/include/transmission_node.h
         scripting/include/valvetrain_node.h
         scripting/include/vtec_valvetrain_node.h
 		scripting/include/vehicle_node.h
@@ -280,14 +279,12 @@ if (PIRANHA_ENABLED)
 endif (PIRANHA_ENABLED)
 
 if (DISCORD_ENABLED)
-add_library(discord-rpc STATIC IMPORTED)
-set_property(TARGET discord-rpc PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/dependencies/discord/lib/discord-rpc.lib)
-
+    add_library(discord-rpc STATIC IMPORTED)
+    set_property(TARGET discord-rpc PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/dependencies/discord/lib/discord-rpc.lib)
     target_link_libraries(engine-sim-app
     	discord
 	discord-rpc)
 endif (DISCORD_ENABLED)
-
 
 target_include_directories(engine-sim-app
     PUBLIC dependencies/submodules)

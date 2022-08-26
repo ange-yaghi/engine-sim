@@ -16,6 +16,8 @@ void CrankshaftObject::generateGeometry() {
 }
 
 void CrankshaftObject::render(const ViewParameters *view) {
+    if (view->Sublayer != 2) return;
+
     const int journalCount = m_crankshaft->getRodJournalCount();
 
     for (int i = 0; i < journalCount; ++i) {

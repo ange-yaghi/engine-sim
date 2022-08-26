@@ -1,18 +1,16 @@
 import "engine_sim.mr"
-import "engines/kohler/kohler_ch750.mr"
+import "../workspace/video-engines/main.mr"
 
-set_engine(
-    engine: kohler_ch750()
-)
+main()
 
 set_application_settings(
     start_fullscreen: false,
-	speed_units: "MPH",		//MPH or KMH
-	pressure_units: "INGH",	//INHG, MBAR, BAR, KPA or PSI
-	torque_units: "FTLBS",	//FTLBS or NM
-	power_units: "HP",		//HP or KW
+	speed_units: "MPH",		// MPH or KMH
+	pressure_units: "INGH",	// INHG, MBAR, BAR, KPA or PSI
+	torque_units: "FTLBS",	// FTLBS or NM
+	power_units: "HP",		// HP or KW
 	
-	//Default Color Settings
+	// Default Color Settings
     color_background: 0x0E1012,
     color_foreground: 0xFFFFFF,
     color_shadow: 0x0E1012,
@@ -24,16 +22,4 @@ set_application_settings(
     color_yellow: 0xFDBD2E,
     color_blue: 0x77CEE0,
     color_green: 0xBDD869
-
-)
-
-set_vehicle(
-	vehicle: vehicle(
-		mass:1000,
-		drag_coefficient: 0.25,
-		cross_sectional_area: 4,
-		diff_ratio: 3.42,
-		tire_radius: 10* 0.0254,
-		rolling_resistance: 2000
-	)
 )

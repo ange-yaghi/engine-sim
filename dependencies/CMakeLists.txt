@@ -1,2 +1,5 @@
 add_subdirectory(submodules)
-add_subdirectory(discord)
+
+if (DISCORD_ENABLED)
+    add_subdirectory(discord)
+endif ()

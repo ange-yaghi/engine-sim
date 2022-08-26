@@ -20,6 +20,8 @@ float LevelingFilter::f(float sample) {
         m_peak = std::abs(sample);
     }
 
+    if (m_peak == 0) return 0;
+
     const float raw_attenuation = p_target / m_peak;
 
     float attenuation = raw_attenuation;

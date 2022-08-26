@@ -26,7 +26,7 @@ void PistonObject::generateGeometry() {
 }
 
 void PistonObject::render(const ViewParameters *view) {
-    const int layer = m_piston->getRod()->getJournal();
+    const int layer = m_piston->getRod()->getLayer();
     if (layer > view->Layer1 || layer < view->Layer0) return;
 
     const ysVector col = tintByLayer(m_app->getWhite(), layer - view->Layer0);

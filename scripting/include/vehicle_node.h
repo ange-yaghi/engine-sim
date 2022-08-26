@@ -3,13 +3,7 @@
 
 #include "object_reference_node.h"
 
-#include "rod_journal_node.h"
-#include "vehicle_node.h"
-
 #include "engine_sim.h"
-
-#include <map>
-#include <vector>
 
 namespace es_script {
 
@@ -18,22 +12,19 @@ namespace es_script {
         VehicleNode() { /* void */ }
         virtual ~VehicleNode() { /* void */ }
 
-        void generate(Vehicle* vehicle) const
+        void generate(Vehicle *vehicle) const
         {
-            Vehicle::Parameters params = m_parameters;
-
-            vehicle->initialize(params);
+            vehicle->initialize(m_parameters);
         }
 
     protected:
         virtual void registerInputs() {
-            addInput("mass", &m_parameters.Mass);
-            addInput("drag_coefficient", &m_parameters.DragCoefficient);
-            addInput("cross_sectional_area", &m_parameters.CrossSectionArea);
-            addInput("diff_ratio", &m_parameters.DiffRatio);
-            addInput("tire_radius", &m_parameters.TireRadius);
-            addInput("rolling_resistance", &m_parameters.RollingResistance);
-
+            addInput("mass", &m_parameters.mass);
+            addInput("drag_coefficient", &m_parameters.dragCoefficient);
+            addInput("cross_sectional_area", &m_parameters.crossSectionArea);
+            addInput("diff_ratio", &m_parameters.diffRatio);
+            addInput("tire_radius", &m_parameters.tireRadius);
+            addInput("rolling_resistance", &m_parameters.rollingResistance);
 
             ObjectReferenceNode<VehicleNode>::registerInputs();
         }

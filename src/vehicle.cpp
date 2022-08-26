@@ -10,6 +10,7 @@ Vehicle::Vehicle() {
     m_diffRatio = 0;
     m_tireRadius = 0;
     m_travelledDistance = 0;
+    m_rollingResistance = 0;
 }
 
 Vehicle::~Vehicle() {
@@ -17,12 +18,12 @@ Vehicle::~Vehicle() {
 }
 
 void Vehicle::initialize(const Parameters &params) {
-    m_mass = params.Mass;
-    m_dragCoefficient = params.DragCoefficient;
-    m_crossSectionArea = params.CrossSectionArea;
-    m_diffRatio = params.DiffRatio;
-    m_tireRadius = params.TireRadius;
-    m_rollingResistance = params.RollingResistance;
+    m_mass = params.mass;
+    m_dragCoefficient = params.dragCoefficient;
+    m_crossSectionArea = params.crossSectionArea;
+    m_diffRatio = params.diffRatio;
+    m_tireRadius = params.tireRadius;
+    m_rollingResistance = params.rollingResistance;
 }
 
 void Vehicle::update(double dt) {

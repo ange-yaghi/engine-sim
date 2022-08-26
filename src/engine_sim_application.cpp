@@ -71,6 +71,9 @@ EngineSimApplication::EngineSimApplication() {
     m_iceEngine = nullptr;
     m_mainRenderTarget = nullptr;
 
+    m_vehicle = nullptr;
+    m_transmission = nullptr;
+
     m_oscillatorSampleOffset = 0;
     m_gameWindowHeight = 256;
     m_screenWidth = 256;
@@ -172,10 +175,12 @@ void EngineSimApplication::initialize() {
 
         m_iceEngine = output.engine;
         m_vehicle = output.vehicle;
+        m_transmission = output.transmission;
     }
     else {
         m_iceEngine = nullptr;
         m_vehicle = nullptr;
+        m_transmission = nullptr;
     }
 
     compiler.destroy();
@@ -185,27 +190,30 @@ void EngineSimApplication::initialize() {
     if (m_vehicle == nullptr)
     {
         Vehicle::Parameters vehParams;
-        vehParams.Mass = units::mass(1597, units::kg);
-        vehParams.DiffRatio = 3.42;
-        vehParams.TireRadius = units::distance(10, units::inch);
-        vehParams.DragCoefficient = 0.25;
-        vehParams.CrossSectionArea = units::distance(6.0, units::foot) * units::distance(6.0, units::foot);
-        vehParams.RollingResistance = 2000.0;
+        vehParams.mass = units::mass(1597, units::kg);
+        vehParams.diffRatio = 3.42;
+        vehParams.tireRadius = units::distance(10, units::inch);
+        vehParams.dragCoefficient = 0.25;
+        vehParams.crossSectionArea = units::distance(6.0, units::foot) * units::distance(6.0, units::foot);
+        vehParams.rollingResistance = 2000.0;
         m_vehicle = new Vehicle;
         m_vehicle->initialize(vehParams);
     }
-    const double gearRatios[] = { 2.97, 2.07, 1.43, 1.00, 0.84, 0.56 };
-    Transmission::Parameters tParams;
-    tParams.GearCount = 6;
-    tParams.GearRatios = gearRatios;
-    tParams.MaxClutchTorque = units::torque(1000.0, units::ft_lb);
-    Transmission *transmission = new Transmission;
-    transmission->initialize(tParams);
+
+    if (m_transmission == nullptr) {
+        const double gearRatios[] = { 2.97, 2.07, 1.43, 1.00, 0.84, 0.56 };
+        Transmission::Parameters tParams;
+        tParams.GearCount = 6;
+        tParams.GearRatios = gearRatios;
+        tParams.MaxClutchTorque = units::torque(1000.0, units::ft_lb);
+        m_transmission = new Transmission;
+        m_transmission->initialize(tParams);
+    }
 
     Simulator::Parameters simulatorParams;
     simulatorParams.Engine = m_iceEngine;
     simulatorParams.SystemType = Simulator::SystemType::NsvOptimized;
-    simulatorParams.Transmission = transmission;
+    simulatorParams.Transmission = m_transmission;
     simulatorParams.Vehicle = m_vehicle;
     simulatorParams.SimulationFrequency = 10000;
     simulatorParams.FluidSimulationSteps = 8;
@@ -383,6 +391,20 @@ void EngineSimApplication::process(float frame_dt) {
 void EngineSimApplication::render() {
     for (SimulationObject *object : m_objects) {
         object->generateGeometry();
+    }
+
+    m_viewParameters.Sublayer = 0;
+    for (SimulationObject *object : m_objects) {
+        object->render(&getViewParameters());
+    }
+
+    m_viewParameters.Sublayer = 1;
+    for (SimulationObject *object : m_objects) {
+        object->render(&getViewParameters());
+    }
+
+    m_viewParameters.Sublayer = 2;
+    for (SimulationObject *object : m_objects) {
         object->render(&getViewParameters());
     }
 
@@ -404,6 +426,7 @@ void EngineSimApplication::run() {
     double targetThrottle = 1.0;
 
     double clutchPressure = 1.0;
+    double targetClutchPressure = 1.0;
     int lastMouseWheel = 0;
 
     while (true) {
@@ -438,7 +461,6 @@ void EngineSimApplication::run() {
             }
         }
 
-        double newClutchPressure = 1.0;
         bool fineControlInUse = false;
         if (m_engine.IsKeyDown(ysKey::Code::Z)) {
             const double rate = fineControlMode
@@ -659,11 +681,21 @@ void EngineSimApplication::run() {
             }
         }
 
-        if (m_engine.IsKeyDown(ysKey::Code::Shift)) {
-            newClutchPressure = 0.0;
-
+        if (m_engine.IsKeyDown(ysKey::Code::T)) {
+            targetClutchPressure -= 0.2 * dt;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::U)) {
+            targetClutchPressure += 0.2 * dt;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::Shift)) {
+            targetClutchPressure = 0.0;
             m_infoCluster->setLogMessage("CLUTCH DEPRESSED");
         }
+        else if (!m_engine.IsKeyDown(ysKey::Code::Y)) {
+            targetClutchPressure = 1.0;
+        }
+
+        targetClutchPressure = clamp(targetClutchPressure);
 
         double clutchRC = 0.001;
         if (m_engine.IsKeyDown(ysKey::Code::Space)) {
@@ -676,7 +708,7 @@ void EngineSimApplication::run() {
         }
 
         const double clutch_s = dt / (dt + clutchRC);
-        clutchPressure = clutchPressure * (1 - clutch_s) + newClutchPressure * clutch_s;
+        clutchPressure = clutchPressure * (1 - clutch_s) + targetClutchPressure * clutch_s;
         m_simulator.getTransmission()->setClutchPressure(clutchPressure);
 
         if (m_engine.ProcessKeyDown(ysKey::Code::M) &&
