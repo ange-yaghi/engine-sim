@@ -99,3 +99,33 @@ public node units {
     // Speed
     output mph: mile / hour;
 }
+
+public node unit_names {
+    // Pressure
+    output inHg: "inHg";
+    output mbar: "mbar";
+    output millibar: mbar;
+    output bar: "bar";
+    output kPa: "kPa";
+    output psi: "psi";
+
+    // Speed
+    output mph: "mph";
+    output kph: "kph";
+    output american: mph;
+    output murican: american;
+    output british: mph;
+    output european: kph;
+    output euro: european;
+
+    // Torque
+    output lb_ft: "lb-ft";
+    output ft_lb: lb_ft;
+    output Nm: "Nm";
+
+    // Power
+    output hp: "hp";
+    output kW: "kW";
+    output horsepower: hp;
+    output kilowatt: kW;
+}

@@ -4,11 +4,11 @@
 
 struct ApplicationSettings {
     bool startFullscreen = false;
-    std::string powerUnits = "HP";
-    std::string torqueUnits = "FTLBS";
-    std::string speedUnits = "MPH";
-    std::string pressureUnits = "INHG";
-    std::string boostUnits = "PSI";
+    std::string powerUnits = "hp";
+    std::string torqueUnits = "lb-ft";
+    std::string speedUnits = "mph";
+    std::string pressureUnits = "inHg";
+    std::string boostUnits = "psi";
 
     int colorBackground = 0x0E1012;
     int colorForeground = 0xFFFFFF;

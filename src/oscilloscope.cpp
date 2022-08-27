@@ -135,7 +135,7 @@ void Oscilloscope::render(const Bounds &bounds) {
         m_app->getGeometryGenerator()->generateLine2d(params);
         m_app->getGeometryGenerator()->endShape(&zeroLine);
 
-        m_app->getShaders()->SetBaseColor(mix(m_app->getWhite(), m_app->getBackgroundColor(), 0.99f));
+        m_app->getShaders()->SetBaseColor(mix(m_app->getForegroundColor(), m_app->getBackgroundColor(), 0.99f));
         m_app->drawGenerated(zeroLine, 0x11, m_app->getShaders()->GetUiFlags());
     }
 

@@ -28,7 +28,7 @@ void ThrottleDisplay::update(float dt) {
 void ThrottleDisplay::render() {
     UiElement::render();
 
-    drawFrame(m_bounds, 1.0, ysMath::Constants::One, m_app->getBackgroundColor());
+    drawFrame(m_bounds, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
 
     const Bounds bounds = m_bounds.inset(10.0f);
     const Bounds title = bounds.verticalSplit(1.0f, 0.9f);
@@ -125,13 +125,13 @@ void ThrottleDisplay::renderThrottle(const Bounds &bounds) {
     gen->generateCircle2d(circleParams);
     gen->endShape(&pivotShadow);
 
-    m_app->getShaders()->SetBaseColor(m_app->getWhite());
+    m_app->getShaders()->SetBaseColor(m_app->getForegroundColor());
     m_app->drawGenerated(main, 0x11, m_app->getShaders()->GetUiFlags());
 
     m_app->getShaders()->SetBaseColor(m_app->getBackgroundColor());
     m_app->drawGenerated(pivotShadow, 0x11, m_app->getShaders()->GetUiFlags());
 
-    m_app->getShaders()->SetBaseColor(m_app->getWhite());
+    m_app->getShaders()->SetBaseColor(m_app->getForegroundColor());
     m_app->drawGenerated(pivot, 0x11, m_app->getShaders()->GetUiFlags());
 }
 
@@ -153,7 +153,7 @@ void ThrottleDisplay::renderSpeedControl(const Bounds &bounds) {
     drawFrame(
         bar,
         1.0f,
-        mix(m_app->getBackgroundColor(), m_app->getWhite(), 0.001f),
+        mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.001f),
         mix(m_app->getBackgroundColor(), m_app->getRed(), 0.01f)
     );
 

@@ -7,6 +7,7 @@ EngineView::EngineView() {
     m_checkMouse = true;
     m_lastScroll = 0;
     m_zoom = 1.0f;
+    m_drawFrame = true;
 }
 
 EngineView::~EngineView() {
@@ -19,7 +20,7 @@ void EngineView::update(float dt) {
 
 void EngineView::render() {
     if (m_drawFrame) {
-        drawFrame(m_bounds, 1.0f, ysMath::Constants::One, m_app->getBackgroundColor(), false);
+        drawFrame(m_bounds, 1.0f, m_app->getForegroundColor(), m_app->getBackgroundColor(), false);
     }
 }
 

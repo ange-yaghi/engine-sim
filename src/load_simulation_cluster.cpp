@@ -133,15 +133,21 @@ void LoadSimulationCluster::update(float dt) {
     if (m_app->getEngine()->ProcessKeyDown(ysKey::Code::I)) {
         std::stringstream ss;
         ss << std::setprecision(0) << std::fixed;
-        if (m_powerUnits == "HP")
-            ss << m_peakHorsepower << "HP @ " << m_peakHorsepowerRpm << "rpm";
-        else
-            ss << m_peakHorsepower << "KW @ " << m_peakHorsepowerRpm << "rpm";
+        if (m_powerUnits == "hp") {
+            ss << m_peakHorsepower << "hp @ " << m_peakHorsepowerRpm << "rpm";
+        }
+        else {
+            ss << m_peakHorsepower << "kW @ " << m_peakHorsepowerRpm << "rpm";
+        }
+
         ss << " | ";
-        if (m_torqueUnits == "FTLBS")
+
+        if (m_torqueUnits == "lb-ft") {
             ss << m_peakTorque << "lb-ft @ " << m_peakTorqueRpm << "rpm";
-        else
-            ss << m_peakTorque << "Nm. @ " << m_peakTorqueRpm << "rpm";
+        }
+        else {
+            ss << m_peakTorque << "Nm @ " << m_peakTorqueRpm << "rpm";
+        }
         m_app->getInfoCluster()->setLogMessage(ss.str());
     }
 
@@ -195,7 +201,7 @@ void LoadSimulationCluster::drawCurrentGear(const Bounds &bounds) {
     const Bounds title = insetBounds.verticalSplit(0.9f, 1.0f);
     const Bounds body = insetBounds.verticalSplit(0.0f, 0.9f);
 
-    drawFrame(bounds, 1.0f, m_app->getWhite(), m_app->getBackgroundColor());
+    drawFrame(bounds, 1.0f, m_app->getForegroundColor(), m_app->getBackgroundColor());
     drawCenteredText("Gear", title.inset(10.0f), 24.0f);
 
     const int gear = m_simulator->getTransmission()->getGear();
@@ -217,7 +223,7 @@ void LoadSimulationCluster::drawSystemStatus(const Bounds &bounds) {
     const Bounds left = bounds.horizontalSplit(0.0f, 0.6f);
     const Bounds right = bounds.horizontalSplit(0.6f, 1.0f);
 
-    drawFrame(bounds, 1.0f, m_app->getWhite(), m_app->getBackgroundColor());
+    drawFrame(bounds, 1.0f, m_app->getForegroundColor(), m_app->getBackgroundColor());
 
     Grid grid;
     grid.v_cells = 4;
@@ -252,7 +258,7 @@ void LoadSimulationCluster::drawSystemStatus(const Bounds &bounds) {
         drawFrame(
             squareBounds,
             1.0f,
-            mix(m_app->getBackgroundColor(), m_app->getWhite(), 0.001f),
+            mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.001f),
             mix(m_app->getBackgroundColor(), m_app->getRed(), m_systemStatusLights[i])
         );
     }
@@ -262,11 +268,17 @@ void LoadSimulationCluster::updateHpAndTorque(float dt) {
     constexpr double RC = 1.0;
     const double alpha = dt / (dt + RC);
 
-    double torque = (m_torqueUnits == "NM") ? (units::convert(m_simulator->getFilteredDynoTorque(), units::Nm)) : (units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb));
-    const double hp = getPower(torque);
+    const double torque = m_simulator->getFilteredDynoTorque();
+    const double power = torque * m_simulator->getEngine()->getSpeed();
+    const double torqueWithUnits = (m_torqueUnits == "Nm") 
+        ? (units::convert(torque, units::Nm))
+        : (units::convert(torque, units::ft_lb));
+    const double powerWithUnits = (m_powerUnits == "kW")
+        ? (units::convert(power, units::kW))
+        : (units::convert(power, units::hp));
 
-    m_filteredTorque = (1 - alpha) * m_filteredTorque + alpha * torque;
-    m_filteredHorsepower = (1 - alpha) * m_filteredHorsepower + alpha * hp;
+    m_filteredTorque = (1 - alpha) * m_filteredTorque + alpha * torqueWithUnits;
+    m_filteredHorsepower = (1 - alpha) * m_filteredHorsepower + alpha * powerWithUnits;
 
     if (m_filteredTorque > m_peakTorque) {
         m_peakTorque = m_filteredTorque;
@@ -279,39 +291,16 @@ void LoadSimulationCluster::updateHpAndTorque(float dt) {
     }
 }
 
-
-double LoadSimulationCluster::getPower(double torque)
-{
-    double power = 0;
-    if (m_powerUnits == "HP")
-    {
-        if(m_torqueUnits == "NM")
-            power = torque * m_simulator->getEngine()->getRpm() / 7127.0;
-        else
-            power = torque * m_simulator->getEngine()->getRpm() / 5252.0;
-    }
-    else if (m_powerUnits == "KW")
-    {
-        if (m_torqueUnits == "NM")
-            power = torque * m_simulator->getEngine()->getRpm() / 9549.0;
-        else
-            power = torque * m_simulator->getEngine()->getRpm() / 7127.0;
-    }
-    return power;
-}
 void LoadSimulationCluster::setUnits(){
-    //Set Torque First
-    if (m_torqueUnits == "FTLBS")
-    {
-        m_torqueGauge->m_unit = "LB-FT";
+    if (m_torqueUnits == "lb-ft") {
+        m_torqueGauge->m_unit = "lb-ft";
         m_torqueGauge->m_precision = 0;
         m_torqueGauge->m_gauge->m_min = 0;
         m_torqueGauge->m_gauge->m_max = 1000;
         m_torqueGauge->m_gauge->m_minorStep = 50;
         m_torqueGauge->m_gauge->m_majorStep = 100;
     }
-    else if (m_torqueUnits == "NM")
-    {
+    else if (m_torqueUnits == "Nm") {
         m_torqueGauge->m_unit = "Nm";
         m_torqueGauge->m_precision = 1;
         m_torqueGauge->m_gauge->m_min = 0;
@@ -320,10 +309,8 @@ void LoadSimulationCluster::setUnits(){
         m_torqueGauge->m_gauge->m_majorStep = 100;
     }
 
-    //Then Power
-    if (m_powerUnits == "HP")
-    {
-        m_hpGauge->m_unit = "HP";
+    if (m_powerUnits == "hp") {
+        m_hpGauge->m_unit = "hp";
         m_hpGauge->m_precision = 0;
 
         m_hpGauge->m_gauge->m_min = 0;
@@ -331,9 +318,8 @@ void LoadSimulationCluster::setUnits(){
         m_hpGauge->m_gauge->m_minorStep = 50;
         m_hpGauge->m_gauge->m_majorStep = 100;
     }
-    else if (m_powerUnits == "KW")
-    {
-        m_hpGauge->m_unit = "Kw";
+    else if (m_powerUnits == "kW") {
+        m_hpGauge->m_unit = "kW";
         m_hpGauge->m_precision = 1;
         m_hpGauge->m_gauge->m_min = 0;
         m_hpGauge->m_gauge->m_max = 1000;

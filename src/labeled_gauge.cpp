@@ -33,7 +33,7 @@ void LabeledGauge::update(float dt) {
 }
 
 void LabeledGauge::render() {
-    drawFrame(m_bounds, 1.0, ysMath::Constants::One, m_app->getBackgroundColor());
+    drawFrame(m_bounds, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
 
     const Bounds bounds = m_bounds.inset(m_margin);
     const Bounds title = bounds.verticalSplit(1.0f, 0.9f);

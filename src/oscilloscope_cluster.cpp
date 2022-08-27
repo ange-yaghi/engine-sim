@@ -7,7 +7,7 @@
 OscilloscopeCluster::OscilloscopeCluster() {
     m_simulator = nullptr;
     m_torqueScope = nullptr;
-    m_hpScope = nullptr;
+    m_powerScope = nullptr;
     m_totalExhaustFlowScope = nullptr;
     m_intakeFlowScope = nullptr;
     m_exhaustFlowScope = nullptr;
@@ -24,7 +24,7 @@ OscilloscopeCluster::OscilloscopeCluster() {
     }
 
     m_torque = 0;
-    m_hp = 0;
+    m_power = 0;
 
     m_updatePeriod = 0.25f;
     m_updateTimer = 0.0f;
@@ -38,7 +38,7 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     UiElement::initialize(app);
 
     m_torqueScope = addElement<Oscilloscope>(this);
-    m_hpScope = addElement<Oscilloscope>(this);
+    m_powerScope = addElement<Oscilloscope>(this);
     m_exhaustFlowScope = addElement<Oscilloscope>(this);
     m_totalExhaustFlowScope = addElement<Oscilloscope>(this);
     m_intakeFlowScope = addElement<Oscilloscope>(this);
@@ -60,15 +60,15 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_torqueScope->m_dynamicallyResizeX = true;
     m_torqueScope->i_color = m_app->getOrange();
 
-    // Horsepower
-    m_hpScope->setBufferSize(100);
-    m_hpScope->m_xMin = 0.0f;
-    m_hpScope->m_yMin = 0.0f;
-    m_hpScope->m_yMax = 0.0f;
-    m_hpScope->m_lineWidth = 2.0f;
-    m_hpScope->m_drawReverse = false;
-    m_hpScope->m_dynamicallyResizeX = true;
-    m_hpScope->i_color = m_app->getPink();
+    // Power
+    m_powerScope->setBufferSize(100);
+    m_powerScope->m_xMin = 0.0f;
+    m_powerScope->m_yMin = 0.0f;
+    m_powerScope->m_yMax = 0.0f;
+    m_powerScope->m_lineWidth = 2.0f;
+    m_powerScope->m_drawReverse = false;
+    m_powerScope->m_dynamicallyResizeX = true;
+    m_powerScope->i_color = m_app->getPink();
 
     // Total exhaust flow
     m_totalExhaustFlowScope->setBufferSize(1024);
@@ -108,7 +108,7 @@ void OscilloscopeCluster::initialize(EngineSimApplication *app) {
     m_cylinderMoleculesScope->m_yMax = 0.2;
     m_cylinderMoleculesScope->m_lineWidth = 4.0f;
     m_cylinderMoleculesScope->m_drawReverse = false;
-    m_cylinderMoleculesScope->i_color = m_app->getWhite();
+    m_cylinderMoleculesScope->i_color = m_app->getForegroundColor();
 
     // Audio waveform scope
     m_audioWaveformScope->setBufferSize(44100 / 50);
@@ -187,9 +187,9 @@ void OscilloscopeCluster::signal(UiElement *element, Event event) {
             m_currentFocusScopes[0] = m_audioWaveformScope;
             m_currentFocusScopes[1] = nullptr;
         }
-        else if (element == m_hpScope || element == m_torqueScope) {
+        else if (element == m_powerScope || element == m_torqueScope) {
             m_currentFocusScopes[0] = m_torqueScope;
-            m_currentFocusScopes[1] = m_hpScope;
+            m_currentFocusScopes[1] = m_powerScope;
             m_currentFocusScopes[2] = nullptr;
         }
         else if (element == m_totalExhaustFlowScope) {
@@ -232,19 +232,22 @@ void OscilloscopeCluster::signal(UiElement *element, Event event) {
 void OscilloscopeCluster::update(float dt) {
     Engine *engine = m_simulator->getEngine();
 
-    const double torque =
-        (m_torqueUnits == "NM") ? (units::convert(m_simulator->getFilteredDynoTorque(), units::Nm)) : (units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb));
+    const double torque = (m_torqueUnits == "Nm")
+        ? (units::convert(m_simulator->getFilteredDynoTorque(), units::Nm))
+        : (units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb));
 
-    const double hp = getPower(torque);
+    const double power = (m_powerUnits == "kW")
+        ? (units::convert(m_simulator->getDynoPower(), units::kW))
+        : (units::convert(m_simulator->getDynoPower(), units::hp));
 
     m_torque = m_torque * 0.95 + 0.05 * torque;
-    m_hp = m_hp * 0.95 + 0.05 * hp;
+    m_power = m_power * 0.95 + 0.05 * power;
 
     if (m_updateTimer <= 0 && m_simulator->m_dyno.m_enabled) {
         m_updateTimer = m_updatePeriod;
         
         m_torqueScope->addDataPoint(engine->getRpm(), m_torque);
-        m_hpScope->addDataPoint(engine->getRpm(), m_hp);
+        m_powerScope->addDataPoint(engine->getRpm(), m_power);
     }
 
     m_sparkAdvanceScope->addDataPoint(
@@ -263,7 +266,7 @@ void OscilloscopeCluster::render() {
 
     const Bounds &hpTorqueBounds = grid.get(m_bounds, 0, 3);
     renderScope(m_torqueScope, hpTorqueBounds, "Torque/Power");
-    renderScope(m_hpScope, hpTorqueBounds, "", true);
+    renderScope(m_powerScope, hpTorqueBounds, "", true);
 
     const Bounds &valveLiftBounds = grid.get(m_bounds, 2, 2);
     renderScope(m_intakeValveLiftScope, valveLiftBounds, "Valve Lift");
@@ -278,7 +281,6 @@ void OscilloscopeCluster::render() {
     renderScope(m_audioWaveformScope, audioWaveformBounds, "Waveform");
 
     const Bounds &cylinderPressureBounds = grid.get(m_bounds, 1, 3);
-    //renderScope(m_cylinderPressureScope, cylinderPressureBounds, "Cylinder Pressure");
     renderScope(m_pvScope, cylinderPressureBounds, "pressure-volume");
 
     const Bounds &totalExhaustPressureBounds = grid.get(m_bounds, 1, 2);
@@ -290,8 +292,8 @@ void OscilloscopeCluster::render() {
     Bounds focusBody = focusBounds;
     focusBody.m1 = focusBody.m1 - Point(0.0f, 24.0f + 15.0f);
 
-    drawFrame(focusTitle, 1.0, ysMath::Constants::One, m_app->getBackgroundColor());
-    drawFrame(focusBody, 1.0, ysMath::Constants::One, m_app->getBackgroundColor());
+    drawFrame(focusTitle, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
+    drawFrame(focusBody, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
 
     for (int i = 0; i < MaxLayeredScopes; ++i) {
         if (m_currentFocusScopes[i] != nullptr) {
@@ -346,17 +348,17 @@ void OscilloscopeCluster::sample() {
     m_exhaustFlowScope->m_yMax = m_intakeFlowScope->m_yMax =
         std::fmax(m_intakeFlowScope->m_yMax, m_exhaustFlowScope->m_yMax);
 
-    m_torqueScope->m_yMin = m_hpScope->m_yMin =
-        std::fmin(m_torqueScope->m_yMin, m_hpScope->m_yMin);
-    m_torqueScope->m_yMax = m_hpScope->m_yMax =
-        std::fmax(m_torqueScope->m_yMax, m_hpScope->m_yMax);
+    m_torqueScope->m_yMin = m_powerScope->m_yMin =
+        std::fmin(m_torqueScope->m_yMin, m_powerScope->m_yMin);
+    m_torqueScope->m_yMax = m_powerScope->m_yMax =
+        std::fmax(m_torqueScope->m_yMax, m_powerScope->m_yMax);
 }
 
 void OscilloscopeCluster::setSimulator(Simulator *simulator) {
     m_simulator = simulator;
     Engine *engine = m_simulator->getEngine();
 
-    m_hpScope->m_xMax = m_torqueScope->m_xMax =
+    m_powerScope->m_xMax = m_torqueScope->m_xMax =
         units::toRpm(engine->getRedline());
 }
 
@@ -367,7 +369,7 @@ void OscilloscopeCluster::renderScope(
     bool overlay)
 {
     if (!overlay) {
-        drawFrame(bounds, 1.0, ysMath::Constants::One, m_app->getBackgroundColor());
+        drawFrame(bounds, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
     }
 
     if (osc == m_currentFocusScopes[0]) {
@@ -385,24 +387,4 @@ void OscilloscopeCluster::renderScope(
     }
 
     osc->m_bounds = bounds;
-}
-
-double OscilloscopeCluster::getPower(double torque)
-{
-    double power = 0;
-    if (m_powerUnits == "HP")
-    {
-        if (m_torqueUnits == "NM")
-            power = torque * m_simulator->getEngine()->getRpm() / 7127.0;
-        else
-            power = torque * m_simulator->getEngine()->getRpm() / 5252.0;
-    }
-    else if (m_powerUnits == "KW")
-    {
-        if (m_torqueUnits == "NM")
-            power = torque * m_simulator->getEngine()->getRpm() / 9549.0;
-        else
-            power = torque * m_simulator->getEngine()->getRpm() / 7127.0;
-    }
-    return power;
 }

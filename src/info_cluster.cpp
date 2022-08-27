@@ -32,16 +32,16 @@ void InfoCluster::render() {
     grid.v_cells = 4;
 
     const Bounds logoBounds = grid.get(m_bounds, 0, 0, 1, 2);
-    drawFrame(logoBounds, 1.0f, m_app->getWhite(), m_app->getBackgroundColor());
+    drawFrame(logoBounds, 1.0f, m_app->getForegroundColor(), m_app->getBackgroundColor());
 
     drawModel(
         m_app->getAssetManager()->GetModelAsset("Logo"),
-        m_app->getWhite(),
+        m_app->getForegroundColor(),
         logoBounds.getPosition(Bounds::center),
         Point(logoBounds.height(), logoBounds.height()) * 0.75f);
 
     const Bounds titleBounds = grid.get(m_bounds, 1, 0, 5, 2);
-    drawFrame(titleBounds, 1.0f, m_app->getWhite(), m_app->getBackgroundColor());
+    drawFrame(titleBounds, 1.0f, m_app->getForegroundColor(), m_app->getBackgroundColor());
 
     Grid titleSplit;
     titleSplit.h_cells = 1;
@@ -66,7 +66,7 @@ void InfoCluster::render() {
         Bounds::tl);
 
     const Bounds engineInfoBounds = grid.get(m_bounds, 0, 2, 6, 1);
-    drawFrame(engineInfoBounds, 1.0f, m_app->getWhite(), m_app->getBackgroundColor());
+    drawFrame(engineInfoBounds, 1.0f, m_app->getForegroundColor(), m_app->getBackgroundColor());
 
     drawAlignedText(
         m_engine->getName(),
@@ -95,7 +95,7 @@ void InfoCluster::render() {
         Bounds::rm);
 
     const Bounds infoMessagesBounds = grid.get(m_bounds, 0, 3, 6, 1);
-    drawFrame(infoMessagesBounds, 1.0f, m_app->getWhite(), m_app->getBackgroundColor());
+    drawFrame(infoMessagesBounds, 1.0f, m_app->getForegroundColor(), m_app->getBackgroundColor());
 
     drawAlignedText(
         m_logMessage,

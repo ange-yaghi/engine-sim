@@ -2,6 +2,7 @@
 
 #include "../include/engine_sim_application.h"
 #include "../include/units.h"
+#include "../include/ui_utilities.h"
 
 ConnectingRodObject::ConnectingRodObject() {
     m_connectingRod = nullptr;
@@ -61,14 +62,18 @@ void ConnectingRodObject::render(const ViewParameters *view) {
     const int layer = m_connectingRod->getLayer();
     if (layer > view->Layer1 || layer < view->Layer0) return;
 
+    const ysVector grey0 = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.9333f);
+    const ysVector grey1 = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.8667f);
+    const ysVector grey2 = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.1333f);
+
     ysVector color =
         (m_connectingRod->getPiston()->getCylinderBank()->getIndex() % 2 == 0)
-        ? ysColor::srgbiToLinear(0xEEEEEE)
-        : ysColor::srgbiToLinear(0xDDDDDD);
+        ? grey0
+        : grey1;
     color = tintByLayer(color, layer - view->Layer0);
 
     const ysVector shadow =
-        tintByLayer(ysColor::srgbiToLinear(0x222222), layer - view->Layer0);
+        tintByLayer(grey2, layer - view->Layer0);
 
     resetShader();
     setTransform(

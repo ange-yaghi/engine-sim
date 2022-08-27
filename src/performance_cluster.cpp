@@ -82,7 +82,7 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_fpsGauge->m_gauge->setBand(
         { m_app->getRed(), 0, 30, 3.0f, 6.0f, -shortenAngle, shortenAngle }, 3);
     m_fpsGauge->m_gauge->setBand(
-        { m_app->getWhite(), 60, 120, 3.0f, 0.0f, -shortenAngle, shortenAngle }, 4);
+        { m_app->getForegroundColor(), 60, 120, 3.0f, 0.0f, -shortenAngle, shortenAngle }, 4);
 
     m_simSpeedGauge = addElement<LabeledGauge>();
     m_simSpeedGauge->m_title = "1 / SPEED";
@@ -122,7 +122,7 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_audioLagGauge->m_gauge->m_needleKd = 20.0f;
     m_audioLagGauge->m_gauge->setBandCount(3);
     m_audioLagGauge->m_gauge->setBand(
-        { m_app->getWhite(), 90, 110, 3.0f, 6.0f, shortenAngle, shortenAngle }, 0);
+        { m_app->getForegroundColor(), 90, 110, 3.0f, 6.0f, shortenAngle, shortenAngle }, 0);
     m_audioLagGauge->m_gauge->setBand(
         { m_app->getRed(), 50, 90, 3.0f, 6.0f, -shortenAngle, shortenAngle }, 1);
     m_audioLagGauge->m_gauge->setBand(
@@ -147,7 +147,7 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_inputSamplesGauge->m_gauge->m_needleKd = 20.0f;
     m_inputSamplesGauge->m_gauge->setBandCount(3);
     m_inputSamplesGauge->m_gauge->setBand(
-        { m_app->getWhite(), 90, 110, 3.0f, 6.0f, shortenAngle, shortenAngle }, 0);
+        { m_app->getForegroundColor(), 90, 110, 3.0f, 6.0f, shortenAngle, shortenAngle }, 0);
     m_inputSamplesGauge->m_gauge->setBand(
         { m_app->getRed(), 0, 10, 3.0f, 6.0f, -shortenAngle, shortenAngle }, 1);
     m_inputSamplesGauge->m_gauge->setBand(
@@ -171,7 +171,7 @@ void PerformanceCluster::initialize(EngineSimApplication *app) {
     m_simulationFrequencyGauge->m_gauge->m_needleKd = 20.0f;
     m_simulationFrequencyGauge->m_gauge->setBandCount(1);
     m_simulationFrequencyGauge->m_gauge->setBand(
-        { m_app->getWhite(), 11025, 44100, 3.0f, 6.0f, shortenAngle, shortenAngle }, 0);
+        { m_app->getForegroundColor(), 11025, 44100, 3.0f, 6.0f, shortenAngle, shortenAngle }, 0);
 }
 
 void PerformanceCluster::destroy() {

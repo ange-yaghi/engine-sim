@@ -28,7 +28,7 @@ void CylinderPressureGauge::update(float dt) {
 }
 
 void CylinderPressureGauge::render() {
-    drawFrame(m_bounds, 1.0, ysMath::Constants::One, m_app->getBackgroundColor());
+    drawFrame(m_bounds, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
 
     const Bounds title = m_bounds.verticalSplit(1.0f, 0.9f);
     const Bounds body = m_bounds.verticalSplit(0.0f, 0.9f);

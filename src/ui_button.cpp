@@ -20,12 +20,12 @@ void UiButton::update(float dt) {
 void UiButton::render() {
     ysVector color = m_app->getBackgroundColor();
     if (isMouseHeld()) {
-        color = mix(m_app->getBackgroundColor(), m_app->getWhite(), 0.02f);
+        color = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.02f);
     }
     else if (isMouseOver()) {
-        color = mix(m_app->getBackgroundColor(), m_app->getWhite(), 0.01f);
+        color = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.01f);
     }
 
-    drawFrame(m_bounds, 1.0, ysMath::Constants::One, color);
+    drawFrame(m_bounds, 1.0, m_app->getForegroundColor(), color);
     drawCenteredText(m_text, m_bounds, m_fontSize);
 }

@@ -36,6 +36,11 @@ namespace units {
     extern constexpr double Nm = N * m;
     extern constexpr double ft_lb = foot * lbf;
 
+    // Power
+    extern constexpr double W = Nm / sec;
+    extern constexpr double kW = W * 1000.0;
+    extern constexpr double hp = 745.699872 * W;
+
     // Volume
     extern constexpr double m3 = 1.0;
     extern constexpr double cc = cm * cm * cm;
@@ -65,8 +70,8 @@ namespace units {
     extern constexpr double MPa = Pa * 1000000.0;
     extern constexpr double atm = 101.325 * kPa;
 
-    extern constexpr double mBar = Pa * 100.0;
-    extern constexpr double Bar = mBar * 1000.0;
+    extern constexpr double mbar = Pa * 100.0;
+    extern constexpr double bar = mbar * 1000.0;
 
     extern constexpr double psi = lbf / (inch * inch);
     extern constexpr double psig = psi;

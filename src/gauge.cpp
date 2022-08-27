@@ -157,7 +157,7 @@ void Gauge::render() {
         m_app->drawGenerated(bandIndices, 0x11, m_app->getShaders()->GetUiFlags());
     }
 
-    m_app->getShaders()->SetBaseColor(ysMath::Constants::One);
+    m_app->getShaders()->SetBaseColor(m_app->getForegroundColor());
     m_app->drawGenerated(ticks, 0x11, m_app->getShaders()->GetUiFlags());
 
     m_app->getShaders()->SetBaseColor(m_app->getHightlight1Color());

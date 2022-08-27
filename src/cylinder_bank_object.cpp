@@ -71,7 +71,7 @@ void CylinderBankObject::render(const ViewParameters *view) {
     resetShader();
 
     const ysVector col = ysMath::Add(
-        ysMath::Mul(ysMath::Constants::One, ysMath::LoadScalar(0.01f)),
+        ysMath::Mul(m_app->getForegroundColor(), ysMath::LoadScalar(0.01f)),
         ysMath::Mul(m_app->getBackgroundColor(), ysMath::LoadScalar(0.99f))
     );
 

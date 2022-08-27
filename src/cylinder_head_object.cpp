@@ -46,10 +46,10 @@ void CylinderHeadObject::render(const ViewParameters *view) {
             scale);
 
     const ysVector col = m_app->getPink();  ysMath::Add(
-        ysMath::Mul(ysMath::Constants::One, ysMath::LoadScalar(0.01f)),
+        ysMath::Mul(m_app->getForegroundColor(), ysMath::LoadScalar(0.01f)),
         ysMath::Mul(m_app->getBackgroundColor(), ysMath::LoadScalar(0.99f))
     );
-    const ysVector moving = m_app->getWhite();
+    const ysVector moving = m_app->getForegroundColor();
 
     GeometryGenerator::GeometryIndices
         valveShadow,
