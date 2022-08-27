@@ -27,7 +27,8 @@ public node chev_truck_454 {
         fuel: fuel(
             max_turbulence_effect: 3.0,
             burning_efficiency_randomness: 0.5,
-            max_burning_efficiency: 0.85)
+            max_burning_efficiency: 0.85),
+        throttle_gamma: 1.5
     )
 
     crankshaft c0(
@@ -75,8 +76,7 @@ public node chev_truck_454 {
     chevy_bbc_stock_intake intake(
         carburetor_cfm: 650.0,
         idle_flow_rate_cfm: 0.007,
-        idle_throttle_plate_position: 0.963,
-        throttle_gamma: 1.5
+        idle_throttle_plate_position: 0.991
     )
 
     exhaust_system_parameters es_params(

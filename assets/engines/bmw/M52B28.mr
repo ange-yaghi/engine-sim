@@ -180,7 +180,8 @@ public node M52B28 {
         redline: 7000 * units.rpm,
         fuel: fuel(
             max_turbulence_effect: 4.0
-        )
+        ),
+        throttle_gamma: 2.0
     )
 
     wires wires()
@@ -234,8 +235,7 @@ public node M52B28 {
     performer_rpm_intake intake(
         carburetor_cfm: 500.0,
         idle_flow_rate_cfm: 0.1,
-        idle_throttle_plate_position: 0.94, // start at 0.963, go to -> 0.97
-        throttle_gamma: 2.0
+        idle_throttle_plate_position: 0.994
     )
 
     exhaust_system_parameters es_params(

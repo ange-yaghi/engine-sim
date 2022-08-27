@@ -1,7 +1,9 @@
 import "engine_sim.mr"
-import "../workspace/video-engines/main.mr"
+import "engines/kohler/kohler_ch750.mr"
 
-main()
+set_engine(
+    kohler_ch750()
+)
 
 set_application_settings(
     start_fullscreen: false,

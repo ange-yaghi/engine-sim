@@ -129,8 +129,7 @@ public node audi_i5_2_2L {
         plenum_cross_section_area: 10.0 * units.cm2,
         intake_flow_rate: k_carb(500.0),
         idle_flow_rate: k_carb(0.0),
-        idle_throttle_plate_position: 0.995,
-        throttle_gamma: 1.0
+        idle_throttle_plate_position: 0.995
     )
 
     exhaust_system_parameters es_params(

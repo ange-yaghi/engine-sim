@@ -27,7 +27,8 @@ public node engine_03_for_e1 {
         fuel: fuel(
             max_turbulence_effect: 3.0,
             burning_efficiency_randomness: 0.5,
-            max_burning_efficiency: 0.85)
+            max_burning_efficiency: 0.85),
+        throttle_gamma: 1.5
     )
 
     crankshaft c0(
@@ -75,8 +76,7 @@ public node engine_03_for_e1 {
     chevy_bbc_stock_intake intake(
         carburetor_cfm: 950.0,
         idle_flow_rate_cfm: 0.007,
-        idle_throttle_plate_position: 0.98, // start at 0.963, go to -> 0.97
-        throttle_gamma: 1.5
+        idle_throttle_plate_position: 0.995
     )
 
     exhaust_system_parameters es_params(
