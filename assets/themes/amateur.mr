@@ -1,0 +1,31 @@
+import "engine_sim.mr"
+
+unit_names units()
+public node use_amateur_theme {
+    input start_fullscreen: false;
+    input speed_units: units.mph;
+    input pressure_units: units.inHg;
+    input torque_units: units.lb_ft;
+    input power_units: units.hp;
+
+    set_application_settings(
+        start_fullscreen: start_fullscreen,
+        speed_units: speed_units,
+        pressure_units: pressure_units,
+        torque_units:torque_units,
+        power_units: power_units,
+        
+        // Default Color Settings
+        color_background: 0x000000,
+        color_foreground: 0xFFFFFF,
+        color_highlight1: 0xFF0000,
+        color_highlight2: 0xFFFFFF,
+        color_shadow: 0x000000,
+        color_pink: 0xFF00FF,
+        color_red: 0xFF0000,
+        color_orange: 0xFF8000,
+        color_yellow: 0xFFFF00,
+        color_blue: 0x0000FF,
+        color_green: 0x00FF00
+    )
+}

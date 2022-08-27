@@ -69,7 +69,7 @@ void FiringOrderDisplay::render() {
 
     const ysVector background = m_app->getBackgroundColor();
     const ysVector hot = mix(background, m_app->getForegroundColor(), 1.0f);
-    const ysVector fixed = mix(background, m_app->getForegroundColor(), 0.01f);
+    const ysVector fixed = mix(background, m_app->getForegroundColor(), 0.02f);
     const ysVector cold = mix(background, m_app->getForegroundColor(), 0.001f);
 
     std::vector<CylinderBank *> orderedBanks;

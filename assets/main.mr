@@ -1,9 +1,9 @@
 import "engine_sim.mr"
 import "themes/default.mr"
-import "engines/chevrolet/chev_truck_454.mr"
+import "engines/kohler/kohler_ch750.mr"
 
 set_engine(
-    chev_truck_454()
+    kohler_ch750()
 )
 
 use_default_theme()
