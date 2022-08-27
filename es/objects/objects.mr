@@ -83,6 +83,11 @@ private node _engine => __engine_sim__engine {
     input fuel [fuel];
     input throttle [throttle_channel];
 
+    input simulation_frequency [float];
+    input hf_gain [float];
+    input jitter [float];
+    input noise [float];
+
     alias output __out [engine_channel];
 }
 
@@ -99,6 +104,11 @@ public node engine {
     input throttle:
         direct_throttle_linkage(gamma: throttle_gamma);
 
+    input simulation_frequency: 10000;
+    input hf_gain: 0.01;
+    input jitter: 0.5;
+    input noise: 1.0;
+
     alias output __out [_engine]:
         _engine(
             name: name,
@@ -108,7 +118,12 @@ public node engine {
             starter_torque: starter_torque,
 
             fuel: fuel,
-            throttle: throttle
+            throttle: throttle,
+
+            simulation_frequency: simulation_frequency,
+            hf_gain: hf_gain,
+            jitter: jitter,
+            noise: noise
         );
 }
 

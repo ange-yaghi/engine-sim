@@ -157,6 +157,10 @@ namespace es_script {
             addInput("redline", &m_parameters.Redline);
             addInput("fuel", &m_fuel, InputTarget::Type::Object);
             addInput("throttle", &m_throttle, InputTarget::Type::Object);
+            addInput("simulation_frequency", &m_parameters.initialSimulationFrequency);
+            addInput("hf_gain", &m_parameters.initialHighFrequencyGain);
+            addInput("jitter", &m_parameters.initialJitter);
+            addInput("noise", &m_parameters.initialNoise);
 
             ObjectReferenceNode<EngineNode>::registerInputs();
         }

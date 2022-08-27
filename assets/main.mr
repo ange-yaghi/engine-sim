@@ -2,8 +2,7 @@ import "engine_sim.mr"
 import "themes/default.mr"
 import "engines/kohler/kohler_ch750.mr"
 
+use_default_theme()
 set_engine(
     kohler_ch750()
 )
-
-use_default_theme()

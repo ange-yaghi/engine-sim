@@ -215,7 +215,7 @@ void EngineSimApplication::initialize() {
     simulatorParams.SystemType = Simulator::SystemType::NsvOptimized;
     simulatorParams.Transmission = m_transmission;
     simulatorParams.Vehicle = m_vehicle;
-    simulatorParams.SimulationFrequency = 10000;
+    simulatorParams.SimulationFrequency = m_iceEngine->getSimulationFrequency();
     simulatorParams.FluidSimulationSteps = 8;
     m_simulator.initialize(simulatorParams);
     m_simulator.startAudioRenderingThread();
@@ -281,15 +281,21 @@ void EngineSimApplication::initialize() {
     m_audioSource->SetPan(0.0f);
     m_audioSource->SetVolume(1.0f);
 
+    Synthesizer::AudioParameters audioParams = m_simulator.getSynthesizer()->getAudioParameters();
+    audioParams.InputSampleNoise = static_cast<float>(m_iceEngine->getInitialJitter());
+    audioParams.AirNoise = static_cast<float>(m_iceEngine->getInitialNoise());
+    audioParams.dF_F_mix = static_cast<float>(m_iceEngine->getInitialHighFrequencyGain());
+    m_simulator.getSynthesizer()->setAudioParameters(audioParams);
+
 #ifdef ATG_ENGINE_DISCORD_ENABLED
-    //Create a global instance of discord-rpc
+    // Create a global instance of discord-rpc
     CDiscord::CreateInstance();
-    //Enable it, this needs to be set via a config file of some sort. 
+
+    // Enable it, this needs to be set via a config file of some sort. 
     GetDiscordManager()->SetUseDiscord(true);
     DiscordRichPresence passMe = { 0 };
     GetDiscordManager()->SetStatus(passMe, m_iceEngine->getName(), s_buildVersion);
-#endif
-
+#endif /* ATG_ENGINE_DISCORD_ENABLED */
 }
 
 void EngineSimApplication::process(float frame_dt) {

@@ -33,6 +33,11 @@ class Engine : public Part {
             double Redline = units::rpm(6500);
 
             Throttle *throttle;
+
+            double initialSimulationFrequency;
+            double initialHighFrequencyGain;
+            double initialNoise;
+            double initialJitter;
         };
 
     public:
@@ -88,6 +93,11 @@ class Engine : public Part {
         CombustionChamber *getChamber(int i) const { return &m_combustionChambers[i]; }
         Fuel *getFuel() { return &m_fuel; }
 
+        double getSimulationFrequency() const { return m_initialSimulationFrequency; }
+        double getInitialHighFrequencyGain() const { return m_initialHighFrequencyGain; }
+        double getInitialNoise() const { return m_initialNoise; }
+        double getInitialJitter() const { return m_initialJitter; }
+
     protected:
         std::string m_name;
 
@@ -106,6 +116,11 @@ class Engine : public Part {
         double m_starterTorque;
         double m_starterSpeed;
         double m_redline;
+
+        double m_initialSimulationFrequency;
+        double m_initialHighFrequencyGain;
+        double m_initialNoise;
+        double m_initialJitter;
 
         ExhaustSystem *m_exhaustSystems;
         int m_exhaustSystemCount;
