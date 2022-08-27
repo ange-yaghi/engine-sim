@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 option(DTV "Enable video output" OFF)
-option(PIRANHA_ENABLED "Enable scripting input" OFF)
+option(PIRANHA_ENABLED "Enable scripting input" ON)
 option(DISCORD_ENABLED "Enable Discord Rich Presence" ON)
 
 if (DTV)
