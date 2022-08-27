@@ -19,7 +19,7 @@ void DirectThrottleLinkage::initialize(const Parameters &params) {
 
 void DirectThrottleLinkage::setSpeedControl(double s) {
     Throttle::setSpeedControl(s);
-    m_throttlePosition = std::pow(1 - s, m_gamma);
+    m_throttlePosition = 1 - std::pow(s, m_gamma);
 }
 
 void DirectThrottleLinkage::update(double dt, Engine *engine) {
