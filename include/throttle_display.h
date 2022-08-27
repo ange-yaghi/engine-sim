@@ -20,7 +20,8 @@ class ThrottleDisplay : public UiElement {
         Engine *m_engine;
 
     protected:
-        virtual void renderThrottle(const Bounds &bounds);
+        void renderThrottle(const Bounds &bounds);
+        void renderSpeedControl(const Bounds &bounds);
 };
 
 #endif /* ATG_ENGINE_SIM_THROTTLE_DISPLAY_H */

@@ -3,6 +3,8 @@
 #include "../include/geometry_generator.h"
 #include "../include/engine_sim_application.h"
 
+#include "../include/ui_utilities.h"
+
 ThrottleDisplay::ThrottleDisplay() {
     m_engine = nullptr;
 }
@@ -32,8 +34,11 @@ void ThrottleDisplay::render() {
     const Bounds title = bounds.verticalSplit(1.0f, 0.9f);
     drawCenteredText("THROTTLE", title.inset(10.0f), 24.0f);
 
-    const Bounds mainDrawArea = bounds.verticalSplit(0.0f, 0.9f);
+    const Bounds mainDrawArea = bounds.verticalSplit(0.05f, 0.9f);
     renderThrottle(mainDrawArea);
+
+    const Bounds speedControlDrawArea = bounds.verticalSplit(0.0f, 0.05f);
+    renderSpeedControl(speedControlDrawArea);
 }
 
 void ThrottleDisplay::renderThrottle(const Bounds &bounds) {
@@ -128,4 +133,32 @@ void ThrottleDisplay::renderThrottle(const Bounds &bounds) {
 
     m_app->getShaders()->SetBaseColor(m_app->getWhite());
     m_app->drawGenerated(pivot, 0x11, m_app->getShaders()->GetUiFlags());
+}
+
+void ThrottleDisplay::renderSpeedControl(const Bounds &bounds) {
+    GeometryGenerator *gen = m_app->getGeometryGenerator();
+
+    Grid grid;
+    grid.v_cells = 1;
+    grid.h_cells = 3;
+    const Bounds b = grid.get(bounds, 1, 0);
+
+    const Point lm = b.getPosition(Bounds::lm);
+    const Point rm = b.getPosition(Bounds::rm);
+
+    const float s = static_cast<float>(m_engine->getSpeedControl());
+    const Bounds bar = Bounds(b.width(), 2.0f, lm, Bounds::lm);
+    const Bounds speedControlBar = Bounds(b.width() * s, 2.0f, lm, Bounds::lm);
+
+    drawFrame(
+        bar,
+        1.0f,
+        mix(m_app->getBackgroundColor(), m_app->getWhite(), 0.001f),
+        mix(m_app->getBackgroundColor(), m_app->getRed(), 0.01f)
+    );
+
+    drawBox(
+        speedControlBar,
+        m_app->getRed()
+    );
 }

@@ -422,8 +422,8 @@ float EngineSimApplication::unitsToPixels(float units) const {
 }
 
 void EngineSimApplication::run() {
-    double throttle = 1.0;
-    double targetThrottle = 1.0;
+    double speedSetting = 1.0;
+    double targetSpeedSetting = 1.0;
 
     double clutchPressure = 1.0;
     double targetClutchPressure = 1.0;
@@ -555,31 +555,31 @@ void EngineSimApplication::run() {
             fineControlInUse = true;
         }
 
-        const double prevTargetThrottle = targetThrottle;
-        targetThrottle = fineControlMode ? targetThrottle : 1.0;
+        const double prevTargetThrottle = targetSpeedSetting;
+        targetSpeedSetting = fineControlMode ? targetSpeedSetting : 0.0;
         if (m_engine.IsKeyDown(ysKey::Code::Q)) {
-            targetThrottle = 0.99;
+            targetSpeedSetting = 0.01;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::W)) {
-            targetThrottle = 0.9;
+            targetSpeedSetting = 0.1;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::E)) {
-            targetThrottle = 0.8;
+            targetSpeedSetting = 0.2;
         }
         else if (m_engine.IsKeyDown(ysKey::Code::R)) {
-            targetThrottle = 0.0;
+            targetSpeedSetting = 1.0;
         }
         else if (fineControlMode && !fineControlInUse) {
-            targetThrottle = std::fmax(0.0, std::fmin(1.0, targetThrottle - mouseWheelDelta * 0.0001));
+            targetSpeedSetting = clamp(targetSpeedSetting + mouseWheelDelta * 0.0001);
         }
 
-        if (prevTargetThrottle != targetThrottle) {
-            m_infoCluster->setLogMessage("Throttle set to " + std::to_string(targetThrottle));
+        if (prevTargetThrottle != targetSpeedSetting) {
+            m_infoCluster->setLogMessage("Speed control set to " + std::to_string(targetSpeedSetting));
         }
 
-        throttle = targetThrottle * 0.5 + 0.5 * throttle;
+        speedSetting = targetSpeedSetting * 0.5 + 0.5 * speedSetting;
 
-        m_iceEngine->setThrottle(throttle);
+        m_iceEngine->setSpeedControl(speedSetting);
 
         if (m_engine.ProcessKeyDown(ysKey::Code::M)) {
             const int currentLayer = getViewParameters().Layer0;

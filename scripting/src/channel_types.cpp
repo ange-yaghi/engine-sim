@@ -20,3 +20,4 @@ DEFINE_CHANNEL(ImpulseResponseChannel);
 DEFINE_CHANNEL(ValvetrainChannel);
 DEFINE_CHANNEL(VehicleChannel);
 DEFINE_CHANNEL(TransmissionChannel);
+DEFINE_CHANNEL(ThrottleChannel);

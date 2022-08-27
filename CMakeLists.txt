@@ -55,6 +55,7 @@ add_library(engine-sim STATIC
     src/cylinder_bank.cpp
     src/cylinder_head.cpp
     src/derivative_filter.cpp
+    src/direct_throttle_linkage.cpp
     src/dynamometer.cpp
     src/engine.cpp
     src/exhaust_system.cpp
@@ -64,6 +65,7 @@ add_library(engine-sim STATIC
     src/function.cpp
     src/gas_system.cpp
     src/gaussian_filter.cpp
+    src/governor.cpp
     src/ignition_module.cpp
     src/impulse_response.cpp
     src/intake.cpp
@@ -76,6 +78,7 @@ add_library(engine-sim STATIC
     src/standard_valvetrain.cpp
     src/starter_motor.cpp
     src/synthesizer.cpp
+    src/throttle.cpp
     src/transmission.cpp
     src/utilities.cpp
     src/valvetrain.cpp
@@ -94,6 +97,7 @@ add_library(engine-sim STATIC
     include/cylinder_bank.h
     include/cylinder_head.h
     include/derivative_filter.h
+    include/direct_throttle_linkage.h
     include/dynamometer.h
     include/engine.h
     include/exhaust_system.h
@@ -103,6 +107,7 @@ add_library(engine-sim STATIC
     include/function.h
     include/gas_system.h
     include/gaussian_filter.h
+    include/governor.h
     include/ignition_module.h
     include/impulse_response.h
     include/intake.h
@@ -115,6 +120,7 @@ add_library(engine-sim STATIC
     include/standard_valvetrain.h
     include/starter_motor.h
     include/synthesizer.h
+    include/throttle.h
     include/transmission.h
     include/units.h
     include/utilities.h

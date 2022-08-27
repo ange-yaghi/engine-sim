@@ -349,6 +349,7 @@ bool Simulator::simulateStep() {
 
     m_dynoTorque = 0.99 * m_dynoTorque + 0.01 * m_dyno.getTorque();
 
+    m_engine->update(timestep);
     m_vehicle->update(timestep);
     m_transmission->update(timestep);
 

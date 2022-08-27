@@ -10,9 +10,9 @@
 #include "../include/impulse_response_node.h"
 #include "../include/standard_valvetrain_node.h"
 #include "../include/vtec_valvetrain_node.h"
-#include "../include/set_application_settings_node.h"
 #include "../include/vehicle_node.h"
 #include "../include/transmission_node.h"
+#include "../include/throttle_nodes.h"
 
 es_script::LanguageRules::LanguageRules() {
     /* void */
@@ -72,6 +72,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__vehicle_channel", &es_script::ObjectChannel::VehicleChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__transmission_channel", &es_script::ObjectChannel::TransmissionChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__throttle_channel", &es_script::ObjectChannel::ThrottleChannel);
 
     // Literals
     registerBuiltinType<piranha::DefaultLiteralFloatNode>(
@@ -166,6 +168,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<VtecValvetrainNode>("__engine_sim__vtec_valvetrain");
     registerBuiltinType<VehicleNode>("__engine_sim__vehicle");
     registerBuiltinType<TransmissionNode>("__engine_sim__transmission");
+    registerBuiltinType<DirectThrottleLinkageNode>("__engine_sim__direct_throttle_linkage");
+    registerBuiltinType<GovernorNode>("__engine_sim__governor");
 
     // String operations
     registerBuiltinType<piranha::OperationNodeSpecialized<

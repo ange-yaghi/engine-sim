@@ -13,6 +13,7 @@
 #include "intake.h"
 #include "combustion_chamber.h"
 #include "units.h"
+#include "throttle.h"
 
 #include <string>
 
@@ -30,6 +31,8 @@ class Engine : public Part {
             double StarterTorque = units::torque(90.0, units::ft_lb);
             double StarterSpeed = units::rpm(200);
             double Redline = units::rpm(6500);
+
+            Throttle *throttle;
         };
 
     public:
@@ -42,12 +45,15 @@ class Engine : public Part {
         std::string getName() const { return m_name; }
 
         virtual Crankshaft *getOutputCrankshaft() const;
+        virtual void setSpeedControl(double s);
+        virtual double getSpeedControl();
         virtual void setThrottle(double throttle);
         virtual double getThrottle() const;
         virtual double getThrottlePlateAngle() const;
         virtual void calculateDisplacement();
         double getDisplacement() const { return m_displacement; }
         virtual double getIntakeFlowRate() const;
+        virtual void update(double dt);
 
         virtual double getManifoldPressure() const;
         virtual double getIntakeAfr() const;
@@ -110,7 +116,9 @@ class Engine : public Part {
         IgnitionModule m_ignitionModule;
         Fuel m_fuel;
 
-        double m_throttle;
+        Throttle *m_throttle;
+
+        double m_throttleValue;
         double m_displacement;
 };
 

@@ -31,6 +31,7 @@ public node impulse_response_channel => __engine_sim__impulse_response_channel {
 public node valvetrain_channel => __engine_sim__valvetrain_channel { /* void */ }
 public node vehicle_channel => __engine_sim__vehicle_channel { /* void */ }
 public node transmission_channel => __engine_sim__transmission_channel { /* void */ }
+public node throttle_channel => __engine_sim__throttle_channel { /* void */ }
 
 private node turbulence_to_flame_speed_ratio_default {
     alias output __out:
@@ -80,6 +81,7 @@ private node _engine => __engine_sim__engine {
     input starter_torque [float];
 
     input fuel [fuel];
+    input throttle [throttle_channel];
 
     alias output __out [engine_channel];
 }
@@ -93,6 +95,9 @@ public node engine {
     input starter_torque: params.starter_torque;
 
     input fuel: params.fuel;
+    input throttle_gamma: 1.0;
+    input throttle:
+        direct_throttle_linkage(gamma: throttle_gamma);
 
     alias output __out [_engine]:
         _engine(
@@ -102,8 +107,25 @@ public node engine {
             starter_speed: starter_speed,
             starter_torque: starter_torque,
 
-            fuel: fuel
+            fuel: fuel,
+            throttle: throttle
         );
+}
+
+public node direct_throttle_linkage => __engine_sim__direct_throttle_linkage {
+    input gamma [float]: 1.0;
+    alias output __out [throttle_channel];
+}
+
+public node governor => __engine_sim__governor {
+    input min_speed [float]: 1.0;
+    input max_speed [float]: 1.0;
+    input min_v [float]: -2.0;
+    input max_v [float]: 2.0;
+    input k_s [float]: 1.0;
+    input k_d [float]: 300.0;
+    input gamma [float]: 0.1;
+    alias output __out [throttle_channel];
 }
 
 // Crankshaft

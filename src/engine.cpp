@@ -1,4 +1,5 @@
 #include "..\include\engine.h"
+#include "..\include\engine.h"
 #include "../include/engine.h"
 
 #include "../include/constants.h"
@@ -29,7 +30,8 @@ Engine::Engine() {
     m_starterTorque = 0;
     m_redline = 0;
 
-    m_throttle = 0.0;
+    m_throttle = nullptr;
+    m_throttleValue = 0.0;
 }
 
 Engine::~Engine() {
@@ -53,6 +55,7 @@ void Engine::initialize(const Parameters &params) {
     m_starterSpeed = params.StarterSpeed;
     m_redline = params.Redline;
     m_name = params.Name;
+    m_throttle = params.throttle;
 
     m_crankshafts = new Crankshaft[m_crankshaftCount];
     m_cylinderBanks = new CylinderBank[m_cylinderBankCount];
@@ -93,6 +96,8 @@ void Engine::destroy() {
 
     m_ignitionModule.destroy();
 
+    delete m_throttle;
+
     delete[] m_crankshafts;
     delete[] m_cylinderBanks;
     delete[] m_heads;
@@ -110,10 +115,19 @@ void Engine::destroy() {
     m_exhaustSystems = nullptr;
     m_intakes = nullptr;
     m_combustionChambers = nullptr;
+    m_throttle = nullptr;
 }
 
 Crankshaft *Engine::getOutputCrankshaft() const {
     return &m_crankshafts[0];
+}
+
+void Engine::setSpeedControl(double s) {
+    m_throttle->setSpeedControl(s);
+}
+
+double Engine::getSpeedControl() {
+    return m_throttle->getSpeedControl();
 }
 
 void Engine::setThrottle(double throttle) {
@@ -121,11 +135,11 @@ void Engine::setThrottle(double throttle) {
         m_intakes[i].m_throttle = throttle;
     }
 
-    m_throttle = throttle;
+    m_throttleValue = throttle;
 }
 
 double Engine::getThrottle() const {
-    return m_throttle;
+    return m_throttleValue;
 }
 
 double Engine::getThrottlePlateAngle() const {
@@ -268,6 +282,10 @@ double Engine::getIntakeFlowRate() const {
     }
 
     return airIntake;
+}
+
+void Engine::update(double dt) {
+    m_throttle->update(dt, this);
 }
 
 double Engine::getManifoldPressure() const {
