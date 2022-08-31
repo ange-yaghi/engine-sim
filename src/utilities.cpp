@@ -2,18 +2,8 @@
 
 #include <cmath>
 
-double modularDistance(double a0, double b0, double mod) {
-    double a, b;
-    if (a0 < b0) {
-        a = a0;
-        b = b0;
-    }
-    else {
-        a = b0;
-        b = a0;
-    }
-
-    return std::fmin(b - a, a + mod - b);
+double modularDistance(double a, double b, double mod) {
+    return (a < b) ? std::fmin(b - a, a + mod - b) : std::fmin(a - b, b + mod - a);
 }
 
 double positiveMod(double x, double mod) {
