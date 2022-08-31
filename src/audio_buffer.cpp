@@ -30,7 +30,7 @@ void AudioBuffer::destroy() {
     m_bufferSize = 0;
 }
 
-bool AudioBuffer::checkForDiscontinuitiy(int threshold) const {
+bool AudioBuffer::checkForDiscontinuity(int threshold) const {
     for (int i = 0; i < m_bufferSize - 1; ++i) {
         const int i0 = getBufferIndex(i + m_writePointer);
         const int i1 = getBufferIndex(i0 + 1);
