@@ -32,7 +32,7 @@ void IgnitionModule::destroy() {
 void IgnitionModule::initialize(const Parameters &params) {
     m_cylinderCount = params.CylinderCount;
     m_plugs = new SparkPlug[m_cylinderCount];
-    m_crankshaft = params.Crankshaft;
+    m_crankshaft = params.crankshaft;
     m_timingCurve = params.TimingCurve;
     m_revLimit = params.RevLimit;
     m_limiterDuration = params.LimiterDuration;

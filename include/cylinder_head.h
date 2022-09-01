@@ -18,7 +18,7 @@ class CylinderHead : public Part {
             Function *ExhaustPortFlow;
             Function *IntakePortFlow;
 
-            Valvetrain *Valvetrain;
+            Valvetrain *valvetrain;
 
             double CombustionChamberVolume;
 

@@ -1,5 +1,3 @@
-#include "..\include\engine.h"
-#include "..\include\engine.h"
 #include "../include/engine.h"
 
 #include "../include/constants.h"
@@ -213,7 +211,7 @@ bool placeRod(
 
     *s = std::max(s0, s1);
     if (*s < 0) return false;
-   
+
     if (s != nullptr) {
         const double dx = (bank.getX() + bank.getDx() * (*s)) - (*p_x);
         const double dy = (bank.getY() + bank.getDy() * (*s)) - (*p_y);

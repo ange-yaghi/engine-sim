@@ -14,7 +14,7 @@ public:
 
     virtual float f(float sample) override { return fast_f(sample); }
 
-    __forceinline float fast_f(float sample) {
+     inline float fast_f(float sample) {
         const float s = -0.95f * sample + m_lastSample;
 
         m_lastSample = sample;

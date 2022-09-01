@@ -1,4 +1,3 @@
-#include "..\include\connecting_rod.h"
 #include "../include/connecting_rod.h"
 
 #include <cmath>
@@ -28,8 +27,8 @@ void ConnectingRod::initialize(const Parameters &params) {
     m_m = params.Mass;
     m_I = params.MomentOfInertia;
     m_journal = params.Journal;
-    m_crankshaft = params.Crankshaft;
-    m_piston = params.Piston;
+    m_crankshaft = params.crankshaft;
+    m_piston = params.piston;
 
     m_rodJournalAngles = new double[params.RodJournals];
     m_rodJournalCount = params.RodJournals;

@@ -12,7 +12,7 @@ class LowPassFilter : public Filter {
 
         virtual float f(float sample) override;
 
-        __forceinline float fast_f(float sample) {
+         float fast_f(float sample) {
             const float alpha = m_dt / (m_rc + m_dt);
             m_y = alpha * sample + (1 - alpha) * m_y;
 

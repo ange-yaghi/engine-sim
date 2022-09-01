@@ -47,7 +47,7 @@ void ExhaustSystem::initialize(const Parameters &params) {
     m_collectorCrossSectionArea = params.CollectorCrossSectionArea;
     m_primaryTubeLength = params.PrimaryTubeLength;
     m_velocityDecay = params.VelocityDecay;
-    m_impulseResponse = params.ImpulseResponse;
+    m_impulseResponse = params.impulseResponse;
 }
 
 void ExhaustSystem::destroy() {

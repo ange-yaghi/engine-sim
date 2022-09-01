@@ -8,7 +8,7 @@
 class CylinderBank {
     public:
         struct Parameters {
-            Crankshaft *Crankshaft;
+            Crankshaft *crankshaft;
             double PositionX;
             double PositionY;
             double Angle;

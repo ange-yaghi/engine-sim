@@ -25,7 +25,7 @@ void Camshaft::initialize(const Parameters &params) {
     memset(m_lobeAngles, 0, sizeof(double) * params.Lobes);
 
     m_lobes = params.Lobes;
-    m_crankshaft = params.Crankshaft;
+    m_crankshaft = params.crankshaft;
     m_lobeProfile = params.LobeProfile;
     m_advance = params.Advance;
     m_baseRadius = params.BaseRadius;

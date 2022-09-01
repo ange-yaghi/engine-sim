@@ -11,7 +11,7 @@ class IgnitionModule : public Part {
     public:
         struct Parameters {
             int CylinderCount;
-            Crankshaft *Crankshaft;
+            Crankshaft *crankshaft;
             Function *TimingCurve;
             double RevLimit = units::rpm(6000.0);
             double LimiterDuration = 0.5 * units::sec;
