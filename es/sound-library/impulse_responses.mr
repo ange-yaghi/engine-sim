@@ -12,4 +12,7 @@ public node impulse_response_library {
 
     output sharp_0:
         impulse_response(filename: "sharp/sharp_01.wav", volume: 0.001);
+
+    output mild_exhaust_0:
+        impulse_response(filename: "new/mild_exhaust.wav", volume: 0.01);
 }

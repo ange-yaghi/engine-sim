@@ -13,12 +13,16 @@ private node wires {
 }
 
 label cycle(2 * 360 * units.deg)
-public node vemsign {
+public node wb_ignition {
     input wires;
     input timing_curve;
     input rev_limit: 7500 * units.rpm;
     alias output __out:
-        ignition_module(timing_curve: timing_curve, rev_limit: rev_limit)
+        ignition_module(
+            timing_curve: timing_curve,
+            rev_limit: rev_limit,
+            limiter_duration: 0.1
+        )
             .connect_wire(wires.wire1, (0.0 / 5.0) * cycle)
             .connect_wire(wires.wire2, (1.0 / 5.0) * cycle)
             .connect_wire(wires.wire4, (2.0 / 5.0) * cycle)
@@ -65,27 +69,107 @@ public node i5_camshaft_builder {
         .add_lobe(rot360 + intake_lobe_center + 3 * rot)
 }
 
+private node audi_i5_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 50 * units.cc;
+    input intake_runner_volume: 149.6 * units.cc;
+    input intake_runner_cross_section_area: 1.9 * units.inch * 1.9 * units.inch;
+    input exhaust_runner_volume: 50.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.25 * units.inch * 1.25 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 58 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 103 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 156 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 214 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 249 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 268 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 280 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 280 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 281 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 37 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 72 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 113 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 160 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 196 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 222 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 235 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 245 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 246 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
 public node audi_i5_2_2L {
     alias output __out: engine;
 
     wires wires()
 
     engine engine(
-        name: "Audi 2.2 inline 5",
+        name: "Audi 2.3 inline 5",
         starter_torque: 200 * units.lb_ft,
-        redline: 7500 * units.rpm,
+        redline: 6000 * units.rpm,
         fuel: fuel(
-            max_turbulence_effect: 4.0,
-            burning_efficiency_randomness: 0.2,
-            max_burning_efficiency: 0.85)
+            max_turbulence_effect: 2.5,
+            max_burning_efficiency: 0.75),
+        hf_gain: 0.01,
+        noise: 1.0,
+        jitter: 0.299,
+        simulation_frequency: 10000
+    )
+
+    label stroke(79.5 * units.mm)
+    label bore(86.4 * units.mm)
+    label rod_length(5.142 * units.inch)
+    label rod_mass(535 * units.g)
+    label compression_height(32.8 * units.mm)
+    label crank_mass(9.39 * units.kg)
+    label flywheel_mass(6.8 * units.kg)
+    label flywheel_radius(6 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // Moment from cams, pulleys, etc [estimated]
+        disk_moment_of_inertia(mass: 20 * units.kg, radius: 8.0 * units.cm)
     )
 
     crankshaft c0(
-        throw: 0.5 * 86.4 * units.mm,
-        flywheel_mass: 20 * units.lb,
-        mass: 40 * units.lb,
-        friction_torque: 10.0 * units.lb_ft,
-        moment_of_inertia: 0.22986844776863666 * 0.9,
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 5.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
         position_x: 0.0,
         position_y: 0.0,
         tdc: constants.pi / 2
@@ -105,43 +189,50 @@ public node audi_i5_2_2L {
         .add_rod_journal(rj4)
 
     piston_parameters piston_params(
-        mass: 400 * units.g,
+        mass: (414 + 152) * units.g, // 414 - piston mass, 152 - pin weight
         blowby: 0,
-        compression_height: 32.8 * units.mm,
+        compression_height: compression_height,
         wrist_pin_position: 0 * units.mm,
         displacement: 0.0
     )
 
     connecting_rod_parameters cr_params(
-        mass: 300.0 * units.g,
-        moment_of_inertia: 0.0015884918028487504,
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
         center_of_mass: 0.0,
-        length: (220 - 0.5 * 86.4 - 32.8) * units.mm
+        length: rod_length
     )
 
     cylinder_bank_parameters bank_params(
-        bore: 81 * units.mm,
-        deck_height: 220 * units.mm
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
     )
 
     intake intake(
-        plenum_volume: 5.0 * units.L,
+        plenum_volume: 1.0 * units.L,
         plenum_cross_section_area: 10.0 * units.cm2,
-        intake_flow_rate: k_carb(500.0),
+        intake_flow_rate: k_carb(350.0),
+        runner_flow_rate: k_carb(175.0),
+        runner_length: 5.0 * units.inch,
         idle_flow_rate: k_carb(0.0),
-        idle_throttle_plate_position: 0.995
+        idle_throttle_plate_position: 0.993
     )
 
     exhaust_system_parameters es_params(
-        outlet_flow_rate: k_carb(200.0),
+        outlet_flow_rate: k_carb(500.0),
         primary_tube_length: 10.0 * units.inch,
         primary_flow_rate: k_carb(100.0),
-        velocity_decay: 0.5, //0.5
+        velocity_decay: 1.0,
         volume: 50.0 * units.L
     )
 
-    exhaust_system exhaust0(es_params, audio_volume: 1.0, impulse_response: ir_lib.default_0)
-    exhaust_system exhaust1(es_params, audio_volume: 0.8, impulse_response: ir_lib.default_0)
+    exhaust_system exhaust0(
+        es_params, audio_volume: 1.0 * 0.01, impulse_response: ir_lib.mild_exhaust_0)
+    exhaust_system exhaust1(
+        es_params, audio_volume: 0.8 * 0.01, impulse_response: ir_lib.mild_exhaust_0)
 
     cylinder_bank b0(bank_params, angle: 0)
     b0
@@ -151,7 +242,8 @@ public node audi_i5_2_2L {
             rod_journal: rj0,
             intake: intake,
             exhaust_system: exhaust0,
-            ignition_wire: wires.wire1
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.6)),
@@ -159,7 +251,8 @@ public node audi_i5_2_2L {
             rod_journal: rj1,
             intake: intake,
             exhaust_system: exhaust1,
-            ignition_wire: wires.wire2
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.8
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.6)),
@@ -167,7 +260,8 @@ public node audi_i5_2_2L {
             rod_journal: rj2,
             intake: intake,
             exhaust_system: exhaust0,
-            ignition_wire: wires.wire3
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.9
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.4)),
@@ -175,7 +269,8 @@ public node audi_i5_2_2L {
             rod_journal: rj3,
             intake: intake,
             exhaust_system: exhaust1,
-            ignition_wire: wires.wire4
+            ignition_wire: wires.wire4,
+            sound_attenuation: 1.0
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.4)),
@@ -183,7 +278,8 @@ public node audi_i5_2_2L {
             rod_journal: rj4,
             intake: intake,
             exhaust_system: exhaust0,
-            ignition_wire: wires.wire5
+            ignition_wire: wires.wire5,
+            sound_attenuation: 1.1
         )
 
     engine
@@ -191,13 +287,36 @@ public node audi_i5_2_2L {
 
     engine.add_crankshaft(c0)
 
-    i5_camshaft_builder camshaft()
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 210 * units.deg,
+        gamma: 2.0,
+        lift: 9.78 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 215 * units.deg,
+        gamma: 2.0,
+        lift: 9.60 * units.mm,
+        steps: 100
+    )
+
+    i5_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 116 * units.deg,
+        exhaust_lobe_center: 116 * units.deg,
+        base_radius: (34.0 / 2) * units.mm
+    )
 
     b0.set_cylinder_head (
-        generic_small_engine_head(
+        audi_i5_head(
             chamber_volume: 50 * units.cc,
             intake_camshaft: camshaft.intake_cam,
-            exhaust_camshaft: camshaft.exhaust_cam
+            exhaust_camshaft: camshaft.exhaust_cam,
+            flow_attenuation: 0.9
         )
     )
 
@@ -213,10 +332,41 @@ public node audi_i5_2_2L {
         .add_sample(7000 * units.rpm, 38 * units.deg)
 
     engine.add_ignition_module(
-        vemsign(
+        wb_ignition(
             wires: wires,
             timing_curve: timing_curve,
-            rev_limit: 7500 * units.rpm
+            rev_limit: 6500 * units.rpm
         )
     )
+}
+
+private node audi_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 2844 * units.lb,
+            drag_coefficient: 0.3,
+            cross_sectional_area: (66 * units.inch) * (50 * units.inch),
+            diff_ratio: 3.55,
+            tire_radius: 10 * units.inch,
+            rolling_resistance: 500 * units.N
+        );
+}
+
+private node audi_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 200 * units.lb_ft
+        )
+        .add_gear(3.417)
+        .add_gear(2.105)
+        .add_gear(1.429)
+        .add_gear(1.088)
+        .add_gear(0.970)
+        .add_gear(0.912);
+}
+
+public node main {
+    set_engine(audi_i5_2_2L())
+    set_vehicle(audi_vehicle())
+    set_transmission(audi_transmission())
 }

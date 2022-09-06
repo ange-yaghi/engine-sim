@@ -1,8 +1,8 @@
 import "engine_sim.mr"
 import "themes/default.mr"
-import "engines/kohler/kohler_ch750.mr"
+import "engines/audi/i5.mr"
 
 use_default_theme()
 set_engine(
-    kohler_ch750()
+    audi_i5_2_2L()
 )
