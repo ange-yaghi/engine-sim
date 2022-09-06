@@ -1,5 +1,3 @@
-#include "..\include\simulator.h"
-#include "..\include\simulator.h"
 #include "../include/simulator.h"
 
 #include "../include/constants.h"
