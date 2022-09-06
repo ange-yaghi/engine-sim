@@ -1,5 +1,5 @@
 # Engine Simulator
-![Alt text](docs/public/screenshot_v01.png?raw=true)
+![Alt text](docs/public/screenshots/screenshot_v01.png?raw=true)
 ---
 ## **Warning: project is in development and will change frequently**
 ---
@@ -27,7 +27,7 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | G + Scroll | Change hold speed |
 | F | Enter fullscreen mode |
 | I | Display dyno stats in the information panel |
-| Shift | Clutch (hold spacebar to slowly engage/disengage) |
+| Shift | Clutch (hold spacebar at the same time to slowly engage/disengage) |
 | Up Arrow | Up Gear | 
 | Down Arrow | Down Gear | 
 | Z + Scroll | Volume |
@@ -36,8 +36,9 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | V + Scroll | Low frequency noise |
 | B + Scroll | High frequency noise |
 | N + Scroll | Simulation frequency |
-| M | Increase View Layer |
-| , | Decrease View Layer |
+| M | Increase view layer |
+| , | Decrease view layer |
+| Enter | Reload engine script |
 | Escape | Exit the program |
 | Q, W, E, R | Change throttle position |
 | Space + Scroll | Fine throttle adjustment |

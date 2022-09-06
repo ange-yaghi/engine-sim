@@ -27,7 +27,12 @@ void UiElement::initialize(EngineSimApplication *app) {
 }
 
 void UiElement::destroy() {
-    /* void */
+    for (UiElement *child : m_children) {
+        child->destroy();
+        delete child;
+    }
+
+    m_children.clear();
 }
 
 void UiElement::update(float dt) {

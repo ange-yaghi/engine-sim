@@ -30,10 +30,11 @@ public:
         if (m_buffer != nullptr) {
             delete[] m_buffer;
             m_buffer = nullptr;
-            m_capacity = 0;
-            m_writeIndex = 0;
-            m_start = 0;
         }
+
+        m_capacity = 0;
+        m_writeIndex = 0;
+        m_start = 0;
     }
 
     inline void write(T_Data data) {

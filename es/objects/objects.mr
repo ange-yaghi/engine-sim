@@ -591,14 +591,14 @@ public node ignition_wire => __engine_sim__ignition_wire {
 }
 
 public node vehicle => __engine_sim__vehicle {
-	input mass [float]: 1000 * units.kg;
-	input drag_coefficient [float]: 0.25;
-	input cross_sectional_area [float]: (72 * units.inch) * (72 * units.inch);
-	input diff_ratio [float]: 3.42;
-	input tire_radius [float]: 10 * units.inch;
-	input rolling_resistance [float]: 2000;
-    
-	alias output __out [vehicle_channel];
+    input mass [float]: 1000 * units.kg;
+    input drag_coefficient [float]: 0.25;
+    input cross_sectional_area [float]: (72 * units.inch) * (72 * units.inch);
+    input diff_ratio [float]: 3.42;
+    input tire_radius [float]: 10 * units.inch;
+    input rolling_resistance [float]: 2000;
+
+    alias output __out [vehicle_channel];
 }
 
 public node transmission => __engine_sim__transmission {

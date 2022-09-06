@@ -105,16 +105,15 @@ void Engine::destroy() {
 
     m_ignitionModule.destroy();
 
-    delete m_throttle;
-
-    delete[] m_crankshafts;
-    delete[] m_cylinderBanks;
-    delete[] m_heads;
-    delete[] m_pistons;
-    delete[] m_connectingRods;
-    delete[] m_exhaustSystems;
-    delete[] m_intakes;
-    delete[] m_combustionChambers;
+    if (m_throttle != nullptr) delete m_throttle;
+    if (m_crankshafts != nullptr) delete[] m_crankshafts;
+    if (m_cylinderBanks != nullptr) delete[] m_cylinderBanks;
+    if (m_heads != nullptr) delete[] m_heads;
+    if (m_pistons != nullptr) delete[] m_pistons;
+    if (m_connectingRods != nullptr) delete[] m_connectingRods;
+    if (m_exhaustSystems != nullptr) delete[] m_exhaustSystems;
+    if (m_intakes != nullptr) delete[] m_intakes;
+    if (m_combustionChambers != nullptr) delete[] m_combustionChambers;
 
     m_crankshafts = nullptr;
     m_cylinderBanks = nullptr;

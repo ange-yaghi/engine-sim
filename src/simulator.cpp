@@ -1,3 +1,5 @@
+#include "..\include\simulator.h"
+#include "..\include\simulator.h"
 #include "../include/simulator.h"
 
 #include "../include/constants.h"
@@ -13,7 +15,7 @@ Simulator::Simulator() {
     m_transmission = nullptr;
     m_vehicle = nullptr;
 
-    i_steps = 1;
+    i_steps = 0;
     m_currentIteration = 0;
     m_simulationSpeed = 1.0;
     m_targetSynthesizerLatency = 0.1;
@@ -46,10 +48,6 @@ Simulator::~Simulator() {
 }
 
 void Simulator::initialize(const Parameters &params) {
-    if (params.Engine == nullptr) {
-        return;
-    }
-
     if (params.SystemType == SystemType::NsvOptimized) {
         atg_scs::OptimizedNsvRigidBodySystem *system =
             new atg_scs::OptimizedNsvRigidBodySystem;
@@ -65,12 +63,12 @@ void Simulator::initialize(const Parameters &params) {
             new atg_scs::NsvOdeSolver);
         m_system = system;
     }
+}
 
-    m_engine = params.Engine;
-    m_vehicle = params.Vehicle;
-    m_transmission = params.Transmission;
-    m_fluidSimulationSteps = params.FluidSimulationSteps;
-    m_simulationFrequency = params.SimulationFrequency;
+void Simulator::loadSimulation(Engine *engine, Vehicle *vehicle, Transmission *transmission) {
+    m_engine = engine;
+    m_vehicle = vehicle;
+    m_transmission = transmission;
 
     const int crankCount = m_engine->getCrankshaftCount();
     const int cylinderCount = m_engine->getCylinderCount();
@@ -93,8 +91,8 @@ void Simulator::initialize(const Parameters &params) {
 
         m_crankConstraints[i].setBody(&crankshaft->m_body);
         m_crankConstraints[i].setWorldPosition(
-                crankshaft->getPosX(),
-                crankshaft->getPosY());
+            crankshaft->getPosX(),
+            crankshaft->getPosY());
         m_crankConstraints[i].setLocalPosition(0.0, 0.0);
         m_crankConstraints[i].m_kd = kd;
         m_crankConstraints[i].m_ks = ks;
@@ -103,7 +101,7 @@ void Simulator::initialize(const Parameters &params) {
         crankshaft->m_body.p_y = crankshaft->getPosY();
         crankshaft->m_body.theta = 0;
         crankshaft->m_body.m =
-                crankshaft->getMass() + crankshaft->getFlywheelMass();
+            crankshaft->getMass() + crankshaft->getFlywheelMass();
         crankshaft->m_body.I = crankshaft->getMomentOfInertia();
 
         m_crankshaftFrictionConstraints[i].m_minTorque = -crankshaft->getFrictionTorque();
@@ -129,6 +127,7 @@ void Simulator::initialize(const Parameters &params) {
     m_vehicleDrag.initialize(&m_vehicleMass, m_vehicle);
     m_system->addConstraint(&m_vehicleDrag);
 
+    m_vehicleMass.reset();
     m_vehicleMass.m = 1.0;
     m_vehicleMass.I = 1.0;
     m_system->addRigidBody(&m_vehicleMass);
@@ -210,6 +209,13 @@ void Simulator::initialize(const Parameters &params) {
 
     placeAndInitialize();
     initializeSynthesizer();
+}
+
+void Simulator::releaseSimulation() {
+    m_synthesizer.endAudioRenderingThread();
+    if (m_system != nullptr) m_system->reset();
+
+    destroy();
 }
 
 double Simulator::getAverageOutputSignal() const {
@@ -296,6 +302,11 @@ void Simulator::placeCylinder(int i) {
 }
 
 void Simulator::startFrame(double dt) {
+    if (m_engine == nullptr) {
+        i_steps = 0;
+        return;
+    }
+
     m_simulationStart = std::chrono::steady_clock::now();
     m_currentIteration = 0;
     m_synthesizer.setInputSampleRate(m_simulationFrequency * m_simulationSpeed);
@@ -417,6 +428,10 @@ int Simulator::readAudioOutput(int samples, int16_t *target) {
 }
 
 void Simulator::endFrame() {
+    if (m_engine == nullptr) {
+        return;
+    }
+
     const double frameTimestep = i_steps * getTimestep();
     const int cylinderCount = m_engine->getCylinderCount();
     for (int i = 0; i < m_engine->getIntakeCount(); ++i) {
@@ -427,12 +442,14 @@ void Simulator::endFrame() {
 }
 
 void Simulator::destroy() {
-    delete[] m_crankConstraints;
-    delete[] m_cylinderWallConstraints;
-    delete[] m_linkConstraints;
-    delete[] m_crankshaftFrictionConstraints;
-    delete[] m_exhaustFlowStagingBuffer;
-    delete m_system;
+    if (m_system != nullptr) m_system->reset();
+
+    if (m_crankConstraints != nullptr) delete[] m_crankConstraints;
+    if (m_cylinderWallConstraints != nullptr) delete[] m_cylinderWallConstraints;
+    if (m_linkConstraints != nullptr) delete[] m_linkConstraints;
+    if (m_crankshaftFrictionConstraints != nullptr) delete[] m_crankshaftFrictionConstraints;
+    if (m_exhaustFlowStagingBuffer != nullptr) delete[] m_exhaustFlowStagingBuffer;
+    if (m_system != nullptr) delete m_system;
 
     m_crankConstraints = nullptr;
     m_cylinderWallConstraints = nullptr;
@@ -441,6 +458,8 @@ void Simulator::destroy() {
     m_exhaustFlowStagingBuffer = nullptr;
     m_system = nullptr;
 
+    m_vehicle = nullptr;
+    m_transmission = nullptr;
     m_engine = nullptr;
 
     m_synthesizer.destroy();

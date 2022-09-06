@@ -45,8 +45,8 @@ void ConnectingRodObject::generateGeometry() {
             double x, y;
             m_connectingRod->getRodJournalPositionLocal(i, &x, &y);
 
-            circleParams.center_x = x;
-            circleParams.center_y = y;
+            circleParams.center_x = static_cast<float>(x);
+            circleParams.center_y = static_cast<float>(y);
 
             gen->generateCircle2d(circleParams);
         }

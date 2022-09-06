@@ -24,12 +24,6 @@ class Simulator {
 
         struct Parameters {
             SystemType SystemType = SystemType::NsvOptimized;
-            Engine *Engine = nullptr;
-            Transmission *Transmission = nullptr;
-            Vehicle *Vehicle = nullptr;
-
-            int SimulationFrequency = 10000;
-            int FluidSimulationSteps = 8;
         };
 
     public:
@@ -37,6 +31,9 @@ class Simulator {
         ~Simulator();
 
         void initialize(const Parameters &params);
+        void loadSimulation(Engine *engine, Vehicle *vehicle, Transmission *transmission);
+        void releaseSimulation();
+
         void startFrame(double dt);
         bool simulateStep();
         double getTotalExhaustFlow() const;
@@ -65,6 +62,7 @@ class Simulator {
         void setSimulationFrequency(int frequency) { m_simulationFrequency = frequency; }
         int getSimulationFrequency() const { return m_simulationFrequency; }
 
+        void setFluidSimulationSteps(int steps) { m_fluidSimulationSteps = steps; }
         int getFluidSimulationSteps() const { return m_fluidSimulationSteps; }
         int getFluidSimulationFrequency() const { return m_fluidSimulationSteps * m_simulationFrequency; }
 
@@ -77,7 +75,7 @@ class Simulator {
         double getSimulationSpeed() const { return m_simulationSpeed; }
 
         double getFilteredDynoTorque() const { return m_dynoTorque; }
-        double getDynoPower() const { return m_dynoTorque * m_engine->getSpeed(); }
+        double getDynoPower() const { return (m_engine != nullptr) ? m_dynoTorque * m_engine->getSpeed() : 0; }
         double getAverageOutputSignal() const;
 
         Synthesizer *getSynthesizer() { return &m_synthesizer; }

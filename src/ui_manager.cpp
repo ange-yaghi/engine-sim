@@ -20,6 +20,9 @@ void UiManager::initialize(EngineSimApplication *app) {
 
 void UiManager::destroy() {
     m_root.destroy();
+    m_hover = nullptr;
+    m_dragStart = nullptr;
+    m_app = nullptr;
 }
 
 void UiManager::update(float dt) {

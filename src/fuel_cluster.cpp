@@ -39,7 +39,7 @@ void FuelCluster::render() {
 
     std::stringstream ss;
     ss << std::setprecision(3) << std::fixed;
-    ss << units::convert(m_engine->getTotalVolumeFuelConsumed(), units::L);
+    ss << units::convert(getTotalVolumeFuelConsumed(), units::L);
     ss << " L";
 
     const Bounds totalFuelLiters = grid.get(bodyBounds, 0, 1, 1, 2);
@@ -47,13 +47,13 @@ void FuelCluster::render() {
 
     ss = std::stringstream();
     ss << std::setprecision(3) << std::fixed;
-    ss << units::convert(m_engine->getTotalVolumeFuelConsumed(), units::gal);
+    ss << units::convert(getTotalVolumeFuelConsumed(), units::gal);
     ss << " gal";
 
     const Bounds totalFuelGallons = grid.get(bodyBounds, 0, 3, 1, 1);
     drawText(ss.str(), totalFuelGallons, 16.0f, Bounds::lm);
 
-    const double fuelConsumed = m_engine->getTotalVolumeFuelConsumed();
+    const double fuelConsumed = getTotalVolumeFuelConsumed();
     const double fuelConsumed_gallons = units::convert(fuelConsumed, units::gal);
 
     ss = std::stringstream();
@@ -63,7 +63,9 @@ void FuelCluster::render() {
     const Bounds costUSD = grid.get(bodyBounds, 0, 4);
     drawText(ss.str(), costUSD, 16.0f, Bounds::lm);
 
-    const double travelledDistance = m_simulator->getVehicle()->getTravelledDistance();
+    const double travelledDistance = (m_simulator->getVehicle() != nullptr)
+        ? m_simulator->getVehicle()->getTravelledDistance()
+        : 0.0;
     const double mpg = units::convert(travelledDistance, units::mile) / fuelConsumed_gallons;
 
     ss = std::stringstream();
@@ -86,4 +88,10 @@ void FuelCluster::render() {
     drawText(ss.str(), lp100kmBounds, 12.0f, Bounds::lm);
 
     UiElement::render();
+}
+
+double FuelCluster::getTotalVolumeFuelConsumed() const {
+    return (m_engine != nullptr)
+        ? m_engine->getTotalVolumeFuelConsumed()
+        : 0.0;
 }

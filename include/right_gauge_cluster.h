@@ -26,7 +26,14 @@ class RightGaugeCluster : public UiElement {
         void setEngine(Engine *engine);
         void setUnits();
         double getManifoldPressureWithUnits(double ambientPressure);
+
         Simulator *m_simulator;
+
+    private:
+        double getRpm() const;
+        double getRedline() const;
+        double getSpeed() const;
+        double getManifoldPressure() const;
 
     protected:
         Engine *m_engine;

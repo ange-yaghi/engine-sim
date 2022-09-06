@@ -91,7 +91,9 @@ void ThrottleDisplay::renderThrottle(const Bounds &bounds) {
     gen->generateCircle2d(circleParams);
 
     // Draw throttle plate
-    const float throttleAngle = (float)m_engine->getThrottlePlateAngle();
+    const float throttleAngle = (m_engine == nullptr)
+        ? 0.0f
+        : static_cast<float>(m_engine->getThrottlePlateAngle());
     const float cos_theta = std::cosf(throttleAngle);
     const float sin_theta = std::sinf(throttleAngle);
 
@@ -146,7 +148,9 @@ void ThrottleDisplay::renderSpeedControl(const Bounds &bounds) {
     const Point lm = b.getPosition(Bounds::lm);
     const Point rm = b.getPosition(Bounds::rm);
 
-    const float s = static_cast<float>(m_engine->getSpeedControl());
+    const float s = (m_engine != nullptr)
+        ? static_cast<float>(m_engine->getSpeedControl())
+        : 0;
     const Bounds bar = Bounds(b.width(), 2.0f, lm, Bounds::lm);
     const Bounds speedControlBar = Bounds(b.width() * s, 2.0f, lm, Bounds::lm);
 

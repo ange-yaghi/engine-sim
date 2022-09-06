@@ -76,7 +76,7 @@ void CylinderBankObject::render(const ViewParameters *view) {
     );
 
     m_app->getShaders()->SetBaseColor(m_app->getPink());
-    m_app->drawGenerated(m_walls, 0x33);
+    m_app->drawGenerated(m_walls, 0x0);
 }
 
 void CylinderBankObject::process(float dt) {

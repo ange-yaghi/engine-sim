@@ -43,6 +43,8 @@ void Synthesizer::initialize(const Parameters &p) {
     m_audioSampleRate = p.AudioSampleRate;
     m_audioParameters = p.InitialAudioParameters;
 
+    m_inputSamplesRead = 0;
+
     m_inputWriteOffset = 0;
     m_processed = true;
 
@@ -106,13 +108,15 @@ void Synthesizer::startAudioRenderingThread() {
 }
 
 void Synthesizer::endAudioRenderingThread() {
-    m_run = false;
-    endInputBlock();
+    if (m_thread != nullptr) {
+        m_run = false;
+        endInputBlock();
 
-    m_thread->join();
-    delete m_thread;
+        m_thread->join();
+        delete m_thread;
 
-    m_thread = nullptr;
+        m_thread = nullptr;
+    }
 }
 
 void Synthesizer::destroy() {
@@ -124,11 +128,12 @@ void Synthesizer::destroy() {
     }
 
     delete[] m_inputChannels;
-
     delete[] m_filters;
 
     m_inputChannels = nullptr;
     m_filters = nullptr;
+
+    m_inputChannelCount = 0;
 }
 
 int Synthesizer::readAudioOutput(int samples, int16_t *buffer) {
@@ -194,9 +199,11 @@ void Synthesizer::endInputBlock() {
         m_inputChannels[i].Data.removeBeginning(m_inputSamplesRead);
     }
 
-    m_inputSamplesRead = 0;
-    m_latency = m_inputChannels[0].Data.size();
+    if (m_inputChannelCount != 0) {
+        m_latency = m_inputChannels[0].Data.size();
+    }
     
+    m_inputSamplesRead = 0;
     m_processed = false;
 
     lk.unlock();
@@ -300,6 +307,12 @@ int16_t Synthesizer::renderAudio(int inputSample) {
             + (1 - convAmount) * v_in;
 
         signal += v;
+    }
+
+    if (std::isnan(signal)) {
+        std::fstream f("test.txt");
+        f << "here";
+        f.close();
     }
 
     m_levelingFilter.p_target = m_audioParameters.LevelerTarget;

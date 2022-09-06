@@ -73,10 +73,14 @@ void AfrCluster::render() {
     const Bounds bottom = m_bounds.verticalSplit(0.0f, 0.5f);
 
     m_intakeAfrGauge->m_bounds = top;
-    m_intakeAfrGauge->m_gauge->m_value = (float)m_engine->getIntakeAfr();
+    m_intakeAfrGauge->m_gauge->m_value = (m_engine != nullptr)
+        ? static_cast<float>(m_engine->getIntakeAfr())
+        : 0.0f;
 
     m_exhaustAfrGauge->m_bounds = bottom;
-    m_exhaustAfrGauge->m_gauge->m_value = (float)m_engine->getExhaustO2() * 100;
+    m_exhaustAfrGauge->m_gauge->m_value = (m_engine != nullptr)
+        ? static_cast<float>(m_engine->getExhaustO2()) * 100.0f
+        : 0.0f;
 
     UiElement::render();
 }

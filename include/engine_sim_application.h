@@ -42,6 +42,7 @@ class EngineSimApplication {
         void run();
         void destroy();
 
+        void loadEngine(Engine *engine, Vehicle *vehicle, Transmission *transmission);
         void drawGenerated(
                 const GeometryGenerator::GeometryIndices &indices,
                 int layer = 0);
@@ -59,6 +60,7 @@ class EngineSimApplication {
         dbasic::TextRenderer *getTextRenderer() { return &m_textRenderer; }
 
         void createObjects(Engine *engine);
+        void destroyObjects();
         dbasic::DeltaEngine *getEngine() { return &m_engine; }
 
         float pixelsToUnits(float pixels) const;
@@ -87,7 +89,19 @@ class EngineSimApplication {
         ApplicationSettings* getAppSettings() { return &m_applicationSettings; }
 
     protected:
+        void loadScript();
+        void processEngineInput();
         void renderScene();
+
+        void refreshUserInterface();
+
+    protected:
+        double m_speedSetting = 1.0;
+        double m_targetSpeedSetting = 1.0;
+
+        double m_clutchPressure = 1.0;
+        double m_targetClutchPressure = 1.0;
+        int m_lastMouseWheel = 0;
 
     protected:
         virtual void initialize();

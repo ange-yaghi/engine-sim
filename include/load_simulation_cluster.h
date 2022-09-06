@@ -20,11 +20,15 @@ class LoadSimulationCluster : public UiElement {
 
         void setSimulator(Simulator *simulator) { m_simulator = simulator; }
 
+    private:
+        Transmission *getTransmission() const { return m_simulator->getTransmission(); }
+
     protected:
         void drawCurrentGear(const Bounds &bounds);
         void drawClutchPressureGauge(const Bounds &bounds);
         void drawSystemStatus(const Bounds &bounds);
         void updateHpAndTorque(float dt);
+        bool isIgnitionOn() const;
 
         float m_systemStatusLights[4];
         LabeledGauge *m_dynoSpeedGauge;
