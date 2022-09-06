@@ -262,10 +262,6 @@ add_executable(engine-sim-app WIN32
     include/info_cluster.h
 )
 
-target_link_libraries(engine-sim-app
-    engine-sim
-)
-
 if (DTV)
     target_link_libraries(engine-sim-app
         direct-to-video)
@@ -287,6 +283,10 @@ if (DISCORD_ENABLED)
         discord-rpc
     )
 endif (DISCORD_ENABLED)
+
+target_link_libraries(engine-sim-app
+    engine-sim
+)
 
 # GTEST
 
