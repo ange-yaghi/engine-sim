@@ -21,7 +21,7 @@
 #include <sstream>
 
 
-#if ATG_ENGINE_DISCORD_ENABLED
+#if ATG_ENGINE_SIM_DISCORD_ENABLED
 #include "../discord/Discord.h"
 #endif
 
@@ -607,7 +607,7 @@ void EngineSimApplication::loadScript() {
     Vehicle *vehicle = nullptr;
     Transmission *transmission = nullptr;
 
-#ifdef ATG_ENGINE_PIRANHA_ENABLED
+#ifdef ATG_ENGINE_SIM_PIRANHA_ENABLED
     es_script::Compiler compiler;
     compiler.initialize();
     const bool compiled = compiler.compile("../assets/main.mr");
@@ -626,7 +626,7 @@ void EngineSimApplication::loadScript() {
     }
 
     compiler.destroy();
-#endif /* PIRANHA_ENABLED */
+#endif /* ATG_ENGINE_SIM_PIRANHA_ENABLED */
 
     if (vehicle == nullptr) {
         Vehicle::Parameters vehParams;

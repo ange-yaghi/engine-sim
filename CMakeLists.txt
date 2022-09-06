@@ -9,11 +9,11 @@ if (DTV)
 endif (DTV)
 
 if (PIRANHA_ENABLED)
-    add_compile_definitions(ATG_ENGINE_PIRANHA_ENABLED)
+    add_compile_definitions(ATG_ENGINE_SIM_PIRANHA_ENABLED)
 endif (PIRANHA_ENABLED)
 
 if (DISCORD_ENABLED)
-    add_compile_definitions(ATG_ENGINE_DISCORD_ENABLED)
+    add_compile_definitions(ATG_ENGINE_SIM_DISCORD_ENABLED)
 endif (DISCORD_ENABLED)
 
 # Enable group projects in folders
