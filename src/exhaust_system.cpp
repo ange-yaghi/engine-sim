@@ -6,6 +6,7 @@ ExhaustSystem::ExhaustSystem() {
     m_primaryFlowRate = 0;
     m_outletFlowRate = 0;
     m_collectorCrossSectionArea = 0;
+    m_length = 0;
     m_primaryTubeLength = 0;
     m_audioVolume = 0;
     m_velocityDecay = 0;
@@ -19,11 +20,12 @@ ExhaustSystem::~ExhaustSystem() {
 }
 
 void ExhaustSystem::initialize(const Parameters &params) {
-    const double systemWidth = std::sqrt(params.CollectorCrossSectionArea);
-    const double systemLength = params.Volume / systemWidth;
+    const double systemWidth = std::sqrt(params.collectorCrossSectionArea);
+    const double volume = params.collectorCrossSectionArea * params.length;
+    const double systemLength = params.length;
     m_system.initialize(
             units::pressure(1.0, units::atm),
-            params.Volume,
+            volume,
             units::celcius(25.0));
     m_system.setGeometry(
         systemLength,
@@ -41,13 +43,14 @@ void ExhaustSystem::initialize(const Parameters &params) {
         1.0,
         0.0);
 
-    m_primaryFlowRate = params.PrimaryFlowRate;
-    m_audioVolume = params.AudioVolume;
-    m_outletFlowRate = params.OutletFlowRate;
-    m_collectorCrossSectionArea = params.CollectorCrossSectionArea;
-    m_primaryTubeLength = params.PrimaryTubeLength;
-    m_velocityDecay = params.VelocityDecay;
-    m_impulseResponse = params.ImpulseResponse;
+    m_primaryFlowRate = params.primaryFlowRate;
+    m_audioVolume = params.audioVolume;
+    m_outletFlowRate = params.outletFlowRate;
+    m_collectorCrossSectionArea = params.collectorCrossSectionArea;
+    m_velocityDecay = params.velocityDecay;
+    m_impulseResponse = params.impulseResponse;
+    m_length = params.length;
+    m_primaryTubeLength = params.primaryTubeLength;
 }
 
 void ExhaustSystem::destroy() {

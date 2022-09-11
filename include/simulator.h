@@ -10,6 +10,7 @@
 #include "starter_motor.h"
 #include "derivative_filter.h"
 #include "vehicle_drag_constraint.h"
+#include "delay_filter.h"
 
 #include "scs.h"
 
@@ -96,6 +97,8 @@ class Simulator {
     protected:
         atg_scs::RigidBodySystem *m_system;
         Synthesizer m_synthesizer;
+
+        DelayFilter *m_delayFilters;
 
         atg_scs::FixedPositionConstraint *m_crankConstraints;
         atg_scs::ClutchConstraint *m_crankshaftLinks;

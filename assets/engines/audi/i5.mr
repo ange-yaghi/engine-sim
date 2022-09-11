@@ -226,13 +226,18 @@ public node audi_i5_2_2L {
         primary_tube_length: 10.0 * units.inch,
         primary_flow_rate: k_carb(100.0),
         velocity_decay: 1.0,
-        volume: 50.0 * units.L
+        length: 200 * units.inch
     )
 
     exhaust_system exhaust0(
-        es_params, audio_volume: 1.0 * 0.01, impulse_response: ir_lib.mild_exhaust_0)
+        es_params,
+        length: 200.0 * units.inch,
+        audio_volume: 1.0 * 0.01,
+        impulse_response: ir_lib.mild_exhaust_0)
     exhaust_system exhaust1(
-        es_params, audio_volume: 0.8 * 0.01, impulse_response: ir_lib.mild_exhaust_0)
+        es_params,
+        audio_volume: 1.0 * 0.01,
+        impulse_response: ir_lib.mild_exhaust_0)
 
     cylinder_bank b0(bank_params, angle: 0)
     b0
@@ -243,7 +248,8 @@ public node audi_i5_2_2L {
             intake: intake,
             exhaust_system: exhaust0,
             ignition_wire: wires.wire1,
-            sound_attenuation: 0.9
+            sound_attenuation: 0.9,
+            primary_length: (5 * 5 + 0.5) * units.inch
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.6)),
@@ -252,7 +258,8 @@ public node audi_i5_2_2L {
             intake: intake,
             exhaust_system: exhaust1,
             ignition_wire: wires.wire2,
-            sound_attenuation: 0.8
+            sound_attenuation: 0.8,
+            primary_length: (4 * 5 + 1.0) * units.inch
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.6)),
@@ -261,7 +268,8 @@ public node audi_i5_2_2L {
             intake: intake,
             exhaust_system: exhaust0,
             ignition_wire: wires.wire3,
-            sound_attenuation: 0.9
+            sound_attenuation: 0.9,
+            primary_length: (3 * 5 - 0.5) * units.inch
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.4)),
@@ -270,7 +278,8 @@ public node audi_i5_2_2L {
             intake: intake,
             exhaust_system: exhaust1,
             ignition_wire: wires.wire4,
-            sound_attenuation: 1.0
+            sound_attenuation: 1.0,
+            primary_length: (2 * 5 + 1) * units.inch
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.4)),
@@ -279,7 +288,8 @@ public node audi_i5_2_2L {
             intake: intake,
             exhaust_system: exhaust0,
             ignition_wire: wires.wire5,
-            sound_attenuation: 1.1
+            sound_attenuation: 1.1,
+            primary_length: (1 * 5 + 2) * units.inch
         )
 
     engine

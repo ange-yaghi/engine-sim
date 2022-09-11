@@ -8,9 +8,6 @@
 
 #include "engine_sim.h"
 
-#include <map>
-#include <vector>
-
 namespace es_script {
 
     class ExhaustSystemNode : public ObjectReferenceNode<ExhaustSystemNode> {
@@ -21,7 +18,7 @@ namespace es_script {
         ExhaustSystem *generate(EngineContext *context) {
             ExhaustSystem *exhaust = context->getExhaust(this);
             ExhaustSystem::Parameters parameters = m_parameters;
-            parameters.ImpulseResponse = m_impulseResponse->generate(context);
+            parameters.impulseResponse = m_impulseResponse->generate(context);
 
             exhaust->initialize(parameters);
 
@@ -30,13 +27,13 @@ namespace es_script {
 
     protected:
         virtual void registerInputs() {
-            addInput("volume", &m_parameters.Volume);
-            addInput("collector_cross_section_area", &m_parameters.CollectorCrossSectionArea);
-            addInput("outlet_flow_rate", &m_parameters.OutletFlowRate);
-            addInput("primary_tube_length", &m_parameters.PrimaryTubeLength);
-            addInput("primary_flow_rate", &m_parameters.PrimaryFlowRate);
-            addInput("audio_volume", &m_parameters.AudioVolume);
-            addInput("velocity_decay", &m_parameters.VelocityDecay);
+            addInput("length", &m_parameters.length);
+            addInput("collector_cross_section_area", &m_parameters.collectorCrossSectionArea);
+            addInput("outlet_flow_rate", &m_parameters.outletFlowRate);
+            addInput("primary_tube_length", &m_parameters.primaryTubeLength);
+            addInput("primary_flow_rate", &m_parameters.primaryFlowRate);
+            addInput("audio_volume", &m_parameters.audioVolume);
+            addInput("velocity_decay", &m_parameters.velocityDecay);
             addInput("impulse_response", &m_impulseResponse, InputTarget::Type::Object);
 
             ObjectReferenceNode<ExhaustSystemNode>::registerInputs();

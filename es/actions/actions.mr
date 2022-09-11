@@ -79,6 +79,7 @@ private node _add_cylinder => __engine_sim__add_cylinder {
     input cylinder_bank [cylinder_bank];
     input ignition_wire [ignition_wire];
     input sound_attenuation [float];
+    input primary_length [float];
 }
 
 public node add_cylinder {
@@ -89,6 +90,7 @@ public node add_cylinder {
     input rod_journal;
     input ignition_wire;
     input sound_attenuation: 1.0;
+    input primary_length: 0.0;
     input this;
     alias output __out: this;
 
@@ -100,7 +102,8 @@ public node add_cylinder {
         intake: intake,
         ignition_wire: ignition_wire,
         cylinder_bank: this,
-        sound_attenuation: sound_attenuation
+        sound_attenuation: sound_attenuation,
+        primary_length: primary_length
     )
 }
 

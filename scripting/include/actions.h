@@ -151,6 +151,7 @@ namespace es_script {
             addInput("intake", &m_intake, InputTarget::Type::Object);
             addInput("cylinder_bank", &m_cylinderBank, InputTarget::Type::Object);
             addInput("ignition_wire", &m_ignitionWire, InputTarget::Type::Object);
+            addInput("primary_length", &m_primaryLength);
             addInput("sound_attenuation", &m_soundAttenuation);
 
             Node::registerInputs();
@@ -166,7 +167,8 @@ namespace es_script {
                 m_intake,
                 m_exhaustSystem,
                 m_ignitionWire,
-                m_soundAttenuation
+                m_soundAttenuation,
+                m_primaryLength
             );
         }
 
@@ -178,6 +180,7 @@ namespace es_script {
         ExhaustSystemNode *m_exhaustSystem = nullptr;
         IntakeNode *m_intake = nullptr;
         IgnitionWireNode *m_ignitionWire = nullptr;
+        double m_primaryLength = 0.0;
         double m_soundAttenuation = 1.0;
     };
 
@@ -487,7 +490,7 @@ namespace es_script {
         }
 
     protected:
-        double m_ratio;
+        double m_ratio = 1.0;
         TransmissionNode *m_transmission = nullptr;
     };
 

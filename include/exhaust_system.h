@@ -11,14 +11,14 @@ class ExhaustSystem : public Part {
 
     public:
         struct Parameters {
-            double Volume;
-            double CollectorCrossSectionArea;
-            double OutletFlowRate;
-            double PrimaryTubeLength;
-            double PrimaryFlowRate;
-            double VelocityDecay;
-            double AudioVolume;
-            ImpulseResponse *ImpulseResponse;
+            double length;
+            double collectorCrossSectionArea;
+            double outletFlowRate;
+            double primaryTubeLength;
+            double primaryFlowRate;
+            double velocityDecay;
+            double audioVolume;
+            ImpulseResponse *impulseResponse;
         };
 
     public:
@@ -31,6 +31,7 @@ class ExhaustSystem : public Part {
         void process(double dt);
 
         inline int getIndex() const { return m_index; }
+        inline double getLength() const { return m_length; }
         inline double getFlow() const { return m_flow; }
         inline double getAudioVolume() const { return m_audioVolume; }
         inline double getPrimaryFlowRate() const { return m_primaryFlowRate; }
@@ -47,6 +48,7 @@ class ExhaustSystem : public Part {
 
         ImpulseResponse *m_impulseResponse;
 
+        double m_length;
         double m_primaryTubeLength;
         double m_collectorCrossSectionArea;
         double m_primaryFlowRate;

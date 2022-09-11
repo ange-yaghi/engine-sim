@@ -1,8 +1,8 @@
 import "engine_sim.mr"
 import "themes/default.mr"
-import "engines/audi/i5.mr"
+import "engines/chevrolet/chev_truck_454.mr"
 
 use_default_theme()
 set_engine(
-    audi_i5_2_2L()
+    chev_truck_454()
 )

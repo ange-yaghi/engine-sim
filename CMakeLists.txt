@@ -54,6 +54,7 @@ add_library(engine-sim STATIC
     src/convolution_filter.cpp
     src/cylinder_bank.cpp
     src/cylinder_head.cpp
+    src/delay_filter.cpp
     src/derivative_filter.cpp
     src/direct_throttle_linkage.cpp
     src/dynamometer.cpp
@@ -96,6 +97,7 @@ add_library(engine-sim STATIC
     include/convolution_filter.h
     include/cylinder_bank.h
     include/cylinder_head.h
+    include/delay_filter.h
     include/derivative_filter.h
     include/direct_throttle_linkage.h
     include/dynamometer.h

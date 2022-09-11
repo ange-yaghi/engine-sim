@@ -82,13 +82,23 @@ public node chev_truck_454 {
     exhaust_system_parameters es_params(
         outlet_flow_rate: k_carb(550.0),
         primary_tube_length: 10.0 * units.inch,
-        primary_flow_rate: k_carb(90.0),
+        primary_flow_rate: k_carb(100.0),
         velocity_decay: 1.0, //0.5
-        volume: 50.0 * units.L
+        length: 100.0 * units.inch
     )
 
-    exhaust_system exhaust0(es_params, audio_volume: 1.0, impulse_response: ir_lib.default_0)
-    exhaust_system exhaust1(es_params, audio_volume: 0.1, impulse_response: ir_lib.default_0)
+    label distance(5.0 * units.inch)
+
+    exhaust_system exhaust0(
+        es_params,
+        length: (180 + 72.0) * units.inch,
+        audio_volume: 5.5,
+        impulse_response: ir_lib.default_0)
+    exhaust_system exhaust1(
+        es_params,
+        length: 180.0 * units.inch,
+        audio_volume: 5.5, 
+        impulse_response: ir_lib.default_0)
 
     cylinder_bank b0(bank_params, angle: -45 * units.deg)
     b0
@@ -98,7 +108,9 @@ public node chev_truck_454 {
             rod_journal: rj0,
             intake: intake,
             exhaust_system: exhaust0,
-            ignition_wire: wires.wire1
+            ignition_wire: wires.wire1,
+            primary_length: distance * 4,
+            sound_attenuation: 0.9
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.6)),
@@ -106,7 +118,9 @@ public node chev_truck_454 {
             rod_journal: rj1,
             intake: intake,
             exhaust_system: exhaust0,
-            ignition_wire: wires.wire3
+            ignition_wire: wires.wire3,
+            primary_length: distance * 3,
+            sound_attenuation: 1.1
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.6)),
@@ -114,7 +128,9 @@ public node chev_truck_454 {
             rod_journal: rj2,
             intake: intake,
             exhaust_system: exhaust0,
-            ignition_wire: wires.wire5
+            ignition_wire: wires.wire5,
+            primary_length: distance * 2,
+            sound_attenuation: 0.8
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.4)),
@@ -122,7 +138,9 @@ public node chev_truck_454 {
             rod_journal: rj3,
             intake: intake,
             exhaust_system: exhaust0,
-            ignition_wire: wires.wire7
+            ignition_wire: wires.wire7,
+            primary_length: distance * 1,
+            sound_attenuation: 0.85
         )
 
     cylinder_bank b1(bank_params, angle: 45.0 * units.deg)
@@ -133,7 +151,9 @@ public node chev_truck_454 {
             rod_journal: rj0,
             intake: intake,
             exhaust_system: exhaust1,
-            ignition_wire: wires.wire2
+            ignition_wire: wires.wire2,
+            primary_length: distance * 4,
+            sound_attenuation: 0.9
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.2)),
@@ -141,7 +161,9 @@ public node chev_truck_454 {
             rod_journal: rj1,
             intake: intake,
             exhaust_system: exhaust1,
-            ignition_wire: wires.wire4
+            ignition_wire: wires.wire4,
+            primary_length: distance * 3,
+            sound_attenuation: 1.1
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.6)),
@@ -149,7 +171,9 @@ public node chev_truck_454 {
             rod_journal: rj2,
             intake: intake,
             exhaust_system: exhaust1,
-            ignition_wire: wires.wire6
+            ignition_wire: wires.wire6,
+            primary_length: distance * 2,
+            sound_attenuation: 0.8
         )
         .add_cylinder(
             piston: piston(piston_params, blowby: k_28inH2O(0.6)),
@@ -157,7 +181,9 @@ public node chev_truck_454 {
             rod_journal: rj3,
             intake: intake,
             exhaust_system: exhaust1,
-            ignition_wire: wires.wire8
+            ignition_wire: wires.wire8,
+            primary_length: distance * 1,
+            sound_attenuation: 0.75
         )
 
     engine
