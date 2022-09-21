@@ -3,7 +3,8 @@
 
 #include "filter.h"
 
-#include "low_pass_filter.h"
+#include "butterworth_low_pass_filter.h"
+#include "utilities.h"
 
 #include <random>
 
@@ -31,8 +32,8 @@ public:
             static_cast<float>(m_maxJitter - 1));
         
         const float s = m_noiseFilter.fast_f(dist(m_generator) * m_jitterScale * jitterScale);
-        const float s_i_0 = std::floor(s);
-        const float s_i_1 = std::ceil(s);
+        const float s_i_0 = clamp(std::floor(s), 0.0f, static_cast<float>(m_maxJitter - 1));
+        const float s_i_1 = clamp(std::ceil(s), 0.0f, static_cast<float>(m_maxJitter - 1));
 
         const float s_frac = (s - s_i_0);
 
@@ -42,14 +43,15 @@ public:
         const float v0 = m_history[i_0 >= m_maxJitter ? i_0 - m_maxJitter : i_0];
         const float v1 = m_history[i_1 >= m_maxJitter ? i_1 - m_maxJitter : i_1];
 
-        return v1 * s_frac + v0 * (1 - s_frac);
+        return m_antialiasing.fast_f(v1 * s_frac + v0 * (1 - s_frac));
     }
 
     inline void setJitterScale(float jitterScale) { m_jitterScale = jitterScale; }
     inline float getJitterScale() const { return m_jitterScale; }
 
 protected:
-    LowPassFilter m_noiseFilter;
+    ButterworthLowPassFilter m_noiseFilter;
+    ButterworthLowPassFilter m_antialiasing;
 
     float m_jitterScale;
     int m_maxJitter;

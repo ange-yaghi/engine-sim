@@ -4,6 +4,7 @@ JitterFilter::JitterFilter() {
     m_history = nullptr;
     m_maxJitter = 0;
     m_offset = 0;
+    m_jitterScale = 0.0f;
 }
 
 JitterFilter::~JitterFilter() {
@@ -21,8 +22,8 @@ void JitterFilter::initialize(
     m_offset = 0;
     memset(m_history, 0, sizeof(float) * maxJitter);
 
-    m_noiseFilter.setCutoffFrequency(cutoffFrequency);
-    m_noiseFilter.m_dt = 1 / audioFrequency;
+    m_noiseFilter.setCutoffFrequency(cutoffFrequency, audioFrequency);
+    m_antialiasing.setCutoffFrequency(audioFrequency / 3.0f, audioFrequency);
 }
 
 float JitterFilter::f(float sample) {

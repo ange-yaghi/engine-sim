@@ -197,7 +197,7 @@ void EngineSimApplication::initialize() {
 }
 
 void EngineSimApplication::process(float frame_dt) {
-    frame_dt = static_cast<float>(clamp(frame_dt, 1 / 200.0, 1 / 30.0));
+    frame_dt = static_cast<float>(clamp(frame_dt, 1 / 200.0f, 1 / 30.0f));
 
     double speed = 1.0 / 1.0;
     if (m_engine.IsKeyDown(ysKey::Code::N1)) {

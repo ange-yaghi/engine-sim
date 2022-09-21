@@ -3,6 +3,8 @@
 
 #include "filter.h"
 
+#include "function.h"
+
 class LevelingFilter : public Filter {
     public:
         LevelingFilter();

@@ -4,7 +4,9 @@
 double modularDistance(double a, double b, double mod = 1.0);
 double positiveMod(double x, double mod);
 double erfApproximation(double x);
-inline double clamp(double x, double x0 = 0.0, double x1 = 1.0) {
+
+template <typename t>
+inline t clamp(t x, t x0 = static_cast<t>(0.0), t x1 = static_cast<t>(1.0)) {
     if (x <= x0) return x0;
     else if (x >= x1) return x1;
     else return x;
