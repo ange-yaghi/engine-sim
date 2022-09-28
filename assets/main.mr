@@ -1,7 +1,6 @@
 import "engine_sim.mr"
 import "themes/default.mr"
-import "themes/paper.mr"
-import "../workspace/video-engines/main.mr"
+import "engines/video-2/02_subaru_ej25_uh.mr"
 
 use_default_theme()
 main()

@@ -15,4 +15,12 @@ public node impulse_response_library {
 
     output mild_exhaust_0:
         impulse_response(filename: "new/mild_exhaust.wav", volume: 0.01);
+    output mild_exhaust_0_reverb:
+        impulse_response(filename: "new/mild_exhaust_reverb.wav", volume: 0.01);
+    output minimal_muffling_01:
+        impulse_response(filename: "new/minimal_muffling_01.wav", volume: 0.01);
+    output minimal_muffling_02:
+        impulse_response(filename: "new/minimal_muffling_02.wav", volume: 0.01);
+    output minimal_muffling_03:
+        impulse_response(filename: "new/minimal_muffling_03.wav", volume: 0.01);
 }

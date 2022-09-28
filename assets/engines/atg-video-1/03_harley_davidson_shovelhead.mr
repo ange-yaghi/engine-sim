@@ -1,0 +1,231 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+}
+
+public node harley_distributor {
+    input wires;
+    input timing_curve;
+    input rev_limit: 5500 * units.rpm;
+    alias output __out:
+        ignition_module(timing_curve: timing_curve, rev_limit: rev_limit)
+            .connect_wire(wires.wire1, 0 * units.deg)
+            .connect_wire(wires.wire2, 315 * units.deg);
+}
+
+public node harley_davidson_shovelhead {
+    alias output __out: engine;
+
+    engine engine(
+        name: "Harley Davidson Shovelhead",
+        starter_torque: 70 * units.lb_ft,
+        starter_speed: 500 * units.rpm,
+        redline: 5000 * units.rpm,
+        hf_gain: 0.01,
+        noise: 0.115,
+        jitter: 0.136,
+        simulation_frequency: 35000
+    )
+
+    wires wires()
+
+    label stroke(4.25 * units.inch)
+    label bore(3.5 * units.inch)
+    label rod_length(8 * units.inch)
+    label compression_height(1.0 * units.inch)
+    label crank_mass(9.39 * units.kg)
+    label flywheel_mass(15 * units.kg)
+    label flywheel_radius(6 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // Moment from cams, pulleys, etc [estimated]
+        disk_moment_of_inertia(mass: 10 * units.kg, radius: 3.0 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 5.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: (90 - 0.5 * 45) * units.deg
+    )
+
+    rod_journal rj0(angle: 0.0)
+    c0
+        .add_rod_journal(rj0)
+
+    piston_parameters piston_params(
+        mass: 500 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: 500.0 * units.g,
+        moment_of_inertia: 0.0015884918028487504,
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 1.5 * units.L,
+        plenum_cross_section_area: 10.0 * units.cm2,
+        intake_flow_rate: k_carb(100.0),
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.991,
+        throttle_gamma: 1.0,
+        velocity_decay: 1.0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(100.0),
+        primary_tube_length: 70.0 * units.inch,
+        primary_flow_rate: k_carb(100.0),
+        velocity_decay: 0.75,
+        volume: 10.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 1.0 * 0.1,
+        impulse_response: ir_lib.minimal_muffling_01
+    )
+
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 2.0 * 0.1,
+        impulse_response: ir_lib.minimal_muffling_01
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: -0.5 * 45 * units.deg, display_depth: 0.55)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.2)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1
+        )
+
+    cylinder_bank b1(bank_params, angle: 0.5 * 45 * units.deg, display_depth: 0.55)
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe lobe(
+        duration_at_50_thou: 210 * units.deg,
+        gamma: 0.9,
+        lift: 400 * units.thou,
+        steps: 100
+    )
+
+    vtwin_camshaft_builder camshaft(
+        lobe_profile: lobe,
+        lobe_separation: 110 * units.deg,
+        base_radius: 500 * units.thou,
+        angle: 315 * units.deg
+    )
+
+    b0.set_cylinder_head (
+        generic_small_engine_head(
+            chamber_volume: 100 * units.cc,
+            intake_camshaft: camshaft.intake_cam_0,
+            exhaust_camshaft: camshaft.exhaust_cam_0,
+            flow_attenuation: 2.0,
+            intake_runner_cross_section_area: 20.0 * units.cm2,
+            exhaust_runner_cross_section_area: 20.0 * units.cm2
+        )
+    )
+
+    b1.set_cylinder_head (
+        generic_small_engine_head(
+            flip_display: true,
+            chamber_volume: 100 * units.cc,
+            intake_camshaft: camshaft.intake_cam_1,
+            exhaust_camshaft: camshaft.exhaust_cam_1,
+            flow_attenuation: 1.0,
+            intake_runner_cross_section_area: 20.0 * units.cm2,
+            exhaust_runner_cross_section_area: 20.0 * units.cm2
+        )
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 18 * units.deg)
+        .add_sample(1000 * units.rpm, 18 * units.deg)
+        .add_sample(2000 * units.rpm, 30 * units.deg)
+        .add_sample(3000 * units.rpm, 40 * units.deg)
+        .add_sample(4000 * units.rpm, 40 * units.deg)
+
+    engine.add_ignition_module(
+        harley_distributor(
+            wires: wires,
+            timing_curve: timing_curve,
+            rev_limit: 5500 * units.rpm
+        ))
+}
+
+private node harley_davidson_motorcyle {
+    alias output __out:
+        vehicle(
+            mass: 900 * units.lb,
+            drag_coefficient: 0.1,
+            cross_sectional_area: (15 * units.inch) * (47 * units.inch),
+            diff_ratio: 2.0,
+            tire_radius: 11 * units.inch,
+            rolling_resistance: 200 * units.N
+        );
+}
+
+private node harley_davidson_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 200 * units.lb_ft
+        )
+        .add_gear(3.34)
+        .add_gear(2.30)
+        .add_gear(1.71)
+        .add_gear(1.41)
+        .add_gear(1.18)
+        .add_gear(1.00);
+}
+
+public node main {
+    set_engine(harley_davidson_shovelhead())
+    set_vehicle(harley_davidson_motorcyle())
+    set_transmission(harley_davidson_transmission())
+}

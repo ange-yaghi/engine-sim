@@ -1,0 +1,56 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+label cycle(2 * 360 * units.deg)
+
+public node radial_head {
+    input offset;
+    input lobe_profile;
+    input chamber_volume: 290 * units.cc;
+    alias output __head:
+        generic_small_engine_head(
+            chamber_volume: chamber_volume,
+            intake_camshaft: camshaft.intake_cam,
+            exhaust_camshaft: camshaft.exhaust_cam,
+            flow_attenuation: 2.0,
+            intake_runner_cross_section_area: 20.0 * units.cm2,
+            exhaust_runner_cross_section_area: 20.0 * units.cm2
+        );
+
+    radial_camshaft camshaft(
+        lobe_profile: lobe_profile,
+        offset: offset
+    )
+}
+
+public node radial_camshaft {
+    input lobe_profile;
+    input offset;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;  
+    input advance: 0 * units.deg;
+    input base_radius: 1.0 * units.inch;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+
+    camshaft_parameters params (
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot180(180 * units.deg)
+    label rot360(360 * units.deg)
+
+    _exhaust_cam
+        .add_lobe(rot360 - exhaust_lobe_center + offset * cycle)
+    _intake_cam
+        .add_lobe(rot360 + intake_lobe_center + offset * cycle)
+}

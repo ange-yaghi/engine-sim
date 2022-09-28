@@ -1,0 +1,402 @@
+import "engine_sim.mr"
+
+import "radial.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+    output wire9: ignition_wire();
+}
+
+label cycle(2 * 360 * units.deg)
+public node radial_9_distributor {
+    input wires;
+    input timing_curve;
+    input rev_limit: 5500 * units.rpm;
+    alias output __out:
+        ignition_module(
+            timing_curve: timing_curve,
+            rev_limit: rev_limit,
+            limiter_duration: 0.2
+        )
+            .connect_wire(wires.wire1, (0 / 9.0) * cycle)
+            .connect_wire(wires.wire3, (1 / 9.0) * cycle)
+            .connect_wire(wires.wire5, (2 / 9.0) * cycle)
+            .connect_wire(wires.wire7, (3 / 9.0) * cycle)
+            .connect_wire(wires.wire9, (4 / 9.0) * cycle)
+            .connect_wire(wires.wire2, (5 / 9.0) * cycle)
+            .connect_wire(wires.wire4, (6 / 9.0) * cycle)
+            .connect_wire(wires.wire6, (7 / 9.0) * cycle)
+            .connect_wire(wires.wire8, (8 / 9.0) * cycle);
+}
+
+public node radial_9 {
+    alias output __out: engine;
+
+    engine engine(
+        name: "Radial 9",
+        starter_torque: 80 * units.lb_ft,
+        starter_speed: 400 * units.rpm,
+        redline: 3000 * units.rpm,
+        fuel: fuel(
+            //max_turbulence_effect: 0.5,
+            //max_burning_efficiency: 1.0
+        ),
+        simulation_frequency: 7500
+    )
+
+    wires wires()
+
+    label slave_throw(3.5 * units.inch)
+    label stroke(5.5 * units.inch)
+    label bore(5 * units.inch)
+    label rod_length(16 * units.inch)
+    label compression_height(1.0 * units.inch)
+    label rod_mass(535 * units.g)
+    label crank_mass(20.39 * units.kg)
+    label flywheel_mass(50 * units.kg)
+    label flywheel_radius(12 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // Moment from cams, pulleys, etc [estimated]
+        disk_moment_of_inertia(mass: 10 * units.kg, radius: 2.0 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: 10 * units.lb,
+        mass: 10 * units.lb,
+        friction_torque: 10.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: (90 - 0.5 * 45) * units.deg
+    )
+
+    rod_journal rj0(angle: 0.0)
+    c0
+        .add_rod_journal(rj0)
+
+    piston_parameters piston_params(
+        mass: 10 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: 100.0 * units.g,
+        moment_of_inertia: 0.0015884918028487504,
+        center_of_mass: 0.0,
+        length: rod_length - slave_throw
+    )
+
+    intake intake(
+        plenum_volume: 10.5 * units.L,
+        plenum_cross_section_area: 10.0 * units.cm2,
+        intake_flow_rate: k_carb(1000.0),
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.993,
+        throttle_gamma: 1.0,
+        velocity_decay: 1.0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(2000.0),
+        primary_tube_length: 70.0 * units.inch,
+        primary_flow_rate: k_carb(1000.0),
+        velocity_decay: 0.75,
+        length: 100 * units.inch
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 1.0,
+        impulse_response: ir_lib.mild_exhaust_0_reverb
+    )
+
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 1.0,
+        impulse_response: ir_lib.mild_exhaust_0_reverb
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    connecting_rod master(
+        connecting_rod_parameters(
+            cr_params,
+            slave_throw: slave_throw,
+            length: rod_length
+        )
+    )
+
+    rod_journal sj0(angle: (0 / 9.0) * 360 * units.deg)
+    rod_journal sj1(angle: (1 / 9.0) * 360 * units.deg)
+    rod_journal sj2(angle: (2 / 9.0) * 360 * units.deg)
+    rod_journal sj3(angle: (3 / 9.0) * 360 * units.deg)
+    rod_journal sj4(angle: (4 / 9.0) * 360 * units.deg)
+    rod_journal sj5(angle: (5 / 9.0) * 360 * units.deg)
+    rod_journal sj6(angle: (6 / 9.0) * 360 * units.deg)
+    rod_journal sj7(angle: (7 / 9.0) * 360 * units.deg)
+    rod_journal sj8(angle: (8 / 9.0) * 360 * units.deg)
+    master
+        .add_slave_journal(sj0)
+        .add_slave_journal(sj1)
+        .add_slave_journal(sj2)
+        .add_slave_journal(sj3)
+        .add_slave_journal(sj4)
+        .add_slave_journal(sj5)
+        .add_slave_journal(sj6)
+        .add_slave_journal(sj7)
+        .add_slave_journal(sj8)
+
+    label spacing(10 * units.inch)
+
+    cylinder_bank b0(bank_params, angle: (0 / 9.0) * 360 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.2)),
+            connecting_rod: master,
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            primary_length: 6.11 * units.foot
+        )
+
+    cylinder_bank b1(bank_params, angle: (1 / 9.0) * 360 * units.deg)
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.03)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: sj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire9,
+            primary_length: 7.46 * units.foot
+        )
+
+    cylinder_bank b2(bank_params, angle: (2 / 9.0) * 360 * units.deg)
+    b2
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: sj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire8,
+            primary_length: 8.31 * units.foot
+        )
+
+    cylinder_bank b3(bank_params, angle: (3 / 9.0) * 360 * units.deg)
+    b3
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: sj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire7,
+            primary_length: 8.45 * units.foot
+        )
+    cylinder_bank b4(bank_params, angle: (4 / 9.0) * 360 * units.deg)
+    b4
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.5)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: sj4,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            primary_length: 7.84 * units.foot
+        )
+    cylinder_bank b5(bank_params, angle: (5 / 9.0) * 360 * units.deg)
+    b5
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.5)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: sj5,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire5,
+            primary_length: 6.63 * units.foot
+        )
+    cylinder_bank b6(bank_params, angle: (6 / 9.0) * 360 * units.deg)
+    b6
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.5)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: sj6,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            primary_length: 5.2 * units.foot
+        )
+    cylinder_bank b7(bank_params, angle: (7 / 9.0) * 360 * units.deg)
+    b7
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.5)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: sj7,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire3,
+            primary_length: 4.33 * units.foot
+        )
+    cylinder_bank b8(bank_params, angle: (8 / 9.0) * 360 * units.deg)
+    b8
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.5)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: sj8,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            primary_length: 4.77 * units.foot
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+        .add_cylinder_bank(b2)
+        .add_cylinder_bank(b3)
+        .add_cylinder_bank(b4)
+        .add_cylinder_bank(b5)
+        .add_cylinder_bank(b6)
+        .add_cylinder_bank(b7)
+        .add_cylinder_bank(b8)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe lobe(
+        duration_at_50_thou: 260 * units.deg,
+        gamma: 0.9,
+        lift: 800 * units.thou,
+        steps: 100
+    )
+
+    b0.set_cylinder_head (
+        radial_head(
+            offset: 0 / 9.0,
+            lobe_profile: lobe
+        )
+    )
+
+    b1.set_cylinder_head (
+        radial_head(
+            offset: 4 / 9.0,
+            lobe_profile: lobe
+        )
+    )
+
+    b2.set_cylinder_head (
+        radial_head(
+            offset: 8 / 9.0,
+            lobe_profile: lobe
+        )
+    )
+
+    b3.set_cylinder_head (
+        radial_head(
+            offset: 3 / 9.0,
+            lobe_profile: lobe
+        )
+    )
+
+    b4.set_cylinder_head (
+        radial_head(
+            offset: 7 / 9.0,
+            lobe_profile: lobe
+        )
+    )
+
+    b5.set_cylinder_head (
+        radial_head(
+            offset: 2 / 9.0,
+            lobe_profile: lobe
+        )
+    )
+
+    b6.set_cylinder_head (
+        radial_head(
+            offset: 6 / 9.0,
+            lobe_profile: lobe
+        )
+    )
+
+    b7.set_cylinder_head (
+        radial_head(
+            offset: 1 / 9.0,
+            lobe_profile: lobe
+        )
+    )
+
+    b8.set_cylinder_head (
+        radial_head(
+            offset: 5 / 9.0,
+            lobe_profile: lobe
+        )
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 18 * units.deg)
+        .add_sample(1000 * units.rpm, 18 * units.deg)
+        .add_sample(2000 * units.rpm, 30 * units.deg)
+        .add_sample(3000 * units.rpm, 40 * units.deg)
+        .add_sample(4000 * units.rpm, 40 * units.deg)
+
+    engine.add_ignition_module(
+        radial_9_distributor(
+            wires: wires,
+            timing_curve: timing_curve,
+            rev_limit: 3500 * units.rpm
+        ))
+}
+
+label car_mass(2700 * units.lb)
+private node random_car {
+    alias output __out:
+        vehicle(
+            mass: car_mass,
+            drag_coefficient: 0.3,
+            cross_sectional_area: (72 * units.inch) * (56 * units.inch),
+            diff_ratio: 3.9,
+            tire_radius: 10 * units.inch,
+            rolling_resistance: 10000
+        );
+}
+
+private node random_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 2000 * units.lb_ft
+        )
+        .add_gear(0.01);
+}
+
+public node main {
+    set_engine(radial_9())
+    set_vehicle(random_car())
+    set_transmission(random_transmission())
+}

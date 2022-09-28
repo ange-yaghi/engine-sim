@@ -1,0 +1,174 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+}
+
+public node honda_trx520 {
+    alias output __out: engine;
+
+    engine engine(
+        name: "Honda TRX520 (ATV)",
+        starter_torque: 50 * units.lb_ft,
+        starter_speed: 500 * units.rpm,
+        redline: 5000 * units.rpm,
+        fuel: fuel(
+            max_burning_efficiency: 1.0
+        ),
+        hf_gain: 0.00121,
+        noise: 0.229,
+        jitter: 0.42,
+        simulation_frequency: 40000
+    )
+
+    wires wires()
+
+    crankshaft c0(
+        throw: 71.5 * units.mm / 2,
+        flywheel_mass: 5 * units.lb,
+        mass: 5 * units.lb,
+        friction_torque: 5.0 * units.lb_ft,
+        moment_of_inertia: 0.22986844776863666 * 0.2,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: constants.pi / 2
+    )
+
+    rod_journal rj0(angle: 0.0)
+    c0
+        .add_rod_journal(rj0)
+
+    piston_parameters piston_params(
+        mass: 100 * units.g,
+        compression_height: 1.0 * units.inch,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: 100.0 * units.g,
+        moment_of_inertia: 0.0015884918028487504,
+        center_of_mass: 0.0,
+        length: 6.0 * units.inch
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: 96 * units.mm,
+        deck_height: 71.5 * units.mm / 2 + 6.0 * units.inch + 1.0 * units.inch
+    )
+
+    intake intake(
+        plenum_volume: 1.5 * units.L,
+        plenum_cross_section_area: 10.0 * units.cm2,
+        intake_flow_rate: k_carb(100.0),
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.993,
+        velocity_decay: 0.5
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(500.0),
+        primary_tube_length: 20.0 * units.inch,
+        primary_flow_rate: k_carb(200.0),
+        velocity_decay: 0.5,
+        volume: 5.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 1.0,
+        impulse_response: ir_lib.mild_exhaust_0_reverb
+    )
+
+    cylinder_bank b0(bank_params, angle: 0 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe lobe(
+        duration_at_50_thou: 180 * units.deg,
+        gamma: 1.0,
+        lift: 200 * units.thou,
+        steps: 100
+    )
+
+    vtwin90_camshaft_builder camshaft(
+        lobe_profile: lobe,
+        lobe_separation: 100 * units.deg,
+        base_radius: 500 * units.thou
+    )
+
+    b0.set_cylinder_head (
+        generic_small_engine_head(
+            chamber_volume: 60 * units.cc,
+            intake_camshaft: camshaft.intake_cam_0,
+            exhaust_camshaft: camshaft.exhaust_cam_0,
+            flow_attenuation: 2.0,
+            intake_runner_cross_section_area: 9.0 * units.cm2,
+            exhaust_runner_cross_section_area: 9.0 * units.cm2
+        )
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 12 * units.deg)
+        .add_sample(1000 * units.rpm, 12 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 35 * units.deg)
+        .add_sample(4000 * units.rpm, 35 * units.deg)
+
+    engine.add_ignition_module(
+        single_cylinder_distributor(
+            wires: wires,
+            timing_curve: timing_curve,
+            rev_limit: 6000 * units.rpm
+        ))
+}
+
+private node honda_trx520_transmission {
+    alias output __out: transmission;
+
+    transmission transmission(
+        max_clutch_torque: 50 * units.lb_ft
+    )
+
+    transmission.add_gear(4.0)
+    transmission.add_gear(3.5)
+    transmission.add_gear(3.0)
+    transmission.add_gear(2.5)
+    transmission.add_gear(2.0)
+}
+
+private node honda_trx520_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 500 * units.kg,
+            drag_coefficient: 0.25,
+            cross_sectional_area: (47 * units.inch) * (47 * units.inch),
+            diff_ratio: 3.33,
+            tire_radius: 11 * units.inch,
+            rolling_resistance: 200 * units.N
+        );
+}
+
+public node main {
+    set_engine(honda_trx520())
+    set_transmission(honda_trx520_transmission())
+    set_vehicle(honda_trx520_vehicle())
+}

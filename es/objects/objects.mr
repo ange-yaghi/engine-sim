@@ -534,7 +534,8 @@ public node impulse_response => __engine_sim__impulse_response {
 }
 
 public node exhaust_system_parameters {
-    input length: 100.0 * units.inch;
+    input volume: 100.0 * units.L;
+    input length: volume / collector_cross_section_area;
     input collector_cross_section_area: circle_area(2.0 * units.inch);
     input outlet_flow_rate: k_carb(1000.0);
     input primary_tube_length: 10.0 * units.inch;
