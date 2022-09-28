@@ -59,7 +59,6 @@ void Synthesizer::initialize(const Parameters &p) {
     for (int i = 0; i < p.InputChannelCount; ++i) {
         m_filters[i].AirNoiseLowPass.setCutoffFrequency(
             m_audioParameters.AirNoiseFrequencyCutoff, m_audioSampleRate);
-        //m_filters[i].AirNoiseLowPass.m_dt = 1 / m_audioSampleRate;
 
         m_filters[i].Derivative.m_dt = 1 / m_audioSampleRate;
 
@@ -77,6 +76,7 @@ void Synthesizer::initialize(const Parameters &p) {
     m_levelingFilter.p_target = m_audioParameters.LevelerTarget;
     m_levelingFilter.p_maxLevel = m_audioParameters.LevelerMaxGain;
     m_levelingFilter.p_minLevel = m_audioParameters.LevelerMinGain;
+    m_antialiasing.setCutoffFrequency(m_audioSampleRate * 0.45f, m_audioSampleRate);
 
     for (int i = 0; i < m_audioBufferSize; ++i) {
         m_audioBuffer.write(0);
@@ -310,6 +310,8 @@ int16_t Synthesizer::renderAudio(int inputSample) {
 
         signal += v;
     }
+
+    signal = m_antialiasing.fast_f(signal);
 
     if (std::isnan(signal)) {
         std::fstream f("test.txt");

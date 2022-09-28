@@ -43,7 +43,7 @@ public:
         const float v0 = m_history[i_0 >= m_maxJitter ? i_0 - m_maxJitter : i_0];
         const float v1 = m_history[i_1 >= m_maxJitter ? i_1 - m_maxJitter : i_1];
 
-        return m_antialiasing.fast_f(v1 * s_frac + v0 * (1 - s_frac));
+        return v1 * s_frac + v0 * (1 - s_frac);
     }
 
     inline void setJitterScale(float jitterScale) { m_jitterScale = jitterScale; }
@@ -51,7 +51,6 @@ public:
 
 protected:
     ButterworthLowPassFilter m_noiseFilter;
-    ButterworthLowPassFilter m_antialiasing;
 
     float m_jitterScale;
     int m_maxJitter;

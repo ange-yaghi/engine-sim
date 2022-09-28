@@ -520,13 +520,13 @@ void Simulator::writeToSynthesizer() {
             head->getHeaderPrimaryLength(piston->getCylinderIndex())
             + exhaust->getLength();
 
-        const double exhaustFlow =
+        double exhaustFlow =
             attenuation_3 * 1600 * (
                 1.0 * (chamber->m_exhaustRunnerAndPrimary.pressure() - units::pressure(1.0, units::atm))
                 + 0.1 * chamber->m_exhaustRunnerAndPrimary.dynamicPressure(1.0, 0.0)
                 + 0.1 * chamber->m_exhaustRunnerAndPrimary.dynamicPressure(-1.0, 0.0));
 
-        //double exhaustFlow = 0.0;
+        //exhaustFlow = 0.0;
         //if (head->exhaustValveLift(piston->getCylinderIndex()) > 0 && lastValveLift[i] == 0) {
         //    exhaustFlow = 10000000.0;
         //}
