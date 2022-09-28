@@ -34,6 +34,13 @@ class Intake : public Part {
 
             // Velocity decay factor
             double VelocityDecay = 0.5;
+
+            // Atmospere pressure
+            double AtmospherePressure = units::pressure(1.0, units::atm);
+
+            // Atmospere pressure
+            double AtmosphereTemperature = units::celcius(25.0);
+
         };
 
     public:
@@ -67,6 +74,8 @@ class Intake : public Part {
         double m_idleThrottlePlatePosition;
         double m_runnerLength;
         double m_velocityDecay;
+        double m_atmospherePressure;
+        double m_atmosphereTemperature;
 
         GasSystem m_atmosphere;
 };

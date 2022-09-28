@@ -16,6 +16,9 @@ class Camshaft : public Part {
             // Camshaft advance in camshaft degrees
             double Advance = 0;
 
+            // Camshaft to crankshaft reduction ratio
+            double ReductionRatio = 0.5;
+
             // Corresponding crankshaft
             Crankshaft *Crankshaft;
 
@@ -51,6 +54,7 @@ class Camshaft : public Part {
         double *m_lobeAngles;
         double m_advance;
         double m_baseRadius;
+        double m_reductionRatio;
         int m_lobes;
 };
 
