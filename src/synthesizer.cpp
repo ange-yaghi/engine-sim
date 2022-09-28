@@ -313,12 +313,6 @@ int16_t Synthesizer::renderAudio(int inputSample) {
 
     signal = m_antialiasing.fast_f(signal);
 
-    if (std::isnan(signal)) {
-        std::fstream f("test.txt");
-        f << "here";
-        f.close();
-    }
-
     m_levelingFilter.p_target = m_audioParameters.LevelerTarget;
     const float v_leveled = m_levelingFilter.f(signal) * m_audioParameters.Volume;
     int r_int = std::lround(v_leveled);

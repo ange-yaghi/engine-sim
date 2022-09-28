@@ -378,8 +378,14 @@ bool Simulator::simulateStep() {
 
     updateFilteredEngineSpeed(timestep);
 
+    Crankshaft *outputShaft = m_engine->getOutputCrankshaft();
+    outputShaft->resetAngle();
+
     for (int i = 0; i < m_engine->getCrankshaftCount(); ++i) {
-        m_engine->getCrankshaft(i)->resetAngle();
+        Crankshaft *shaft = m_engine->getCrankshaft(i);
+
+        // Correct drift (temporary hack)
+        shaft->m_body.theta = outputShaft->m_body.theta;
     }
 
     IgnitionModule *im = m_engine->getIgnitionModule();
