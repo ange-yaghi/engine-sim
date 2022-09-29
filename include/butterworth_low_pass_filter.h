@@ -8,6 +8,7 @@
 
 #include <cmath>
 
+template <typename T_Real>
 class ButterworthLowPassFilter : public Filter {
 public:
     ButterworthLowPassFilter() {
@@ -15,8 +16,8 @@ public:
         m_x.initialize(4);
 
         for (int i = 0; i < 4; ++i) {
-            m_y.write(0.0f);
-            m_x.write(0.0f);
+            m_y.write(0);
+            m_x.write(0);
         }
     }
 
@@ -24,28 +25,24 @@ public:
         /* void */
     }
 
-    virtual float f(float sample) override {
-        return fast_f(sample);
-    }
-
-    __forceinline float fast_f(float sample) {
-        const float y_prev[4] = {
+    __forceinline T_Real fast_f(T_Real sample) {
+        const T_Real y_prev[4] = {
             m_y.read(3),
             m_y.read(2),
             m_y.read(1),
             m_y.read(0)
         };
 
-        const float x_prev[4] = {
+        const T_Real x_prev[4] = {
             m_x.read(3),
             m_x.read(2),
             m_x.read(1),
             m_x.read(0)
         };
 
-        float const n = m_f_4 / m_a[0] * (sample + 4.0f * x_prev[0] + 6.f * x_prev[1] + 4.f * x_prev[2] + x_prev[3]);
-        float const d = -m_a[1] * y_prev[0] - m_a[2] * y_prev[1] - m_a[3] * y_prev[2] - m_a[4] * y_prev[3];
-        float const y = n + d;
+        T_Real const n = m_f_4 / m_a[0] * (sample + 4 * x_prev[0] + 6 * x_prev[1] + 4 * x_prev[2] + x_prev[3]);
+        T_Real const d = -m_a[1] * y_prev[0] - m_a[2] * y_prev[1] - m_a[3] * y_prev[2] - m_a[4] * y_prev[3];
+        T_Real const y = n + d;
 
         m_x.removeBeginning(1);
         m_x.write(sample);
@@ -56,28 +53,28 @@ public:
         return y;
     }
 
-    inline void setCutoffFrequency(float f_c, float sampleRate) {
-        const float f = std::tan(static_cast<float>(constants::pi) * f_c / sampleRate);
-        const float f_2 = f * f;
-        const float f_3 = f_2 * f;
-        const float f_4 = f_2 * f_2;
-        const float m = -2.0f * std::cos(5.0f * constants::pi / 8.0f);
-        const float n = -2.0f * std::cos(7.0f * constants::pi / 8.0f);
+    inline void setCutoffFrequency(T_Real f_c, T_Real sampleRate) {
+        const T_Real f = std::tan(static_cast<T_Real>(constants::pi) * f_c / sampleRate);
+        const T_Real f_2 = f * f;
+        const T_Real f_3 = f_2 * f;
+        const T_Real f_4 = f_2 * f_2;
+        const T_Real m = -2.0 * std::cos(5.0 * constants::pi / 8.0);
+        const T_Real n = -2.0 * std::cos(7.0 * constants::pi / 8.0);
 
-        m_a[0] = 1.0f + (m + n) * f + (2.0f + n * m) * f_2 + (m + n) * f_3 + f_4;
-        m_a[1] = (-4.0f - 2.0f * (n + m) * f + 2.0f * (m + n) * f_3 + 4.0f * f_4) / m_a[0];
-        m_a[2] = (6.0f - 2.0f * (2 + m * n) * f_2 + 6.0f * f_4) / m_a[0];
-        m_a[3] = (-4.0f + 2.0f * (m + n) * f - 2.0f * (m + n) * f_3 + 4.0f * f_4) / m_a[0];
-        m_a[4] = (1.0f - (n + m) * f + (2.0f + m * n) * f_2 - (m + n) * f_3 + f_4) / m_a[0];
+        m_a[0] = 1.0 + (m + n) * f + (2.0 + n * m) * f_2 + (m + n) * f_3 + f_4;
+        m_a[1] = (-4.0 - 2.0 * (n + m) * f + 2.0 * (m + n) * f_3 + 4.0 * f_4) / m_a[0];
+        m_a[2] = (6.0 - 2.0 * (2.0 + m * n) * f_2 + 6.0 * f_4) / m_a[0];
+        m_a[3] = (-4.0 + 2.0 * (m + n) * f - 2.0 * (m + n) * f_3 + 4.0 * f_4) / m_a[0];
+        m_a[4] = (1.0 - (n + m) * f + (2.0 + m * n) * f_2 - (m + n) * f_3 + f_4) / m_a[0];
 
         m_f_4 = f_4;
     }
 
 protected:
-    RingBuffer<float> m_y;
-    RingBuffer<float> m_x;
-    float m_a[5];
-    float m_f_4;
+    RingBuffer<T_Real> m_y;
+    RingBuffer<T_Real> m_x;
+    T_Real m_a[5];
+    T_Real m_f_4;
 };
 
 #endif /* ATG_ENGINE_SIM_BUTTERWORTH_LOW_PASS_FILTER_H */

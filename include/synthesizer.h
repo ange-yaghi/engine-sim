@@ -42,16 +42,16 @@ class Synthesizer {
         struct InputChannel {
             RingBuffer<float> Data;
             float *TransferBuffer = nullptr;
-            float LastInputSample = 0.0f;
+            double LastInputSample = 0.0f;
         };
 
         struct ProcessingFilters {
             ConvolutionFilter Convolution;
             DerivativeFilter Derivative;
             JitterFilter JitterFilter;
-            ButterworthLowPassFilter AirNoiseLowPass;
+            ButterworthLowPassFilter<float> AirNoiseLowPass;
             LowPassFilter InputDcFilter;
-            ButterworthLowPassFilter antialiasing;
+            ButterworthLowPassFilter<double> antialiasing;
         };
 
     public:
@@ -93,7 +93,7 @@ class Synthesizer {
         void setAudioParameters(const AudioParameters &params);
 
     //protected:
-        ButterworthLowPassFilter m_antialiasing;
+        ButterworthLowPassFilter<float> m_antialiasing;
         LevelingFilter m_levelingFilter;
         InputChannel *m_inputChannels;
         AudioParameters m_audioParameters;

@@ -173,7 +173,7 @@ void Synthesizer::writeInput(const double *data) {
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
         RingBuffer<float> &buffer = m_inputChannels[i].Data;
-        const float lastInputSample = m_inputChannels[i].LastInputSample;
+        const double lastInputSample = m_inputChannels[i].LastInputSample;
         const size_t baseIndex = buffer.writeIndex();
         const double distance =
             inputDistance(m_inputWriteOffset, m_lastInputSampleOffset);
@@ -301,9 +301,13 @@ int16_t Synthesizer::renderAudio(int inputSample) {
         const float r_mixed =
             airNoise * r + (1 - airNoise);
 
-        const float v_in =
+        float v_in =
             f_p * dF_F_mix
             + f * r_mixed * (1 - dF_F_mix);
+        if (fpclassify(v_in) == FP_SUBNORMAL) {
+            v_in = 0;
+        }
+
         const float v =
             convAmount * m_filters[i].Convolution.f(v_in)
             + (1 - convAmount) * v_in;

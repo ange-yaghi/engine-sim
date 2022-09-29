@@ -50,7 +50,7 @@ public:
     inline float getJitterScale() const { return m_jitterScale; }
 
 protected:
-    ButterworthLowPassFilter m_noiseFilter;
+    ButterworthLowPassFilter<float> m_noiseFilter;
 
     float m_jitterScale;
     int m_maxJitter;

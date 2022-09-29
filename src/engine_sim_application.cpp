@@ -247,6 +247,12 @@ void EngineSimApplication::process(float frame_dt) {
     SampleOffset currentLead = m_audioBuffer.offsetDelta(safeWritePosition, writePosition);
     SampleOffset newLead = m_audioBuffer.offsetDelta(safeWritePosition, targetWritePosition);
 
+    if (currentLead > 44100 * 0.5) {
+        m_audioBuffer.m_writePointer = m_audioBuffer.getBufferIndex(safeWritePosition, (int)(44100 * 0.05));
+        currentLead = m_audioBuffer.offsetDelta(safeWritePosition, m_audioBuffer.m_writePointer);
+        maxWrite = m_audioBuffer.offsetDelta(m_audioBuffer.m_writePointer, targetWritePosition);
+    }
+
     if (currentLead > newLead) {
         maxWrite = 0;
     }
@@ -286,19 +292,10 @@ void EngineSimApplication::process(float frame_dt) {
         m_audioBuffer.commitBlock(readSamples);
     }
 
-    m_performanceCluster->addAudioLatencySample(
-        m_audioBuffer.offsetDelta(m_audioSource->GetCurrentWritePosition(), m_audioBuffer.m_writePointer) / (44100 * 0.1));
     m_performanceCluster->addInputBufferUsageSample(
         (double)m_simulator.getSynthesizerInputLatency() / m_simulator.getSynthesizerInputLatencyTarget());
-
-    if (m_simulator.getEngine() != nullptr) {
-        if (m_simulator.getSynthesizerInputLatency() > m_simulator.getSynthesizerInputLatencyTarget() * 2) {
-            m_audioSource->SetMode(ysAudioSource::Mode::Stop);
-        }
-        else {
-            m_audioSource->SetMode(ysAudioSource::Mode::Loop);
-        }
-    }
+    m_performanceCluster->addAudioLatencySample(
+        m_audioBuffer.offsetDelta(m_audioSource->GetCurrentWritePosition(), m_audioBuffer.m_writePointer) / (44100 * 0.1));
 }
 
 void EngineSimApplication::render() {
