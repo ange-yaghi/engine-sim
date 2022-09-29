@@ -1,7 +1,5 @@
 #include "../include/engine_sim_application.h"
 
-#include "../include/math.h"
-
 #include <iostream>
 
 int WINAPI WinMain(
