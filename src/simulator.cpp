@@ -1,3 +1,5 @@
+#include "..\include\simulator.h"
+#include "..\include\simulator.h"
 #include "../include/simulator.h"
 
 #include "../include/constants.h"
@@ -32,7 +34,8 @@ Simulator::Simulator() {
     m_exhaustFlowStagingBuffer = nullptr;
 
     m_filteredEngineSpeed = 0.0;
-    m_dynoTorque = 0.0;
+    m_dynoTorqueSamples = nullptr;
+    m_lastDynoTorqueSample = 0;
 
     m_derivativeFilter.m_dt = 1.0;
 }
@@ -46,6 +49,7 @@ Simulator::~Simulator() {
     assert(m_exhaustFlowStagingBuffer == nullptr);
     assert(m_delayFilters == nullptr);
     assert(m_antialiasingFilters == nullptr);
+    assert(m_dynoTorqueSamples == nullptr);
 }
 
 void Simulator::initialize(const Parameters &params) {
@@ -63,6 +67,11 @@ void Simulator::initialize(const Parameters &params) {
             new atg_scs::GaussianEliminationSleSolver,
             new atg_scs::NsvOdeSolver);
         m_system = system;
+    }
+
+    m_dynoTorqueSamples = new double[DynoTorqueSamples];
+    for (int i = 0; i < DynoTorqueSamples; ++i) {
+        m_dynoTorqueSamples[i] = 0.0;
     }
 }
 
@@ -220,6 +229,23 @@ void Simulator::releaseSimulation() {
     destroy();
 }
 
+double Simulator::getFilteredDynoTorque() const {
+    if (m_dynoTorqueSamples == nullptr) return 0;
+
+    double averageTorque = 0;
+    for (int i = 0; i < DynoTorqueSamples; ++i) {
+        averageTorque += m_dynoTorqueSamples[i];
+    }
+
+    return averageTorque / DynoTorqueSamples;
+}
+
+double Simulator::getDynoPower() const {
+    return (m_engine != nullptr)
+        ? getFilteredDynoTorque() * m_engine->getSpeed()
+        : 0;
+}
+
 double Simulator::getAverageOutputSignal() const {
     double sum = 0.0;
     for (int i = 0; i < m_engine->getExhaustSystemCount(); ++i) {
@@ -370,8 +396,6 @@ bool Simulator::simulateStep() {
     const double timestep = 1.0 / m_simulationFrequency;
     m_system->process(timestep, 1);
 
-    m_dynoTorque = 0.99 * m_dynoTorque + 0.01 * m_dyno.getTorque();
-
     m_engine->update(timestep);
     m_vehicle->update(timestep);
     m_transmission->update(timestep);
@@ -386,6 +410,28 @@ bool Simulator::simulateStep() {
 
         // Correct drift (temporary hack)
         shaft->m_body.theta = outputShaft->m_body.theta;
+    }
+
+    const int index =
+        static_cast<int>(std::floor(DynoTorqueSamples * outputShaft->getCycleAngle() / (4 * constants::pi)));
+    const int step = m_engine->isSpinningCw() ? 1 : -1;
+    m_dynoTorqueSamples[index] = m_dyno.getTorque();
+
+    if (m_lastDynoTorqueSample != index) {
+        for (int i = m_lastDynoTorqueSample + step; i != index; i += step) {
+            if (i >= DynoTorqueSamples) {
+                i = -1;
+                continue;
+            }
+            else if (i < 0) {
+                i = DynoTorqueSamples;
+                continue;
+            }
+
+            m_dynoTorqueSamples[i] = m_dyno.getTorque();
+        }
+
+        m_lastDynoTorqueSample = index;
     }
 
     IgnitionModule *im = m_engine->getIgnitionModule();
@@ -531,11 +577,6 @@ void Simulator::writeToSynthesizer() {
                 1.0 * (chamber->m_exhaustRunnerAndPrimary.pressure() - units::pressure(1.0, units::atm))
                 + 0.1 * chamber->m_exhaustRunnerAndPrimary.dynamicPressure(1.0, 0.0)
                 + 0.1 * chamber->m_exhaustRunnerAndPrimary.dynamicPressure(-1.0, 0.0));
-
-        //exhaustFlow = 0.0;
-        //if (head->exhaustValveLift(piston->getCylinderIndex()) > 0 && lastValveLift[i] == 0) {
-        //    exhaustFlow = 10000000.0;
-        //}
 
         lastValveLift[i] = head->exhaustValveLift(piston->getCylinderIndex());
 

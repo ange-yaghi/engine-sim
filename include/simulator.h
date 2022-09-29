@@ -27,6 +27,8 @@ class Simulator {
             SystemType SystemType = SystemType::NsvOptimized;
         };
 
+        static constexpr int DynoTorqueSamples = 512;
+
     public:
         Simulator();
         ~Simulator();
@@ -75,8 +77,8 @@ class Simulator {
         void setSimulationSpeed(double simSpeed) { m_simulationSpeed = simSpeed; }
         double getSimulationSpeed() const { return m_simulationSpeed; }
 
-        double getFilteredDynoTorque() const { return m_dynoTorque; }
-        double getDynoPower() const { return (m_engine != nullptr) ? m_dynoTorque * m_engine->getSpeed() : 0; }
+        double getFilteredDynoTorque() const;
+        double getDynoPower() const;
         double getAverageOutputSignal() const;
 
         Synthesizer *getSynthesizer() { return &m_synthesizer; }
@@ -125,7 +127,9 @@ class Simulator {
         double m_simulationSpeed;
         double *m_exhaustFlowStagingBuffer;
         double m_filteredEngineSpeed;
-        double m_dynoTorque;
+
+        double *m_dynoTorqueSamples;
+        int m_lastDynoTorqueSample;
 };
 
 #endif /* ATG_ENGINE_SIM_SIMULATOR_H */

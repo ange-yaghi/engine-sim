@@ -358,7 +358,7 @@ void OscilloscopeCluster::sample() {
         std::fmax(m_torqueScope->m_yMax, m_powerScope->m_yMax);
 
     m_powerScope->m_xMax = m_torqueScope->m_xMax =
-        units::toRpm(engine->getRedline());
+        std::fmax(m_powerScope->m_xMax, units::toRpm(engine->getSpeed()));
 }
 
 void OscilloscopeCluster::setSimulator(Simulator *simulator) {

@@ -1041,8 +1041,6 @@ void EngineSimApplication::refreshUserInterface() {
     m_uiManager.destroy();
     m_uiManager.initialize(this);
 
-    m_uiManager.initialize(this);
-
     m_engineView = m_uiManager.getRoot()->addElement<EngineView>();
     m_rightGaugeCluster = m_uiManager.getRoot()->addElement<RightGaugeCluster>();
     m_oscCluster = m_uiManager.getRoot()->addElement<OscilloscopeCluster>();

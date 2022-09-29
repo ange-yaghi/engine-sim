@@ -270,7 +270,7 @@ void LoadSimulationCluster::drawSystemStatus(const Bounds &bounds) {
 }
 
 void LoadSimulationCluster::updateHpAndTorque(float dt) {
-    constexpr double RC = 1.0;
+    constexpr double RC = 0.1;
     const double alpha = dt / (dt + RC);
 
     const double torque = m_simulator->getFilteredDynoTorque();
