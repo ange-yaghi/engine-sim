@@ -304,7 +304,7 @@ int16_t Synthesizer::renderAudio(int inputSample) {
         float v_in =
             f_p * dF_F_mix
             + f * r_mixed * (1 - dF_F_mix);
-        if (fpclassify(v_in) == FP_SUBNORMAL) {
+        if (std::fpclassify(v_in) == FP_SUBNORMAL) {
             v_in = 0;
         }
 
