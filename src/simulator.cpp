@@ -1,5 +1,3 @@
-#include "..\include\simulator.h"
-#include "..\include\simulator.h"
 #include "../include/simulator.h"
 
 #include "../include/constants.h"
@@ -48,7 +46,6 @@ Simulator::~Simulator() {
     assert(m_system == nullptr);
     assert(m_exhaustFlowStagingBuffer == nullptr);
     assert(m_delayFilters == nullptr);
-    assert(m_antialiasingFilters == nullptr);
     assert(m_dynoTorqueSamples == nullptr);
 }
 
