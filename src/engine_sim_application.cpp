@@ -652,27 +652,38 @@ void EngineSimApplication::loadScript() {
     Transmission *transmission = nullptr;
 
 #ifdef ATG_ENGINE_SIM_PIRANHA_ENABLED
-    const auto outputLogPath = m_outputPath.Append("error_log.log").ToString();
-    std::ofstream outputLog(outputLogPath, std::ios::out);
+    // Try and load the local version first, if not fallback to the default one in data
+    std::vector<piranha::IrPath> dataPaths;
+    dataPaths.push_back(m_userData.ToString());
+    dataPaths.push_back(m_dataRoot.ToString());
 
-    es_script::Compiler compiler;
-    compiler.initialize();
-    const bool compiled = compiler.compile("../assets/main.mr", outputLog);
-    if (compiled) {
-        const es_script::Compiler::Output output = compiler.execute();
-        configure(output.applicationSettings);
+    for (const auto &dataPath : dataPaths) {
+        // Skip this path if the script doesn't exist
+        const auto script = dataPath.append("assets/main.mr");
+        if (!script.exists()) {
+            continue;
+        }
 
-        engine = output.engine;
-        vehicle = output.vehicle;
-        transmission = output.transmission;
+        const auto outputLogPath = m_outputPath.Append("error_log.log").ToString();
+        std::ofstream outputLog(outputLogPath, std::ios::out);
+
+        es_script::Compiler compiler;
+        compiler.initialize();
+        const bool compiled = compiler.compile(script.toString(), outputLog);
+        if (compiled) {
+            const es_script::Compiler::Output output = compiler.execute();
+            configure(output.applicationSettings);
+
+            engine = output.engine;
+            vehicle = output.vehicle;
+            transmission = output.transmission;
+        }
+
+        compiler.destroy();
+
+        // Don't try any other scripts or we'd nuke the error log
+        break;
     }
-    else {
-        engine = nullptr;
-        vehicle = nullptr;
-        transmission = nullptr;
-    }
-
-    compiler.destroy();
 #endif /* ATG_ENGINE_SIM_PIRANHA_ENABLED */
 
     if (vehicle == nullptr) {
