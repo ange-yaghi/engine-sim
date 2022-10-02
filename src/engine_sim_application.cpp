@@ -90,10 +90,43 @@ EngineSimApplication::~EngineSimApplication() {
 
 void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI api) {
     dbasic::Path modulePath = dbasic::GetModulePath();
-    dbasic::Path confPath = modulePath.Append("delta.conf");
 
-    std::string enginePath = "../dependencies/submodules/delta-studio/engines/basic";
-    m_assetPath = "../assets";
+    // Check the env var for where to load fixed data from
+    if (getenv("DATA_ROOT") != nullptr) {
+        m_dataRoot = getenv("DATA_ROOT");
+    } else {
+        m_dataRoot = "..";
+    }
+
+    // Grab the userdata folder (input files that aren't from fixed data)
+    if (getenv("XDG_DATA_HOME") != nullptr) {
+        m_userData = getenv("XDG_DATA_HOME");
+    } else if (getenv("HOME") != nullptr) {
+        m_userData = dbasic::Path(getenv("HOME")).Append(".local/share/engine-sim");
+    } else {
+        m_userData = modulePath;
+    }
+    if (!m_userData.Exists()) {
+        m_userData.CreateDir();
+    }
+
+    // Setup output files (log files, videos, etc...)
+    if (getenv("XDG_STATE_HOME") != nullptr) {
+        m_outputPath = getenv("XDG_STATE_HOME");
+    } else if (getenv("HOME") != nullptr) {
+        m_outputPath = dbasic::Path(getenv("HOME")).Append(".local/share/engine-sim");
+    } else {
+        m_outputPath = modulePath;
+    }
+    if (!m_outputPath.Exists()) {
+        m_outputPath.CreateDir();
+    }
+
+    std::string enginePath = m_dataRoot.Append("dependencies/submodules/delta-studio/engines/basic").ToString();
+    m_assetPath = m_dataRoot.Append("assets").ToString();
+
+    // Read in local config to pick replacement locations
+    dbasic::Path confPath = modulePath.Append("delta.conf");
     if (confPath.Exists()) {
         std::fstream confFile(confPath.ToString(), std::ios::in);
 
@@ -101,8 +134,6 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
         std::getline(confFile, m_assetPath);
         enginePath = modulePath.Append(enginePath).ToString();
         m_assetPath = modulePath.Append(m_assetPath).ToString();
-
-        confFile.close();
     }
 
     m_engine.GetConsole()->SetDefaultFontDirectory(enginePath + "/fonts/");

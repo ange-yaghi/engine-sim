@@ -121,6 +121,10 @@ class EngineSimApplication {
         dbasic::DeltaEngine m_engine;
         dbasic::AssetManager m_assetManager;
 
+        dbasic::Path m_dataRoot;
+        dbasic::Path m_userData;
+        dbasic::Path m_outputPath;
+
         std::string m_assetPath;
 
         ysRenderTarget *m_mainRenderTarget;
