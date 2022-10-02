@@ -652,9 +652,12 @@ void EngineSimApplication::loadScript() {
     Transmission *transmission = nullptr;
 
 #ifdef ATG_ENGINE_SIM_PIRANHA_ENABLED
+    const auto outputLogPath = m_outputPath.Append("error_log.log").ToString();
+    std::ofstream outputLog(outputLogPath, std::ios::out);
+
     es_script::Compiler compiler;
     compiler.initialize();
-    const bool compiled = compiler.compile("../assets/main.mr");
+    const bool compiled = compiler.compile("../assets/main.mr", outputLog);
     if (compiled) {
         const es_script::Compiler::Output output = compiler.execute();
         configure(output.applicationSettings);

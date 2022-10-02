@@ -29,13 +29,12 @@ void es_script::Compiler::initialize() {
     m_rules.initialize();
 }
 
-bool es_script::Compiler::compile(const piranha::IrPath &path) {
+bool es_script::Compiler::compile(const piranha::IrPath &path, std::ostream &logs) {
     bool successful = false;
 
-    std::ofstream file("error_log.log", std::ios::out);
     piranha::IrCompilationUnit *unit = m_compiler->compile(path);
     if (unit == nullptr) {
-        file << "Can't find file: " << path.toString() << "\n";
+        logs << "Can't find file: " << path.toString() << "\n";
     }
     else {
         const piranha::ErrorList *errors = m_compiler->getErrorList();
@@ -48,12 +47,10 @@ bool es_script::Compiler::compile(const piranha::IrPath &path) {
         }
         else {
             for (int i = 0; i < errors->getErrorCount(); ++i) {
-                printError(errors->getCompilationError(i), file);
+                printError(errors->getCompilationError(i), logs);
             }
         }
     }
-
-    file.close();
 
     return successful;
 }
@@ -78,7 +75,7 @@ void es_script::Compiler::destroy() {
 
 void es_script::Compiler::printError(
     const piranha::CompilationError *err,
-    std::ofstream &file) const
+    std::ostream &file) const
 {
     const piranha::ErrorCode_struct &errorCode = err->getErrorCode();
     file << err->getCompilationUnit()->getPath().getStem()
