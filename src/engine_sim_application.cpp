@@ -652,6 +652,12 @@ void EngineSimApplication::loadScript() {
     Transmission *transmission = nullptr;
 
 #ifdef ATG_ENGINE_SIM_PIRANHA_ENABLED
+    // Search for user defined assets first, then fallback to data
+    std::vector<piranha::IrPath> searchPaths;
+    searchPaths.push_back(m_userData.Append("assets").ToString());
+    searchPaths.push_back(m_dataRoot.Append("assets").ToString());
+    searchPaths.push_back(m_dataRoot.Append("es").ToString());
+
     // Try and load the local version first, if not fallback to the default one in data
     std::vector<piranha::IrPath> dataPaths;
     dataPaths.push_back(m_userData.ToString());
@@ -668,7 +674,7 @@ void EngineSimApplication::loadScript() {
         std::ofstream outputLog(outputLogPath, std::ios::out);
 
         es_script::Compiler compiler;
-        compiler.initialize();
+        compiler.initialize(searchPaths);
         const bool compiled = compiler.compile(script.toString(), outputLog);
         if (compiled) {
             const es_script::Compiler::Output output = compiler.execute();

@@ -18,10 +18,14 @@ es_script::Compiler::Output *es_script::Compiler::output() {
     return s_output;
 }
 
-void es_script::Compiler::initialize() {
+void es_script::Compiler::initialize(const std::vector<piranha::IrPath> &searchPaths) {
     m_compiler = new piranha::Compiler(&m_rules);
     m_compiler->setFileExtension(".mr");
 
+    // Add the user provided ones first so that they take priority
+    for (const auto &path : searchPaths) {
+        m_compiler->addSearchPath(path);
+    }
     m_compiler->addSearchPath("../../es/");
     m_compiler->addSearchPath("../es/");
     m_compiler->addSearchPath("es/");

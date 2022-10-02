@@ -31,7 +31,7 @@ namespace es_script {
 
         static Output *output();
 
-        void initialize();
+        void initialize(const std::vector<piranha::IrPath> &searchPaths);
         bool compile(const piranha::IrPath &path, std::ostream &logs);
         Output execute();
         void destroy();
