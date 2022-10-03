@@ -16,6 +16,8 @@
 
 #include "../scripting/include/compiler.h"
 
+#include "build_info.h"
+
 #include <chrono>
 #include <stdlib.h>
 #include <sstream>
@@ -95,7 +97,7 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     if (getenv("ENGINESIM_DATA_ROOT") != nullptr) {
         m_dataRoot = getenv("ENGINESIM_DATA_ROOT");
     } else {
-        m_dataRoot = "..";
+        m_dataRoot = ENGINE_SIM_DATA_ROOT;
     }
 
     // Grab the userdata folder (input files that aren't from fixed data)

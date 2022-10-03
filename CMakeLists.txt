@@ -295,6 +295,21 @@ target_link_libraries(engine-sim-app
     engine-sim
 )
 
+# ========================================================
+# Generated build info
+
+# Fallback to '..' if not provided
+if (NOT DEFINED ENGINE_SIM_DATA_ROOT)
+    set(ENGINE_SIM_DATA_ROOT ".." CACHE STRING "Where to look for data")
+endif()
+message(STATUS "Data root set to '${ENGINE_SIM_DATA_ROOT}'")
+
+configure_file(include/build_info.h.in
+    generated/build_info.h @ONLY)
+target_include_directories(engine-sim-app
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+
+# ========================================================
 # GTEST
 
 enable_testing()
