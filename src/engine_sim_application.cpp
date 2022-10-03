@@ -92,8 +92,8 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     dbasic::Path modulePath = dbasic::GetModulePath();
 
     // Check the env var for where to load fixed data from
-    if (getenv("DATA_ROOT") != nullptr) {
-        m_dataRoot = getenv("DATA_ROOT");
+    if (getenv("ENGINESIM_DATA_ROOT") != nullptr) {
+        m_dataRoot = getenv("ENGINESIM_DATA_ROOT");
     } else {
         m_dataRoot = "..";
     }
