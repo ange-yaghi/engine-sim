@@ -27,7 +27,7 @@ endif (DISCORD_ENABLED)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
 
-project(engine-sim)
+project(engine-sim VERSION 0.1.12)
 
 set(CMAKE_CXX_STANDARD 17)
 
