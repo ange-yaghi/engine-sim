@@ -4,7 +4,7 @@ option(DTV "Enable video output" OFF)
 option(PIRANHA_ENABLED "Enable scripting input" ON)
 option(DISCORD_ENABLED "Enable Discord Rich Presence" ON)
 option(BUILD_APP "Build Application" ON)
-option(BUILD_APP_AS_LIB "Build Application as a library" OFF)
+option(BUILD_APP_LIB "Build the application library. This library includes the visualization and simulation setup." ON)
 
 if (DTV)
     add_compile_definitions(ATG_ENGINE_SIM_VIDEO_CAPTURE)
@@ -207,7 +207,7 @@ if (DISCORD_ENABLED)
     )
 endif (DISCORD_ENABLED)
 
-if (BUILD_APP_AS_LIB OR BUILD_APP)
+if (BUILD_APP_LIB OR BUILD_APP)
 	add_library(engine-sim-app-lib STATIC
 		# Source files
 		src/engine_sim_application.cpp
@@ -306,7 +306,7 @@ if (BUILD_APP_AS_LIB OR BUILD_APP)
 		
 	add_subdirectory(dependencies/submodules/delta-studio)
 	add_subdirectory(dependencies/submodules/csv-io)
-endif (BUILD_APP_AS_LIB OR BUILD_APP)
+endif (BUILD_APP_LIB OR BUILD_APP)
 
 if (BUILD_APP)
 	add_executable(engine-sim-app WIN32
