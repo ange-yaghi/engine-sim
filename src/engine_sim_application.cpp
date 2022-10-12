@@ -465,6 +465,8 @@ void EngineSimApplication::destroy() {
 
     m_simulator->destroy();
     m_audioBuffer.destroy();
+
+    m_geometryGenerator.destroy();
 }
 
 void EngineSimApplication::loadEngine(
