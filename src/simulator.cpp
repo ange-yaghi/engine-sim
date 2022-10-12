@@ -165,6 +165,8 @@ void Simulator::endFrame() {
 }
 
 void Simulator::destroy() {
+    if (m_dynoTorqueSamples != nullptr) delete[] m_dynoTorqueSamples;
+    m_dynoTorqueSamples = nullptr;
     m_synthesizer.destroy();
 }
 
