@@ -13,3 +13,6 @@
 [submodule "dependencies/submodules/piranha"]
 	path = dependencies/submodules/piranha
 	url = https://github.com/ange-yaghi/piranha.git
+[submodule "dependencies/discord"]
+	path = dependencies/discord
+	url = https://github.com/discord/discord-rpc.git

@@ -4,7 +4,7 @@ include(CMakeDependentOption)
 
 option(DTV "Enable video output" OFF)
 option(PIRANHA_ENABLED "Enable scripting input" ON)
-cmake_dependent_option(DISCORD_ENABLED "Enable Discord Rich Presence" ON WIN32 OFF)
+option(DISCORD_ENABLED "Enable Discord Rich Presence" ON)
 
 # Default to compiling as Release in single-configuration generators
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -285,8 +285,14 @@ target_include_directories(engine-sim-app
 add_subdirectory(dependencies)
 
 if (DISCORD_ENABLED)
+    target_sources(engine-sim-app PUBLIC
+        src/discord.cpp
+        include/discord.h
+    )
+    target_include_directories(engine-sim-app PUBLIC
+        dependencies/discord/include
+    )
     target_link_libraries(engine-sim-app
-        discord
         discord-rpc
     )
 endif (DISCORD_ENABLED)

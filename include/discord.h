@@ -15,7 +15,6 @@
 
 #include <string>
 #include "discord_rpc.h"
-#pragma comment(lib, "discord-rpc.lib")
 
 class CDiscord
 {

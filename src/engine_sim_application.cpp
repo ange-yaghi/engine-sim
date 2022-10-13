@@ -23,7 +23,7 @@
 #include <sstream>
 
 #if ATG_ENGINE_SIM_DISCORD_ENABLED
-#include "../discord/Discord.h"
+#include "../include/discord.h"
 #endif
 
 std::string EngineSimApplication::s_buildVersion = ENGINE_SIM_PROJECT_VERSION "a" "-" ENGINE_SIM_SYSTEM_NAME;
