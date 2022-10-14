@@ -1,8 +1,8 @@
 #include "../include/engine_sim_application.h"
 
-static void runApp(void *handle) {
+static void runApp(void *handle, ysContextObject::DeviceAPI api) {
     EngineSimApplication application;
-    application.initialize(handle, ysContextObject::DeviceAPI::OpenGL4_0);
+    application.initialize(handle, api);
     application.run();
     application.destroy();
 }
@@ -18,14 +18,14 @@ int WINAPI WinMain(
     (void)lpCmdLine;
     (void)hPrevInstance;
 
-    runApp(static_cast<void*>(&hInstance));
+    runApp(static_cast<void*>(&hInstance), ysContextObject::DeviceAPI::DirectX11);
 
     return 0;
 }
 
 #else
 int main() {
-    runApp(nullptr);
+    runApp(nullptr, ysContextObject::DeviceAPI::OpenGL4_0);
     return 0;
 }
 
