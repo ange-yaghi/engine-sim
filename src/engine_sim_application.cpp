@@ -16,6 +16,8 @@
 
 #include "../scripting/include/compiler.h"
 
+#include <delta-studio/include/yds_error_handler.h>
+
 #include "build_info.h"
 
 #include <chrono>
@@ -27,6 +29,12 @@
 #endif
 
 std::string EngineSimApplication::s_buildVersion = ENGINE_SIM_PROJECT_VERSION "a" "-" ENGINE_SIM_SYSTEM_NAME;
+
+struct LoggingErrorHandler : ysErrorHandler {
+    void OnError(ysError error, unsigned int line, ysObject *object, const char *file) override {
+        printf("Error @ %s:%i - %i\n", file, line, static_cast<int>(error));
+    }
+};
 
 EngineSimApplication::EngineSimApplication() {
     m_assetPath = "";
@@ -84,6 +92,8 @@ EngineSimApplication::EngineSimApplication() {
     m_viewParameters.Layer1 = 0;
 
     m_displayAngle = 0.0f;
+
+    ysErrorSystem::GetInstance()->AttachErrorHandler(&m_error_handler);
 }
 
 EngineSimApplication::~EngineSimApplication() {
