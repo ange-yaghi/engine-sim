@@ -619,7 +619,7 @@ void EngineSimApplication::createObjects(Engine *engine) {
 
         CombustionChamberObject *ccObject = new CombustionChamberObject;
         ccObject->initialize(this);
-        ccObject->m_chamber = m_iceEngine->getChamber(i);
+        ccObject->m_chamber = engine->getChamber(i);
         m_objects.push_back(ccObject);
     }
 
