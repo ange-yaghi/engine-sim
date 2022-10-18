@@ -15,11 +15,11 @@ namespace es_script {
         virtual Valvetrain *generate(EngineContext *context, Crankshaft *crank) = 0;
 
     protected:
-        virtual void registerInputs() {
+        virtual void registerInputs() override {
             ObjectReferenceNode<ValvetrainNode>::registerInputs();
         }
 
-        virtual void _evaluate() {
+        virtual void _evaluate() override {
             setOutput(this);
             readAllInputs();
         }

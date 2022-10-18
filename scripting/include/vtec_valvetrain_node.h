@@ -46,7 +46,7 @@ namespace es_script {
         }
 
     protected:
-        virtual void registerInputs() {
+        virtual void registerInputs() override {
             addInput("vtec_intake_camshaft", &m_vtecIntakeCamshaft, InputTarget::Type::Object);
             addInput("vtec_exhaust_camshaft", &m_vtecExhaustCamshaft, InputTarget::Type::Object);
             addInput("intake_camshaft", &m_intakeCamshaft, InputTarget::Type::Object);
