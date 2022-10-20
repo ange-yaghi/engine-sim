@@ -458,12 +458,14 @@ public node camshaft_parameters {
     input advance: 0.0;
     input base_radius: 0.0;
     input lobe_profile: function();
+    input reduction_ratio: 0.5;
 }
 
 private node _camshaft => __engine_sim__camshaft {
     input advance [float];
     input base_radius [float];
     input lobe_profile [function];
+    input reduction_ratio [float];
     alias output __out [camshaft_channel];
 }
 
@@ -472,11 +474,13 @@ public node camshaft {
     input advance: parameters.advance;
     input base_radius: parameters.base_radius;
     input lobe_profile: parameters.lobe_profile;
+    input reduction_ratio: parameters.reduction_ratio;
     alias output __out [_camshaft]:
         _camshaft(
             advance: advance,
             base_radius: base_radius,
-            lobe_profile: lobe_profile
+            lobe_profile: lobe_profile,
+            reduction_ratio: reduction_ratio
         );
 }
 
@@ -492,6 +496,8 @@ public node intake_parameters {
     input runner_length: 4.0 * units.inch;
     input runner_flow_rate: k_carb(200.0);
     input velocity_decay: 0.25;
+    input atmosphere_pressure: 1.0 * units.atm;
+    input atmosphere_temperature: 25.0 + units.K0;
 }
 
 private node _intake => __engine_sim__intake {
@@ -505,6 +511,8 @@ private node _intake => __engine_sim__intake {
     input throttle_gamma [float];
     input runner_length [float];
     input velocity_decay [float];
+    input atmosphere_pressure [float];
+    input atmosphere_temperature [float];
     alias output __out [intake_channel];
 }
 
@@ -520,6 +528,8 @@ public node intake {
     input throttle_gamma: parameters.throttle_gamma;
     input runner_length: parameters.runner_length;
     input velocity_decay: parameters.velocity_decay;
+    input atmosphere_pressure: parameters.atmosphere_pressure;
+    input atmosphere_temperature: parameters.atmosphere_temperature;
     alias output __out [_intake]:
         _intake(
             plenum_volume: plenum_volume,
@@ -531,7 +541,9 @@ public node intake {
             idle_throttle_plate_position: idle_throttle_plate_position,
             throttle_gamma: throttle_gamma,
             runner_length: runner_length,
-            velocity_decay: velocity_decay
+            velocity_decay: velocity_decay,
+            atmosphere_pressure: atmosphere_pressure,
+            atmosphere_temperature: atmosphere_temperature
         );
 }
 
