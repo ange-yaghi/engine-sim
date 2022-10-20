@@ -24,7 +24,7 @@
 #include "../discord/Discord.h"
 #endif
 
-std::string EngineSimApplication::s_buildVersion = "0.1.11a";
+std::string EngineSimApplication::s_buildVersion = "0.1.12a";
 
 EngineSimApplication::EngineSimApplication() {
     m_assetPath = "";
