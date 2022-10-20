@@ -42,11 +42,11 @@ namespace es_script {
             context.setEngine(engine);
 
             Engine::Parameters parameters = m_parameters;
-            parameters.CrankshaftCount = (int)m_crankshafts.size();
-            parameters.CylinderBanks = (int)m_cylinderBanks.size();
-            parameters.CylinderCount = cylinderCount;
-            parameters.ExhaustSystemCount = (int)exhaustSystems.size();
-            parameters.IntakeCount = (int)intakes.size();
+            parameters.crankshaftCount = (int)m_crankshafts.size();
+            parameters.cylinderBanks = (int)m_cylinderBanks.size();
+            parameters.cylinderCount = cylinderCount;
+            parameters.exhaustSystemCount = (int)exhaustSystems.size();
+            parameters.intakeCount = (int)intakes.size();
             parameters.throttle = m_throttle->generate();
             engine->initialize(parameters);
 
@@ -81,16 +81,16 @@ namespace es_script {
                 }
             }
 
-            for (int i = 0; i < parameters.CrankshaftCount; ++i) {
+            for (int i = 0; i < parameters.crankshaftCount; ++i) {
                 m_crankshafts[i]->generate(engine->getCrankshaft(i), &context);
             }
 
-            for (int i = 0; i < parameters.CylinderBanks; ++i) {
+            for (int i = 0; i < parameters.cylinderBanks; ++i) {
                 m_cylinderBanks[i]->indexSlaveJournals(&context);
             }
 
             int cylinderIndex = 0;
-            for (int i = 0; i < parameters.CylinderBanks; ++i) {
+            for (int i = 0; i < parameters.cylinderBanks; ++i) {
                 m_cylinderBanks[i]->generate(
                     i,
                     cylinderIndex,
@@ -101,7 +101,7 @@ namespace es_script {
                 cylinderIndex += m_cylinderBanks[i]->getCylinderCount();
             }
 
-            for (int i = 0; i < parameters.CylinderBanks; ++i) {
+            for (int i = 0; i < parameters.cylinderBanks; ++i) {
                 m_cylinderBanks[i]->connectRodAssemblies(&context);
             }
 
@@ -151,10 +151,13 @@ namespace es_script {
 
     protected:
         virtual void registerInputs() {
-            addInput("name", &m_parameters.Name);
-            addInput("starter_torque", &m_parameters.StarterTorque);
-            addInput("starter_speed", &m_parameters.StarterSpeed);
-            addInput("redline", &m_parameters.Redline);
+            addInput("name", &m_parameters.name);
+            addInput("starter_torque", &m_parameters.starterTorque);
+            addInput("starter_speed", &m_parameters.starterSpeed);
+            addInput("dyno_min_speed", &m_parameters.dynoMinSpeed);
+            addInput("dyno_max_speed", &m_parameters.dynoMaxSpeed);
+            addInput("dyno_hold_step", &m_parameters.dynoHoldStep);
+            addInput("redline", &m_parameters.redline);
             addInput("fuel", &m_fuel, InputTarget::Type::Object);
             addInput("throttle", &m_throttle, InputTarget::Type::Object);
             addInput("simulation_frequency", &m_parameters.initialSimulationFrequency);

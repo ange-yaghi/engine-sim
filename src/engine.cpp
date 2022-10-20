@@ -28,6 +28,9 @@ Engine::Engine() {
     m_exhaustSystemCount = 0;
     m_starterSpeed = 0;
     m_starterTorque = 0;
+    m_dynoMinSpeed = 0;
+    m_dynoMaxSpeed = 0;
+    m_dynoHoldStep = 0;
     m_redline = 0;
 
     m_throttle = nullptr;
@@ -51,15 +54,18 @@ Engine::~Engine() {
 }
 
 void Engine::initialize(const Parameters &params) {
-    m_crankshaftCount = params.CrankshaftCount;
-    m_cylinderCount = params.CylinderCount;
-    m_cylinderBankCount = params.CylinderBanks;
-    m_exhaustSystemCount = params.ExhaustSystemCount;
-    m_intakeCount = params.IntakeCount;
-    m_starterTorque = params.StarterTorque;
-    m_starterSpeed = params.StarterSpeed;
-    m_redline = params.Redline;
-    m_name = params.Name;
+    m_crankshaftCount = params.crankshaftCount;
+    m_cylinderCount = params.cylinderCount;
+    m_cylinderBankCount = params.cylinderBanks;
+    m_exhaustSystemCount = params.exhaustSystemCount;
+    m_intakeCount = params.intakeCount;
+    m_starterTorque = params.starterTorque;
+    m_starterSpeed = params.starterSpeed;
+    m_dynoMinSpeed = params.dynoMinSpeed;
+    m_dynoMaxSpeed = params.dynoMaxSpeed;
+    m_dynoHoldStep = params.dynoHoldStep;
+    m_redline = params.redline;
+    m_name = params.name;
     m_throttle = params.throttle;
     m_initialHighFrequencyGain = params.initialHighFrequencyGain;
     m_initialSimulationFrequency = params.initialSimulationFrequency;

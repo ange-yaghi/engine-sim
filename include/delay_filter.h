@@ -26,7 +26,7 @@ public:
     }
 
     virtual float f(float sample) override {
-        return fast_f(static_cast<double>(sample));
+        return static_cast<float>(fast_f(static_cast<double>(sample)));
     }
 
     inline double fast_f(double sample) {

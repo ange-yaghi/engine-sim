@@ -760,15 +760,15 @@ void EngineSimApplication::processEngineInput() {
     }
     else if (m_engine.IsKeyDown(ysKey::Code::G) && m_simulator.m_dyno.m_hold) {
         if (mouseWheelDelta > 0) {
-            m_dynoSpeed += units::rpm(100.0);
+            m_dynoSpeed += m_iceEngine->getDynoHoldStep();
         }
         else if (mouseWheelDelta < 0) {
-            m_dynoSpeed -= units::rpm(100.0);
+            m_dynoSpeed -= m_iceEngine->getDynoHoldStep();
         }
 
-        m_dynoSpeed = clamp(m_dynoSpeed, units::rpm(0), DBL_MAX);
+        m_dynoSpeed = clamp(m_dynoSpeed, m_iceEngine->getDynoMinSpeed(), m_iceEngine->getDynoMaxSpeed());
 
-        m_infoCluster->setLogMessage("[G] - Set dyno speed to " + std::to_string(m_dynoSpeed));
+        m_infoCluster->setLogMessage("[G] - Set dyno speed to " + std::to_string(units::toRpm(m_dynoSpeed)));
         fineControlInUse = true;
     }
 
@@ -840,7 +840,7 @@ void EngineSimApplication::processEngineInput() {
                 m_dynoSpeed *= (1 / (1 + dt));
             }
 
-            if ((m_dynoSpeed + units::rpm(1000)) > m_iceEngine->getRedline()) {
+            if (m_dynoSpeed > m_iceEngine->getRedline()) {
                 m_simulator.m_dyno.m_enabled = false;
                 m_dynoSpeed = units::rpm(0);
             }
@@ -852,7 +852,8 @@ void EngineSimApplication::processEngineInput() {
         }
     }
 
-    m_simulator.m_dyno.m_rotationSpeed = m_dynoSpeed + units::rpm(1000);
+    m_dynoSpeed = clamp(m_dynoSpeed, m_iceEngine->getDynoMinSpeed(), m_iceEngine->getDynoMaxSpeed());
+    m_simulator.m_dyno.m_rotationSpeed = m_dynoSpeed;
 
     const bool prevStarterEnabled = m_simulator.m_starterMotor.m_enabled;
     if (m_engine.IsKeyDown(ysKey::Code::S)) {

@@ -79,6 +79,9 @@ private node _engine => __engine_sim__engine {
     input redline [float];
     input starter_speed [float];
     input starter_torque [float];
+    input dyno_min_speed [float];
+    input dyno_max_speed [float];
+    input dyno_hold_step [float];
 
     input fuel [fuel];
     input throttle [throttle_channel];
@@ -98,6 +101,9 @@ public node engine {
     input redline: params.redline;
     input starter_speed: params.starter_speed;
     input starter_torque: params.starter_torque;
+    input dyno_min_speed: 1000 * units.rpm;
+    input dyno_max_speed: redline;
+    input dyno_hold_step: 100 * units.rpm;
 
     input fuel: params.fuel;
     input throttle_gamma: 1.0;
@@ -116,6 +122,9 @@ public node engine {
             redline: redline,
             starter_speed: starter_speed,
             starter_torque: starter_torque,
+            dyno_min_speed: dyno_min_speed,
+            dyno_max_speed: dyno_max_speed,
+            dyno_hold_step: dyno_hold_step,
 
             fuel: fuel,
             throttle: throttle,
