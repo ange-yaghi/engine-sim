@@ -24,7 +24,6 @@ namespace units {
     extern constexpr double inch = cm * 2.54;
     extern constexpr double foot = inch * 12.0;
     extern constexpr double thou = inch / 1000.0;
-
     extern constexpr double mile = m * 1609.344;
 
     // Time

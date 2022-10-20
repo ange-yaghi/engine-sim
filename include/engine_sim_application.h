@@ -108,6 +108,7 @@ class EngineSimApplication {
         virtual void process(float dt);
         virtual void render();
 
+        float m_displayAngle;
         float m_displayHeight;
         int m_gameWindowHeight;
         int m_screenWidth;

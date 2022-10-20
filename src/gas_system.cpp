@@ -278,10 +278,6 @@ void GasSystem::dissipateExcessVelocity() {
     m_state.E_k += 0.5 * mass() * (v_squared - c_squared);
 
     if (m_state.E_k < 0) m_state.E_k = 0;
-
-    if (std::isnan(m_state.momentum[0]) || std::isnan(m_state.E_k)) {
-        int a = 0;
-    }
 }
 
 void GasSystem::updateVelocity(double dt, double beta) {
@@ -402,7 +398,6 @@ double GasSystem::flow(const FlowParameters &params) {
 
     const double maxFlow = source->pressureEquilibriumMaxFlow(sink);
     flow = clamp(flow, 0.0, 0.9 * source->n());
-    //flow = clamp(flow, 0.0, maxFlow);
 
     const double fraction = flow / source->n();
     const double fractionVolume = fraction * source->volume();

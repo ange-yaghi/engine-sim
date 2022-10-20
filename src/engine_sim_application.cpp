@@ -79,6 +79,8 @@ EngineSimApplication::EngineSimApplication() {
     m_screen = 0;
     m_viewParameters.Layer0 = 0;
     m_viewParameters.Layer1 = 0;
+
+    m_displayAngle = 0.0f;
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -105,7 +107,7 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
     m_engine.GetConsole()->SetDefaultFontDirectory(enginePath + "/fonts/");
 
     const std::string shaderPath = enginePath + "/shaders/";
-    std::string winTitle = "Engine Sim | AngeTheGreat | v" + s_buildVersion;
+    const std::string winTitle = "Engine Sim | AngeTheGreat | v" + s_buildVersion;
     dbasic::DeltaEngine::GameEngineSettings settings;
     settings.API = api;
     settings.DepthBuffer = false;
@@ -214,6 +216,16 @@ void EngineSimApplication::process(float frame_dt) {
     }
     else if (m_engine.IsKeyDown(ysKey::Code::N5)) {
         speed = 1 / 1000.0;
+    }
+
+    if (m_engine.IsKeyDown(ysKey::Code::F1)) {
+        m_displayAngle += frame_dt * 1.0f;
+    }
+    else if (m_engine.IsKeyDown(ysKey::Code::F2)) {
+        m_displayAngle -= frame_dt * 1.0f;
+    }
+    else if (m_engine.ProcessKeyDown(ysKey::Code::F3)) {
+        m_displayAngle = 0.0f;
     }
 
     m_simulator.setSimulationSpeed(speed);
@@ -1015,7 +1027,8 @@ void EngineSimApplication::renderScene() {
         m_displayHeight / m_engineView->m_zoom,
         m_engineView->m_bounds,
         m_screenWidth,
-        m_screenHeight);
+        m_screenHeight,
+        m_displayAngle);
 
     m_geometryGenerator.reset();
 

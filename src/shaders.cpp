@@ -113,7 +113,8 @@ void Shaders::CalculateCamera(
     float height,
     const Bounds &cameraBounds,
     float screenWidth,
-    float screenHeight)
+    float screenHeight,
+    float angle)
 {
     const ysMatrix projection = ysMath::OrthographicProjection(
         width,
@@ -140,9 +141,12 @@ void Shaders::CalculateCamera(
 
     m_screenVariables.Projection = ysMath::Transpose(projection);
 
+    const float sinAngle = std::sin(angle);
+    const float cosAngle = std::cos(angle);
+
     const ysVector cameraEye =
         ysMath::Add(
-                ysMath::LoadVector(0.0f, 0.0f, 10.0f, 1.0f),
+                ysMath::LoadVector(10.0f * sinAngle, 0.0f, 10.0f * cosAngle, 1.0f),
                 m_cameraPosition);
     const ysVector cameraTarget =
         ysMath::Add(
