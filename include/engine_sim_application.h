@@ -22,11 +22,17 @@
 #include "info_cluster.h"
 #include "application_settings.h"
 #include "transmission.h"
+#include "main_menu.h"
 
 #include "delta.h"
 #include "dtv.h"
 
 #include <vector>
+
+enum class SceneType {
+    MainMenu,
+    Engine
+};
 
 class EngineSimApplication {
     private:
@@ -87,9 +93,11 @@ class EngineSimApplication {
         Simulator *getSimulator() { return &m_simulator; }
         InfoCluster *getInfoCluster() { return m_infoCluster; }
         ApplicationSettings* getAppSettings() { return &m_applicationSettings; }
+        void setSceneType(SceneType sceneType) { m_sceneType = sceneType; }
+        void quit() { m_quit = true; }
+        void loadScript();
 
     protected:
-        void loadScript();
         void processEngineInput();
         void renderScene();
 
@@ -148,6 +156,10 @@ class EngineSimApplication {
         MixerCluster *m_mixerCluster;
         InfoCluster *m_infoCluster;
         SimulationObject::ViewParameters m_viewParameters;
+
+        MainMenu m_mainMenu;
+        SceneType m_sceneType = SceneType::MainMenu;
+        bool m_quit = false;
 
         bool m_paused;
 

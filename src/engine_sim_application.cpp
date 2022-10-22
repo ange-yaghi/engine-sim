@@ -151,6 +151,8 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
 
     m_geometryGenerator.initialize(100000, 200000);
 
+    m_mainMenu = MainMenu::Create(this);
+
     initialize();
 }
 
@@ -162,9 +164,9 @@ void EngineSimApplication::initialize() {
     m_textRenderer.SetEngine(&m_engine);
     m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
     m_textRenderer.SetFont(m_engine.GetConsole()->GetFont());
-
+    
     loadScript();
-
+    
     m_audioBuffer.initialize(44100, 44100);
     m_audioBuffer.m_writePointer = (int)(44100 * 0.1);
 
@@ -201,136 +203,148 @@ void EngineSimApplication::initialize() {
 void EngineSimApplication::process(float frame_dt) {
     frame_dt = static_cast<float>(clamp(frame_dt, 1 / 200.0f, 1 / 30.0f));
 
-    double speed = 1.0 / 1.0;
-    if (m_engine.IsKeyDown(ysKey::Code::N1)) {
-        speed = 1 / 10.0;
-    }
-    else if (m_engine.IsKeyDown(ysKey::Code::N2)) {
-        speed = 1 / 100.0;
-    }
-    else if (m_engine.IsKeyDown(ysKey::Code::N3)) {
-        speed = 1 / 200.0;
-    }
-    else if (m_engine.IsKeyDown(ysKey::Code::N4)) {
-        speed = 1 / 500.0;
-    }
-    else if (m_engine.IsKeyDown(ysKey::Code::N5)) {
-        speed = 1 / 1000.0;
-    }
+    if (m_sceneType == SceneType::Engine) {
 
-    if (m_engine.IsKeyDown(ysKey::Code::F1)) {
-        m_displayAngle += frame_dt * 1.0f;
-    }
-    else if (m_engine.IsKeyDown(ysKey::Code::F2)) {
-        m_displayAngle -= frame_dt * 1.0f;
-    }
-    else if (m_engine.ProcessKeyDown(ysKey::Code::F3)) {
-        m_displayAngle = 0.0f;
-    }
-
-    m_simulator.setSimulationSpeed(speed);
-
-    const double avgFramerate = clamp(m_engine.GetAverageFramerate(), 30.0f, 1000.0f);
-    m_simulator.startFrame(1 / avgFramerate);
-
-    auto proc_t0 = std::chrono::steady_clock::now();
-    const int iterationCount = m_simulator.getFrameIterationCount();
-    while (m_simulator.simulateStep()) {
-        m_oscCluster->sample();
-    }
-
-    auto proc_t1 = std::chrono::steady_clock::now();
-
-    m_simulator.endFrame();
-
-    auto duration = proc_t1 - proc_t0;
-    if (iterationCount > 0) {
-        m_performanceCluster->addTimePerTimestepSample(
-            (duration.count() / 1E9) / iterationCount);
-    }
-
-    const SampleOffset safeWritePosition = m_audioSource->GetCurrentWritePosition();
-    const SampleOffset writePosition = m_audioBuffer.m_writePointer;
-
-    SampleOffset targetWritePosition =
-        m_audioBuffer.getBufferIndex(safeWritePosition, (int)(44100 * 0.1));
-    SampleOffset maxWrite = m_audioBuffer.offsetDelta(writePosition, targetWritePosition);
-
-    SampleOffset currentLead = m_audioBuffer.offsetDelta(safeWritePosition, writePosition);
-    SampleOffset newLead = m_audioBuffer.offsetDelta(safeWritePosition, targetWritePosition);
-
-    if (currentLead > 44100 * 0.5) {
-        m_audioBuffer.m_writePointer = m_audioBuffer.getBufferIndex(safeWritePosition, (int)(44100 * 0.05));
-        currentLead = m_audioBuffer.offsetDelta(safeWritePosition, m_audioBuffer.m_writePointer);
-        maxWrite = m_audioBuffer.offsetDelta(m_audioBuffer.m_writePointer, targetWritePosition);
-    }
-
-    if (currentLead > newLead) {
-        maxWrite = 0;
-    }
-
-    int16_t *samples = new int16_t[maxWrite];
-    const int readSamples = m_simulator.readAudioOutput(maxWrite, samples);
-
-    for (SampleOffset i = 0; i < (SampleOffset)readSamples && i < maxWrite; ++i) {
-        const int16_t sample = samples[i];
-        if (m_oscillatorSampleOffset % 4 == 0) {
-            m_oscCluster->getAudioWaveformOscilloscope()->addDataPoint(
-                m_oscillatorSampleOffset,
-                sample / (float)(INT16_MAX));
+        double speed = 1.0 / 1.0;
+        if (m_engine.IsKeyDown(ysKey::Code::N1)) {
+            speed = 1 / 10.0;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::N2)) {
+            speed = 1 / 100.0;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::N3)) {
+            speed = 1 / 200.0;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::N4)) {
+            speed = 1 / 500.0;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::N5)) {
+            speed = 1 / 1000.0;
         }
 
-        m_audioBuffer.writeSample(sample, m_audioBuffer.m_writePointer, (int)i);
+        if (m_engine.IsKeyDown(ysKey::Code::F1)) {
+            m_displayAngle += frame_dt * 1.0f;
+        }
+        else if (m_engine.IsKeyDown(ysKey::Code::F2)) {
+            m_displayAngle -= frame_dt * 1.0f;
+        }
+        else if (m_engine.ProcessKeyDown(ysKey::Code::F3)) {
+            m_displayAngle = 0.0f;
+        }
 
-        m_oscillatorSampleOffset = (m_oscillatorSampleOffset + 1) % (44100 / 10);
+        m_simulator.setSimulationSpeed(speed);
+
+        const double avgFramerate = clamp(m_engine.GetAverageFramerate(), 30.0f, 1000.0f);
+        m_simulator.startFrame(1 / avgFramerate);
+
+        auto proc_t0 = std::chrono::steady_clock::now();
+        const int iterationCount = m_simulator.getFrameIterationCount();
+        while (m_simulator.simulateStep()) {
+            m_oscCluster->sample();
+        }
+
+        auto proc_t1 = std::chrono::steady_clock::now();
+
+        m_simulator.endFrame();
+
+        auto duration = proc_t1 - proc_t0;
+        if (iterationCount > 0) {
+            m_performanceCluster->addTimePerTimestepSample(
+                (duration.count() / 1E9) / iterationCount);
+        }
+
+        const SampleOffset safeWritePosition = m_audioSource->GetCurrentWritePosition();
+        const SampleOffset writePosition = m_audioBuffer.m_writePointer;
+
+        SampleOffset targetWritePosition =
+            m_audioBuffer.getBufferIndex(safeWritePosition, (int)(44100 * 0.1));
+        SampleOffset maxWrite = m_audioBuffer.offsetDelta(writePosition, targetWritePosition);
+
+        SampleOffset currentLead = m_audioBuffer.offsetDelta(safeWritePosition, writePosition);
+        SampleOffset newLead = m_audioBuffer.offsetDelta(safeWritePosition, targetWritePosition);
+
+        if (currentLead > 44100 * 0.5) {
+            m_audioBuffer.m_writePointer = m_audioBuffer.getBufferIndex(safeWritePosition, (int)(44100 * 0.05));
+            currentLead = m_audioBuffer.offsetDelta(safeWritePosition, m_audioBuffer.m_writePointer);
+            maxWrite = m_audioBuffer.offsetDelta(m_audioBuffer.m_writePointer, targetWritePosition);
+        }
+
+        if (currentLead > newLead) {
+            maxWrite = 0;
+        }
+
+        int16_t* samples = new int16_t[maxWrite];
+        const int readSamples = m_simulator.readAudioOutput(maxWrite, samples);
+
+        for (SampleOffset i = 0; i < (SampleOffset)readSamples && i < maxWrite; ++i) {
+            const int16_t sample = samples[i];
+            if (m_oscillatorSampleOffset % 4 == 0) {
+                m_oscCluster->getAudioWaveformOscilloscope()->addDataPoint(
+                    m_oscillatorSampleOffset,
+                    sample / (float)(INT16_MAX));
+            }
+
+            m_audioBuffer.writeSample(sample, m_audioBuffer.m_writePointer, (int)i);
+
+            m_oscillatorSampleOffset = (m_oscillatorSampleOffset + 1) % (44100 / 10);
+        }
+
+        delete[] samples;
+
+        if (readSamples > 0) {
+            SampleOffset size0, size1;
+            void* data0, * data1;
+            m_audioSource->LockBufferSegment(
+                m_audioBuffer.m_writePointer, readSamples, &data0, &size0, &data1, &size1);
+
+            m_audioBuffer.copyBuffer(
+                reinterpret_cast<int16_t*>(data0), m_audioBuffer.m_writePointer, size0);
+            m_audioBuffer.copyBuffer(
+                reinterpret_cast<int16_t*>(data1),
+                m_audioBuffer.getBufferIndex(m_audioBuffer.m_writePointer, size0),
+                size1);
+
+            m_audioSource->UnlockBufferSegments(data0, size0, data1, size1);
+            m_audioBuffer.commitBlock(readSamples);
+        }
+
+        m_performanceCluster->addInputBufferUsageSample(
+            (double)m_simulator.getSynthesizerInputLatency() / m_simulator.getSynthesizerInputLatencyTarget());
+        m_performanceCluster->addAudioLatencySample(
+            m_audioBuffer.offsetDelta(m_audioSource->GetCurrentWritePosition(), m_audioBuffer.m_writePointer) / (44100 * 0.1));
     }
-
-    delete[] samples;
-
-    if (readSamples > 0) {
-        SampleOffset size0, size1;
-        void *data0, *data1;
-        m_audioSource->LockBufferSegment(
-            m_audioBuffer.m_writePointer, readSamples, &data0, &size0, &data1, &size1);
-
-        m_audioBuffer.copyBuffer(
-            reinterpret_cast<int16_t *>(data0), m_audioBuffer.m_writePointer, size0);
-        m_audioBuffer.copyBuffer(
-            reinterpret_cast<int16_t *>(data1),
-            m_audioBuffer.getBufferIndex(m_audioBuffer.m_writePointer, size0),
-            size1);
-
-        m_audioSource->UnlockBufferSegments(data0, size0, data1, size1);
-        m_audioBuffer.commitBlock(readSamples);
+    else {
+        m_mainMenu.process();
     }
-
-    m_performanceCluster->addInputBufferUsageSample(
-        (double)m_simulator.getSynthesizerInputLatency() / m_simulator.getSynthesizerInputLatencyTarget());
-    m_performanceCluster->addAudioLatencySample(
-        m_audioBuffer.offsetDelta(m_audioSource->GetCurrentWritePosition(), m_audioBuffer.m_writePointer) / (44100 * 0.1));
 }
 
 void EngineSimApplication::render() {
-    for (SimulationObject *object : m_objects) {
-        object->generateGeometry();
-    }
 
-    m_viewParameters.Sublayer = 0;
-    for (SimulationObject *object : m_objects) {
-        object->render(&getViewParameters());
-    }
+    if (m_sceneType == SceneType::Engine) {
+        for (SimulationObject* object : m_objects) {
+            object->generateGeometry();
+        }
 
-    m_viewParameters.Sublayer = 1;
-    for (SimulationObject *object : m_objects) {
-        object->render(&getViewParameters());
-    }
+        m_viewParameters.Sublayer = 0;
+        for (SimulationObject* object : m_objects) {
+            object->render(&getViewParameters());
+        }
 
-    m_viewParameters.Sublayer = 2;
-    for (SimulationObject *object : m_objects) {
-        object->render(&getViewParameters());
-    }
+        m_viewParameters.Sublayer = 1;
+        for (SimulationObject* object : m_objects) {
+            object->render(&getViewParameters());
+        }
 
-    m_uiManager.render();
+        m_viewParameters.Sublayer = 2;
+        for (SimulationObject* object : m_objects) {
+            object->render(&getViewParameters());
+        }
+
+        m_uiManager.render();
+    }
+    else {
+        m_mainMenu.render();
+    }
 }
 
 float EngineSimApplication::pixelsToUnits(float pixels) const {
@@ -349,14 +363,29 @@ void EngineSimApplication::run() {
 
         if (!m_engine.IsOpen()) break;
         if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
+            if (m_sceneType == SceneType::Engine) {
+                m_sceneType = SceneType::MainMenu;
+                m_audioSource->SetMode(ysAudioSource::Mode::Stop);
+            }
+            else
+                break;
+        }
+
+        if (m_quit) {
             break;
         }
 
+        if (m_sceneType == SceneType::Engine) {
+            m_audioSource->SetMode(ysAudioSource::Mode::Loop);
+        }
+
         if (m_engine.ProcessKeyDown(ysKey::Code::Return)) {
-            m_audioSource->SetMode(ysAudioSource::Mode::Stop);
-            loadScript();
-            if (m_simulator.getEngine() != nullptr) {
-                m_audioSource->SetMode(ysAudioSource::Mode::Loop);
+            if (m_sceneType == SceneType::Engine) {
+                m_audioSource->SetMode(ysAudioSource::Mode::Stop);
+                loadScript();
+                if (m_simulator.getEngine() != nullptr) {
+                    m_audioSource->SetMode(ysAudioSource::Mode::Loop);
+                }
             }
         }
 
@@ -382,7 +411,9 @@ void EngineSimApplication::run() {
 
         updateScreenSizeStability();
 
-        processEngineInput();
+        if (m_sceneType == SceneType::Engine) {
+            processEngineInput();
+        }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::Insert) &&
             m_engine.GetGameWindow()->IsActive()) {
@@ -940,40 +971,78 @@ void EngineSimApplication::renderScene() {
 
     m_shaders.CalculateUiCamera(screenWidth, screenHeight);
 
-    if (m_screen == 0) {
-        Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
-        Grid grid;
-        grid.v_cells = 2;
-        grid.h_cells = 3;
-        Grid grid3x3;
-        grid3x3.v_cells = 3;
-        grid3x3.h_cells = 3;
-        m_engineView->setDrawFrame(true);
-        m_engineView->setBounds(grid.get(windowBounds, 1, 0, 1, 1));
-        m_engineView->setLocalPosition({ 0, 0 });
+    if (m_sceneType == SceneType::Engine) {
 
-        m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 2);
-        m_oscCluster->m_bounds = grid.get(windowBounds, 1, 1);
-        m_performanceCluster->m_bounds = grid3x3.get(windowBounds, 0, 1);
-        m_loadSimulationCluster->m_bounds = grid3x3.get(windowBounds, 0, 2);
+        if (m_screen == 0) {
+            Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
+            Grid grid;
+            grid.v_cells = 2;
+            grid.h_cells = 3;
+            Grid grid3x3;
+            grid3x3.v_cells = 3;
+            grid3x3.h_cells = 3;
+            m_engineView->setDrawFrame(true);
+            m_engineView->setBounds(grid.get(windowBounds, 1, 0, 1, 1));
+            m_engineView->setLocalPosition({ 0, 0 });
 
-        Grid grid1x3;
-        grid1x3.v_cells = 3;
-        grid1x3.h_cells = 1;
-        m_mixerCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 2);
-        m_infoCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 0, 1, 2);
+            m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 2);
+            m_oscCluster->m_bounds = grid.get(windowBounds, 1, 1);
+            m_performanceCluster->m_bounds = grid3x3.get(windowBounds, 0, 1);
+            m_loadSimulationCluster->m_bounds = grid3x3.get(windowBounds, 0, 2);
 
-        m_engineView->setVisible(true);
-        m_rightGaugeCluster->setVisible(true);
-        m_oscCluster->setVisible(true);
-        m_performanceCluster->setVisible(true);
-        m_loadSimulationCluster->setVisible(true);
-        m_mixerCluster->setVisible(true);
-        m_infoCluster->setVisible(true);
+            Grid grid1x3;
+            grid1x3.v_cells = 3;
+            grid1x3.h_cells = 1;
+            m_mixerCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 2);
+            m_infoCluster->m_bounds = grid1x3.get(grid3x3.get(windowBounds, 0, 0), 0, 0, 1, 2);
 
-        m_oscCluster->activate();
+            m_engineView->setVisible(true);
+            m_rightGaugeCluster->setVisible(true);
+            m_oscCluster->setVisible(true);
+            m_performanceCluster->setVisible(true);
+            m_loadSimulationCluster->setVisible(true);
+            m_mixerCluster->setVisible(true);
+            m_infoCluster->setVisible(true);
+
+            m_oscCluster->activate();
+        }
+        else if (m_screen == 1) {
+            Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
+            m_engineView->setDrawFrame(false);
+            m_engineView->setBounds(windowBounds);
+            m_engineView->setLocalPosition({ 0, 0 });
+            m_engineView->activate();
+
+            m_engineView->setVisible(true);
+            m_rightGaugeCluster->setVisible(false);
+            m_oscCluster->setVisible(false);
+            m_performanceCluster->setVisible(false);
+            m_loadSimulationCluster->setVisible(false);
+            m_mixerCluster->setVisible(false);
+            m_infoCluster->setVisible(false);
+        }
+        else if (m_screen == 2) {
+            Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
+            Grid grid;
+            grid.v_cells = 1;
+            grid.h_cells = 3;
+            m_engineView->setDrawFrame(true);
+            m_engineView->setBounds(grid.get(windowBounds, 0, 0, 2, 1));
+            m_engineView->setLocalPosition({ 0, 0 });
+            m_engineView->activate();
+
+            m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 1);
+
+            m_engineView->setVisible(true);
+            m_rightGaugeCluster->setVisible(true);
+            m_oscCluster->setVisible(false);
+            m_performanceCluster->setVisible(false);
+            m_loadSimulationCluster->setVisible(false);
+            m_mixerCluster->setVisible(false);
+            m_infoCluster->setVisible(false);
+        }
     }
-    else if (m_screen == 1) {
+    else {
         Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
         m_engineView->setDrawFrame(false);
         m_engineView->setBounds(windowBounds);
@@ -982,26 +1051,6 @@ void EngineSimApplication::renderScene() {
 
         m_engineView->setVisible(true);
         m_rightGaugeCluster->setVisible(false);
-        m_oscCluster->setVisible(false);
-        m_performanceCluster->setVisible(false);
-        m_loadSimulationCluster->setVisible(false);
-        m_mixerCluster->setVisible(false);
-        m_infoCluster->setVisible(false);
-    }
-    else if (m_screen == 2) {
-        Bounds windowBounds((float)screenWidth, (float)screenHeight, { 0, (float)screenHeight });
-        Grid grid;
-        grid.v_cells = 1;
-        grid.h_cells = 3;
-        m_engineView->setDrawFrame(true);
-        m_engineView->setBounds(grid.get(windowBounds, 0, 0, 2, 1));
-        m_engineView->setLocalPosition({ 0, 0 });
-        m_engineView->activate();
-
-        m_rightGaugeCluster->m_bounds = grid.get(windowBounds, 2, 0, 1, 1);
-
-        m_engineView->setVisible(true);
-        m_rightGaugeCluster->setVisible(true);
         m_oscCluster->setVisible(false);
         m_performanceCluster->setVisible(false);
         m_loadSimulationCluster->setVisible(false);
