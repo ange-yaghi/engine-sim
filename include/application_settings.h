@@ -4,6 +4,7 @@
 
 struct ApplicationSettings {
     bool startFullscreen = false;
+    bool startInMenu = true;
     std::string powerUnits = "hp";
     std::string torqueUnits = "lb-ft";
     std::string speedUnits = "mph";

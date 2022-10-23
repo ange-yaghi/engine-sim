@@ -1,6 +1,10 @@
 import "engine_sim.mr"
 import "themes/default.mr"
-import "engines/atg-video-2/02_subaru_ej25_uh.mr"
+import "engines/atg-video-2/01_subaru_ej25_eh.mr"
 
 use_default_theme()
 main()
+
+set_application_settings(
+    start_in_menu: true
+)

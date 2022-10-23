@@ -577,6 +577,10 @@ void EngineSimApplication::configure(const ApplicationSettings &settings) {
         m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
     }
 
+    if (!settings.startInMenu) {
+        m_sceneType = SceneType::Engine;
+    }
+
     m_background = ysColor::srgbiToLinear(m_applicationSettings.colorBackground);
     m_foreground = ysColor::srgbiToLinear(m_applicationSettings.colorForeground);
     m_shadow = ysColor::srgbiToLinear(m_applicationSettings.colorShadow);

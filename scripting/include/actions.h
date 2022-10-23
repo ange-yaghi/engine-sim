@@ -550,6 +550,7 @@ namespace es_script {
     protected:
         virtual void registerInputs() {
             addInput("start_fullscreen", &m_settings.startFullscreen);
+            addInput("start_in_menu", &m_settings.startInMenu);
             addInput("power_units", &m_settings.powerUnits);
             addInput("torque_units", &m_settings.torqueUnits);
             addInput("speed_units", &m_settings.speedUnits);
