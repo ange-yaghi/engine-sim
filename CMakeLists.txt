@@ -235,6 +235,7 @@ add_executable(engine-sim-app WIN32
     src/load_simulation_cluster.cpp
     src/mixer_cluster.cpp
     src/info_cluster.cpp
+	src/main_menu.cpp
 
     # Include files
     include/delta.h
@@ -270,6 +271,7 @@ add_executable(engine-sim-app WIN32
     include/load_simulation_cluster.h
     include/mixer_cluster.h
     include/info_cluster.h
+	include/main_menu.h
 )
 
 target_link_libraries(engine-sim-app

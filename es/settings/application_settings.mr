@@ -4,6 +4,7 @@ units units()
 
 public node set_application_settings => __engine_sim__set_application_settings {
     input start_fullscreen [bool]: false;
+    input start_in_menu [bool]: true;
 	input power_units [string]: "HP";
 	input torque_units [string]: "FTLBS";
 	input speed_units [string]: "MPH";
