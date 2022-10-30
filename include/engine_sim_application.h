@@ -26,6 +26,8 @@
 #include "delta.h"
 #include "dtv.h"
 
+#include "joystick.h"
+
 #include <vector>
 
 class EngineSimApplication {
@@ -150,6 +152,8 @@ class EngineSimApplication {
         SimulationObject::ViewParameters m_viewParameters;
 
         bool m_paused;
+
+        Joystick j_Controller;
 
     protected:
         void startRecording();
