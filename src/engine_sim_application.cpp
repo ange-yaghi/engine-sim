@@ -819,7 +819,7 @@ void EngineSimApplication::processEngineInput() {
         m_infoCluster->setLogMessage("[,] - Set render layer to " + std::to_string(getViewParameters().Layer0));
     }
 
-    if (m_engine.ProcessKeyDown(ysKey::Code::D) || j_Controller.buttonPressed(j_Buttons.B)) {
+    if (m_engine.ProcessKeyDown(ysKey::Code::D) || j_Controller.buttonDown(j_Buttons.B)) {
         m_simulator.m_dyno.m_enabled = !m_simulator.m_dyno.m_enabled;
 
         const std::string msg = m_simulator.m_dyno.m_enabled
@@ -828,7 +828,7 @@ void EngineSimApplication::processEngineInput() {
         m_infoCluster->setLogMessage(msg);
     }
 
-    if (m_engine.ProcessKeyDown(ysKey::Code::H) || j_Controller.buttonPressed(j_Buttons.A)) {
+    if (m_engine.ProcessKeyDown(ysKey::Code::H) || j_Controller.buttonDown(j_Buttons.A)) {
         m_simulator.m_dyno.m_hold = !m_simulator.m_dyno.m_hold;
 
         const std::string msg = m_simulator.m_dyno.m_hold
