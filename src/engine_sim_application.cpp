@@ -20,9 +20,9 @@
 #include <stdlib.h>
 #include <sstream>
 
-//#if ATG_ENGINE_SIM_DISCORD_ENABLED
-//#include "../discord/Discord.h"
-//#endif
+#if ATG_ENGINE_SIM_DISCORD_ENABLED
+#include "../discord/Discord.h"
+#endif
 
 std::string EngineSimApplication::s_buildVersion = "0.1.12a";
 
@@ -184,20 +184,20 @@ void EngineSimApplication::initialize() {
     m_audioSource->SetPan(0.0f);
     m_audioSource->SetVolume(1.0f);
 
-//#ifdef ATG_ENGINE_SIM_DISCORD_ENABLED
-//    // Create a global instance of discord-rpc
-//    CDiscord::CreateInstance();
-//
-//    // Enable it, this needs to be set via a config file of some sort. 
-//    GetDiscordManager()->SetUseDiscord(true);
-//    DiscordRichPresence passMe = { 0 };
-//
-//    std::string engineName = (m_iceEngine != nullptr)
-//        ? m_iceEngine->getName()
-//        : "Broken Engine";
-//
-//    GetDiscordManager()->SetStatus(passMe, engineName, s_buildVersion);
-//#endif /* ATG_ENGINE_SIM_DISCORD_ENABLED */
+#ifdef ATG_ENGINE_SIM_DISCORD_ENABLED
+    // Create a global instance of discord-rpc
+    CDiscord::CreateInstance();
+
+    // Enable it, this needs to be set via a config file of some sort. 
+    GetDiscordManager()->SetUseDiscord(true);
+    DiscordRichPresence passMe = { 0 };
+
+    std::string engineName = (m_iceEngine != nullptr)
+        ? m_iceEngine->getName()
+        : "Broken Engine";
+
+    GetDiscordManager()->SetStatus(passMe, engineName, s_buildVersion);
+#endif /* ATG_ENGINE_SIM_DISCORD_ENABLED */
 }
 
 void EngineSimApplication::process(float frame_dt) {

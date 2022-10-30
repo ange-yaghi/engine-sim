@@ -31,6 +31,7 @@ XINPUT_STATE Joystick::GetState() {
 
 int Joystick::GetIndex() { return j_JoystickIndex; }
 
+//Check if joystick is connected and working
 bool Joystick::Alive() {
 
 	memset(&j_State, 0, sizeof(XINPUT_STATE));
@@ -43,6 +44,8 @@ bool Joystick::Alive() {
 		return false;
 }
 
+//updates state of controller
+//needs to be called before using any functions of controller
 void Joystick::Update() { 
 	j_State = GetState(); 
 
@@ -58,12 +61,14 @@ void Joystick::Update() {
 	}
 }
 
+//refreshes states of buttons. needs to be called at the end of use of controller
 void Joystick::RefreshState()
 {
 	memcpy(bStates_prev, bStates,
 		sizeof(bStates_prev));
 }
 
+//get left trigger pull
 float Joystick::LT() {
 	BYTE T = j_State.Gamepad.bLeftTrigger;
 
@@ -73,6 +78,7 @@ float Joystick::LT() {
 	return 0.0;
 }
 
+//get right trigger pull
 float Joystick::RT() {
 	BYTE T = j_State.Gamepad.bRightTrigger;
 
@@ -82,6 +88,7 @@ float Joystick::RT() {
 	return 0.0;
 }
 
+//vibrate controller, use 0,0 to cancel rumble
 void Joystick::Rumble(float a_fLM, float a_fRM) {
 	XINPUT_VIBRATION VS;
 
@@ -96,6 +103,7 @@ void Joystick::Rumble(float a_fLM, float a_fRM) {
 	XInputSetState(j_JoystickIndex, &VS);
 }
 
+//check if button is pressed. use this for single button checks
 bool Joystick::buttonPressed(int j_iButton) {
 	if (j_State.Gamepad.wButtons & XINPUT_Buttons[j_iButton]) {
 		return true;
@@ -104,6 +112,7 @@ bool Joystick::buttonPressed(int j_iButton) {
 	
 }
 
+//check if button is down every frame
 bool Joystick::buttonDown(int j_iButton)
 {
 	return b_ButtonsDown[j_iButton];
