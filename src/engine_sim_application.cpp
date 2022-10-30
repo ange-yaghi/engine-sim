@@ -81,6 +81,8 @@ EngineSimApplication::EngineSimApplication() {
     m_viewParameters.Layer1 = 0;
 
     m_displayAngle = 0.0f;
+
+    j_Controller = Joystick(1);
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -671,6 +673,7 @@ void EngineSimApplication::processEngineInput() {
         return;
     }
 
+    j_Controller.Update();
     const float dt = m_engine.GetFrameLength();
     const bool fineControlMode = m_engine.IsKeyDown(ysKey::Code::Space);
 
@@ -789,6 +792,9 @@ void EngineSimApplication::processEngineInput() {
     else if (fineControlMode && !fineControlInUse) {
         m_targetSpeedSetting = clamp(m_targetSpeedSetting + mouseWheelDelta * 0.0001);
     }
+    else if (j_Controller.Alive()) {
+        m_targetSpeedSetting = j_Controller.RT();
+    }
 
     if (prevTargetThrottle != m_targetSpeedSetting) {
         m_infoCluster->setLogMessage("Speed control set to " + std::to_string(m_targetSpeedSetting));
@@ -813,7 +819,7 @@ void EngineSimApplication::processEngineInput() {
         m_infoCluster->setLogMessage("[,] - Set render layer to " + std::to_string(getViewParameters().Layer0));
     }
 
-    if (m_engine.ProcessKeyDown(ysKey::Code::D)) {
+    if (m_engine.ProcessKeyDown(ysKey::Code::D) || j_Controller.buttonDown(j_Buttons.B)) {
         m_simulator.m_dyno.m_enabled = !m_simulator.m_dyno.m_enabled;
 
         const std::string msg = m_simulator.m_dyno.m_enabled
@@ -822,7 +828,7 @@ void EngineSimApplication::processEngineInput() {
         m_infoCluster->setLogMessage(msg);
     }
 
-    if (m_engine.ProcessKeyDown(ysKey::Code::H)) {
+    if (m_engine.ProcessKeyDown(ysKey::Code::H) || j_Controller.buttonDown(j_Buttons.A)) {
         m_simulator.m_dyno.m_hold = !m_simulator.m_dyno.m_hold;
 
         const std::string msg = m_simulator.m_dyno.m_hold
@@ -859,7 +865,9 @@ void EngineSimApplication::processEngineInput() {
     if (m_engine.IsKeyDown(ysKey::Code::S)) {
         m_simulator.m_starterMotor.m_enabled = true;
     }
-    else {
+    else if (j_Controller.Alive() && j_Controller.buttonPressed(j_Buttons.X)) {
+        m_simulator.m_starterMotor.m_enabled = true;
+    } else {
         m_simulator.m_starterMotor.m_enabled = false;
     }
 
@@ -870,7 +878,7 @@ void EngineSimApplication::processEngineInput() {
         m_infoCluster->setLogMessage(msg);
     }
 
-    if (m_engine.ProcessKeyDown(ysKey::Code::A)) {
+    if (m_engine.ProcessKeyDown(ysKey::Code::A) || j_Controller.buttonDown(j_Buttons.Y)) {
         m_simulator.getEngine()->getIgnitionModule()->m_enabled =
             !m_simulator.getEngine()->getIgnitionModule()->m_enabled;
 
@@ -880,13 +888,13 @@ void EngineSimApplication::processEngineInput() {
         m_infoCluster->setLogMessage(msg);
     }
 
-    if (m_engine.ProcessKeyDown(ysKey::Code::Up)) {
+    if (m_engine.ProcessKeyDown(ysKey::Code::Up) || j_Controller.buttonDown(j_Buttons.r_s)) {
         m_simulator.getTransmission()->changeGear(m_simulator.getTransmission()->getGear() + 1);
 
         m_infoCluster->setLogMessage(
             "UPSHIFTED TO " + std::to_string(m_simulator.getTransmission()->getGear() + 1));
     }
-    else if (m_engine.ProcessKeyDown(ysKey::Code::Down)) {
+    else if (m_engine.ProcessKeyDown(ysKey::Code::Down) || j_Controller.buttonDown(j_Buttons.l_s)) {
         m_simulator.getTransmission()->changeGear(m_simulator.getTransmission()->getGear() - 1);
 
         if (m_simulator.getTransmission()->getGear() != -1) {
@@ -908,9 +916,13 @@ void EngineSimApplication::processEngineInput() {
         m_targetClutchPressure = 0.0;
         m_infoCluster->setLogMessage("CLUTCH DEPRESSED");
     }
+    else if (j_Controller.Alive()) {
+        m_targetClutchPressure = 1-j_Controller.LT();
+    }
     else if (!m_engine.IsKeyDown(ysKey::Code::Y)) {
         m_targetClutchPressure = 1.0;
     }
+
 
     m_targetClutchPressure = clamp(m_targetClutchPressure);
 
@@ -922,6 +934,8 @@ void EngineSimApplication::processEngineInput() {
     const double clutch_s = dt / (dt + clutchRC);
     m_clutchPressure = m_clutchPressure * (1 - clutch_s) + m_targetClutchPressure * clutch_s;
     m_simulator.getTransmission()->setClutchPressure(m_clutchPressure);
+
+    j_Controller.RefreshState();
 }
 
 void EngineSimApplication::renderScene() {
