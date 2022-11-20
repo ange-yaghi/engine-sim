@@ -34,7 +34,7 @@ namespace es_script {
 
     protected:
         virtual void registerInputs() {
-            addInput("mass", &m_parameters.Mass);
+            addInput("mass", &m_parameters.mass);
             addInput("blowby", &m_parameters.BlowbyFlowCoefficient);
             addInput("compression_height", &m_parameters.CompressionHeight);
             addInput("wrist_pin_position", &m_parameters.WristPinPosition);

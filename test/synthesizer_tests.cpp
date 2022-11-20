@@ -8,38 +8,38 @@ using namespace std::chrono_literals;
 
 void setupStandardSynthesizer(Synthesizer &synth) {
     Synthesizer::Parameters params;
-    params.AudioBufferSize = 512 * 16;
-    params.AudioSampleRate = 16;
-    params.InputBufferSize = 256;
-    params.InputChannelCount = 8;
-    params.InputSampleRate = 32;
+    params.audioBufferSize = 512 * 16;
+    params.audioSampleRate = 16;
+    params.inputBufferSize = 256;
+    params.inputChannelCount = 8;
+    params.inputSampleRate = 32;
 
     Synthesizer::AudioParameters audioParams;
-    audioParams.AirNoise = 0.0;
-    audioParams.InputSampleNoise = 0.0;
-    audioParams.LevelerMaxGain = 1.0;
-    audioParams.LevelerMinGain = 1.0;
+    audioParams.airNoise = 0.0;
+    audioParams.inputSampleNoise = 0.0;
+    audioParams.levelerMaxGain = 1.0;
+    audioParams.levelerMinGain = 1.0;
     audioParams.dF_F_mix = 0.0;
-    params.InitialAudioParameters = audioParams;
+    params.initialAudioParameters = audioParams;
 
     synth.initialize(params);
 }
 
 void setupSynchronizedSynthesizer(Synthesizer &synth) {
     Synthesizer::Parameters params;
-    params.AudioBufferSize = 512 * 16;
-    params.AudioSampleRate = 32;
-    params.InputBufferSize = 1024;
-    params.InputChannelCount = 8;
-    params.InputSampleRate = 32;
+    params.audioBufferSize = 512 * 16;
+    params.audioSampleRate = 32;
+    params.inputBufferSize = 1024;
+    params.inputChannelCount = 8;
+    params.inputSampleRate = 32;
 
     Synthesizer::AudioParameters audioParams;
-    audioParams.AirNoise = 0.0;
-    audioParams.InputSampleNoise = 0.0;
-    audioParams.LevelerMaxGain = 1.0;
-    audioParams.LevelerMinGain = 1.0;
+    audioParams.airNoise = 0.0;
+    audioParams.inputSampleNoise = 0.0;
+    audioParams.levelerMaxGain = 1.0;
+    audioParams.levelerMinGain = 1.0;
     audioParams.dF_F_mix = 0.0;
-    params.InitialAudioParameters = audioParams;
+    params.initialAudioParameters = audioParams;
 
     synth.initialize(params);
 }

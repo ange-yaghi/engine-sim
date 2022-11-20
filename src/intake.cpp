@@ -25,11 +25,11 @@ void Intake::initialize(Parameters &params) {
     const double width = std::sqrt(params.CrossSectionArea);
     m_system.initialize(
         units::pressure(1.0, units::atm),
-        params.Volume,
+        params.volume,
         units::celcius(25.0));
     m_system.setGeometry(
         width,
-        params.Volume / params.CrossSectionArea,
+        params.volume / params.CrossSectionArea,
         1.0,
         0.0);
 

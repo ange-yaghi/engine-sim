@@ -9,19 +9,19 @@ class Piston;
 class ConnectingRod : public Part {
     public:
         struct Parameters {
-            double Mass = 0.0;
-            double MomentOfInertia = 0.0;
-            double CenterOfMass = 0.0;
-            double Length = 0.0;
+            double mass = 0.0;
+            double momentOfInertia = 0.0;
+            double centerOfMass = 0.0;
+            double length = 0.0;
 
-            int RodJournals = 0;
-            double SlaveThrow = 0;
+            int rodJournals = 0;
+            double slaveThrow = 0;
 
-            Piston *Piston = nullptr;
+            Piston *piston = nullptr;
 
-            Crankshaft *Crankshaft = nullptr;
-            ConnectingRod *Master = nullptr;
-            int Journal = 0;
+            Crankshaft *crankshaft = nullptr;
+            ConnectingRod *master = nullptr;
+            int journal = 0;
         };
 
     public:

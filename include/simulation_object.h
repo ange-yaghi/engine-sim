@@ -34,7 +34,8 @@ class SimulationObject {
             float scale = 1.0f,
             float lx = 0.0f,
             float ly = 0.0f,
-            float theta = 0.0f);
+            float theta = 0.0f,
+            float z = 0.0f);
         ysVector tintByLayer(const ysVector &col, int layers) const;
 
         EngineSimApplication *m_app;

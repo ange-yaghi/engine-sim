@@ -12,8 +12,8 @@ StandardValvetrain::~StandardValvetrain() {
 }
 
 void StandardValvetrain::initialize(const Parameters &params) {
-    m_intakeCamshaft = params.IntakeCamshaft;
-    m_exhaustCamshaft = params.ExhaustCamshaft;
+    m_intakeCamshaft = params.intakeCamshaft;
+    m_exhaustCamshaft = params.exhaustCamshaft;
 }
 
 double StandardValvetrain::intakeValveLift(int cylinder) {

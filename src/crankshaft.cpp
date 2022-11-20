@@ -22,16 +22,16 @@ Crankshaft::~Crankshaft() {
 }
 
 void Crankshaft::initialize(const Parameters &params) {
-    m_m = params.Mass;
-    m_flywheelMass = params.FlywheelMass;
-    m_I = params.MomentOfInertia;
-    m_throw = params.CrankThrow;
-    m_rodJournalCount = params.RodJournals;
+    m_m = params.mass;
+    m_flywheelMass = params.flywheelMass;
+    m_I = params.momentOfInertia;
+    m_throw = params.crankThrow;
+    m_rodJournalCount = params.rodJournals;
     m_rodJournalAngles = new double[m_rodJournalCount];
-    m_p_x = params.Pos_x;
-    m_p_y = params.Pos_y;
-    m_tdc = params.TDC;
-    m_frictionTorque = params.FrictionTorque;
+    m_p_x = params.pos_x;
+    m_p_y = params.pos_y;
+    m_tdc = params.tdc;
+    m_frictionTorque = params.frictionTorque;
 }
 
 void Crankshaft::destroy() {

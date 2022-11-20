@@ -29,7 +29,7 @@ void Piston::initialize(const Parameters &params) {
     m_compressionHeight = params.CompressionHeight;
     m_displacement = params.Displacement;
     m_wristPinLocation = params.WristPinPosition;
-    m_mass = params.Mass;
+    m_mass = params.mass;
     m_blowby_k = params.BlowbyFlowCoefficient;
 }
 

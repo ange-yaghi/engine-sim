@@ -22,16 +22,16 @@ Fuel::~Fuel() {
 }
 
 void Fuel::initialize(const Parameters &params) {
-    m_molecularMass = params.MolecularMass;
-    m_energyDensity = params.EnergyDensity;
-    m_density = params.Density;
-    m_turbulenceToFlameSpeedRatio = params.TurbulenceToFlameSpeedRatio;
-    m_molecularAfr = params.MolecularAfr;
-    m_burningEfficiencyRandomness = params.BurningEfficiencyRandomness;
-    m_maxBurningEfficiency = params.MaxBurningEfficiency;
-    m_maxDilutionEffect = params.MaxDilutionEffect;
-    m_maxTurbulenceEffect = params.MaxTurbulenceEffect;
-    m_lowEfficiencyAttenuation = params.LowEfficiencyAttenuation;
+    m_molecularMass = params.molecularMass;
+    m_energyDensity = params.energyDensity;
+    m_density = params.density;
+    m_turbulenceToFlameSpeedRatio = params.turbulenceToFlameSpeedRatio;
+    m_molecularAfr = params.molecularAfr;
+    m_burningEfficiencyRandomness = params.burningEfficiencyRandomness;
+    m_maxBurningEfficiency = params.maxBurningEfficiency;
+    m_maxDilutionEffect = params.maxDilutionEffect;
+    m_maxTurbulenceEffect = params.maxTurbulenceEffect;
+    m_lowEfficiencyAttenuation = params.lowEfficiencyAttenuation;
 }
 
 double Fuel::flameSpeed(

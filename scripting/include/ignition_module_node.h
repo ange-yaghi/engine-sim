@@ -25,12 +25,12 @@ namespace es_script {
 
         void generate(Engine *engine, EngineContext *context) const {
             IgnitionModule::Parameters params;
-            params.Crankshaft = engine->getCrankshaft(0);
-            params.CylinderCount = engine->getCylinderCount();
-            params.RevLimit = m_revLimit;
-            params.TimingCurve = m_timingCurve->generate(context);
-            params.CylinderCount = engine->getCylinderCount();
-            params.LimiterDuration = m_limiterDuration;
+            params.crankshaft = engine->getCrankshaft(0);
+            params.cylinderCount = engine->getCylinderCount();
+            params.revLimit = m_revLimit;
+            params.timingCurve = m_timingCurve->generate(context);
+            params.cylinderCount = engine->getCylinderCount();
+            params.limiterDuration = m_limiterDuration;
             engine->getIgnitionModule()->initialize(params);
 
             for (const Post &post : m_posts) {

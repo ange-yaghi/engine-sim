@@ -17,6 +17,9 @@
 
 #include <string>
 
+class Simulator;
+class Vehicle;
+class Transmission;
 class Engine : public Part {
     public:
         struct Parameters {
@@ -103,6 +106,8 @@ class Engine : public Part {
         double getInitialHighFrequencyGain() const { return m_initialHighFrequencyGain; }
         double getInitialNoise() const { return m_initialNoise; }
         double getInitialJitter() const { return m_initialJitter; }
+
+        virtual Simulator *createSimulator(Vehicle *vehicle, Transmission *transmission);
 
     protected:
         std::string m_name;
