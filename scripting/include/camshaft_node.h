@@ -24,13 +24,13 @@ namespace es_script {
             EngineContext *context) const
         {
             Camshaft::Parameters parameters = m_parameters;
-            parameters.Crankshaft = crankshaft;
-            parameters.Lobes = (int)m_lobes.size();
-            parameters.LobeProfile = m_lobeProfile->generate(context);
+            parameters.crankshaft = crankshaft;
+            parameters.lobes = (int)m_lobes.size();
+            parameters.lobeProfile = m_lobeProfile->generate(context);
             
             camshaft->initialize(parameters);
 
-            for (int i = 0; i < parameters.Lobes; ++i) {
+            for (int i = 0; i < parameters.lobes; ++i) {
                 camshaft->setLobeCenterline(i, m_lobes[i]);
             }
         }
@@ -41,8 +41,8 @@ namespace es_script {
 
     protected:
         virtual void registerInputs() {
-            addInput("advance", &m_parameters.Advance);
-            addInput("base_radius", &m_parameters.BaseRadius);
+            addInput("advance", &m_parameters.advance);
+            addInput("base_radius", &m_parameters.baseRadius);
             addInput("lobe_profile", &m_lobeProfile);
 
             ObjectReferenceNode<CamshaftNode>::registerInputs();
@@ -54,7 +54,7 @@ namespace es_script {
             // Read inputs
             readAllInputs();
 
-            m_parameters.Crankshaft = nullptr;
+            m_parameters.crankshaft = nullptr;
         }
 
         Camshaft::Parameters m_parameters;

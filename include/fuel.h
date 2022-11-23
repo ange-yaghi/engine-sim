@@ -10,20 +10,20 @@
 class Fuel {
     public:
         struct Parameters {
-            std::string Name = "Gasoline";
-            double MolecularMass =
+            std::string name = "Gasoline";
+            double molecularMass =
                 units::mass(100.0, units::g);
-            double EnergyDensity =
+            double energyDensity =
                 units::energy(48.1, units::kJ) / units::mass(1.0, units::g);
-            double Density =
+            double density =
                 units::mass(0.755, units::kg) / units::volume(1.0, units::L);
-            double MolecularAfr = 25 / 2.0;
-            double BurningEfficiencyRandomness = 0.5;
-            double LowEfficiencyAttenuation = 0.6;
-            double MaxBurningEfficiency = 0.8;
-            double MaxTurbulenceEffect = 2.0;
-            double MaxDilutionEffect = 50.0;
-            Function *TurbulenceToFlameSpeedRatio = nullptr;
+            double molecularAfr = 25 / 2.0;
+            double burningEfficiencyRandomness = 0.5;
+            double lowEfficiencyAttenuation = 0.6;
+            double maxBurningEfficiency = 0.8;
+            double maxTurbulenceEffect = 2.0;
+            double maxDilutionEffect = 50.0;
+            Function *turbulenceToFlameSpeedRatio = nullptr;
         };
 
         Fuel();

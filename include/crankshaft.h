@@ -6,15 +6,15 @@
 class Crankshaft : public Part {
     public:
         struct Parameters {
-            double Mass;
-            double FlywheelMass;
-            double MomentOfInertia;
-            double CrankThrow;
-            double Pos_x = 0;
-            double Pos_y = 0;
-            double TDC = 0;
-            double FrictionTorque = 0;
-            int RodJournals;
+            double mass;
+            double flywheelMass;
+            double momentOfInertia;
+            double crankThrow;
+            double pos_x = 0;
+            double pos_y = 0;
+            double tdc = 0;
+            double frictionTorque = 0;
+            int rodJournals;
         };
 
     public:

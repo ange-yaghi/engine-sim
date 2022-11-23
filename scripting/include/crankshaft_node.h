@@ -25,10 +25,10 @@ namespace es_script {
 
         void generate(Crankshaft *crankshaft, EngineContext *context) {
             Crankshaft::Parameters params = m_parameters;
-            params.RodJournals = (int)m_rodJournals.size();
+            params.rodJournals = (int)m_rodJournals.size();
 
             crankshaft->initialize(params);
-            for (int i = 0; i < params.RodJournals; ++i) {
+            for (int i = 0; i < params.rodJournals; ++i) {
                 RodJournalNode *rodJournal = m_rodJournals[i];
                 crankshaft->setRodJournalAngle(
                     i,
@@ -42,14 +42,14 @@ namespace es_script {
 
     protected:
         virtual void registerInputs() {
-            addInput("throw", &m_parameters.CrankThrow);
-            addInput("flywheel_mass", &m_parameters.FlywheelMass);
-            addInput("mass", &m_parameters.Mass);
-            addInput("friction_torque", &m_parameters.FrictionTorque);
-            addInput("moment_of_inertia", &m_parameters.MomentOfInertia);
-            addInput("position_x", &m_parameters.Pos_x);
-            addInput("position_y", &m_parameters.Pos_y);
-            addInput("tdc", &m_parameters.TDC);
+            addInput("throw", &m_parameters.crankThrow);
+            addInput("flywheel_mass", &m_parameters.flywheelMass);
+            addInput("mass", &m_parameters.mass);
+            addInput("friction_torque", &m_parameters.frictionTorque);
+            addInput("moment_of_inertia", &m_parameters.momentOfInertia);
+            addInput("position_x", &m_parameters.pos_x);
+            addInput("position_y", &m_parameters.pos_y);
+            addInput("tdc", &m_parameters.tdc);
 
             ObjectReferenceNode<CrankshaftNode>::registerInputs();
         }
@@ -60,7 +60,7 @@ namespace es_script {
             // Read inputs
             readAllInputs();
 
-            m_parameters.RodJournals = 0;
+            m_parameters.rodJournals = 0;
         }
 
         Crankshaft::Parameters m_parameters;

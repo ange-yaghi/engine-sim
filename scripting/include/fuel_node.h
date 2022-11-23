@@ -20,7 +20,7 @@ namespace es_script {
 
         void generate(Fuel *fuel, EngineContext *context) const {
             Fuel::Parameters params = m_parameters;
-            params.TurbulenceToFlameSpeedRatio =
+            params.turbulenceToFlameSpeedRatio =
                 m_turbulenceToFlameSpeedRatio->generate(context);
 
             fuel->initialize(params);
@@ -32,16 +32,16 @@ namespace es_script {
                 "turbulence_to_flame_speed_ratio",
                 &m_turbulenceToFlameSpeedRatio,
                 InputTarget::Type::Object);
-            addInput("name", &m_parameters.Name);
-            addInput("molecular_mass", &m_parameters.MolecularMass);
-            addInput("energy_density", &m_parameters.EnergyDensity);
-            addInput("density", &m_parameters.Density);
-            addInput("molecular_afr", &m_parameters.MolecularAfr);
-            addInput("max_burning_efficiency", &m_parameters.MaxBurningEfficiency);
-            addInput("burning_efficiency_randomness", &m_parameters.BurningEfficiencyRandomness);
-            addInput("low_efficiency_attenuation", &m_parameters.LowEfficiencyAttenuation);
-            addInput("max_turbulence_effect", &m_parameters.MaxTurbulenceEffect);
-            addInput("max_dilution_effect", &m_parameters.MaxDilutionEffect);
+            addInput("name", &m_parameters.name);
+            addInput("molecular_mass", &m_parameters.molecularMass);
+            addInput("energy_density", &m_parameters.energyDensity);
+            addInput("density", &m_parameters.density);
+            addInput("molecular_afr", &m_parameters.molecularAfr);
+            addInput("max_burning_efficiency", &m_parameters.maxBurningEfficiency);
+            addInput("burning_efficiency_randomness", &m_parameters.burningEfficiencyRandomness);
+            addInput("low_efficiency_attenuation", &m_parameters.lowEfficiencyAttenuation);
+            addInput("max_turbulence_effect", &m_parameters.maxTurbulenceEffect);
+            addInput("max_dilution_effect", &m_parameters.maxDilutionEffect);
 
             ObjectReferenceNode<FuelNode>::registerInputs();
         }

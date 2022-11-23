@@ -16,7 +16,7 @@ class Piston : public Part {
             double CompressionHeight;
             double WristPinPosition;
             double Displacement;
-            double Mass;
+            double mass;
         };
 
     public:

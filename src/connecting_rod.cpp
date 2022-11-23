@@ -23,18 +23,18 @@ ConnectingRod::~ConnectingRod() {
 }
 
 void ConnectingRod::initialize(const Parameters &params) {
-    m_centerOfMass = params.CenterOfMass;
-    m_length = params.Length;
-    m_m = params.Mass;
-    m_I = params.MomentOfInertia;
-    m_journal = params.Journal;
-    m_crankshaft = params.Crankshaft;
-    m_piston = params.Piston;
+    m_centerOfMass = params.centerOfMass;
+    m_length = params.length;
+    m_m = params.mass;
+    m_I = params.momentOfInertia;
+    m_journal = params.journal;
+    m_crankshaft = params.crankshaft;
+    m_piston = params.piston;
 
-    m_rodJournalAngles = new double[params.RodJournals];
-    m_rodJournalCount = params.RodJournals;
-    m_slaveThrow = params.SlaveThrow;
-    m_master = params.Master;
+    m_rodJournalAngles = new double[params.rodJournals];
+    m_rodJournalCount = params.rodJournals;
+    m_slaveThrow = params.slaveThrow;
+    m_master = params.master;
 }
 
 double ConnectingRod::getBigEndLocal() const {

@@ -1,10 +1,10 @@
 #include "..\include\engine.h"
-#include "..\include\engine.h"
 #include "../include/engine.h"
 
 #include "../include/constants.h"
 #include "../include/units.h"
 #include "../include/fuel.h"
+#include "../include/piston_engine_simulator.h"
 
 #include <cmath>
 #include <assert.h>
@@ -381,6 +381,18 @@ int Engine::getMaxDepth() const {
     }
 
     return maxDepth;
+}
+
+Simulator *Engine::createSimulator(Vehicle *vehicle, Transmission *transmission) {
+    PistonEngineSimulator *simulator = new PistonEngineSimulator;
+    Simulator::Parameters simulatorParams;
+    simulatorParams.systemType = Simulator::SystemType::NsvOptimized;
+    simulator->initialize(simulatorParams);
+
+    simulator->loadSimulation(this, vehicle, transmission);
+    simulator->setFluidSimulationSteps(8);
+
+    return static_cast<Simulator *>(simulator);
 }
 
 double Engine::getRpm() const {

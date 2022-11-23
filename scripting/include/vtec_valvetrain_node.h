@@ -31,15 +31,15 @@ namespace es_script {
             m_vtecExhaustCamshaft->generate(vtecExhaustCam, crank, context);
 
             VtecValvetrain::Parameters params;
-            params.IntakeCamshaft = intakeCam;
-            params.ExhaustCamshaft = exhaustCam;
-            params.VtecIntakeCamshaft = vtecIntakeCam;
-            params.VtexExhaustCamshaft = vtecExhaustCam;
-            params.MinRpm = m_parameters.MinRpm;
-            params.MinSpeed = m_parameters.MinSpeed;
-            params.MinThrottlePosition = m_parameters.MinThrottlePosition;
-            params.ManifoldVacuum = m_parameters.ManifoldVacuum;
-            params.Engine = context->getEngine();
+            params.intakeCamshaft = intakeCam;
+            params.exhaustCamshaft = exhaustCam;
+            params.vtecIntakeCamshaft = vtecIntakeCam;
+            params.vtexExhaustCamshaft = vtecExhaustCam;
+            params.minRpm = m_parameters.minRpm;
+            params.minSpeed = m_parameters.minSpeed;
+            params.minThrottlePosition = m_parameters.minThrottlePosition;
+            params.manifoldVacuum = m_parameters.manifoldVacuum;
+            params.engine = context->getEngine();
             valvetrain->initialize(params);
 
             return valvetrain;
@@ -52,10 +52,10 @@ namespace es_script {
             addInput("intake_camshaft", &m_intakeCamshaft, InputTarget::Type::Object);
             addInput("exhaust_camshaft", &m_exhaustCamshaft, InputTarget::Type::Object);
 
-            addInput("min_rpm", &m_parameters.MinRpm);
-            addInput("min_speed", &m_parameters.MinSpeed);
-            addInput("manifold_vacuum", &m_parameters.ManifoldVacuum);
-            addInput("min_throttle_position", &m_parameters.MinThrottlePosition);
+            addInput("min_rpm", &m_parameters.minRpm);
+            addInput("min_speed", &m_parameters.minSpeed);
+            addInput("manifold_vacuum", &m_parameters.manifoldVacuum);
+            addInput("min_throttle_position", &m_parameters.minThrottlePosition);
 
             ValvetrainNode::registerInputs();
         }

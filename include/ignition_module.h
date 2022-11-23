@@ -10,17 +10,17 @@
 class IgnitionModule : public Part {
     public:
         struct Parameters {
-            int CylinderCount;
-            Crankshaft *Crankshaft;
-            Function *TimingCurve;
-            double RevLimit = units::rpm(6000.0);
-            double LimiterDuration = 0.5 * units::sec;
+            int cylinderCount;
+            Crankshaft *crankshaft;
+            Function *timingCurve;
+            double revLimit = units::rpm(6000.0);
+            double limiterDuration = 0.5 * units::sec;
         };
 
         struct SparkPlug {
-            double Angle = 0;
-            bool IgnitionEvent = false;
-            bool Enabled = false;
+            double angle = 0;
+            bool ignitionEvent = false;
+            bool enabled = false;
         };
 
     public:

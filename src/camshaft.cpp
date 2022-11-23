@@ -21,14 +21,14 @@ Camshaft::~Camshaft() {
 }
 
 void Camshaft::initialize(const Parameters &params) {
-    m_lobeAngles = new double[params.Lobes];
-    memset(m_lobeAngles, 0, sizeof(double) * params.Lobes);
+    m_lobeAngles = new double[params.lobes];
+    memset(m_lobeAngles, 0, sizeof(double) * params.lobes);
 
-    m_lobes = params.Lobes;
-    m_crankshaft = params.Crankshaft;
-    m_lobeProfile = params.LobeProfile;
-    m_advance = params.Advance;
-    m_baseRadius = params.BaseRadius;
+    m_lobes = params.lobes;
+    m_crankshaft = params.crankshaft;
+    m_lobeProfile = params.lobeProfile;
+    m_advance = params.advance;
+    m_baseRadius = params.baseRadius;
 }
 
 void Camshaft::destroy() {

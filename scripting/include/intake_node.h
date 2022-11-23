@@ -28,7 +28,7 @@ namespace es_script {
 
     protected:
         virtual void registerInputs() {
-            addInput("plenum_volume", &m_parameters.Volume);
+            addInput("plenum_volume", &m_parameters.volume);
             addInput("plenum_cross_section_area", &m_parameters.CrossSectionArea);
             addInput("intake_flow_rate", &m_parameters.InputFlowK);
             addInput("idle_flow_rate", &m_parameters.IdleFlowK);
