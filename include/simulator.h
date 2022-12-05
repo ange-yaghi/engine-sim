@@ -58,6 +58,8 @@ public:
     int getSimulationFrequency() const { return m_simulationFrequency; }
 
     double getTimestep() const { return 1.0 / m_simulationFrequency; }
+    double getSinceLastUpdate() const { return m_sinceLastUpdate; }
+    void resetSinceLastUpdate() { m_sinceLastUpdate = 0.0; }
 
     void setTargetSynthesizerLatency(double latency) { m_targetSynthesizerLatency = latency; }
     double getTargetSynthesizerLatency() const { return m_targetSynthesizerLatency; }
@@ -107,6 +109,8 @@ private:
     double m_physicsProcessingTime;
 
     int m_simulationFrequency;
+    double m_elapsedTime;
+    double m_sinceLastUpdate;
 
     double m_targetSynthesizerLatency;
     double m_simulationSpeed;

@@ -44,6 +44,7 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | Space + Scroll | Fine throttle adjustment |
 | 1, 2, 3, 4, 5 | Simulation time warp |
 | Tab | Change screen |
+| P | Toggle Average/Instant fuel consumption |
 
 ### Using the RPM hold
 The RPM hold feature will hold the engine at a specific RPM and also measure the engine's horsepower and torque at that RPM. You can enable RPM hold by pressing the `H` key. **You must then enable the dynomometer** (press the `D` key) in order for the RPM hold to take effect. To change the hold speed, hold the `G` key and scroll with the mouse wheel. The RPM hold will be shown on the `DYNO. SPEED` gauge in the lower left of the screen.

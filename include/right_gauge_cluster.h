@@ -27,6 +27,8 @@ class RightGaugeCluster : public UiElement {
         void setUnits();
         double getManifoldPressureWithUnits(double ambientPressure);
 
+        void toggleInstantConsumption() { m_fuelCluster->m_instantConsumption = !m_fuelCluster->m_instantConsumption; }
+
         Simulator *m_simulator;
 
     private:
