@@ -22,6 +22,9 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
 
 project(engine-sim)
 
+execute_process(COMMAND git submodule init)
+execute_process(COMMAND git submodule update)
+
 set(CMAKE_CXX_STANDARD 17)
 
 # ========================================================
