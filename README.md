@@ -1,7 +1,9 @@
 # Engine Simulator
 ![Alt text](docs/public/screenshots/screenshot_v01.png?raw=true)
 ---
-## **Warning: project is in development and will change frequently**
+# Engine Simulator has moved!
+
+To get the newest releases of the game, [click here](https://github.com/Engine-Simulator/engine-sim-community-edition).
 ---
 
 ## What is this?
