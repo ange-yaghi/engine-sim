@@ -67,7 +67,7 @@ class AudioBuffer {
             }
         }
 
-        bool checkForDiscontinuitiy(int threshold) const;
+        bool checkForDiscontinuity(int threshold) const;
 
         int m_writePointer;
 
