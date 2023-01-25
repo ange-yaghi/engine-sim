@@ -1,5 +1,5 @@
 import "engine_sim.mr"
-import "themes/default.mr"
+import "themes/default_metric.mr"
 import "engines/atg-video-2/01_subaru_ej25_eh.mr"
 
 use_default_theme()
