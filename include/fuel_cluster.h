@@ -20,8 +20,17 @@ class FuelCluster : public UiElement {
         Engine *m_engine;
         Simulator *m_simulator;
 
+        double m_fuelConsumedOld;
+        double m_deltaFuel;
+
+        double m_distanceOld;
+        double m_deltaDist;
+
+        bool m_instantConsumption;
+
     private:
         double getTotalVolumeFuelConsumed() const;
+
 };
 
 #endif /* ATG_ENGINE_SIM_FUEL_CLUSTER_H */

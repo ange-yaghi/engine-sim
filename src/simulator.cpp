@@ -18,6 +18,9 @@ Simulator::Simulator() {
     m_filteredEngineSpeed = 0.0;
     m_dynoTorqueSamples = nullptr;
     m_lastDynoTorqueSample = 0;
+
+    m_elapsedTime = 0.0;
+    m_sinceLastUpdate = 0.0;
 }
 
 Simulator::~Simulator() {
@@ -149,7 +152,11 @@ bool Simulator::simulateStep() {
     writeToSynthesizer();
 
     ++m_currentIteration;
+
+    m_elapsedTime += timestep;
+    m_sinceLastUpdate += timestep;
     return true;
+
 }
 
 double Simulator::getTotalExhaustFlow() const {

@@ -8,6 +8,10 @@
 FuelCluster::FuelCluster() {
     m_engine = nullptr;
     m_simulator = nullptr;
+
+    m_fuelConsumedOld = 0.0;
+    m_distanceOld = 0.0;
+    m_instantConsumption = false;
 }
 
 FuelCluster::~FuelCluster() {
@@ -66,26 +70,84 @@ void FuelCluster::render() {
     const double travelledDistance = (m_simulator->getVehicle() != nullptr)
         ? m_simulator->getVehicle()->getTravelledDistance()
         : 0.0;
-    const double mpg = units::convert(travelledDistance, units::mile) / fuelConsumed_gallons;
 
-    ss = std::stringstream();
-    ss << std::setprecision(2) << std::fixed;
-    ss << mpg << " MPG";
+    if (m_simulator->getSinceLastUpdate() > 1.0) {
+        m_deltaFuel = fuelConsumed - m_fuelConsumedOld;
+        m_fuelConsumedOld = fuelConsumed;
 
-    const Bounds mpgBounds = grid.get(bodyBounds, 0, 6);
-    drawText(ss.str(), mpgBounds, 16.0f, Bounds::lm);
+        m_deltaDist = travelledDistance - m_distanceOld;
+        m_distanceOld = travelledDistance;
 
-    const double lp100km = (travelledDistance != 0)
-        ? units::convert(fuelConsumed, units::L)
-            / (units::convert(travelledDistance, units::km) / 100.0)
-        : 0;
+        m_simulator->resetSinceLastUpdate();
+    }
 
-    ss = std::stringstream();
-    ss << std::setprecision(2) << std::fixed;
-    ss << ((lp100km > 100.0) ? 100.0 : lp100km) << " L/100 KM";
+    if (!m_instantConsumption) {
+        const double mpg = units::convert(travelledDistance, units::mile) / fuelConsumed_gallons;
 
-    const Bounds lp100kmBounds = grid.get(bodyBounds, 0, 7);
-    drawText(ss.str(), lp100kmBounds, 12.0f, Bounds::lm);
+        ss = std::stringstream();
+        ss << std::setprecision(2) << std::fixed;
+        ss << mpg << " MPG";
+
+        const Bounds mpgBounds = grid.get(bodyBounds, 0, 6);
+        drawText(ss.str(), mpgBounds, 16.0f, Bounds::lm);
+
+        const double lp100km = (travelledDistance != 0)
+            ? units::convert(fuelConsumed, units::L)
+                / (units::convert(travelledDistance, units::km) / 100.0)
+            : 0;
+
+        ss = std::stringstream();
+        ss << std::setprecision(2) << std::fixed;
+        ss << ((lp100km > 100.0) ? 100.0 : lp100km) << " L/100 KM";
+
+        const Bounds lp100kmBounds = grid.get(bodyBounds, 0, 7);
+        drawText(ss.str(), lp100kmBounds, 12.0f, Bounds::lm);
+    } else {
+        const double speed = (m_simulator->getVehicle() != nullptr)
+            ? m_simulator->getVehicle()->getSpeed()
+            : 0.0;
+
+        const double delta_gal = units::convert(m_deltaFuel, units::gal);
+        const double delta_l = units::convert(m_deltaFuel, units::L);
+
+        if (units::convert(speed, units::km / units::hour) < 8.0) {
+            const double galh = delta_gal * 3600;
+
+            ss = std::stringstream();
+            ss << std::setprecision(2) << std::fixed;
+            ss << galh << " GAL/H";
+
+            const Bounds mpgBounds = grid.get(bodyBounds, 0, 6);
+            drawText(ss.str(), mpgBounds, 16.0f, Bounds::lm);
+
+            const double lh = delta_l * 3600;
+
+            ss = std::stringstream();
+            ss << std::setprecision(2) << std::fixed;
+            ss << lh << " L/H";
+
+            const Bounds lp100kmBounds = grid.get(bodyBounds, 0, 7);
+            drawText(ss.str(), lp100kmBounds, 12.0f, Bounds::lm);
+        } else {
+            const double mpg = units::convert(m_deltaDist, units::mile) / delta_gal;
+
+            ss = std::stringstream();
+            ss << std::setprecision(2) << std::fixed;
+            ss << mpg << " MPG";
+
+            const Bounds mpgBounds = grid.get(bodyBounds, 0, 6);
+            drawText(ss.str(), mpgBounds, 16.0f, Bounds::lm);
+
+            const double lp100km = 100 * delta_l / units::convert(m_deltaDist, units::km);
+
+            ss = std::stringstream();
+            ss << std::setprecision(2) << std::fixed;
+            ss << ((lp100km > 100.0) ? 100.0 : lp100km) << " L/100 KM";
+
+            const Bounds lp100kmBounds = grid.get(bodyBounds, 0, 7);
+            drawText(ss.str(), lp100kmBounds, 12.0f, Bounds::lm);
+        }
+    }
 
     UiElement::render();
 }

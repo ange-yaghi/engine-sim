@@ -913,6 +913,10 @@ void EngineSimApplication::processEngineInput() {
         m_targetClutchPressure = 1.0;
     }
 
+    if (m_engine.ProcessKeyDown(ysKey::Code::P)) {
+        m_rightGaugeCluster->toggleInstantConsumption();
+    }
+
     m_targetClutchPressure = clamp(m_targetClutchPressure);
 
     double clutchRC = 0.001;
