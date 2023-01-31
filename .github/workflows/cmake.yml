@@ -43,7 +43,7 @@ jobs:
     # Actual install step (only runs if the cache is empty)
     - name: Install boost
       if: steps.cache-boost.outputs.cache-hit != 'true'
-      uses: MarkusJx/install-boost@v2.3.0
+      uses: MarkusJx/install-boost@latest
       with:
         # Set the boost version (required)
         boost_version: ${{env.BOOST_VERSION}}
