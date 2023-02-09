@@ -441,3 +441,5 @@ public node main {
     set_vehicle(i6_vehicle())
     set_transmission(i6_transmission())
 }
+
+main()
