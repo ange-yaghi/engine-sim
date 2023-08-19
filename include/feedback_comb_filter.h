@@ -10,7 +10,7 @@ class FeedbackCombFilter : public Filter {
 
         void initialize(int M);
         virtual float f(float sample) override;
-        virtual void destroy();
+        virtual void destroy() override;
 
         float a_M;
 

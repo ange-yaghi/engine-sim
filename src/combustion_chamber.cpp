@@ -45,9 +45,9 @@ CombustionChamber::~CombustionChamber() {
 }
 
 void CombustionChamber::initialize(const Parameters &params) {
-    m_piston = params.Piston;
+    m_piston = params.piston;
     m_head = params.Head;
-    m_fuel = params.Fuel;
+    m_fuel = params.fuel;
     m_crankcasePressure = params.CrankcasePressure;
     m_meanPistonSpeedToTurbulence = params.MeanPistonSpeedToTurbulence;
 

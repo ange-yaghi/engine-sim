@@ -506,7 +506,7 @@ namespace es_script {
             Node::registerInputs();
         }
 
-        virtual void _evaluate() {
+        virtual void _evaluate() override {
             readAllInputs();
 
             Transmission *transmission = new Transmission;

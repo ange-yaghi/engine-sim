@@ -1,6 +1,8 @@
-﻿#include "Discord.h"
-#include <stdio.h>
-#include <time.h>
+﻿#include "../include/discord.h"
+
+#include <cstdio>
+#include <cstring>
+#include <ctime>
 
 
 const char* DISCORD_APPLICATION_ID = "1008609936256811038"; // https://discordapp.com/developers/applications

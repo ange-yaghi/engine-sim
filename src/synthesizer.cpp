@@ -125,6 +125,7 @@ void Synthesizer::destroy() {
     m_audioBuffer.destroy();
 
     for (int i = 0; i < m_inputChannelCount; ++i) {
+        delete[] m_inputChannels[i].transferBuffer;
         m_inputChannels[i].data.destroy();
         m_filters[i].convolution.destroy();
     }
@@ -304,7 +305,7 @@ int16_t Synthesizer::renderAudio(int inputSample) {
         float v_in =
             f_p * dF_F_mix
             + f * r_mixed * (1 - dF_F_mix);
-        if (fpclassify(v_in) == FP_SUBNORMAL) {
+        if (std::fpclassify(v_in) == FP_SUBNORMAL) {
             v_in = 0;
         }
 

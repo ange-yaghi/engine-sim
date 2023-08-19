@@ -5,6 +5,7 @@
 #include "../include/constants.h"
 #include "../include/engine_sim_application.h"
 
+#include <climits>
 #include <cmath>
 #include <sstream>
 

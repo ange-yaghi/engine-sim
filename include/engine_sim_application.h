@@ -121,6 +121,10 @@ class EngineSimApplication {
         dbasic::DeltaEngine m_engine;
         dbasic::AssetManager m_assetManager;
 
+        dbasic::Path m_dataRoot;
+        dbasic::Path m_userData;
+        dbasic::Path m_outputPath;
+
         std::string m_assetPath;
 
         ysRenderTarget *m_mainRenderTarget;
@@ -183,6 +187,8 @@ class EngineSimApplication {
 
         int m_oscillatorSampleOffset;
         int m_screen;
+
+        struct LoggingErrorHandler *m_error_handler;
 
 #ifdef ATG_ENGINE_SIM_VIDEO_CAPTURE
         atg_dtv::Encoder m_encoder;

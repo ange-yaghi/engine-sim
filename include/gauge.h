@@ -34,8 +34,8 @@ class Gauge : public UiElement {
         float m_thetaMin;
         float m_thetaMax;
 
-        int m_min;
-        int m_max;
+        float m_min;
+        float m_max;
         int m_maxMinorTick;
         float m_gamma;
 

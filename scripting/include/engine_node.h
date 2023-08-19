@@ -119,14 +119,14 @@ namespace es_script {
 
             CombustionChamber::Parameters ccParams;
             ccParams.CrankcasePressure = units::pressure(1.0, units::atm);
-            ccParams.Fuel = fuel;
+            ccParams.fuel = fuel;
             ccParams.StartingPressure = units::pressure(1.0, units::atm);
             ccParams.StartingTemperature = units::celcius(25.0);
             ccParams.MeanPistonSpeedToTurbulence = meanPistonSpeedToTurbulence;
 
             for (int i = 0; i < engine->getCylinderCount(); ++i) {
-                ccParams.Piston = engine->getPiston(i);
-                ccParams.Head = engine->getHead(ccParams.Piston->getCylinderBank()->getIndex());
+                ccParams.piston = engine->getPiston(i);
+                ccParams.Head = engine->getHead(ccParams.piston->getCylinderBank()->getIndex());
                 engine->getChamber(i)->initialize(ccParams);
             }
         }

@@ -16,15 +16,25 @@
 
 #include "../scripting/include/compiler.h"
 
+#include <delta-studio/include/yds_error_handler.h>
+
+#include "build_info.h"
+
 #include <chrono>
 #include <stdlib.h>
 #include <sstream>
 
 #if ATG_ENGINE_SIM_DISCORD_ENABLED
-#include "../discord/Discord.h"
+#include "../include/discord.h"
 #endif
 
-std::string EngineSimApplication::s_buildVersion = "0.1.12a";
+std::string EngineSimApplication::s_buildVersion = ENGINE_SIM_PROJECT_VERSION "a" "-" ENGINE_SIM_SYSTEM_NAME;
+
+struct LoggingErrorHandler : ysErrorHandler {
+    void OnError(ysError error, unsigned int line, ysObject *object, const char *file) override {
+        printf("Error @ %s:%i - %i\n", file, line, static_cast<int>(error));
+    }
+};
 
 EngineSimApplication::EngineSimApplication() {
     m_assetPath = "";
@@ -82,6 +92,8 @@ EngineSimApplication::EngineSimApplication() {
     m_viewParameters.Layer1 = 0;
 
     m_displayAngle = 0.0f;
+
+    ysErrorSystem::GetInstance()->AttachErrorHandler(&m_error_handler);
 }
 
 EngineSimApplication::~EngineSimApplication() {
@@ -90,10 +102,43 @@ EngineSimApplication::~EngineSimApplication() {
 
 void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI api) {
     dbasic::Path modulePath = dbasic::GetModulePath();
-    dbasic::Path confPath = modulePath.Append("delta.conf");
 
-    std::string enginePath = "../dependencies/submodules/delta-studio/engines/basic";
-    m_assetPath = "../assets";
+    // Check the env var for where to load fixed data from
+    if (getenv("ENGINE_SIM_DATA_ROOT") != nullptr) {
+        m_dataRoot = getenv("ENGINE_SIM_DATA_ROOT");
+    } else {
+        m_dataRoot = ENGINE_SIM_DATA_ROOT;
+    }
+
+    // Grab the userdata folder (input files that aren't from fixed data)
+    if (getenv("XDG_DATA_HOME") != nullptr) {
+        m_userData = getenv("XDG_DATA_HOME");
+    } else if (getenv("HOME") != nullptr) {
+        m_userData = dbasic::Path(getenv("HOME")).Append(".local/share/engine-sim");
+    } else {
+        m_userData = modulePath;
+    }
+    if (!m_userData.Exists()) {
+        m_userData.CreateDir();
+    }
+
+    // Setup output files (log files, videos, etc...)
+    if (getenv("XDG_STATE_HOME") != nullptr) {
+        m_outputPath = getenv("XDG_STATE_HOME");
+    } else if (getenv("HOME") != nullptr) {
+        m_outputPath = dbasic::Path(getenv("HOME")).Append(".local/share/engine-sim");
+    } else {
+        m_outputPath = modulePath;
+    }
+    if (!m_outputPath.Exists()) {
+        m_outputPath.CreateDir();
+    }
+
+    std::string enginePath = m_dataRoot.Append("dependencies/submodules/delta-studio/engines/basic").ToString();
+    m_assetPath = m_dataRoot.Append("assets").ToString();
+
+    // Read in local config to pick replacement locations
+    dbasic::Path confPath = modulePath.Append("delta.conf");
     if (confPath.Exists()) {
         std::fstream confFile(confPath.ToString(), std::ios::in);
 
@@ -101,8 +146,6 @@ void EngineSimApplication::initialize(void *instance, ysContextObject::DeviceAPI
         std::getline(confFile, m_assetPath);
         enginePath = modulePath.Append(enginePath).ToString();
         m_assetPath = modulePath.Append(m_assetPath).ToString();
-
-        confFile.close();
     }
 
     m_engine.GetConsole()->SetDefaultFontDirectory(enginePath + "/fonts/");
@@ -432,6 +475,8 @@ void EngineSimApplication::destroy() {
 
     m_simulator->destroy();
     m_audioBuffer.destroy();
+
+    m_geometryGenerator.destroy();
 }
 
 void EngineSimApplication::loadEngine(
@@ -490,7 +535,7 @@ void EngineSimApplication::loadEngine(
     for (int i = 0; i < engine->getExhaustSystemCount(); ++i) {
         ImpulseResponse *response = engine->getExhaustSystem(i)->getImpulseResponse();
 
-        ysWindowsAudioWaveFile waveFile;
+        ysAudioWaveFile waveFile;
         waveFile.OpenFile(response->getFilename().c_str());
         waveFile.InitializeInternalBuffer(waveFile.GetSampleCount());
         waveFile.FillBuffer(0);
@@ -574,7 +619,7 @@ void EngineSimApplication::createObjects(Engine *engine) {
 
         CombustionChamberObject *ccObject = new CombustionChamberObject;
         ccObject->initialize(this);
-        ccObject->m_chamber = m_iceEngine->getChamber(i);
+        ccObject->m_chamber = engine->getChamber(i);
         m_objects.push_back(ccObject);
     }
 
@@ -621,24 +666,44 @@ void EngineSimApplication::loadScript() {
     Transmission *transmission = nullptr;
 
 #ifdef ATG_ENGINE_SIM_PIRANHA_ENABLED
-    es_script::Compiler compiler;
-    compiler.initialize();
-    const bool compiled = compiler.compile("../assets/main.mr");
-    if (compiled) {
-        const es_script::Compiler::Output output = compiler.execute();
-        configure(output.applicationSettings);
+    // Search for user defined assets first, then fallback to data
+    std::vector<piranha::IrPath> searchPaths;
+    searchPaths.push_back(m_userData.Append("assets").ToString());
+    searchPaths.push_back(m_dataRoot.Append("assets").ToString());
+    searchPaths.push_back(m_dataRoot.Append("es").ToString());
 
-        engine = output.engine;
-        vehicle = output.vehicle;
-        transmission = output.transmission;
-    }
-    else {
-        engine = nullptr;
-        vehicle = nullptr;
-        transmission = nullptr;
-    }
+    // Try and load the local version first, if not fallback to the default one in data
+    std::vector<piranha::IrPath> dataPaths;
+    dataPaths.push_back(m_userData.ToString());
+    dataPaths.push_back(m_dataRoot.ToString());
 
-    compiler.destroy();
+    for (const auto &dataPath : dataPaths) {
+        // Skip this path if the script doesn't exist
+        const auto script = dataPath.append("assets/main.mr");
+        if (!script.exists()) {
+            continue;
+        }
+
+        const auto outputLogPath = m_outputPath.Append("error_log.log").ToString();
+        std::ofstream outputLog(outputLogPath, std::ios::out);
+
+        es_script::Compiler compiler;
+        compiler.initialize(searchPaths);
+        const bool compiled = compiler.compile(script.toString(), outputLog);
+        if (compiled) {
+            const es_script::Compiler::Output output = compiler.execute();
+            configure(output.applicationSettings);
+
+            engine = output.engine;
+            vehicle = output.vehicle;
+            transmission = output.transmission;
+        }
+
+        compiler.destroy();
+
+        // Don't try any other scripts or we'd nuke the error log
+        break;
+    }
 #endif /* ATG_ENGINE_SIM_PIRANHA_ENABLED */
 
     if (vehicle == nullptr) {

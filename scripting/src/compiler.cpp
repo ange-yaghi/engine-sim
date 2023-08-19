@@ -18,10 +18,14 @@ es_script::Compiler::Output *es_script::Compiler::output() {
     return s_output;
 }
 
-void es_script::Compiler::initialize() {
+void es_script::Compiler::initialize(const std::vector<piranha::IrPath> &searchPaths) {
     m_compiler = new piranha::Compiler(&m_rules);
     m_compiler->setFileExtension(".mr");
 
+    // Add the user provided ones first so that they take priority
+    for (const auto &path : searchPaths) {
+        m_compiler->addSearchPath(path);
+    }
     m_compiler->addSearchPath("../../es/");
     m_compiler->addSearchPath("../es/");
     m_compiler->addSearchPath("es/");
@@ -29,13 +33,12 @@ void es_script::Compiler::initialize() {
     m_rules.initialize();
 }
 
-bool es_script::Compiler::compile(const piranha::IrPath &path) {
+bool es_script::Compiler::compile(const piranha::IrPath &path, std::ostream &logs) {
     bool successful = false;
 
-    std::ofstream file("error_log.log", std::ios::out);
     piranha::IrCompilationUnit *unit = m_compiler->compile(path);
     if (unit == nullptr) {
-        file << "Can't find file: " << path.toString() << "\n";
+        logs << "Can't find file: " << path.toString() << "\n";
     }
     else {
         const piranha::ErrorList *errors = m_compiler->getErrorList();
@@ -48,12 +51,10 @@ bool es_script::Compiler::compile(const piranha::IrPath &path) {
         }
         else {
             for (int i = 0; i < errors->getErrorCount(); ++i) {
-                printError(errors->getCompilationError(i), file);
+                printError(errors->getCompilationError(i), logs);
             }
         }
     }
-
-    file.close();
 
     return successful;
 }
@@ -78,7 +79,7 @@ void es_script::Compiler::destroy() {
 
 void es_script::Compiler::printError(
     const piranha::CompilationError *err,
-    std::ofstream &file) const
+    std::ostream &file) const
 {
     const piranha::ErrorCode_struct &errorCode = err->getErrorCode();
     file << err->getCompilationUnit()->getPath().getStem()

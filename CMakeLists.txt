@@ -1,8 +1,15 @@
 cmake_minimum_required(VERSION 3.10)
 
+include(CMakeDependentOption)
+
 option(DTV "Enable video output" OFF)
 option(PIRANHA_ENABLED "Enable scripting input" ON)
 option(DISCORD_ENABLED "Enable Discord Rich Presence" ON)
+
+# Default to compiling as Release in single-configuration generators
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+endif()
 
 if (DTV)
     add_compile_definitions(ATG_ENGINE_SIM_VIDEO_CAPTURE)
@@ -20,7 +27,7 @@ endif (DISCORD_ENABLED)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
 
-project(engine-sim)
+project(engine-sim VERSION 0.1.12)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -191,18 +198,6 @@ if (PIRANHA_ENABLED)
         piranha)
 endif (PIRANHA_ENABLED)
 
-if (DISCORD_ENABLED)
-    add_library(discord STATIC
-        # Source files
-        dependencies/discord/Discord.cpp
-
-        # Include files
-        dependencies/discord/Discord.h
-        dependencies/discord/discord_register.h
-        dependencies/discord/discord_rpc.h
-    )
-endif (DISCORD_ENABLED)
-
 add_executable(engine-sim-app WIN32
     # Source files
     src/main.cpp
@@ -274,10 +269,6 @@ add_executable(engine-sim-app WIN32
     include/info_cluster.h
 )
 
-target_link_libraries(engine-sim-app
-    engine-sim
-)
-
 if (DTV)
     target_link_libraries(engine-sim-app
         direct-to-video)
@@ -288,19 +279,43 @@ if (PIRANHA_ENABLED)
         engine-sim-script-interpreter)
 endif (PIRANHA_ENABLED)
 
-if (DISCORD_ENABLED)
-    add_library(discord-rpc STATIC IMPORTED)
-    set_property(TARGET discord-rpc PROPERTY IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/dependencies/discord/lib/discord-rpc.lib)
-    target_link_libraries(engine-sim-app
-    	discord
-	discord-rpc)
-endif (DISCORD_ENABLED)
-
 target_include_directories(engine-sim-app
     PUBLIC dependencies/submodules)
 
 add_subdirectory(dependencies)
 
+if (DISCORD_ENABLED)
+    target_sources(engine-sim-app PUBLIC
+        src/discord.cpp
+        include/discord.h
+    )
+    target_include_directories(engine-sim-app PUBLIC
+        dependencies/discord/include
+    )
+    target_link_libraries(engine-sim-app
+        discord-rpc
+    )
+endif (DISCORD_ENABLED)
+
+target_link_libraries(engine-sim-app
+    engine-sim
+)
+
+# ========================================================
+# Generated build info
+
+# Fallback to '..' if not provided
+if (NOT DEFINED ENGINE_SIM_DATA_ROOT)
+    set(ENGINE_SIM_DATA_ROOT ".." CACHE STRING "Where to look for data")
+endif()
+message(STATUS "Data root set to '${ENGINE_SIM_DATA_ROOT}'")
+
+configure_file(include/build_info.h.in
+    generated/build_info.h @ONLY)
+target_include_directories(engine-sim-app
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+
+# ========================================================
 # GTEST
 
 enable_testing()
