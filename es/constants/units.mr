@@ -72,7 +72,7 @@ public node units {
     output MPa: kPa * 1000.0;
     output atm: 101.325 * kPa;
 
-    output psi: lb / (inch * inch);
+    output psi: lbf / (inch * inch);
     output psig: psi;
     output inHg: Pa * 3386.3886666666713;
     output inH2O: inHg * 0.0734824;

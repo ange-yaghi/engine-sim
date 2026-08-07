@@ -58,6 +58,12 @@ void ExhaustSystem::destroy() {
 }
 
 void ExhaustSystem::process(double dt) {
+    if (m_turbocharged) {
+        // A Turbocharger performs this system's outlet flow (through its
+        // turbine) once per substep instead -- see Turbocharger::process().
+        return;
+    }
+
     GasSystem::Mix airMix;
     airMix.p_fuel = 0;
     airMix.p_inert = 1.0;

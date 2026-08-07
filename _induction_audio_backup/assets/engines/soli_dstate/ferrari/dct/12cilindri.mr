@@ -1,0 +1,630 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Ferrari 12Cilindri (2024-, successor to the 812 Superfast) -- the F140HD,
+// a 6.5L naturally-aspirated 65-degree V12, DOHC 4-valve. The last NA V12
+// front-engine Ferrari, revving to a 9500 RPM redline with no forced
+// induction or hybrid assist on the combustion side.
+//
+// BANK ANGLE VS. FIRING SPACING: this sim's shared-rod-journal V-engine
+// convention (see angethegreat/atg-video-2/08_ferrari_f136_v8.mr and
+// 10_lfa_v10.mr) works cleanly when the bank angle equals the even-firing
+// crank spacing -- a flat-plane V8 is 90/90, that V10 is 72/72. A V12 fires
+// evenly every 720/12 = 60 degrees, but Ferrari's F140 architecture uses a
+// 65-degree vee (wider than 60, for packaging/accessory-drive reasons), so
+// the two numbers diverge here. The real engine closes that 5-degree gap
+// with a small offset ground into each crank pin so it still fires exactly
+// even. That per-pin offset isn't modeled -- bank_angle (65 deg, real spec)
+// drives the visual/kinematic cylinder_bank tilt and the tdc formula, while
+// a separate firing_angle (60 deg, 720/12) drives rod_journal spacing, cam
+// lobe phasing, and ignition wire timing, exactly like every other V-engine
+// file in this repo. The two are simply allowed to differ instead of being
+// tied to one v_angle constant.
+//
+// Bore/stroke (94.0mm x 78.0mm, 6496cc) and compression (~13.2:1) are real
+// F140-family specs (shared with the outgoing 812 Superfast). Rod length,
+// piston/rod/crank masses, port flow figures, and DCT gear ratios are
+// reasoned approximations in this repo's usual style -- exact factory
+// values for those weren't available to verify here.
+//
+// FIRING ORDER: NOT the commonly-cited real-world Ferrari V12 sequence
+// (1-7-5-11-3-9-6-12-2-8-4-10) -- that sequence turns out to be mechanically
+// incompatible with this sim's "cylinder N on bank 0 shares a rod journal
+// with cylinder N+6 on bank 1" convention (the same convention every other
+// V-engine file in this repo uses). The sim doesn't reject an inconsistent
+// firing order at load time, it just quietly runs it: two cylinders sharing
+// a journal have their cam/spark timing computed independently of each
+// other, but their pistons are mechanically locked together by the shared
+// pin, so if the requested firing order puts them at the wrong angular
+// separation, every cylinder's valve events end up out of phase with where
+// its piston actually is. An earlier draft of this file used that
+// mechanically-impossible order anyway; the spark fired and the sim's
+// flame-travel bookkeeping reported "100% burned" every cycle, but almost
+// no real heat was released (peak chamber temperature capped around 1000K
+// instead of a healthy 2300K+), so the engine could crank on the starter
+// but never sustain idle once released, and produced zero net torque even
+// under the dyno's forced rotation. Confirmed this isn't specific to this
+// file: the repo's other pre-existing V12 (angethegreat/atg-video-2/
+// 11_merlin_v12.mr) fails the exact same way for the same underlying
+// reason -- its cited firing order has the same kind of mismatch.
+//
+// The firing order actually used below is derived directly from the crank
+// geometry instead: cylinder N on bank 0 (rod_journal rj(N-1), angle
+// (N-1)*60deg) fires at that same crank angle; cylinder N+6 on bank 1
+// shares that journal but bank 1 is offset by the firing_angle (60deg)
+// from bank 0, so it fires 60deg later than its bank-0 partner -- placed
+// in the second half of the 720-degree cycle (+360deg) so it doesn't
+// collide (mod 360) with a different bank-0 cylinder on another journal.
+// That works out to 1-2-3-4-5-6-12-7-8-9-10-11. It's not a verified
+// factory sequence (neither was the one it replaced), but unlike that one
+// it's actually consistent with how this file's crank is built.
+//
+// TUNING NOTE: fuel/intake tuning here deliberately mirrors the proven
+// values in this repo's other DCT Ferrari file (f163_296gtb.mr) rather than
+// inventing new ones.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+    output wire9: ignition_wire();
+    output wire10: ignition_wire();
+    output wire11: ignition_wire();
+    output wire12: ignition_wire();
+}
+
+private node f140_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    // CR calc: swept vol/cyl @ 94x78mm bore/stroke =~ 541.3cc.
+    // (541.3 + 44.4) / 44.4 =~ 13.2:1, matching the real F140's stock
+    // ~13.2:1 compression.
+    input chamber_volume: 44.4 * units.cc;
+    input intake_runner_volume: 90.0 * units.cc;
+    input intake_runner_cross_section_area: 1.5 * units.inch * 1.5 * units.inch;
+    input exhaust_runner_volume: 35.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.3 * units.inch * 1.3 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Big-valve 4-valve head -- this is a ~124 hp/liter NA engine, so the
+    // flow numbers need to keep climbing well past what a road-going V8
+    // head like f136/f129 in this repo would show.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 52 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 96 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 148 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 196 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 230 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 250 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 262 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 267 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 269 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 40 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 76 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 118 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 156 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 184 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 200 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 210 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 214 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 215 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+private node f140_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 112 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 17.0 * units.mm;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Continuously variable intake and exhaust cam timing, same on both
+    // banks.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 12 * units.deg)
+        .add_sample(5500 * units.rpm, 16 * units.deg)
+        .add_sample(9500 * units.rpm, 8 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 10 * units.deg)
+        .add_sample(9500 * units.rpm, 12 * units.deg)
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    // 720/12 -- even-firing spacing, NOT the 65-degree bank angle (see
+    // file header).
+    label rot(60 * units.deg)
+    label rot360(360 * units.deg)
+
+    // Bank 0 = cylinders 1-6 (sequential), bank 1 = cylinders 7-12
+    // (sequential), cylinder N (bank 0) sharing a rod journal with
+    // cylinder N+6 (bank 1). Firing positions are derived directly from
+    // crank geometry (see the FIRING ORDER note in the file header) rather
+    // than the commonly-cited real-world sequence, which is mechanically
+    // incompatible with this pairing. Works out to
+    // 1-2-3-4-5-6-12-7-8-9-10-11.
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot)  // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot)  // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot)  // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot)  // 4
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot)  // 5
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot)  // 6
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot)  // 1
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot)  // 2
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot)  // 3
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot)  // 4
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot)  // 5
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot)  // 6
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot)  // 7
+        .add_lobe(rot360 - exhaust_lobe_center + 8 * rot)  // 8
+        .add_lobe(rot360 - exhaust_lobe_center + 9 * rot)  // 9
+        .add_lobe(rot360 - exhaust_lobe_center + 10 * rot) // 10
+        .add_lobe(rot360 - exhaust_lobe_center + 11 * rot) // 11
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot)  // 12
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot)  // 7
+        .add_lobe(rot360 + intake_lobe_center + 8 * rot)  // 8
+        .add_lobe(rot360 + intake_lobe_center + 9 * rot)  // 9
+        .add_lobe(rot360 + intake_lobe_center + 10 * rot) // 10
+        .add_lobe(rot360 + intake_lobe_center + 11 * rot) // 11
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot)  // 12
+}
+
+public node f140hd_12cilindri {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Ferrari F140HD [12Cilindri, NA V12]",
+        starter_torque: 500 * units.lb_ft,
+        starter_speed: 250 * units.rpm,
+        // Real power peak is 9250 RPM; fuel cut sits a bit above that.
+        redline: 9500 * units.rpm,
+        // Fuel tuning matches f163_296gtb.mr (this repo's other proven
+        // Ferrari DCT file) rather than inventing new values -- see the
+        // TUNING NOTE at the top of this file.
+        fuel: fuel(
+            max_burning_efficiency: 0.9
+        ),
+        throttle_gamma: 1.8,
+        hf_gain: 0.006,
+        noise: 0.5,
+        jitter: 0.12,
+        simulation_frequency: 16000
+    )
+
+    // 94.0mm x 78.0mm, 6496cc -- real F140HD dimensions. Rod length/
+    // compression height are plausible estimates for a short-stroke,
+    // high-revving V12 of this size, not exact factory figures.
+    label stroke(78.0 * units.mm)
+    label bore(94.0 * units.mm)
+    label rod_length(135.0 * units.mm)
+    label rod_mass(350 * units.g)
+    label compression_height(24.0 * units.mm)
+    label crank_mass(25 * units.kg)
+    label flywheel_mass(8 * units.kg)
+    label flywheel_radius(5.0 * units.inch)
+
+    label crank_moment(
+        1.5 * disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment(
+        disk_moment_of_inertia(mass: 2 * units.kg, radius: 3.0 * units.cm)
+    )
+
+    // Real included bank angle -- see file header for why this is kept
+    // separate from the 60-degree even-firing spacing used below.
+    label bank_angle(65 * units.deg)
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 14.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + (bank_angle / 2.0)
+    )
+
+    // Six unique throws, 60 degrees apart (even-firing spacing), each
+    // shared between bank 0's Nth cylinder and bank 1's Nth cylinder --
+    // same fork-rod convention as this repo's other V-engines. See the
+    // FIRING ORDER note in the file header for how cam/wire timing is kept
+    // consistent with this pairing.
+    rod_journal rj0(angle: 0 * units.deg)
+    rod_journal rj1(angle: 60 * units.deg)
+    rod_journal rj2(angle: 120 * units.deg)
+    rod_journal rj3(angle: 180 * units.deg)
+    rod_journal rj4(angle: 240 * units.deg)
+    rod_journal rj5(angle: 300 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+        .add_rod_journal(rj5)
+
+    piston_parameters piston_params(
+        mass: 280 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    // Individual throttle bodies feeding a shared plenum. Sized
+    // proportionally to f163_296gtb.mr's plenum (2.4L for a 3.0L six,
+    // i.e. ~0.8L per liter of displacement) rather than the much smaller,
+    // unproven 1.0L an earlier draft used -- see the TUNING NOTE above.
+    intake intake(
+        plenum_volume: 3.2 * units.L,
+        plenum_cross_section_area: 40.0 * units.cm2,
+        intake_flow_rate: k_carb(1400.0),
+        runner_flow_rate: k_carb(420.0),
+        runner_length: 5.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.997,
+        velocity_decay: 0.45
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1200.0),
+        primary_tube_length: 20.0 * units.inch,
+        primary_flow_rate: k_carb(260.0),
+        velocity_decay: 0.6,
+        volume: 24.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.9,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: bank_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: -bank_angle / 2.0)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.85,
+            primary_length: 1 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 1.05,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 1.0,
+            primary_length: 5 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.95,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj5,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.9,
+            primary_length: 0 * units.cm
+        )
+        .set_cylinder_head(
+            f140_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true
+            )
+        )
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 1.0,
+            primary_length: 1 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 0.85,
+            primary_length: 5 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire9,
+            sound_attenuation: 0.95,
+            primary_length: 7 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire10,
+            sound_attenuation: 0.9,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire11,
+            sound_attenuation: 1.0,
+            primary_length: 6 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj5,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire12,
+            sound_attenuation: 0.8,
+            primary_length: 0 * units.cm
+        )
+        .set_cylinder_head(
+            f140_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    // Aggressive DOHC race-bred lobe -- big lift/duration to feed a
+    // 9500 RPM NA V12.
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 248 * units.deg,
+        gamma: 1.0,
+        lift: 13.5 * units.mm,
+        steps: 150
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 240 * units.deg,
+        gamma: 1.0,
+        lift: 12.5 * units.mm,
+        steps: 150
+    )
+
+    f140_camshaft camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 112 * units.deg,
+        exhaust_lobe_center: 112 * units.deg,
+        base_radius: 17.0 * units.mm
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 14 * units.deg)
+        .add_sample(1000 * units.rpm, 16 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 22 * units.deg)
+        .add_sample(4000 * units.rpm, 24 * units.deg)
+        .add_sample(5000 * units.rpm, 24 * units.deg)
+        .add_sample(6000 * units.rpm, 23 * units.deg)
+        .add_sample(7000 * units.rpm, 22 * units.deg)
+        .add_sample(8000 * units.rpm, 20 * units.deg)
+        .add_sample(9000 * units.rpm, 18 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 9600 * units.rpm,
+        limiter_duration: 0.05
+    )
+    // Firing order 1-2-3-4-5-6-12-7-8-9-10-11 -- see the FIRING ORDER note
+    // in the file header for why it's this and not the commonly-cited
+    // real-world sequence.
+    ignition_module
+        .connect_wire(wires.wire1,  0 * 60 * units.deg)
+        .connect_wire(wires.wire2,  1 * 60 * units.deg)
+        .connect_wire(wires.wire3,  2 * 60 * units.deg)
+        .connect_wire(wires.wire4,  3 * 60 * units.deg)
+        .connect_wire(wires.wire5,  4 * 60 * units.deg)
+        .connect_wire(wires.wire6,  5 * 60 * units.deg)
+        .connect_wire(wires.wire12, 6 * 60 * units.deg)
+        .connect_wire(wires.wire7,  7 * 60 * units.deg)
+        .connect_wire(wires.wire8,  8 * 60 * units.deg)
+        .connect_wire(wires.wire9,  9 * 60 * units.deg)
+        .connect_wire(wires.wire10, 10 * 60 * units.deg)
+        .connect_wire(wires.wire11, 11 * 60 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// Front-engine, RWD 2+2 GT -- larger and heavier than the mid-engine F355/
+// F136 cars elsewhere in this repo, matching the 12Cilindri's grand-tourer
+// remit rather than a track-focused mid-engine layout.
+private node ferrari_12cilindri_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 1700 * units.kg,
+            drag_coefficient: 0.34,
+            cross_sectional_area: (73 * units.inch) * (48 * units.inch),
+            diff_ratio: 3.9,
+            tire_radius: 13.0 * units.inch,
+            rolling_resistance: 260 * units.N
+        );
+}
+
+// Ferrari's 8-speed wet dual-clutch (shared architecture with SF90/296) --
+// shift behavior mirrors this repo's other wet-DCT file (bmw/dct/
+// S55B30_dct.mr): quick shifts, shallow torque cut since the next gear's
+// clutch is already spinning before the handoff. Gear ratios are a
+// plausible approximation of the real 8-speed's spread, not verified
+// factory figures.
+private node ferrari_12cilindri_dct {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 560 * units.lb_ft,
+            type: "dual_clutch",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 4000 * units.rpm,
+            shift_up_rpm_wot: 9400 * units.rpm,
+            shift_down_rpm_closed_throttle: 2000 * units.rpm,
+            shift_down_rpm_wot: 5500 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 5500 * units.rpm,
+            sport_shift_up_rpm_wot: 9550 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 3000 * units.rpm,
+            sport_shift_down_rpm_wot: 6500 * units.rpm,
+            shift_time_drive: 0.15,
+            shift_time_sport: 0.08,
+            shift_torque_cut: 0.15
+        )
+        .add_gear(3.31)
+        .add_gear(2.31)
+        .add_gear(1.72)
+        .add_gear(1.33)
+        .add_gear(1.06)
+        .add_gear(0.85)
+        .add_gear(0.69)
+        .add_gear(0.56);
+}
+
+public node main {
+    set_engine(f140hd_12cilindri())
+    set_vehicle(ferrari_12cilindri_vehicle())
+    set_transmission(ferrari_12cilindri_dct())
+}

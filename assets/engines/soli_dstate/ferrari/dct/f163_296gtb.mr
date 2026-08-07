@@ -1,0 +1,503 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+bov_sound_library bov_lib()
+label cycle(2 * 360 * units.deg)
+
+// Ferrari F163 -- the 2,992cc twin-turbo 120-degree V6 out of the 296 GTB
+// (F163 BC variant). Bore/stroke (88.0mm x 82.0mm) and the 9.4:1 compression
+// ratio are real factory specs; redline (8500rpm) and the twin IHI
+// turbochargers ("hot-V", turbos nested inside the bank rather than
+// outboard) are also real. Rod length, piston/rod/crank masses, port flow
+// figures, boost curve shape, and gear ratios (beyond the two Ferrari has
+// published -- 1st 2.93, 8th 0.74) are reasoned approximations in the style
+// of this repo's other reference engines.
+//
+// BANK ANGLE VS. FIRING SPACING: 120 degrees is the one V6 bank angle that
+// is naturally even-firing with true shared crank pins (no per-pin offset
+// needed, unlike a 90-degree V6) -- see the note in
+// soli_dstate/ferrari/dct/12cilindri.mr for the general version of this
+// bank_angle-vs-firing_angle distinction. Here bank_angle and firing_angle
+// (720 / 6 = 120 deg) are the same number, which is the real engineering
+// reason Ferrari picked 120 degrees for this engine: it fires every 120
+// degrees off a plain 3-pin crank, giving it the even, V12-like exhaust
+// note the 296 is known for.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+}
+
+private node f163_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume;
+    input intake_runner_volume: 90 * units.cc;
+    input intake_runner_cross_section_area: 1.6 * units.inch * 1.6 * units.inch;
+    input exhaust_runner_volume: 40 * units.cc;
+    input exhaust_runner_cross_section_area: 1.5 * units.inch * 1.5 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 65 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 115 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 175 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 235 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 270 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 290 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 300 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 305 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 306 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 42 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 80 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 125 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 175 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 210 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 235 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 250 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 258 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 259 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+// Bank 0 (cyl 1-3-5) shares its three crank pins with bank 1 (cyl 2-4-6),
+// firing 0/480/240 deg and 600/360/120 deg respectively -- an even
+// 120-degree firing order of 1-6-5-4-3-2 with no split/offset journals.
+private node f163_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 112 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.7 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params (
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot360(360 * units.deg)
+
+    // Bank 0: cyl 1 (pin 0), cyl 3 (pin 120), cyl 5 (pin 240)
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 480 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 240 * units.deg)
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 480 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 240 * units.deg)
+
+    // Bank 1: cyl 2 (pin 0), cyl 4 (pin 120), cyl 6 (pin 240)
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 600 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 360 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 120 * units.deg)
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 600 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 360 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 120 * units.deg)
+}
+
+public node f163_na {
+    output turbo_engine: engine;
+    output turbo_intake: intake;
+    output turbo_exhaust0: exhaust0;
+    output turbo_exhaust1: exhaust1;
+
+    wires wires()
+
+    engine engine(
+        name: "Ferrari F163 [296 GTB, Twin Turbo]",
+        starter_torque: 120 * units.lb_ft,
+        starter_speed: 250 * units.rpm,
+        redline: 8500 * units.rpm,
+        fuel: fuel(
+            max_burning_efficiency: 0.9
+        ),
+        throttle_gamma: 1.8,
+        simulation_frequency: 15000
+    )
+
+    label bore(88.0 * units.mm)
+    label stroke(82.0 * units.mm)
+    label rod_length(130.0 * units.mm)
+    label rod_mass(380 * units.g)
+    label compression_height(30.0 * units.mm)
+    label compression_ratio(9.4)
+    label chamber_volume(
+        (circle_area(bore / 2) * stroke) / (compression_ratio - 1)
+    )
+
+    label crank_mass(16 * units.kg)
+    label flywheel_mass(8 * units.kg)
+    label flywheel_radius(5 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // Moment from cams, pulleys, etc [estimated]
+        disk_moment_of_inertia(mass: 4 * units.kg, radius: 1.0 * units.cm)
+    )
+
+    label v_angle(120 * units.deg) // bank_angle == firing_angle here
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 8.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: v_angle / 2.0
+    )
+
+    // True shared crank pins -- 120 deg is one of the "natural" V angles
+    // for a 6-cylinder, so no split/offset journals are needed.
+    rod_journal rj0(angle: 0.0 * units.deg)
+    rod_journal rj1(angle: 120.0 * units.deg)
+    rod_journal rj2(angle: 240.0 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+
+    piston_parameters piston_params(
+        mass: (320 + 110) * units.g, // piston + pin
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 2.4 * units.L,
+        plenum_cross_section_area: 24.0 * units.cm2,
+        intake_flow_rate: k_carb(650.0),
+        runner_flow_rate: k_carb(320.0),
+        // Every other turbo engine in this pack (rb26dett, vg30dett,
+        // 2jzgte, rs3_2_5_tfsi, etc.) runs a 6-9in intake runner -- this
+        // file had drifted down to 3.5in, shorter than even this pack's
+        // highest-revving NA screamers (12cilindri, S85B50 at 4.5-5.0in),
+        // which reads as an unnaturally buzzy, over-resonant intake note
+        // on a shared-plenum turbo six. velocity_decay bumped to match
+        // the turbo-engine convention too (more damping, less artificial
+        // ringing). idle_throttle_plate_position is intentionally still
+        // 0.9935, not the ~0.998 other turbo engines use -- tightening it
+        // starves this engine's idle circuit and stalls it (verified via
+        // engine-sim-check), so it stays as its own tuned value.
+        runner_length: 6.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.9935,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1100.0),
+        primary_tube_length: 14.0 * units.inch,
+        primary_flow_rate: k_carb(380.0),
+        velocity_decay: 1.0,
+        volume: 24.0 * units.L
+    )
+
+    // Hot-V layout: the turbos sit in the valley between the banks, each
+    // fed by its own bank's contiguous 3-cylinder manifold (cyl 1-3-5 to
+    // exhaust0, cyl 2-4-6 to exhaust1), both compressors merging into one
+    // shared intake plenum -- see f163_twin_turbo below.
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 1.0,
+        impulse_response: ir_lib.sharp_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 1.0,
+        impulse_response: ir_lib.sharp_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: -v_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: v_angle / 2.0)
+    b0
+        .add_cylinder( // cyl 1
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder( // cyl 3
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.95
+        )
+        .add_cylinder( // cyl 5
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5
+        )
+        .set_cylinder_head(
+            f163_head(
+                chamber_volume: chamber_volume,
+                flip_display: true,
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0)
+        )
+    b1
+        .add_cylinder( // cyl 2
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.95
+        )
+        .add_cylinder( // cyl 4
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder( // cyl 6
+            piston: piston(piston_params, blowby: k_28inH2O(0.1)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6
+        )
+        .set_cylinder_head(
+            f163_head(
+                chamber_volume: chamber_volume,
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1,
+                flip_display: false)
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 228 * units.deg,
+        gamma: 1.05,
+        lift: 436 * units.thou,
+        steps: 256
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 230 * units.deg,
+        gamma: 1.05,
+        lift: 394 * units.thou,
+        steps: 256
+    )
+
+    f163_camshaft camshaft(
+        lobe_profile: "N/A",
+
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 112 * units.deg,
+        exhaust_lobe_center: 112 * units.deg,
+        base_radius: 0.7 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 14 * units.deg)
+        .add_sample(1000 * units.rpm, 20 * units.deg)
+        .add_sample(2000 * units.rpm, 26 * units.deg)
+        .add_sample(3000 * units.rpm, 30 * units.deg)
+        .add_sample(4000 * units.rpm, 33 * units.deg)
+        .add_sample(5000 * units.rpm, 34 * units.deg)
+        .add_sample(6000 * units.rpm, 34 * units.deg)
+        .add_sample(7000 * units.rpm, 33 * units.deg)
+        .add_sample(8000 * units.rpm, 32 * units.deg)
+
+    // The e-motor's instant torque reduction smooths the approach to the
+    // limit the same way spark retard would -- no missing-fire texture --
+    // layered with a soft (partial, not all-cylinder) fuel cut as the
+    // backstop.
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 8700 * units.rpm,
+        limiter_duration: 0.02,
+        limiter_cut_fraction: 0.25,
+        limiter_max_retard: 15 * units.deg)
+    ignition_module
+            .connect_wire(wires.wire1, 0 * units.deg)
+            .connect_wire(wires.wire6, 120 * units.deg)
+            .connect_wire(wires.wire5, 240 * units.deg)
+            .connect_wire(wires.wire4, 360 * units.deg)
+            .connect_wire(wires.wire3, 480 * units.deg)
+            .connect_wire(wires.wire2, 600 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// Twin IHI turbos (real spec), collapsed to the same always-live parallel
+// model this repo uses elsewhere (see soli_dstate/toyota/mt/2jzgte.mr) --
+// small/quick-spooling units sized for a high-strung small-displacement
+// six, each fed by only its own bank, both charging one shared plenum.
+private node f163_twin_turbo {
+    alias output __out: base.turbo_engine;
+
+    f163_na base()
+
+    turbocharger turbo_left(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(150.0),
+        turbine_inertia: 0.00003,
+        turbine_efficiency: 0.68,
+        compressor_efficiency: 0.71,
+        max_boost: 19.0 * units.psi,
+        spool_speed: 200000.0 * units.rpm,
+        bov_sound: bov_lib.bovstock1
+    )
+    turbo_left.add_exhaust_system(base.turbo_exhaust0)
+
+    turbocharger turbo_right(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(150.0),
+        turbine_inertia: 0.00003,
+        turbine_efficiency: 0.68,
+        compressor_efficiency: 0.71,
+        max_boost: 19.0 * units.psi,
+        spool_speed: 200000.0 * units.rpm,
+        bov_sound: bov_lib.bovstock1
+    )
+    turbo_right.add_exhaust_system(base.turbo_exhaust1)
+
+    base.turbo_engine
+        .add_turbocharger(turbo_left)
+        .add_turbocharger(turbo_right)
+}
+
+label car_mass(1470 * units.kg) // 296 GTB dry weight
+private node f163_vehicle {
+    alias output __out:
+        vehicle(
+            mass: car_mass,
+            drag_coefficient: 0.34,
+            cross_sectional_area: (1.958 * units.m) * (1.187 * units.m),
+            diff_ratio: 3.2,
+            tire_radius: 14 * units.inch,
+            rolling_resistance: 0.015 * car_mass * 9.81
+        );
+}
+
+// 8-speed dual-clutch (Magna 8DCL900). Ratios interpolated from the two
+// Ferrari has published (1st 2.93, 8th 0.74); final drive is approximated.
+private node f163_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 550 * units.lb_ft,
+            type: "dual_clutch",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 3800 * units.rpm,
+            shift_up_rpm_wot: 8400 * units.rpm,
+            shift_down_rpm_closed_throttle: 1800 * units.rpm,
+            shift_down_rpm_wot: 5000 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 5000 * units.rpm,
+            sport_shift_up_rpm_wot: 8550 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 2800 * units.rpm,
+            sport_shift_down_rpm_wot: 6000 * units.rpm,
+            shift_time_drive: 0.12,
+            shift_time_sport: 0.05,
+            shift_torque_cut: 0.12
+        )
+        .add_gear(2.93)
+        .add_gear(2.41)
+        .add_gear(1.98)
+        .add_gear(1.62)
+        .add_gear(1.34)
+        .add_gear(1.10)
+        .add_gear(0.90)
+        .add_gear(0.74);
+}
+
+public node main {
+    set_engine(f163_twin_turbo())
+    set_vehicle(f163_vehicle())
+    set_transmission(f163_transmission())
+}

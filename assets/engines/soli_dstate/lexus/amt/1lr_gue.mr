@@ -1,0 +1,554 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Lexus 1LR-GUE -- the 4.8L naturally-aspirated 72-degree V10 built
+// exclusively for the LFA (2010-2012), co-developed with Yamaha's sound
+// and engine-tuning division. Bore/stroke (88.0mm x 79.0mm, ~4805cc) and
+// 12.0:1 compression are real factory specs, as is the famous 9000rpm
+// redline -- the LFA's party trick was an analog tachometer needle that
+// could sweep the full dial in about 0.6 seconds, because Yamaha designed
+// the engine's rotational inertia and throttle response to keep up with a
+// digital tach display re-rendered as an analog needle. This file doesn't
+// model the display, just the underlying engine that made it plausible:
+// a light flywheel/crank assembly and a short-duration-but-high-lift DOHC
+// valvetrain built to spin up fast.
+//
+// Firing order: the real 1LR-GUE's factory firing order was not confirmed
+// for this file, so 1-10-5-6-9-2-7-4-3-8 is used as a reasonable
+// approximation in the same family as other 90-ish-degree-class V10s
+// (this engine's actual bank angle is 72 degrees, chosen by Yamaha/Toyota
+// for primary-balance reasons similar to how a 90-degree V10 relates to a
+// V8). Cylinder numbering follows the common V10 convention of bank 0
+// (right) = cylinders 1-5 front-to-back, bank 1 (left) = cylinders 6-10
+// front-to-back, with cylinder N and N+5 sharing a rod journal. Crank/bank
+// layout otherwise mirrors angethegreat/atg-video-2/10_lfa_v10.mr, the
+// existing V10 reference in this repo, though this is an independent,
+// from-scratch file.
+//
+// Transmission: Aisin AMT-AM12VLR "ASG" (Automated Sequential Gearbox),
+// a single-clutch robotized manual -- the LFA never offered a torque
+// converter automatic or DCT. Real-world shifts were widely reported at
+// ~200ms in Sport, unusually quick for a single-clutch box of its era;
+// modeled here with type "automated_manual" following this repo's
+// bmw/S54_amt.mr pattern, but tuned snappier than that truck-ish SMG
+// character to reflect the ASG's reputation.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+    output wire9: ignition_wire();
+    output wire10: ignition_wire();
+}
+
+private node lr_gue_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 43.7 * units.cc; // sized for ~12.0:1 CR against a ~481cc swept cylinder
+    input intake_runner_volume: 118.0 * units.cc;
+    input intake_runner_cross_section_area: 1.65 * units.inch * 1.65 * units.inch;
+    input exhaust_runner_volume: 46.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.4 * units.inch * 1.4 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 56 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 100 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 152 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 205 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 240 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 260 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 271 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 274 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 275 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 36 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 70 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 110 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 152 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 186 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 210 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 222 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 227 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 228 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+private node lr_gue_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 112 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.75 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Dual VVT-i -- independent intake and exhaust cam phasing, same on
+    // both banks.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 12 * units.deg)
+        .add_sample(6000 * units.rpm, 16 * units.deg)
+        .add_sample(9000 * units.rpm, 8 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 10 * units.deg)
+        .add_sample(9000 * units.rpm, 12 * units.deg)
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    // Firing interval for a 10-cylinder engine is always 720/10 = 72
+    // degrees, independent of the 72-degree bank angle above (the two
+    // happen to share a value here, but conceptually they're unrelated).
+    label rot(72 * units.deg)
+    label rot360(360 * units.deg)
+
+    // Corrected: with a 72-degree bank angle exactly matching the 5
+    // journals' 72-degree spacing, cylinder TDC = (bankBase + rj.angle)
+    // mod 360 lands cleanly on multiples of rot for every cylinder here
+    // (bankBase 0 for bank 0, 72 for bank 1) -- unlike the 90-degree-bank
+    // V10s elsewhere in this batch. Firing order works out to
+    // 1-2-3-4-5-10-6-7-8-9, evenly spaced 72 degrees apart.
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 4
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 5
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 3
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 4
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 5
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot) // 7
+        .add_lobe(rot360 - exhaust_lobe_center + 8 * rot) // 8
+        .add_lobe(rot360 - exhaust_lobe_center + 9 * rot) // 9
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot) // 10
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot) // 7
+        .add_lobe(rot360 + intake_lobe_center + 8 * rot) // 8
+        .add_lobe(rot360 + intake_lobe_center + 9 * rot) // 9
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot) // 10
+}
+
+public node lr_gue_v10 {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Lexus 1LR-GUE [LFA, V10]",
+        starter_torque: 110 * units.lb_ft,
+        starter_speed: 250 * units.rpm,
+        redline: 9000 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 6.0,
+            max_dilution_effect: 15.0,
+            burning_efficiency_randomness: 0.15,
+            max_burning_efficiency: 1.0
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.008,
+        noise: 0.85,
+        jitter: 0.1,
+        simulation_frequency: 9000
+    )
+
+    // Real 1LR-GUE dimensions: 88.0mm x 79.0mm, ~4805cc.
+    label stroke(79.0 * units.mm)
+    label bore(88.0 * units.mm)
+    label rod_length(130.0 * units.mm)
+    label rod_mass(430 * units.g)
+    label compression_height(31.0 * units.mm)
+    label crank_mass(30 * units.lb)
+    label flywheel_mass(16 * units.lb) // light single-mass flywheel -- part of why the tach could sweep so fast
+    label flywheel_radius(5.5 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // cams, pulleys, etc [estimated]
+        disk_moment_of_inertia(mass: 1.2 * units.kg, radius: 3.0 * units.cm)
+    )
+
+    label v_angle(72 * units.deg) // real 1LR-GUE bank angle
+    label rj_spacing(72 * units.deg) // 360 / 5 rod journals -- crank throw spacing, independent of v_angle
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 4.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + (v_angle / 2.0)
+    )
+
+    // 5 rod journals, one per front-to-back cylinder position, each
+    // shared by cylinder N (bank 0) and cylinder N+5 (bank 1).
+    rod_journal rj0(angle: 0 * rj_spacing) // cyl 1 & 6
+    rod_journal rj1(angle: 1 * rj_spacing) // cyl 2 & 7
+    rod_journal rj2(angle: 2 * rj_spacing) // cyl 3 & 8
+    rod_journal rj3(angle: 3 * rj_spacing) // cyl 4 & 9
+    rod_journal rj4(angle: 4 * rj_spacing) // cyl 5 & 10
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+
+    piston_parameters piston_params(
+        mass: 370 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 1.4 * units.L,
+        plenum_cross_section_area: 21.0 * units.cm2,
+        intake_flow_rate: k_carb(1050.0),
+        runner_flow_rate: k_carb(215.0),
+        runner_length: 4.5 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.9975,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1900.0),
+        primary_tube_length: 46.0 * units.inch,
+        primary_flow_rate: k_carb(950.0),
+        velocity_decay: 1.0,
+        volume: 22.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 2.0,
+        length: 95 * units.inch,
+        impulse_response: ir_lib.mild_exhaust_0_reverb
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 2.0,
+        length: 95.5 * units.inch,
+        impulse_response: ir_lib.mild_exhaust_0_reverb
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: v_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: -v_angle / 2.0)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.85,
+            primary_length: 5 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 1.0,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 1.05,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.8,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            lr_gue_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true
+            )
+        )
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.8,
+            primary_length: 5 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 1.0,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire9,
+            sound_attenuation: 1.05,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire10,
+            sound_attenuation: 0.85,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            lr_gue_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 226 * units.deg,
+        gamma: 1.1,
+        lift: 11.4 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 222 * units.deg,
+        gamma: 1.1,
+        lift: 11.0 * units.mm,
+        steps: 100
+    )
+
+    lr_gue_camshaft camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 112 * units.deg,
+        exhaust_lobe_center: 112 * units.deg,
+        base_radius: 0.75 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 14 * units.deg)
+        .add_sample(1000 * units.rpm, 18 * units.deg)
+        .add_sample(2000 * units.rpm, 26 * units.deg)
+        .add_sample(3000 * units.rpm, 32 * units.deg)
+        .add_sample(4000 * units.rpm, 36 * units.deg)
+        .add_sample(5000 * units.rpm, 38 * units.deg)
+        .add_sample(6000 * units.rpm, 38 * units.deg)
+        .add_sample(7000 * units.rpm, 38 * units.deg)
+        .add_sample(8000 * units.rpm, 38 * units.deg)
+        .add_sample(9000 * units.rpm, 38 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 9200 * units.rpm,
+        limiter_duration: 0.012
+    )
+    // Corrected to match the camshaft fix above: firing order
+    // 1-2-3-4-5-10-6-7-8-9, evenly spaced 72 degrees apart (this engine's
+    // 72-degree bank angle matches the 72-degree journal spacing exactly,
+    // so unlike this batch's 90-degree-bank V10s, every cylinder's true
+    // TDC lands cleanly on a multiple of 72).
+    ignition_module
+        .connect_wire(wires.wire1,  0 * 72 * units.deg)
+        .connect_wire(wires.wire2,  1 * 72 * units.deg)
+        .connect_wire(wires.wire3,  2 * 72 * units.deg)
+        .connect_wire(wires.wire4,  3 * 72 * units.deg)
+        .connect_wire(wires.wire5,  4 * 72 * units.deg)
+        .connect_wire(wires.wire10, 5 * 72 * units.deg)
+        .connect_wire(wires.wire6,  6 * 72 * units.deg)
+        .connect_wire(wires.wire7,  7 * 72 * units.deg)
+        .connect_wire(wires.wire8,  8 * 72 * units.deg)
+        .connect_wire(wires.wire9,  9 * 72 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+private node lfa_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 1580 * units.kg, // real LFA curb weight ~1590-1600kg, aluminum/CFRP chassis
+            drag_coefficient: 0.31,
+            cross_sectional_area: (71 * units.inch) * (48 * units.inch),
+            diff_ratio: 3.31, // approximate -- exact factory final drive not confirmed
+            tire_radius: 10.2 * units.inch,
+            rolling_resistance: 190 * units.N
+        );
+}
+
+// Aisin ASG (Automated Sequential Gearbox) -- single-clutch automated
+// manual, real production ratios approximate. Shift lever walks Neutral
+// -> Drive -> Sport -> Manual same as this repo's other automated_manual
+// (bmw/S54_amt.mr) and dual_clutch (bmw/S55_dct.mr) transmissions.
+// shift_time_sport lands at 0.2s, matching the ~200ms Sport-mode shifts
+// the real ASG was known for -- still a real single-clutch torque
+// interruption (shift_torque_cut well above a DCT's shallow blip), just a
+// notably quick one for that category. shift_time_drive is slower/softer,
+// closer to a comfort-oriented single-clutch shift.
+private node lfa_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 750 * units.lb_ft,
+            type: "automated_manual",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 3600 * units.rpm,
+            shift_up_rpm_wot: 8800 * units.rpm,
+            shift_down_rpm_closed_throttle: 1800 * units.rpm,
+            shift_down_rpm_wot: 5200 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 5200 * units.rpm,
+            sport_shift_up_rpm_wot: 8900 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 3000 * units.rpm,
+            sport_shift_down_rpm_wot: 5800 * units.rpm,
+            shift_time_drive: 0.4,
+            shift_time_sport: 0.2,
+            shift_torque_cut: 0.55
+        )
+        .add_gear(3.31)
+        .add_gear(2.09)
+        .add_gear(1.49)
+        .add_gear(1.15)
+        .add_gear(0.93)
+        .add_gear(0.76);
+}
+
+public node main {
+    set_engine(lr_gue_v10())
+    set_vehicle(lfa_vehicle())
+    set_transmission(lfa_transmission())
+}

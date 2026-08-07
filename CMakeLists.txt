@@ -47,6 +47,7 @@ set_property(TARGET gtest_main PROPERTY FOLDER "gtest")
 add_library(engine-sim STATIC
     # Source files
     src/audio_buffer.cpp
+    src/bov_sound.cpp
     src/camshaft.cpp
     src/crankshaft.cpp
     src/combustion_chamber.cpp
@@ -79,9 +80,12 @@ add_library(engine-sim STATIC
     src/simulator.cpp
     src/standard_valvetrain.cpp
     src/starter_motor.cpp
+    src/supercharger.cpp
     src/synthesizer.cpp
     src/throttle.cpp
+    src/torque_converter.cpp
     src/transmission.cpp
+    src/turbocharger.cpp
     src/utilities.cpp
     src/valvetrain.cpp
     src/vehicle.cpp
@@ -91,6 +95,7 @@ add_library(engine-sim STATIC
     # Include files
     include/audio_buffer.h
     include/application_settings.h
+    include/bov_sound.h
     include/camshaft.h
     include/crankshaft.h
     include/combustion_chamber.h
@@ -123,9 +128,12 @@ add_library(engine-sim STATIC
     include/simulator.h
     include/standard_valvetrain.h
     include/starter_motor.h
+    include/supercharger.h
     include/synthesizer.h
     include/throttle.h
+    include/torque_converter.h
     include/transmission.h
+    include/turbocharger.h
     include/units.h
     include/utilities.h
     include/valvetrain.h
@@ -168,6 +176,7 @@ if (PIRANHA_ENABLED)
         scripting/include/ignition_module_node.h
         scripting/include/ignition_wire_node.h
         scripting/include/impulse_response_node.h
+        scripting/include/bov_sound_node.h
         scripting/include/intake_node.h
         scripting/include/language_rules.h
         scripting/include/node.h
@@ -177,6 +186,7 @@ if (PIRANHA_ENABLED)
         scripting/include/piston_node.h
         scripting/include/rod_journal_node.h
         scripting/include/standard_valvetrain_node.h
+        scripting/include/supercharger_node.h
         scripting/include/transmission_node.h
         scripting/include/valvetrain_node.h
         scripting/include/vtec_valvetrain_node.h
@@ -205,8 +215,12 @@ endif (DISCORD_ENABLED)
 
 add_executable(engine-sim-app WIN32
     # Source files
+    dependencies/libraries/stb_vorbis/stb_vorbis.c
     src/main.cpp
     src/engine_sim_application.cpp
+    src/input_action.cpp
+    src/key_bindings.cpp
+    src/json_util.cpp
     src/geometry_generator.cpp
     src/simulation_object.cpp
     src/piston_object.cpp
@@ -237,11 +251,21 @@ add_executable(engine-sim-app WIN32
     src/load_simulation_cluster.cpp
     src/mixer_cluster.cpp
     src/info_cluster.cpp
+    src/ui_number_field.cpp
+    src/turbocharger_editor_cluster.cpp
+    src/sim_frequency_cache.cpp
+    src/dyno_chart.cpp
+    src/dyno_cluster.cpp
+    src/settings_cluster.cpp
 
     # Include files
+    dependencies/libraries/stb_vorbis/stb_vorbis.h
     include/delta.h
     include/dtv.h
     include/engine_sim_application.h
+    include/input_action.h
+    include/key_bindings.h
+    include/json_util.h
     include/geometry_generator.h
     include/simulation_object.h
     include/piston_object.h
@@ -272,6 +296,12 @@ add_executable(engine-sim-app WIN32
     include/load_simulation_cluster.h
     include/mixer_cluster.h
     include/info_cluster.h
+    include/ui_number_field.h
+    include/turbocharger_editor_cluster.h
+    include/sim_frequency_cache.h
+    include/dyno_chart.h
+    include/dyno_cluster.h
+    include/settings_cluster.h
 )
 
 target_link_libraries(engine-sim-app
@@ -297,7 +327,21 @@ if (DISCORD_ENABLED)
 endif (DISCORD_ENABLED)
 
 target_include_directories(engine-sim-app
-    PUBLIC dependencies/submodules)
+    PUBLIC dependencies/submodules
+    PUBLIC dependencies/libraries/stb_vorbis)
+
+if (PIRANHA_ENABLED)
+    add_executable(engine-sim-check
+        src/engine_check_main.cpp
+    )
+
+    target_compile_definitions(engine-sim-check PRIVATE
+        ATG_ENGINE_SIM_ASSET_DIR="${PROJECT_SOURCE_DIR}/assets/engines")
+
+    target_link_libraries(engine-sim-check
+        engine-sim
+        engine-sim-script-interpreter)
+endif (PIRANHA_ENABLED)
 
 add_subdirectory(dependencies)
 
@@ -310,12 +354,27 @@ add_executable(engine-sim-test
     test/gas_system_tests.cpp
     test/function_test.cpp
     test/synthesizer_tests.cpp
+    test/turbocharger_tests.cpp
+    test/supercharger_tests.cpp
+    test/transmission_logic_test.cpp
+    test/ignition_module_test.cpp
+    test/drivetrain_launch_test.cpp
+    test/vehicle_brake_test.cpp
+    test/mr_asset_smoke_test.cpp
 )
+
+target_compile_definitions(engine-sim-test PRIVATE
+    ATG_ENGINE_SIM_ASSET_DIR="${PROJECT_SOURCE_DIR}/assets/engines")
 
 target_link_libraries(engine-sim-test
     gtest_main
     engine-sim
 )
+
+if (PIRANHA_ENABLED)
+    target_link_libraries(engine-sim-test
+        engine-sim-script-interpreter)
+endif (PIRANHA_ENABLED)
 
 include(GoogleTest)
 gtest_discover_tests(engine-sim-test)

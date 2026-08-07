@@ -1,0 +1,468 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+bov_sound_library bov_lib()
+label cycle(2 * 360 * units.deg)
+
+// Volkswagen EA111 1.4 TSI "Twincharger" (engine code CTHE, 132kW/180PS
+// state of tune) -- Mk5-facelift Polo GTI. This is the engine that made
+// "twincharging" a mainstream production term: a small Roots-type
+// supercharger covers low-RPM response, a small turbocharger takes over
+// once it's spooled, with a magnetic clutch and bypass valve handing off
+// between them (see the supercharger's clutched: true below, and
+// turbocharger's upstream_supercharger -- see include/supercharger.h and
+// include/turbocharger.h's header comments for how that series-staged
+// coupling and the clutch/bypass handoff are actually modeled, not just a
+// pressure-ratio label). Bore/stroke (76.5mm x 75.6mm, 1390cc),
+// compression (10.0:1), and factory rated output (180PS/177hp @ 6200rpm,
+// 250Nm/184 lb-ft across a broad 1750-4500rpm plateau -- exactly the kind
+// of flat, boost-filled torque curve dual forced induction is for) are
+// real CTHE figures.
+//
+// Inline-4, so crank/cam/wire geometry follows honda/mt/k20a.mr's
+// validated inline-4 template verbatim (same rod journal angles, same
+// (k/4)*cycle wire-angle encoding) rather than an independent derivation
+// -- see scat_pack_392.mr's header comment for why an independent
+// from-scratch derivation for a firing-order-sensitive crank is worth
+// avoiding when a validated template already exists for the same
+// cylinder layout.
+//
+// IMPORTANT wiring note for anyone extending this file: the supercharger
+// (blower) is intentionally NOT passed to intake.add_supercharger() --
+// it's wired into the turbocharger via upstream_supercharger instead, so
+// its discharge feeds the turbo's compressor inlet (series staging), not
+// the plenum directly. Attaching it to the intake as well would double-
+// count its boost (once via the turbo's inlet, once directly into the
+// plenum) -- see include/intake.h's addSupercharger()/addTurbocharger()
+// for how each attachment point works.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+}
+
+private node ea111_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 16.0 * units.mm;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Continuous intake cam phasing (VW's basic single-cam-phaser VVT on
+    // this engine family).
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 12 * units.deg)
+        .add_sample(4000 * units.rpm, 16 * units.deg)
+        .add_sample(6800 * units.rpm, 8 * units.deg)
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot360(360 * units.deg)
+
+    // Same (k/4)*cycle encoding as honda/mt/k20a.mr's validated inline-4
+    // template, unchanged -- firing order matching that file's.
+    _exhaust_cam
+        .add_lobe(rot360 + exhaust_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (2.0 / 4) * cycle)
+    _intake_cam
+        .add_lobe(rot360 - intake_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (2.0 / 4) * cycle)
+}
+
+private node ea111_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    // 38.6cc chamber -- sized for the real 10.0:1 CR against this
+    // engine's ~347.5cc swept cylinder (1390cc / 4): 347.5 / 9.0 = 38.6cc.
+    input chamber_volume: 38.6 * units.cc;
+    input intake_runner_volume: 42.0 * units.cc;
+    input intake_runner_cross_section_area: 1.05 * units.inch * 1.05 * units.inch;
+    input exhaust_runner_volume: 20.0 * units.cc;
+    input exhaust_runner_cross_section_area: 0.95 * units.inch * 0.95 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Approximated, not from a flow bench -- small, boosted DI head.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 28 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 52 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 78 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 100 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 116 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 126 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 132 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 135 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 136 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 22 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 40 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 60 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 78 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 92 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 100 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 105 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 107 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 108 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+public node polo_gti_1_4_tsi_twincharged {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Volkswagen Polo GTI [Mk5, EA111 1.4 TSI Twincharger, 180PS]",
+        starter_torque: 90 * units.lb_ft,
+        starter_speed: -450 * units.rpm,
+        redline: 6800 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.0,
+            max_burning_efficiency: 0.87
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.003,
+        noise: 0.24,
+        jitter: 0.18,
+        simulation_frequency: 16000
+    )
+
+    // Real EA111 1.4 TSI dimensions: 76.5mm x 75.6mm, 1390cc.
+    label stroke(75.6 * units.mm)
+    label bore(76.5 * units.mm)
+    label rod_length(131.0 * units.mm) // approximated, not from spec
+    label rod_mass(340 * units.g) // approximated, not from spec
+    label compression_height(28.0 * units.mm) // approximated, not from spec
+    label crank_mass(9 * units.kg)
+    label flywheel_mass(5.5 * units.kg) // DSG dual-clutch pack
+    label flywheel_radius(5.2 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // cams, chain/balancer, supercharger drive, etc [estimated]
+        disk_moment_of_inertia(mass: 6 * units.kg, radius: 5.5 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 4.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg
+    )
+
+    // Standard inline-4 crank -- same rj0/rj1/rj2/rj3 = 0/180/180/0
+    // pattern as honda/mt/k20a.mr.
+    rod_journal rj0(angle: 0.0 * units.deg)
+    rod_journal rj1(angle: 180.0 * units.deg)
+    rod_journal rj2(angle: 180.0 * units.deg)
+    rod_journal rj3(angle: 0.0 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 300 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    // The turbo's compressor draws from the supercharger's discharge
+    // (upstream_supercharger below), not flat atmosphere -- this intake
+    // only ever sees the TURBO's output. See header comment for why the
+    // supercharger itself is never separately attached here.
+    intake intake(
+        plenum_volume: 2.2 * units.L,
+        plenum_cross_section_area: 14.0 * units.cm2,
+        intake_flow_rate: k_carb(620.0),
+        runner_flow_rate: k_carb(150.0),
+        runner_length: 7.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.997,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    // Small clutched Roots blower -- covers low RPM only, disengages
+    // (bypass opens) once the turbo is spooled. See
+    // twincharger_supercharger_parameters in es/objects/objects.mr for
+    // the type-specific defaults (leakage/efficiency numbers matched to a
+    // real bolt-on-scale unit, not a big standalone blower).
+    supercharger blower(
+        parameters: twincharger_supercharger_parameters(
+            drive_ratio: 2.4,
+            displacement: 0.40 * units.L,
+            max_boost: 7.0 * units.psi,
+            compressor_discharge_volume: 0.4 * units.L,
+            clutch_engage_rpm: 5200.0 * units.rpm,
+            clutch_disengage_rpm: 6000.0 * units.rpm
+        )
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(700.0),
+        primary_tube_length: 16.0 * units.inch,
+        primary_flow_rate: k_carb(150.0),
+        velocity_decay: 1.0,
+        volume: 12.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.75,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 0.95,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    // Small K03-ish turbo -- takes over from the supercharger once
+    // spooled. upstream_supercharger wires its compressor inlet to the
+    // blower's discharge instead of flat atmosphere, so the two stages'
+    // boost multiplies while the blower is engaged, and the turbo just
+    // breathes atmosphere directly once the blower's bypass opens.
+    turbocharger turbo(
+        intake: intake,
+        upstream_supercharger: blower,
+        turbine_flow_rate: k_carb(110.0),
+        turbine_inertia: 0.000007,
+        turbine_efficiency: 0.67,
+        compressor_efficiency: 0.70,
+        max_boost: 15.0 * units.psi,
+        spool_speed: 90000.0 * units.rpm,
+        spin_down_time: 0.35,
+        // Small OEM K03-class turbo -- a mild stock-style flutter, not an
+        // aftermarket "chatter" valve.
+        bov_sound: bov_lib.bovstock1
+    )
+    turbo.add_exhaust_system(exhaust0)
+    turbo.add_exhaust_system(exhaust1)
+    engine.add_turbocharger(turbo)
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 0.0 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 1.1
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.8
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.9
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+    engine.add_supercharger(blower)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 202 * units.deg,
+        gamma: 1.05,
+        lift: 8.6 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 198 * units.deg,
+        gamma: 1.05,
+        lift: 8.2 * units.mm,
+        steps: 100
+    )
+
+    ea111_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        base_radius: 16.0 * units.mm
+    )
+
+    b0.set_cylinder_head(
+        ea111_head(
+            intake_camshaft: camshaft.intake_cam,
+            exhaust_camshaft: camshaft.exhaust_cam
+        )
+    )
+
+    // Sign convention matches honda/mt/k20a.mr's ignition_module (negative
+    // degrees = advance/BTDC) -- see that file's comment for why getting
+    // this backwards silently crushes torque everywhere.
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, -10 * units.deg)
+        .add_sample(1000 * units.rpm, -13 * units.deg)
+        .add_sample(2000 * units.rpm, -17 * units.deg)
+        .add_sample(3000 * units.rpm, -19 * units.deg)
+        .add_sample(4000 * units.rpm, -20 * units.deg)
+        .add_sample(5000 * units.rpm, -20 * units.deg)
+        .add_sample(6200 * units.rpm, -19 * units.deg)
+        .add_sample(6800 * units.rpm, -17 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 6900 * units.rpm,
+        limiter_duration: 0.03
+    )
+    ignition_module
+        .connect_wire(wires.wire1, (0.0 / 4.0) * cycle)
+        .connect_wire(wires.wire3, (3.0 / 4.0) * cycle)
+        .connect_wire(wires.wire4, (2.0 / 4.0) * cycle)
+        .connect_wire(wires.wire2, (1.0 / 4.0) * cycle)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// Mk5-facelift Polo GTI (2010-2014) -- real curb weight/aero for the
+// compact hatchback this engine actually shipped in.
+private node polo_gti_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 2619 * units.lb, // ~1188kg
+            drag_coefficient: 0.32,
+            cross_sectional_area: (66 * units.inch) * (46 * units.inch),
+            diff_ratio: 4.235,
+            tire_radius: 10.4 * units.inch, // 215/40R17
+            rolling_resistance: 260 * units.N
+        );
+}
+
+// 7-speed DQ200 DSG -- the only gearbox the Mk5 Polo GTI launched with.
+// Approximated ratios (VW hasn't published the exact DQ200 gearset for
+// this application).
+private node polo_gti_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 260 * units.lb_ft,
+            type: "dual_clutch",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 2000 * units.rpm,
+            shift_up_rpm_wot: 6600 * units.rpm,
+            shift_down_rpm_closed_throttle: 1100 * units.rpm,
+            shift_down_rpm_wot: 3600 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 3600 * units.rpm,
+            sport_shift_up_rpm_wot: 6800 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 2200 * units.rpm,
+            sport_shift_down_rpm_wot: 4400 * units.rpm,
+            shift_time_drive: 0.2,
+            shift_time_sport: 0.1,
+            shift_torque_cut: 0.15
+        )
+        .add_gear(3.462)
+        .add_gear(2.050)
+        .add_gear(1.321)
+        .add_gear(0.971)
+        .add_gear(0.757)
+        .add_gear(0.625)
+        .add_gear(0.517);
+}
+
+public node main {
+    set_engine(polo_gti_1_4_tsi_twincharged())
+    set_vehicle(polo_gti_vehicle())
+    set_transmission(polo_gti_transmission())
+}

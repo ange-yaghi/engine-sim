@@ -5,6 +5,7 @@
 
 #include "engine_context.h"
 #include "function_node.h"
+#include "impulse_response_node.h"
 
 #include "engine_sim.h"
 
@@ -21,6 +22,7 @@ namespace es_script {
         Intake *generate(EngineContext *context) {
             Intake *intake = context->getIntake(this);
             Intake::Parameters parameters = m_parameters;
+            parameters.ImpulseResponse = m_impulseResponse->generate(context);
             intake->initialize(parameters);
 
             return intake;
@@ -38,6 +40,8 @@ namespace es_script {
             addInput("throttle_gamma", &m_throttleGammaUnused);
             addInput("runner_length", &m_parameters.RunnerLength);
             addInput("velocity_decay", &m_parameters.VelocityDecay);
+            addInput("audio_volume", &m_parameters.AudioVolume);
+            addInput("impulse_response", &m_impulseResponse, InputTarget::Type::Object);
 
             ObjectReferenceNode<IntakeNode>::registerInputs();
         }
@@ -50,6 +54,7 @@ namespace es_script {
         }
 
         double m_throttleGammaUnused = 0.0; // Deprecated; to be removed in a future release
+        ImpulseResponseNode *m_impulseResponse = nullptr;
         Intake::Parameters m_parameters;
     };
 

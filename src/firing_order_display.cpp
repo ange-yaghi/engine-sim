@@ -54,7 +54,7 @@ void FiringOrderDisplay::update(float dt) {
 }
 
 void FiringOrderDisplay::render() {
-    drawFrame(m_bounds, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
+    drawPanel(m_bounds);
 
     const Bounds title = m_bounds.verticalSplit(1.0f, 0.9f);
     const Bounds body = m_bounds.verticalSplit(0.0f, 0.9f);

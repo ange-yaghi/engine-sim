@@ -1,0 +1,421 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Honda D16Y8 -- 1.6L SOHC VTEC inline-4, naturally aspirated. 49-state
+// spec from the 1996-2000 Civic EX / Del Sol VTEC.
+//
+// Unlike the K20A/K24A files in this folder (genuine DOHC, independent
+// intake/exhaust camshafts), this is a genuine SOHC engine: ONE physical
+// camshaft carries the intake lobes, exhaust lobes, and VTEC mid lobes,
+// all phase-locked to the same shaft. That's modeled here the same way
+// assets/engines/soli_dstate/vespa/vespa_cvt.mr models its SOHC unit --
+// every camshaft object below is built from the SAME camshaft_parameters
+// (shared advance/base_radius), differing only in lobe_profile, so they
+// can never drift out of phase with each other.
+//
+// Also unlike the K-series DOHC VTEC engines, real SOHC VTEC on the
+// D-series only switches the INTAKE rocker/lobe -- the exhaust side runs
+// a single, non-switching lobe the whole rev range. That's modeled below
+// by pointing the vtec exhaust lobe profile at the same lobe as the base
+// exhaust cam (same object, so vtec_valvetrain's exhaust switch is a
+// physical no-op, matching the real head).
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+}
+
+private node d16y8_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+
+    input vtec_intake_lobe_profile: intake_lobe_profile;
+    // Real SOHC VTEC doesn't switch the exhaust lobe -- defaults to the
+    // same profile as the base exhaust cam unless overridden.
+    input vtec_exhaust_lobe_profile: exhaust_lobe_profile;
+
+    input lobe_separation: 112 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input vtec_lobe_separation: 108 * units.deg;
+    input vtec_intake_lobe_center: vtec_lobe_separation;
+    input vtec_exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 17.0 * units.mm;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+    output vtec_intake_cam: _vtec_intake_cam;
+    output vtec_exhaust_cam: _vtec_exhaust_cam;
+
+    // One shared parameter set -- every camshaft object below rides the
+    // same physical shaft (same advance, same base_radius).
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _vtec_intake_cam(params, lobe_profile: vtec_intake_lobe_profile)
+    camshaft _vtec_exhaust_cam(params, lobe_profile: vtec_exhaust_lobe_profile)
+
+    label rot360(360 * units.deg)
+
+    // Firing order 1-3-4-2
+    _exhaust_cam
+        .add_lobe(rot360 + exhaust_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (2.0 / 4) * cycle)
+    _intake_cam
+        .add_lobe(rot360 - intake_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (2.0 / 4) * cycle)
+    _vtec_exhaust_cam
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (2.0 / 4) * cycle)
+    _vtec_intake_cam
+        .add_lobe(rot360 - vtec_intake_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 - vtec_intake_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 - vtec_intake_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 - vtec_intake_lobe_center - (2.0 / 4) * cycle)
+}
+
+private node d16y8_head {
+    input camshaft_set;
+    // CR calc: swept vol/cyl @ 75x90mm bore/stroke =~ 397.6cc.
+    // (397.6 + 47.3) / 47.3 =~ 9.4:1, matching the real D16Y8's stock
+    // 9.4:1 compression.
+    input chamber_volume: 47.3 * units.cc;
+    input intake_runner_volume: 85.0 * units.cc;
+    input intake_runner_cross_section_area: 1.2 * units.inch * 1.2 * units.inch;
+    input exhaust_runner_volume: 35.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.05 * units.inch * 1.05 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Smaller ports/valves and a milder 4-valve SOHC head than the
+    // K-series DOHC units -- flow numbers scaled down accordingly.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 40 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 72 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 108 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 142 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 168 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 184 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 194 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 198 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 199 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 32 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 58 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 88 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 114 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 134 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 146 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 153 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 156 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 157 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        // Real D16Y8 VTEC crossover is stock around 4800-5000 RPM --
+        // noticeably lower than the K-series' ~5800 RPM.
+        valvetrain: vtec_valvetrain(
+            intake_camshaft: camshaft_set.intake_cam,
+            exhaust_camshaft: camshaft_set.exhaust_cam,
+            vtec_intake_camshaft: camshaft_set.vtec_intake_cam,
+            vtec_exhaust_camshaft: camshaft_set.vtec_exhaust_cam,
+            min_rpm: 4900 * units.rpm
+        ),
+        flip_display: flip_display
+    )
+}
+
+public node d16y8_na {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Honda D16Y8 [Civic EX, SOHC VTEC]",
+        starter_torque: 48 * units.lb_ft,
+        starter_speed: -400 * units.rpm,
+        // Real D16Y8 fuel cut is ~6800 RPM (redline paint is a bit lower).
+        redline: 6800 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 2.4,
+            max_burning_efficiency: 0.83
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.002,
+        noise: 0.18,
+        jitter: 0.15,
+        simulation_frequency: 20000
+    )
+
+    // 75.0mm x 90.0mm, 1590cc -- real D16Y8 dimensions. Rod
+    // length/compression height are plausible approximations for this
+    // engine family, not exact factory print specs.
+    label stroke(90.0 * units.mm)
+    label bore(75.0 * units.mm)
+    label rod_length(137.0 * units.mm)
+    label rod_mass(380 * units.g)
+    label compression_height(29.5 * units.mm)
+    label crank_mass(9.0 * units.kg)
+    label flywheel_mass(4.2 * units.kg)
+    label flywheel_radius(5.5 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment(
+        disk_moment_of_inertia(mass: 6 * units.kg, radius: 5.8 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 2.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg
+    )
+
+    rod_journal rj0(angle: 0.0 * units.deg)
+    rod_journal rj1(angle: 180.0 * units.deg)
+    rod_journal rj2(angle: 180.0 * units.deg)
+    rod_journal rj3(angle: 0.0 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 250 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 0.9 * units.L,
+        plenum_cross_section_area: 9.0 * units.cm2,
+        intake_flow_rate: k_carb(450.0),
+        runner_flow_rate: k_carb(180.0),
+        runner_length: 9.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.997,
+        velocity_decay: 0.5
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(500.0),
+        primary_tube_length: 20.0 * units.inch,
+        primary_flow_rate: k_carb(130.0),
+        velocity_decay: 1.0,
+        volume: 18.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.7,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 0.9,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 0.0 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 1.1
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.8
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.9
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    // Primary (low) rocker -- mild economy-cam lobe used below the VTEC
+    // crossover; the base exhaust lobe is used the whole rev range since
+    // real SOHC VTEC on the D-series doesn't switch the exhaust side.
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 180 * units.deg,
+        gamma: 1.05,
+        lift: 7.0 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 178 * units.deg,
+        gamma: 1.05,
+        lift: 6.8 * units.mm,
+        steps: 100
+    )
+
+    // VTEC (mid) rocker -- stock SOHC VTEC intake lobe, engaged above the
+    // crossover RPM. Milder than the K-series' DOHC VTEC lobe, matching
+    // the real D16Y8's more modest top-end breathing.
+    harmonic_cam_lobe vtec_intake_lobe(
+        duration_at_50_thou: 208 * units.deg,
+        gamma: 1.05,
+        lift: 9.4 * units.mm,
+        steps: 100
+    )
+
+    d16y8_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        vtec_intake_lobe_profile: vtec_intake_lobe,
+        intake_lobe_center: 112 * units.deg,
+        exhaust_lobe_center: 112 * units.deg,
+        vtec_intake_lobe_center: 108 * units.deg,
+        base_radius: 17.0 * units.mm
+    )
+
+    b0.set_cylinder_head(
+        d16y8_head(camshaft_set: camshaft)
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 14 * units.deg)
+        .add_sample(2000 * units.rpm, 18 * units.deg)
+        .add_sample(3000 * units.rpm, 20 * units.deg)
+        .add_sample(4000 * units.rpm, 22 * units.deg)
+        .add_sample(5000 * units.rpm, 22 * units.deg)
+        .add_sample(6000 * units.rpm, 20 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 6900 * units.rpm,
+        limiter_duration: 0.04
+    )
+    ignition_module
+        .connect_wire(wires.wire1, (0.0 / 4.0) * cycle)
+        .connect_wire(wires.wire3, (3.0 / 4.0) * cycle)
+        .connect_wire(wires.wire4, (2.0 / 4.0) * cycle)
+        .connect_wire(wires.wire2, (1.0 / 4.0) * cycle)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// 1996-2000 Civic EX-ish FWD coupe/hatchback.
+private node d16y8_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 2550 * units.lb,
+            drag_coefficient: 0.31,
+            cross_sectional_area: (66 * units.inch) * (46 * units.inch),
+            diff_ratio: 4.25,
+            tire_radius: 11.6 * units.inch,
+            rolling_resistance: 260 * units.N
+        );
+}
+
+// Approximate real Civic EX 5-speed manual gearset.
+private node d16y8_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 150 * units.lb_ft,
+            type: "manual"
+        )
+        .add_gear(3.230)
+        .add_gear(1.904)
+        .add_gear(1.310)
+        .add_gear(0.969)
+        .add_gear(0.788);
+}
+
+public node main {
+    set_engine(d16y8_na())
+    set_vehicle(d16y8_vehicle())
+    set_transmission(d16y8_transmission())
+}

@@ -16,6 +16,13 @@ class Camshaft : public Part {
             // Camshaft advance in camshaft degrees
             double advance = 0;
 
+            // Optional RPM-dependent advance on top of the static value
+            // above -- VVT (cam phasing). Sampled by current crankshaft
+            // speed each time getAngle() is called; nullptr means no VVT
+            // (advance stays fixed at the static value, same as before
+            // this field existed).
+            Function *advanceCurve = nullptr;
+
             // Corresponding crankshaft
             Crankshaft *crankshaft;
 
@@ -48,6 +55,7 @@ class Camshaft : public Part {
     private:
         Crankshaft *m_crankshaft;
         Function *m_lobeProfile;
+        Function *m_advanceCurve;
         double *m_lobeAngles;
         double m_advance;
         double m_baseRadius;

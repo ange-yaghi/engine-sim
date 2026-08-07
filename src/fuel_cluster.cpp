@@ -63,7 +63,7 @@ void FuelCluster::render() {
     const Bounds costUSD = grid.get(bodyBounds, 0, 4);
     drawText(ss.str(), costUSD, 16.0f, Bounds::lm);
 
-    const double travelledDistance = (m_simulator->getVehicle() != nullptr)
+    const double travelledDistance = (m_simulator != nullptr && m_simulator->getVehicle() != nullptr)
         ? m_simulator->getVehicle()->getTravelledDistance()
         : 0.0;
     const double mpg = units::convert(travelledDistance, units::mile) / fuelConsumed_gallons;

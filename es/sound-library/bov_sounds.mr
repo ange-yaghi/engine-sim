@@ -1,0 +1,25 @@
+private import "engine_sim.mr"
+
+// Bundled blow-off/wastegate flutter recordings (art/sfx/*.ogg). Pass any
+// of these to a turbocharger's bov_sound input, or write your own
+// bov_sound(filename: "...") pointing at a file of your own -- see the
+// note on the bov_sound node in objects/objects.mr.
+public node bov_sound_library {
+    output bovstock1: bov_sound(filename: "../../art/sfx/bovstock1.ogg");
+    output bovstock2: bov_sound(filename: "../../art/sfx/bovstock2.ogg");
+    output bovstock3: bov_sound(filename: "../../art/sfx/bovstock3.ogg");
+
+    output bovaftermarket1: bov_sound(filename: "../../art/sfx/bovaftermarket1.ogg");
+    output bovaftermarket2: bov_sound(filename: "../../art/sfx/bovaftermarket2.ogg");
+    output bovaftermarket3: bov_sound(filename: "../../art/sfx/bovaftermarket3.ogg");
+    output bovaftermarket4: bov_sound(filename: "../../art/sfx/bovaftermarket4.ogg");
+    output bovaftermarket5: bov_sound(filename: "../../art/sfx/bovaftermarket5.ogg");
+    output bovaftermarket6: bov_sound(filename: "../../art/sfx/bovaftermarket6.ogg");
+    output bovaftermarket7: bov_sound(filename: "../../art/sfx/bovaftermarket7.ogg");
+
+    output flutter1: bov_sound(filename: "../../art/sfx/flutter1.ogg");
+    output flutter2: bov_sound(filename: "../../art/sfx/flutter2.ogg");
+    output flutter3: bov_sound(filename: "../../art/sfx/flutter3.ogg");
+    output flutter4: bov_sound(filename: "../../art/sfx/flutter4.ogg");
+    output flutter5: bov_sound(filename: "../../art/sfx/flutter5.ogg");
+}

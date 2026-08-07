@@ -1,0 +1,393 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Toyota Corolla 2ZR-FAE -- plain NA economy four, test mule for the CVT
+// transmission type. A real CVT is stepless; Toyota's own "Super CVT-i"
+// simulates a fixed number of ratios in its manual-shift mode, so this
+// mirrors that with 10 stepped ratios rather than one continuous one.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+}
+
+private node zr_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 17.0 * units.mm;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Dual VVT-i -- both intake and exhaust cams phase continuously.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 16 * units.deg)
+        .add_sample(4000 * units.rpm, 20 * units.deg)
+        .add_sample(6600 * units.rpm, 12 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 10 * units.deg)
+        .add_sample(6600 * units.rpm, 14 * units.deg)
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    label rot360(360 * units.deg)
+
+    // Firing order 1-3-4-2
+    _exhaust_cam
+        .add_lobe(rot360 + exhaust_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (2.0 / 4) * cycle)
+    _intake_cam
+        .add_lobe(rot360 - intake_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (2.0 / 4) * cycle)
+}
+
+private node zr_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 43.0 * units.cc;
+    input intake_runner_volume: 90.0 * units.cc;
+    input intake_runner_cross_section_area: 1.35 * units.inch * 1.35 * units.inch;
+    input exhaust_runner_volume: 40.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.15 * units.inch * 1.15 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 45 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 82 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 124 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 160 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 183 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 194 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 198 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 199 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 36 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 65 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 98 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 126 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 146 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 158 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 163 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 164 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+public node corolla_2zrfae {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Toyota 2ZR-FAE [Corolla, CVT test mule]",
+        starter_torque: 55 * units.lb_ft,
+        starter_speed: -450 * units.rpm,
+        redline: 6600 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 2.6,
+            max_burning_efficiency: 0.88
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.0015,
+        noise: 0.17,
+        jitter: 0.15,
+        simulation_frequency: 20000
+    )
+
+    // 80.5mm x 88.3mm, 1798cc -- real 2ZR-FAE dimensions.
+    label stroke(88.3 * units.mm)
+    label bore(80.5 * units.mm)
+    label rod_length(136.0 * units.mm)
+    label rod_mass(380 * units.g)
+    label compression_height(29.5 * units.mm)
+    label crank_mass(9 * units.kg)
+    label flywheel_mass(4.5 * units.kg)
+    label flywheel_radius(5.5 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment(
+        disk_moment_of_inertia(mass: 6 * units.kg, radius: 5.5 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 2.4 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg
+    )
+
+    rod_journal rj0(angle: 0.0 * units.deg)
+    rod_journal rj1(angle: 180.0 * units.deg)
+    rod_journal rj2(angle: 180.0 * units.deg)
+    rod_journal rj3(angle: 0.0 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 270 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 1.0 * units.L,
+        plenum_cross_section_area: 10.0 * units.cm2,
+        intake_flow_rate: k_carb(520.0),
+        runner_flow_rate: k_carb(185.0),
+        runner_length: 7.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.998,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(750.0),
+        primary_tube_length: 17.0 * units.inch,
+        primary_flow_rate: k_carb(150.0),
+        velocity_decay: 1.0,
+        volume: 24.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.65,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 0.85,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 0.0 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 1.1
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.8
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.9
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 214 * units.deg,
+        gamma: 1.05,
+        lift: 8.6 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 210 * units.deg,
+        gamma: 1.05,
+        lift: 8.3 * units.mm,
+        steps: 100
+    )
+
+    zr_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        base_radius: 17.0 * units.mm
+    )
+
+    b0.set_cylinder_head(
+        zr_head(
+            intake_camshaft: camshaft.intake_cam,
+            exhaust_camshaft: camshaft.exhaust_cam
+        )
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 14 * units.deg)
+        .add_sample(2000 * units.rpm, 18 * units.deg)
+        .add_sample(3000 * units.rpm, 20 * units.deg)
+        .add_sample(4000 * units.rpm, 22 * units.deg)
+        .add_sample(5000 * units.rpm, 22 * units.deg)
+        .add_sample(6000 * units.rpm, 20 * units.deg)
+
+    // Gentlest limiter in the pack -- a Valvematic economy-CVT ECU backs
+    // the intake cam's variable lift off well before the limit, so the
+    // rev-limiter itself only needs a light partial cut plus retard to
+    // finish the job, not a hard bark.
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 7000 * units.rpm,
+        limiter_duration: 0.07,
+        limiter_cut_fraction: 0.2,
+        limiter_max_retard: 25 * units.deg
+    )
+    ignition_module
+        .connect_wire(wires.wire1, (0.0 / 4.0) * cycle)
+        .connect_wire(wires.wire3, (3.0 / 4.0) * cycle)
+        .connect_wire(wires.wire4, (2.0 / 4.0) * cycle)
+        .connect_wire(wires.wire2, (1.0 / 4.0) * cycle)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+private node corolla_test_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 2950 * units.lb,
+            drag_coefficient: 0.29,
+            cross_sectional_area: (68 * units.inch) * (56 * units.inch),
+            diff_ratio: 5.6,
+            tire_radius: 12.5 * units.inch,
+            rolling_resistance: 350 * units.N
+        );
+}
+
+// CVT test mule. Drive continuously varies the ratio between the
+// lowest/highest entries below to hold ~2200 RPM (this economy car's
+// efficient cruise point) -- no discrete shifts at all, shown as a plain
+// "D". Base economy car -- no has_sport_mode (not every CVT gets an "S"
+// button), so Up from Drive goes straight to Manual: the 10 stepped
+// ratios only come into play there, mirroring Toyota's own
+// simulated-manual-mode step count, walked with Up/Down like the
+// shifter's "S" gate / paddles on the real car.
+private node corolla_test_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 170 * units.lb_ft,
+            type: "cvt",
+            has_sport_mode: false,
+            allow_manual_shift: true,
+            cvt_target_rpm: 2200 * units.rpm,
+            cvt_ratio_rate: 1.2
+        )
+        .add_gear(2.393)
+        .add_gear(2.055)
+        .add_gear(1.756)
+        .add_gear(1.500)
+        .add_gear(1.275)
+        .add_gear(1.082)
+        .add_gear(0.917)
+        .add_gear(0.774)
+        .add_gear(0.649)
+        .add_gear(0.421);
+}
+
+public node main {
+    set_engine(corolla_2zrfae())
+    set_vehicle(corolla_test_vehicle())
+    set_transmission(corolla_test_transmission())
+}

@@ -1,0 +1,466 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Nissan VQ35DE (Rev-up, 2002-2006) -- the 3.5L naturally aspirated 60-degree
+// V6 out of the Z33 350Z (Track/Rev-up spec) and V35 G35. This is the
+// earlier high-revving "Rev-up" DE, not the later VQ35HR (revised
+// heads/rotating assembly, different cam/head tune, later redline) -- same
+// 95.5mm x 81.4mm bore/stroke as the HR, since HR's changes were internal
+// rather than dimensional.
+//
+// Single-plane "split pin" crank: 3 physical throws 120 deg apart, each
+// shared by one right-bank and one left-bank cylinder, with the two rod
+// journals on a given throw offset by the 60-degree bank angle so both
+// cylinders land on TDC at the correct point in the cycle -- the standard
+// even-fire 60-degree V6 layout. Crank/journal/firing geometry here is
+// modeled directly on the validated atg-video-2/04_60_degree_v6.mr
+// reference (same relative bank angles, journal angles, and firing-angle
+// assignment), not reconstructed from scratch. Cylinder numbering follows
+// Nissan's factory convention: 1-3-5 on the right bank (bank0), 2-4-6 on
+// the left bank (bank1). Firing order 1-2-3-4-5-6 -- spark events land at
+// 0/120/240/360/480/600 deg across the 720-degree cycle, i.e. evenly
+// spaced 120 deg apart, confirmed below rather than assumed.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+}
+
+private node vq35de_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    // 62.7cc clearance volume -- computed (not guessed) from this engine's
+    // real ~583cc/cylinder swept volume (95.5mm bore x 81.4mm stroke) to
+    // land on the real ~10.3:1 compression ratio: 583 / (10.3 - 1) = 62.7cc.
+    input chamber_volume: 62.7 * units.cc;
+    input intake_runner_volume: 130.0 * units.cc;
+    input intake_runner_cross_section_area: 1.4 * units.inch * 1.4 * units.inch;
+    input exhaust_runner_volume: 45.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.3 * units.inch * 1.3 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // approximated, not from a flow bench -- shaped for a genuinely
+    // free-flowing modern 4-valve DOHC head (real VQ35DE makes ~82hp/L NA,
+    // high for its era).
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 54 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 103 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 158 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 213 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 251 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 273 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 286 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 293 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 296 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 44 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 82 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 126 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 164 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 195 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 214 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 226 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 233 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 236 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+private node vq35de_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 112.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0.0 * units.deg;
+    input base_radius: 0.75 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // N-VCT -- intake-only cam phasing, both banks share the same curve.
+    // Approximated shape/magnitude, not a real CVTCS map.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 10 * units.deg)
+        .add_sample(4000 * units.rpm, 20 * units.deg)
+        .add_sample(6000 * units.rpm, 12 * units.deg)
+        .add_sample(7000 * units.rpm, 5 * units.deg)
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot360(360 * units.deg)
+
+    // Bank 0 = right bank = cylinders 1, 3, 5 -- firing at 0/240/480 deg
+    // in the 720-degree cycle (see firing-order derivation in the engine
+    // node below).
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 240 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 480 * units.deg)
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 240 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 480 * units.deg)
+
+    // Bank 1 = left bank = cylinders 2, 4, 6 -- firing at 120/360/600 deg.
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 120 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 360 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 600 * units.deg)
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 120 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 360 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 600 * units.deg)
+}
+
+public node vq35de_na {
+    alias output __out: engine;
+
+    engine engine(
+        name: "Nissan VQ35DE [350Z/G35, Rev-up]",
+        starter_torque: 160 * units.lb_ft,
+        starter_speed: 450 * units.rpm,
+        redline: 7000 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 2.9,
+            max_burning_efficiency: 0.86
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.0043,
+        noise: 0.38,
+        jitter: 0.16,
+        simulation_frequency: 16000
+    )
+
+    wires wires()
+
+    // 95.5mm x 81.4mm, 3498cc, ~10.3:1 compression -- real VQ35DE (Rev-up)
+    // dimensions. Check: 6 * (pi/4 * 9.55cm^2) * 8.14cm = 3498cc, matches
+    // the real ~3.5L displacement.
+    label stroke(81.4 * units.mm)
+    label bore(95.5 * units.mm)
+    label rod_length(141.0 * units.mm) // approximated, not from spec
+    label rod_mass(550 * units.g) // approximated, not from spec
+    label compression_height(30.0 * units.mm) // approximated, not from spec
+    label crank_mass(16 * units.kg)
+    label flywheel_mass(9 * units.kg)
+    label flywheel_radius(6.0 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // cams, pulleys, etc [estimated]
+        disk_moment_of_inertia(mass: 18 * units.kg, radius: 7.5 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 7.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: (90 + 30) * units.deg
+    )
+
+    // Single-plane "split pin" 60-degree V6 crank: 3 physical throws at
+    // 0/120/240 deg, each shared by one right-bank (bank0) and one
+    // left-bank (bank1) cylinder, with the two rod journals on a given
+    // throw offset by the 60-degree bank angle -- exact geometry pattern
+    // from atg-video-2/04_60_degree_v6.mr.
+    rod_journal rj0(angle: 0.0 * units.deg)   // cyl 1 (bank0/right)
+    rod_journal rj1(angle: 60.0 * units.deg)  // cyl 2 (bank1/left)
+    rod_journal rj2(angle: 240.0 * units.deg) // cyl 3 (bank0/right)
+    rod_journal rj3(angle: 300.0 * units.deg) // cyl 4 (bank1/left)
+    rod_journal rj4(angle: 120.0 * units.deg) // cyl 5 (bank0/right)
+    rod_journal rj5(angle: 180.0 * units.deg) // cyl 6 (bank1/left)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+        .add_rod_journal(rj5)
+
+    piston_parameters piston_params(
+        mass: 340 * units.g, // approximated, not from spec
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 2.2 * units.L,
+        plenum_cross_section_area: 20.0 * units.cm2,
+        intake_flow_rate: k_carb(680.0),
+        runner_flow_rate: k_carb(255.0),
+        runner_length: 9.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        // 0.998 (0.2% open) settled just under the check tool's
+        // running-floor threshold coming off the starter -- gives enough
+        // flow to hold a clean, realistic idle without stalling.
+        idle_throttle_plate_position: 0.998,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(980.0),
+        primary_tube_length: 18.0 * units.inch,
+        primary_flow_rate: k_carb(235.0),
+        velocity_decay: 1.0,
+        volume: 27.0 * units.L
+    )
+
+    // Right bank (1-3-5) and left bank (2-4-6) each get their own exhaust
+    // manifold/system -- a real contiguous per-bank split, same pattern as
+    // every other V-engine in this asset pack.
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.85,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 30.0 * units.deg)
+    cylinder_bank b1(bank_params, angle: -30.0 * units.deg)
+
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.95
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.98
+        )
+        .set_cylinder_head(
+            vq35de_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true
+            )
+        )
+
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.92
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.97
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj5,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 1.0
+        )
+        .set_cylinder_head(
+            vq35de_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1,
+                flip_display: false
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    // approximated, not from a cam card -- shaped for a high-revving
+    // (7000rpm) NA 4-valve head.
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 228 * units.deg,
+        gamma: 1.1,
+        lift: 9.3 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 224 * units.deg,
+        gamma: 1.1,
+        lift: 8.7 * units.mm,
+        steps: 100
+    )
+
+    vq35de_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 112 * units.deg,
+        exhaust_lobe_center: 112 * units.deg,
+        base_radius: 0.75 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 14 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 26 * units.deg)
+        .add_sample(4000 * units.rpm, 30 * units.deg)
+        .add_sample(5000 * units.rpm, 32 * units.deg)
+        .add_sample(6000 * units.rpm, 32 * units.deg)
+        .add_sample(7000 * units.rpm, 30 * units.deg)
+
+    // DBW soft-limit character: the throttle backs off before the ECU
+    // ever needs a full cut, so only a rotating fraction of cylinders
+    // drop each cycle instead of an all-at-once bark.
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 7100 * units.rpm,
+        limiter_duration: 0.045,
+        limiter_cut_fraction: 0.35
+    )
+    ignition_module
+        // Firing order 1-2-3-4-5-6, evenly spaced 120 deg apart across the
+        // 720-degree cycle -- confirmed, not assumed (see header comment).
+        .connect_wire(wires.wire1, 0 * units.deg)
+        .connect_wire(wires.wire2, 120 * units.deg)
+        .connect_wire(wires.wire3, 240 * units.deg)
+        .connect_wire(wires.wire4, 360 * units.deg)
+        .connect_wire(wires.wire5, 480 * units.deg)
+        .connect_wire(wires.wire6, 600 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// Z33 350Z Track/Rev-up spec, 6-speed manual -- curb weight/aero/diff for
+// the RWD manual car this engine actually shipped in.
+private node vq35de_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3345 * units.lb,
+            drag_coefficient: 0.29,
+            cross_sectional_area: (70 * units.inch) * (52 * units.inch),
+            diff_ratio: 3.538,
+            tire_radius: 12.3 * units.inch,
+            rolling_resistance: 430 * units.N
+        );
+}
+
+// 6-speed manual (FS6R31A, 350Z/G35 signature gearbox). Plausible sporty
+// RWD ratio spread -- approximated, not dyno-verified factory data.
+private node vq35de_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 360 * units.lb_ft
+        )
+        .add_gear(3.626)
+        .add_gear(2.156)
+        .add_gear(1.480)
+        .add_gear(1.107)
+        .add_gear(0.851)
+        .add_gear(0.672);
+}
+
+public node main {
+    set_engine(vq35de_na())
+    set_vehicle(vq35de_vehicle())
+    set_transmission(vq35de_transmission())
+}

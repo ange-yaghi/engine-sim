@@ -1,0 +1,438 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Honda K20A -- 2.0L DOHC i-VTEC inline-4, naturally aspirated, JDM Type R
+// spec (EP3 Civic Type R / DC5 Integra Type R). Square-ish bore/stroke,
+// high (for NA) compression, high-revving VTEC top end. This is a
+// from-scratch NA build -- see atg-video-2/k20a_turbo.mr for a turbocharged
+// test-mule version of the same engine with its redline pushed far past
+// anything the real K20A ever saw; the cam/flow/redline numbers here are
+// retuned to the real stock JDM Type R spec instead.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+}
+
+private node k20a_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+
+    input vtec_lobe_profile;
+    input vtec_intake_lobe_profile: vtec_lobe_profile;
+    input vtec_exhaust_lobe_profile: vtec_lobe_profile;
+
+    input lobe_separation: 110 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input vtec_lobe_separation: lobe_separation;
+    input vtec_intake_lobe_center: vtec_lobe_separation;
+    input vtec_exhaust_lobe_center: vtec_lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 17.0 * units.mm;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+    output vtec_intake_cam: _vtec_intake_cam;
+    output vtec_exhaust_cam: _vtec_exhaust_cam;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // VTC -- the "i" in i-VTEC: continuous intake cam phasing, layered on
+    // top of VTEC's discrete low/high lobe switch (real K-series VTC is
+    // intake-only, so the exhaust cams don't get a curve).
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 14 * units.deg)
+        .add_sample(4500 * units.rpm, 18 * units.deg)
+        .add_sample(8200 * units.rpm, 10 * units.deg)
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _vtec_intake_cam(params, lobe_profile: vtec_intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _vtec_exhaust_cam(params, lobe_profile: vtec_exhaust_lobe_profile)
+
+    label rot360(360 * units.deg)
+
+    // Firing order 1-3-4-2
+    _exhaust_cam
+        .add_lobe(rot360 + exhaust_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (2.0 / 4) * cycle)
+    _intake_cam
+        .add_lobe(rot360 - intake_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (2.0 / 4) * cycle)
+    _vtec_exhaust_cam
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (2.0 / 4) * cycle)
+    _vtec_intake_cam
+        .add_lobe(rot360 - vtec_intake_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 - vtec_intake_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 - vtec_intake_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 - vtec_intake_lobe_center - (2.0 / 4) * cycle)
+}
+
+private node k20a_head {
+    input camshaft_set;
+    // CR calc: swept vol/cyl @ 86x86mm bore/stroke = ~499.6cc.
+    // (499.6 + 47.6) / 47.6 =~ 11.5:1, matching JDM Type R's stock 11.5:1.
+    input chamber_volume: 47.6 * units.cc;
+    input intake_runner_volume: 100.0 * units.cc;
+    input intake_runner_cross_section_area: 1.45 * units.inch * 1.45 * units.inch;
+    input exhaust_runner_volume: 42.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.25 * units.inch * 1.25 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Stock JDM Type R DOHC VTEC head -- big-valve, high-lift-lobe port
+    // work is what lets this thing breathe out to 8000+ RPM NA.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 48 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 88 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 136 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 178 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 208 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 226 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 236 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 240 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 241 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 38 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 70 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 106 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 138 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 162 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 178 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 187 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 190 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 191 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        // JDM Type R engages VTEC at a stock ECU crossover around 5800 RPM.
+        valvetrain: vtec_valvetrain(
+            intake_camshaft: camshaft_set.intake_cam,
+            exhaust_camshaft: camshaft_set.exhaust_cam,
+            vtec_intake_camshaft: camshaft_set.vtec_intake_cam,
+            vtec_exhaust_camshaft: camshaft_set.vtec_exhaust_cam,
+            min_rpm: 5800 * units.rpm
+        ),
+        flip_display: flip_display
+    )
+}
+
+public node k20a_na {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Honda K20A [JDM Type R, NA]",
+        starter_torque: 55 * units.lb_ft,
+        starter_speed: -450 * units.rpm,
+        // JDM Type R (EP3/DC5) redline is 8000-8400 RPM depending on
+        // model year; splitting the difference here.
+        redline: 8200 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 2.6,
+            max_burning_efficiency: 0.85
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.0022,
+        noise: 0.19,
+        jitter: 0.15,
+        simulation_frequency: 24000
+    )
+
+    // 86.0mm x 86.0mm, 1998cc -- real K20A dimensions (near-square bore/
+    // stroke, unusual for a Honda four but a big part of why it revs so
+    // freely). Rod length/compression height are typical published K20A
+    // figures; treat as close approximations.
+    label stroke(86.0 * units.mm)
+    label bore(86.0 * units.mm)
+    label rod_length(137.0 * units.mm)
+    label rod_mass(410 * units.g)
+    label compression_height(30.35 * units.mm)
+    label crank_mass(11 * units.kg)
+    label flywheel_mass(4.6 * units.kg)
+    label flywheel_radius(5.8 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment(
+        disk_moment_of_inertia(mass: 7 * units.kg, radius: 6.0 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 2.3 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg
+    )
+
+    rod_journal rj0(angle: 0.0 * units.deg)
+    rod_journal rj1(angle: 180.0 * units.deg)
+    rod_journal rj2(angle: 180.0 * units.deg)
+    rod_journal rj3(angle: 0.0 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 275 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 1.1 * units.L,
+        plenum_cross_section_area: 11.0 * units.cm2,
+        intake_flow_rate: k_carb(550.0),
+        runner_flow_rate: k_carb(210.0),
+        runner_length: 8.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.9975,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(650.0),
+        primary_tube_length: 16.0 * units.inch,
+        primary_flow_rate: k_carb(160.0),
+        velocity_decay: 1.0,
+        volume: 22.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.7,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 0.9,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 0.0 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 1.1
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.8
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.9
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    // Primary (low) rocker -- mild, low-lift lobe used below the VTEC
+    // crossover for a smooth idle and part-throttle drivability.
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 196 * units.deg,
+        gamma: 1.05,
+        lift: 7.4 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 192 * units.deg,
+        gamma: 1.05,
+        lift: 7.0 * units.mm,
+        steps: 100
+    )
+
+    // Mid/VTEC rocker -- stock JDM Type R high-lobe spec, engaged above
+    // the crossover RPM for the free-revving top end.
+    harmonic_cam_lobe vtec_intake_lobe(
+        duration_at_50_thou: 222 * units.deg,
+        gamma: 1.05,
+        lift: 10.5 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe vtec_exhaust_lobe(
+        duration_at_50_thou: 216 * units.deg,
+        gamma: 1.05,
+        lift: 10.0 * units.mm,
+        steps: 100
+    )
+
+    k20a_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        vtec_lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        vtec_intake_lobe_profile: vtec_intake_lobe,
+        vtec_exhaust_lobe_profile: vtec_exhaust_lobe,
+        intake_lobe_center: 110 * units.deg,
+        exhaust_lobe_center: 110 * units.deg,
+        vtec_intake_lobe_center: 110 * units.deg,
+        vtec_exhaust_lobe_center: 110 * units.deg,
+        base_radius: 17.0 * units.mm
+    )
+
+    b0.set_cylinder_head(
+        k20a_head(camshaft_set: camshaft)
+    )
+
+    // No boost to guard against -- NA tune can carry more total advance
+    // than the turbo test-mule up top.
+    // Sign matches the connect_wire/ignition_module convention used by the
+    // ATG reference VTEC engine (05_honda_vtec.mr) -- this ignition_module
+    // + connect_wire wiring treats negative degrees as advance (BTDC), not
+    // positive. Getting this backwards silently under-advances (really,
+    // massively over-retards) the spark at every RPM, which craters torque
+    // almost immediately off idle and gets worse as RPM climbs.
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, -12 * units.deg)
+        .add_sample(1000 * units.rpm, -14 * units.deg)
+        .add_sample(2000 * units.rpm, -18 * units.deg)
+        .add_sample(3000 * units.rpm, -20 * units.deg)
+        .add_sample(4000 * units.rpm, -22 * units.deg)
+        .add_sample(5000 * units.rpm, -23 * units.deg)
+        .add_sample(6000 * units.rpm, -23 * units.deg)
+        .add_sample(7000 * units.rpm, -21 * units.deg)
+        .add_sample(8000 * units.rpm, -19 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 8400 * units.rpm,
+        limiter_duration: 0.03
+    )
+    ignition_module
+        .connect_wire(wires.wire1, (0.0 / 4.0) * cycle)
+        .connect_wire(wires.wire3, (3.0 / 4.0) * cycle)
+        .connect_wire(wires.wire4, (2.0 / 4.0) * cycle)
+        .connect_wire(wires.wire2, (1.0 / 4.0) * cycle)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// EP3 Civic Type R / DC5 Integra Type R-ish FWD hatchback.
+private node k20a_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 2650 * units.lb,
+            drag_coefficient: 0.32,
+            cross_sectional_area: (65 * units.inch) * (47 * units.inch),
+            diff_ratio: 4.764,
+            tire_radius: 11.3 * units.inch,
+            rolling_resistance: 280 * units.N
+        );
+}
+
+// Real EP3/DC5 JDM Type R close-ratio 6-speed manual gearset.
+private node k20a_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 220 * units.lb_ft,
+            type: "manual"
+        )
+        .add_gear(3.230)
+        .add_gear(2.105)
+        .add_gear(1.458)
+        .add_gear(1.107)
+        .add_gear(0.848)
+        .add_gear(0.685);
+}
+
+public node main {
+    set_engine(k20a_na())
+    set_vehicle(k20a_vehicle())
+    set_transmission(k20a_transmission())
+}

@@ -14,6 +14,8 @@
 #include "combustion_chamber.h"
 #include "units.h"
 #include "throttle.h"
+#include "turbocharger.h"
+#include "supercharger.h"
 
 #include <string>
 
@@ -28,6 +30,8 @@ class Engine : public Part {
             int crankshaftCount;
             int exhaustSystemCount;
             int intakeCount;
+            int turbochargerCount;
+            int superchargerCount;
 
             std::string name;
 
@@ -44,6 +48,22 @@ class Engine : public Part {
             double initialHighFrequencyGain;
             double initialNoise;
             double initialJitter;
+
+            // Off-throttle exhaust pop/burble tuning -- see
+            // Engine::updateAntiLag(). Disabled by default so nothing
+            // changes for an engine file that doesn't ask for it (the UI
+            // toggle still works either way). The three "amount" knobs
+            // default to the values this system always used before they
+            // existed, so antiLagEnabledByDefault: true with everything
+            // else left alone reproduces the original one-size-fits-all
+            // tune; set them explicitly to give a specific engine its own
+            // pop character (e.g. a factory M-car crackle vs. a
+            // comfort-tuned six that's nearly silent on lift-off) instead
+            // of sharing one fixed, race-anti-lag-style tune.
+            bool antiLagEnabledByDefault = false;
+            double antiLagMaxRetard = units::angle(55.0, units::deg);
+            double antiLagDumpRateK = 6.0;
+            double antiLagPopRate = 6.0;
         };
 
     public:
@@ -77,6 +97,18 @@ class Engine : public Part {
         virtual double getTotalFuelMassConsumed() const;
         double getTotalVolumeFuelConsumed() const;
 
+        // Anti-lag: UI-toggleable, no-op without a turbocharger. Off-throttle
+        // (plate mostly closed) gets heavy ignition retard plus a raw
+        // fuel/air charge dumped into each header that pops off on its own;
+        // still-on-throttle ("rolling") gets a lighter, continuous retard to
+        // keep the turbine fed through a lift/shift without giving up much
+        // drive torque. See Engine::updateAntiLag().
+        void setAntiLagEnabled(bool enabled) { m_antiLagEnabled = enabled; }
+        bool getAntiLagEnabled() const { return m_antiLagEnabled; }
+        bool hasTurbocharger() const { return m_turbochargerCount > 0; }
+        bool hasSupercharger() const { return m_superchargerCount > 0; }
+        bool isAntiLagActive() const { return m_antiLagActive; }
+
         inline double getStarterTorque() const { return m_starterTorque; }
         inline double getStarterSpeed() const { return m_starterSpeed; }
         inline double getRedline() const { return m_redline; }
@@ -89,6 +121,8 @@ class Engine : public Part {
         int getCrankshaftCount() const { return m_crankshaftCount; }
         int getExhaustSystemCount() const { return m_exhaustSystemCount; }
         int getIntakeCount() const { return m_intakeCount; }
+        int getTurbochargerCount() const { return m_turbochargerCount; }
+        int getSuperchargerCount() const { return m_superchargerCount; }
         int getMaxDepth() const;
 
         Crankshaft *getCrankshaft(int i) const { return &m_crankshafts[i]; }
@@ -99,6 +133,8 @@ class Engine : public Part {
         IgnitionModule *getIgnitionModule() { return &m_ignitionModule; }
         ExhaustSystem *getExhaustSystem(int i) const { return &m_exhaustSystems[i]; }
         Intake *getIntake(int i) const { return &m_intakes[i]; }
+        Turbocharger *getTurbocharger(int i) const { return &m_turbochargers[i]; }
+        Supercharger *getSupercharger(int i) const { return &m_superchargers[i]; }
         CombustionChamber *getChamber(int i) const { return &m_combustionChambers[i]; }
         Fuel *getFuel() { return &m_fuel; }
 
@@ -110,6 +146,24 @@ class Engine : public Part {
         virtual Simulator *createSimulator(Vehicle *vehicle, Transmission *transmission);
 
     protected:
+        void updateAntiLag(double dt);
+
+        bool m_antiLagEnabled = false;
+        bool m_antiLagActive = false;
+
+        // 0..1 envelope: snaps toward 1 almost immediately off-throttle,
+        // but decays back toward 0 over time rather than instantly once
+        // back on the gas. This *is* "rolling" anti-lag -- the built-up
+        // charge/retard carries over and fades as throttle is reapplied,
+        // instead of a hard cutoff dropping exhaust energy (and turbine
+        // speed) the instant the driver tips back in.
+        double m_antiLagLevel = 0.0;
+
+        // Per-engine pop character -- see Parameters::antiLagMaxRetard etc.
+        double m_antiLagMaxRetard = units::angle(55.0, units::deg);
+        double m_antiLagDumpRateK = 6.0;
+        double m_antiLagPopRate = 6.0;
+
         std::string m_name;
 
         Crankshaft *m_crankshafts;
@@ -141,6 +195,12 @@ class Engine : public Part {
 
         Intake *m_intakes;
         int m_intakeCount;
+
+        Turbocharger *m_turbochargers;
+        int m_turbochargerCount;
+
+        Supercharger *m_superchargers;
+        int m_superchargerCount;
 
         IgnitionModule m_ignitionModule;
         Fuel m_fuel;

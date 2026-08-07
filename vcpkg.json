@@ -1,0 +1,10 @@
+{
+  "name": "engine-sim",
+  "version": "0.1.0",
+  "builtin-baseline": "db4723bd0a99eab031f1a3dee4336dca43049c87",
+  "dependencies": [
+    "sdl2",
+    "sdl2-image",
+    "boost-filesystem"
+  ]
+}

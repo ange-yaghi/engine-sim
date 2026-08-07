@@ -1,0 +1,542 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Toyota/Lexus 1UZ-FE -- the 4.0L naturally-aspirated DOHC V8 that powered
+// the first-generation Lexus LS400 / Toyota Celsior / Toyota Soarer
+// (1989-1997), before the mild 1995 facelift revisions and well before any
+// VVT-i UZ variant (that didn't arrive until the later 3UZ-FE). 32-valve,
+// 4 valves/cylinder, 90-degree bank angle. Bore/stroke (87.5mm x 82.5mm)
+// are real factory specs and compute cleanly to the real ~3969cc
+// displacement: pi/4 * 8.75cm^2 * 8.25cm * 8 cylinders = 3968.7cc. Real
+// compression is ~10.4:1; redline is set at 6200rpm, in line with this
+// engine's factory fuel-cut and its character as a smooth, quiet luxury
+// V8 rather than a screamer (peak power arrives at a leisurely ~5600rpm).
+//
+// Firing order -- derived, not copied blind:
+// Toyota's factory service-manual convention for the UZ V8 family numbers
+// cylinders by bank-and-position, NOT sequentially like Ford's Coyote
+// (assets/engines/soli_dstate/ford/mt/coyote_gen4_mt.mr, bank 0 = 1-4,
+// bank 1 = 5-8). Instead the UZ V8 uses the odd/even-split convention
+// shared by GM LS and Chrysler/Mopar V8s: right bank ("bank 1") =
+// cylinders 1-3-5-7 front-to-back, left bank ("bank 2") = cylinders
+// 2-4-6-8 front-to-back, with cylinder pairs (1,2), (3,4), (5,6), (7,8)
+// -- same front-to-back position, opposite banks -- sharing a crank
+// journal. The commonly-cited UZ firing order 1-8-4-3-6-5-7-2 is in fact
+// identical to Chrysler's well-documented LA/Magnum firing order, which
+// uses this exact same numbering convention -- a strong cross-check that
+// this (and not the Ford-style layout) is the right numbering scheme to
+// build the crank around here.
+//
+// With that convention fixed, a cross-plane crank's 4 journals were
+// assigned angles (front-to-back) of 0/270/90/180 degrees -- solved
+// algebraically so that each cylinder's true combustion TDC (which
+// depends on both its rod journal angle AND which bank it's on, since the
+// two banks are 90 degrees apart) lands exactly on 1-8-4-3-6-5-7-2 when
+// all 8 TDC events are sorted across the 720-degree cycle:
+//   cyl 1 (bank R, journal 1 @   0 deg) -> TDC   0 deg
+//   cyl 8 (bank L, journal 4 @ 180 deg) -> TDC  90 deg
+//   cyl 4 (bank L, journal 2 @ 270 deg) -> TDC 180 deg
+//   cyl 3 (bank R, journal 2 @ 270 deg) -> TDC 270 deg
+//   cyl 6 (bank L, journal 3 @  90 deg) -> TDC 360 deg
+//   cyl 5 (bank R, journal 3 @  90 deg) -> TDC 450 deg
+//   cyl 7 (bank R, journal 4 @ 180 deg) -> TDC 540 deg
+//   cyl 2 (bank L, journal 1 @   0 deg) -> TDC 630 deg
+// This is the exact permutation used below for the rod journals, cam
+// lobe centerlines, and ignition wire angles -- every cylinder fires at
+// its own true TDC, evenly spaced 90 degrees apart, in the order
+// 1-8-4-3-6-5-7-2.
+//
+// Transmission: Aisin-Warner A340E 4-speed torque-converter automatic,
+// the real-world-only gearbox for this generation LS400 (auto-only in
+// essentially every market). Real production ratios (approximate).
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+}
+
+private node uz_fe_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 52.8 * units.cc; // sized for ~10.4:1 CR against a ~496cc swept cylinder
+    input intake_runner_volume: 105.0 * units.cc;
+    input intake_runner_cross_section_area: 1.6 * units.inch * 1.6 * units.inch;
+    input exhaust_runner_volume: 45.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.35 * units.inch * 1.35 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Mild, quiet-luxury-tuned head -- noticeably smaller ports/flow than
+    // this repo's sportier V8 references (Coyote, B58), consistent with
+    // this engine's much lower specific output (~63hp/L vs Coyote's
+    // ~87hp/L in this sim).
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 48 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 88 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 132 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 172 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 200 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 216 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 225 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 229 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 230 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 32 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 60 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 94 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 128 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 154 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 172 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 182 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 186 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 187 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+private node uz_fe_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.78 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    // No VVT-i on this early (1989-1997) 1UZ-FE -- fixed cam timing on
+    // both banks (VVT-i didn't reach the UZ V8 family until the later
+    // 3UZ-FE). advance_curve is left at its default (empty/flat), so no
+    // phasing is applied.
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot(90 * units.deg) // firing interval, 720 / 8
+    label rot360(360 * units.deg)
+
+    // Bank R (cylinders 1,3,5,7, added front-to-back) get true-TDC rot
+    // multipliers 0,3,5,6; bank L (cylinders 2,4,6,8, added front-to-back)
+    // get multipliers 7,2,4,1 -- see the firing-order derivation in the
+    // file header. Together these place every cylinder's cam lobe at its
+    // own correct TDC, reproducing 1-8-4-3-6-5-7-2 exactly.
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot) // 5
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot) // 7
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 3
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot) // 5
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot) // 7
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 4
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 8
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 4
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 8
+}
+
+public node uz_fe_v8 {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Toyota/Lexus 1UZ-FE 4.0L [LS400, V8]",
+        starter_torque: 160 * units.lb_ft,
+        starter_speed: 250 * units.rpm,
+        redline: 6200 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.0,
+            max_burning_efficiency: 0.82
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.005,
+        noise: 0.35,
+        jitter: 0.15,
+        simulation_frequency: 12000
+    )
+
+    // Real 1UZ-FE dimensions: 87.5mm x 82.5mm, ~3969cc. ~10.4:1 compression.
+    label stroke(82.5 * units.mm)
+    label bore(87.5 * units.mm)
+    label rod_length(148.5 * units.mm) // approximated, not from spec
+    label rod_mass(500 * units.g) // approximated, not from spec
+    label compression_height(31.0 * units.mm) // approximated, not from spec
+    label crank_mass(17 * units.kg)
+    label flywheel_mass(10 * units.kg) // flexplate + effective torque-converter mass, approximated
+    label flywheel_radius(6.0 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // cams, chains, balancer, etc [estimated]
+        disk_moment_of_inertia(mass: 16 * units.kg, radius: 7.0 * units.cm)
+    )
+
+    label v_angle(90 * units.deg) // real 1UZ-FE bank angle
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 8.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + (v_angle / 2.0)
+    )
+
+    // Cross-plane crank, 4 journals at 270/180/0/90 degrees (front to
+    // back) -- see the firing-order derivation in the file header for how
+    // this specific permutation was solved for. Journal N (front-to-back
+    // position) is shared by cylinder pair (2N-1, 2N): bank R's odd
+    // cylinder and bank L's even cylinder at that same fore-aft position.
+    //
+    // NOTE on bank angle sign: this simulator's true combustion TDC for a
+    // cylinder depends on both its rod journal angle AND which physical
+    // bank.angle (+45 or -45 deg here) it's mounted on -- empirically
+    // calibrated against assets/engines/soli_dstate/ford/mt/coyote_gen4_mt.mr
+    // (a known-good cross-plane V8 in this repo), a bank at +45deg maps to
+    // TDC-offset 0 and a bank at -45deg maps to TDC-offset +90deg. Solving
+    // for the journal permutation AND which numbering (odd/even) sits on
+    // which physical bank angle that reproduces 1-8-4-3-6-5-7-2 requires
+    // the ODD bank (1,3,5,7) at -45deg and the EVEN bank (2,4,6,8) at
+    // +45deg -- see bank b0/b1 below.
+    rod_journal rj0(angle: 270 * units.deg) // cyl 1 & 2
+    rod_journal rj1(angle: 180 * units.deg) // cyl 3 & 4
+    rod_journal rj2(angle: 0 * units.deg)   // cyl 5 & 6
+    rod_journal rj3(angle: 90 * units.deg)  // cyl 7 & 8
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 340 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 5.0 * units.L,
+        plenum_cross_section_area: 28.0 * units.cm2,
+        intake_flow_rate: k_carb(950.0),
+        runner_flow_rate: k_carb(180.0),
+        runner_length: 8.5 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        // 0.998 (matching this repo's Coyote reference) survived a gentle
+        // starter-cranking catch but stalled on the harsher redline-to-idle
+        // transient the dyno pull's pre-sweep settle puts it through --
+        // this engine's smaller-scale intake (950 flow / 5L plenum vs
+        // Coyote's 1250 / 6L) needed the plate opened up further to keep
+        // enough flow at closed throttle to survive that transient.
+        idle_throttle_plate_position: 0.997,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1050.0),
+        primary_tube_length: 22.0 * units.inch,
+        primary_flow_rate: k_carb(200.0),
+        velocity_decay: 1.0,
+        volume: 30.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.85,
+        impulse_response: ir_lib.default_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.0,
+        impulse_response: ir_lib.default_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    // Bank R (cylinders 1,3,5,7 -- Toyota FSM "bank 1") sits at -45deg,
+    // bank L (cylinders 2,4,6,8 -- "bank 2") sits at +45deg -- see the
+    // bank-angle-sign note above the rod journals for why this specific
+    // (and not the mirror-image) assignment is required to reproduce
+    // 1-8-4-3-6-5-7-2 in this simulator.
+    cylinder_bank b0(bank_params, angle: -v_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: v_angle / 2.0)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.95,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 0.97,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            uz_fe_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true
+            )
+        )
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.95,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 0.97,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            uz_fe_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    // Mild, quiet luxury-car cam timing -- shorter duration and lower
+    // lift than this repo's sportier V8 references (Coyote 218/214deg,
+    // B58 218/214deg).
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 204 * units.deg,
+        gamma: 1.1,
+        lift: 8.6 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 200 * units.deg,
+        gamma: 1.1,
+        lift: 8.3 * units.mm,
+        steps: 100
+    )
+
+    uz_fe_camshaft camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        base_radius: 0.78 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 14 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 26 * units.deg)
+        .add_sample(4000 * units.rpm, 30 * units.deg)
+        .add_sample(5000 * units.rpm, 32 * units.deg)
+        .add_sample(6000 * units.rpm, 32 * units.deg)
+        .add_sample(6200 * units.rpm, 32 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 6350 * units.rpm,
+        limiter_duration: 0.06
+    )
+    // Wire angles are the same 0/90/270/180-derived true-TDC values from
+    // the header derivation, spanning the full 720-degree cycle --
+    // reproduces firing order 1-8-4-3-6-5-7-2 exactly.
+    ignition_module
+        .connect_wire(wires.wire1, 0 * 90 * units.deg)
+        .connect_wire(wires.wire8, 1 * 90 * units.deg)
+        .connect_wire(wires.wire4, 2 * 90 * units.deg)
+        .connect_wire(wires.wire3, 3 * 90 * units.deg)
+        .connect_wire(wires.wire6, 4 * 90 * units.deg)
+        .connect_wire(wires.wire5, 5 * 90 * units.deg)
+        .connect_wire(wires.wire7, 6 * 90 * units.deg)
+        .connect_wire(wires.wire2, 7 * 90 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+private node ls400_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3703 * units.lb, // real 1UZ-FE-era LS400 curb weight, approximate
+            drag_coefficient: 0.29, // famously slippery for its era
+            cross_sectional_area: (72 * units.inch) * (55 * units.inch),
+            diff_ratio: 3.07, // approximate A340E-equipped LS400 final drive
+            tire_radius: 13.0 * units.inch,
+            rolling_resistance: 300 * units.N
+        );
+}
+
+// Aisin-Warner A340E 4-speed automatic -- real production ratios
+// (approximate). Old-school "dumb" automatic (no sport/manual-shift
+// mode, matching the real LS400's P-R-N-D-2-L shifter), with a soft,
+// comfort-tuned lockup torque converter -- gentle stall speed, longer
+// shift/prepare times than a modern electronically-controlled box.
+private node uz_fe_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 380 * units.lb_ft,
+            type: "automatic",
+            has_sport_mode: false,
+            allow_manual_shift: false,
+            shift_up_rpm_closed_throttle: 1500 * units.rpm,
+            shift_up_rpm_wot: 5900 * units.rpm,
+            shift_down_rpm_closed_throttle: 900 * units.rpm,
+            shift_down_rpm_wot: 3000 * units.rpm,
+            shift_time_drive: 0.6,
+            shift_torque_cut: 0.45,
+            shift_prepare_time_drive: 0.15, // old-school hydraulic valve-body "gather" pause
+            converter_stall_torque: 240 * units.lb_ft, // approximated, not from spec
+            converter_stall_speed: 2000 * units.rpm, // approximated, not from spec
+            has_lockup_clutch: true
+        )
+        .add_gear(2.804) // 1st
+        .add_gear(1.531) // 2nd
+        .add_gear(1.000) // 3rd
+        .add_gear(0.705); // 4th (OD)
+}
+
+public node main {
+    set_engine(uz_fe_v8())
+    set_vehicle(ls400_vehicle())
+    set_transmission(uz_fe_transmission())
+}

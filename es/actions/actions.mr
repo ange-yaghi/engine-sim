@@ -147,6 +147,45 @@ public node set_cylinder_head {
     _set_cylinder_head(head: head, bank: this)
 }
 
+private node _add_turbocharger => __engine_sim__add_turbocharger {
+    input engine [engine];
+    input turbocharger [turbocharger];
+}
+
+public node add_turbocharger {
+    input turbocharger;
+    input this;
+    alias output __out: this;
+
+    _add_turbocharger(engine: this, turbocharger: turbocharger)
+}
+
+private node _add_turbocharger_exhaust => __engine_sim__add_turbocharger_exhaust {
+    input turbocharger [turbocharger];
+    input exhaust_system [exhaust_system];
+}
+
+public node add_exhaust_system {
+    input exhaust_system;
+    input this;
+    alias output __out: this;
+
+    _add_turbocharger_exhaust(turbocharger: this, exhaust_system: exhaust_system)
+}
+
+private node _add_supercharger => __engine_sim__add_supercharger {
+    input engine [engine];
+    input supercharger [supercharger];
+}
+
+public node add_supercharger {
+    input supercharger;
+    input this;
+    alias output __out: this;
+
+    _add_supercharger(engine: this, supercharger: supercharger)
+}
+
 public node k_28inH2O => __engine_sim__k_28inH2O {
     input flow [float]: 1.0;
     alias output __out [float];

@@ -18,6 +18,8 @@ RightGaugeCluster::RightGaugeCluster() {
     m_manifoldVacuumGauge = nullptr;
     m_volumetricEffGauge = nullptr;
     m_intakeCfmGauge = nullptr;
+    m_turboRpmGauge = nullptr;
+    m_superchargerRpmGauge = nullptr;
     m_combusionChamberStatus = nullptr;
     m_throttleDisplay = nullptr;
     m_fuelCluster = nullptr;
@@ -36,6 +38,8 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_manifoldVacuumGauge = addElement<LabeledGauge>();
     m_intakeCfmGauge = addElement<LabeledGauge>();
     m_volumetricEffGauge = addElement<LabeledGauge>();
+    m_turboRpmGauge = addElement<LabeledGauge>();
+    m_superchargerRpmGauge = addElement<LabeledGauge>();
     m_combusionChamberStatus = addElement<FiringOrderDisplay>();
     m_throttleDisplay = addElement<ThrottleDisplay>();
     m_afrCluster = addElement<AfrCluster>();
@@ -103,7 +107,7 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_manifoldVacuumGauge->m_gauge->m_gamma = 1.0f;
     m_manifoldVacuumGauge->m_gauge->m_needleKs = 1000.0f;
     m_manifoldVacuumGauge->m_gauge->m_needleKd = 50.0f;
-    m_manifoldVacuumGauge->m_gauge->setBandCount(5);
+    m_manifoldVacuumGauge->m_gauge->setBandCount(7);
     m_manifoldVacuumGauge->m_gauge->setBand(
         { m_app->getRed(), -5, -1, 3.0f, 6.0f, shortenAngle, shortenAngle }, 0);
     m_manifoldVacuumGauge->m_gauge->setBand(
@@ -155,6 +159,48 @@ void RightGaugeCluster::initialize(EngineSimApplication *app) {
     m_intakeCfmGauge->m_gauge->m_needleKs = 1000.0f;
     m_intakeCfmGauge->m_gauge->m_needleKd = 50.0f;
     m_intakeCfmGauge->m_gauge->setBandCount(0);
+
+    m_turboRpmGauge->m_title = "TURBO SPEED";
+    m_turboRpmGauge->m_unit = "rpm";
+    m_turboRpmGauge->m_precision = 0;
+    m_turboRpmGauge->setLocalPosition({ 0, 0 });
+    m_turboRpmGauge->m_gauge->m_min = 0;
+    m_turboRpmGauge->m_gauge->m_max = 180000;
+    m_turboRpmGauge->m_gauge->m_minorStep = 5000;
+    m_turboRpmGauge->m_gauge->m_majorStep = 20000;
+    m_turboRpmGauge->m_gauge->m_maxMinorTick = INT_MAX;
+    m_turboRpmGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_turboRpmGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_turboRpmGauge->m_gauge->m_needleWidth = 4.0f;
+    m_turboRpmGauge->m_gauge->m_gamma = 1.0f;
+    m_turboRpmGauge->m_gauge->m_needleKs = 1000.0f;
+    m_turboRpmGauge->m_gauge->m_needleKd = 50.0f;
+    m_turboRpmGauge->m_gauge->setBandCount(1);
+    m_turboRpmGauge->m_gauge->setBand(
+        { m_app->getRed(), 150000, 180000, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 0);
+
+    // Belt/gear-driven, so shaft speed tops out far lower than a turbo's
+    // free-spinning exhaust-driven wheel -- range covers everything from a
+    // Roots blower (~20-30k rpm) up to a centrifugal unit (~50-70k rpm).
+    m_superchargerRpmGauge->m_title = "SUPERCHARGER SPEED";
+    m_superchargerRpmGauge->m_unit = "rpm";
+    m_superchargerRpmGauge->m_precision = 0;
+    m_superchargerRpmGauge->setLocalPosition({ 0, 0 });
+    m_superchargerRpmGauge->m_gauge->m_min = 0;
+    m_superchargerRpmGauge->m_gauge->m_max = 80000;
+    m_superchargerRpmGauge->m_gauge->m_minorStep = 2000;
+    m_superchargerRpmGauge->m_gauge->m_majorStep = 10000;
+    m_superchargerRpmGauge->m_gauge->m_maxMinorTick = INT_MAX;
+    m_superchargerRpmGauge->m_gauge->m_thetaMin = (float)constants::pi * 1.2f;
+    m_superchargerRpmGauge->m_gauge->m_thetaMax = -(float)constants::pi * 0.2f;
+    m_superchargerRpmGauge->m_gauge->m_needleWidth = 4.0f;
+    m_superchargerRpmGauge->m_gauge->m_gamma = 1.0f;
+    m_superchargerRpmGauge->m_gauge->m_needleKs = 1000.0f;
+    m_superchargerRpmGauge->m_gauge->m_needleKd = 50.0f;
+    m_superchargerRpmGauge->m_gauge->setBandCount(1);
+    m_superchargerRpmGauge->m_gauge->setBand(
+        { m_app->getRed(), 66000, 80000, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 0);
+
     //Set display units
     setUnits();
 }
@@ -174,7 +220,7 @@ void RightGaugeCluster::update(float dt) {
 }
 
 void RightGaugeCluster::render() {
-    drawFrame(m_bounds, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
+    drawPanel(m_bounds);
 
     const Bounds tachSpeedCluster = m_bounds.verticalSplit(0.5f, 1.0f);
     renderTachSpeedCluster(tachSpeedCluster);
@@ -241,7 +287,14 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
     constexpr double ambientPressure = units::pressure(1.0, units::atm);
     constexpr double ambientTemperature = units::celcius(25.0);
 
-    Grid grid = { 1, 3 };
+    // One shared gauge slot covers whichever single forced-induction device
+    // is present; a second slot only appears for a twincharged engine that
+    // has both.
+    const bool hasTurbo = m_engine != nullptr && m_engine->hasTurbocharger();
+    const bool hasSupercharger = m_engine != nullptr && m_engine->hasSupercharger();
+    const bool showBothGauges = hasTurbo && hasSupercharger;
+
+    Grid grid = { 1, showBothGauges ? 5 : 4 };
     const Bounds manifoldVacuum = grid.get(right, 0, 0, 1, 1);
     m_manifoldVacuumGauge->m_bounds = manifoldVacuum;
 
@@ -250,7 +303,9 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
         m_manifoldVacuumGauge->m_gauge->m_value = static_cast<float>(vacuumReading);
     }
     else {
-        m_manifoldVacuumGauge->m_gauge->m_value = (vacuumReading > -0.5)
+        // Small deadband right at atmospheric to kill needle jitter, but
+        // (unlike before) this no longer zeroes out genuine boost readings.
+        m_manifoldVacuumGauge->m_gauge->m_value = (std::abs(vacuumReading) < 0.5)
             ? 0.0f
             : static_cast<float>(vacuumReading);
     }
@@ -276,11 +331,40 @@ void RightGaugeCluster::renderFuelAirCluster(const Bounds &bounds) {
     const Bounds volumetricEfficiencyBounds = grid.get(right, 0, 2, 1, 1);
     m_volumetricEffGauge->m_bounds = volumetricEfficiencyBounds;
     m_volumetricEffGauge->m_gauge->m_value = 100.0f * (float)volumetricEfficiency;
+
+    const Bounds turboRpmBounds = grid.get(right, 0, 3, 1, 1);
+    m_turboRpmGauge->m_bounds = turboRpmBounds;
+    m_turboRpmGauge->m_gauge->m_value = (float)getTurboRpm();
+
+    if (showBothGauges) {
+        m_turboRpmGauge->setVisible(true);
+
+        const Bounds superchargerRpmBounds = grid.get(right, 0, 4, 1, 1);
+        m_superchargerRpmGauge->setVisible(true);
+        m_superchargerRpmGauge->m_bounds = superchargerRpmBounds;
+        m_superchargerRpmGauge->m_gauge->m_value = (float)getSuperchargerRpm();
+    }
+    else if (hasSupercharger) {
+        // No turbo -- repurpose the single forced-induction slot to show
+        // supercharger speed instead of turbo speed.
+        m_turboRpmGauge->setVisible(false);
+
+        m_superchargerRpmGauge->setVisible(true);
+        m_superchargerRpmGauge->m_bounds = turboRpmBounds;
+        m_superchargerRpmGauge->m_gauge->m_value = (float)getSuperchargerRpm();
+    }
+    else {
+        m_turboRpmGauge->setVisible(true);
+        m_superchargerRpmGauge->setVisible(false);
+    }
 }
 
 double RightGaugeCluster::getManifoldPressureWithUnits(double ambientPressure) {
+    // Gauge-relative (can go positive under boost, negative under vacuum) --
+    // no longer clamped to vacuum-only, since a turbocharged engine can
+    // push manifold pressure above ambient.
     if (m_pressureUnits == "inHg") {
-        return units::convert(std::fmin(getManifoldPressure() - ambientPressure, 0.0), units::inHg);
+        return units::convert(getManifoldPressure() - ambientPressure, units::inHg);
     }
     else if (m_pressureUnits == "kPa") {
         return units::convert(getManifoldPressure(), units::kPa);
@@ -292,10 +376,10 @@ double RightGaugeCluster::getManifoldPressureWithUnits(double ambientPressure) {
         return units::convert(getManifoldPressure(), units::bar);
     }
     else if (m_pressureUnits == "psi") {
-        return units::convert(std::fmin(getManifoldPressure() - ambientPressure, 0.0), units::psi);
+        return units::convert(getManifoldPressure() - ambientPressure, units::psi);
     }
     else {
-        return units::convert(std::fmin(getManifoldPressure() - ambientPressure, 0.0), units::inHg);
+        return units::convert(getManifoldPressure() - ambientPressure, units::inHg);
     }
 }
 
@@ -312,7 +396,7 @@ double RightGaugeCluster::getRedline() const {
 }
 
 double RightGaugeCluster::getSpeed() const {
-    return (m_simulator->getVehicle() != nullptr)
+    return (m_simulator != nullptr && m_simulator->getVehicle() != nullptr)
         ? m_simulator->getVehicle()->getSpeed()
         : 0;
 }
@@ -321,6 +405,18 @@ double RightGaugeCluster::getManifoldPressure() const {
     return (m_engine != nullptr)
         ? m_engine->getManifoldPressure()
         : units::pressure(1.0, units::atm);
+}
+
+double RightGaugeCluster::getTurboRpm() const {
+    return (m_engine != nullptr && m_engine->getTurbochargerCount() > 0)
+        ? units::toRpm(m_engine->getTurbocharger(0)->getShaftSpeed())
+        : 0.0;
+}
+
+double RightGaugeCluster::getSuperchargerRpm() const {
+    return (m_engine != nullptr && m_engine->getSuperchargerCount() > 0)
+        ? units::toRpm(m_engine->getSupercharger(0)->getShaftSpeed())
+        : 0.0;
 }
 
 void RightGaugeCluster::setUnits() {
@@ -335,9 +431,9 @@ void RightGaugeCluster::setUnits() {
 
         m_manifoldVacuumGauge->m_unit = "kPa";
         m_manifoldVacuumGauge->m_gauge->m_min = 0;
-        m_manifoldVacuumGauge->m_gauge->m_max = 110;
-        m_manifoldVacuumGauge->m_gauge->m_minorStep = 5;
-        m_manifoldVacuumGauge->m_gauge->m_majorStep = 10;
+        m_manifoldVacuumGauge->m_gauge->m_max = 300;
+        m_manifoldVacuumGauge->m_gauge->m_minorStep = 10;
+        m_manifoldVacuumGauge->m_gauge->m_majorStep = 25;
         m_manifoldVacuumGauge->m_gauge->setBand(
             { m_app->getRed(), 110, 90, 3.0f, 6.0f, shortenAngle, shortenAngle }, 0);
         m_manifoldVacuumGauge->m_gauge->setBand(
@@ -348,15 +444,20 @@ void RightGaugeCluster::setUnits() {
             { m_app->getBlue(), 15, 29, 3.0f, 6.0f, shortenAngle, shortenAngle }, 3);
         m_manifoldVacuumGauge->m_gauge->setBand(
             { m_app->getForegroundColor(), 0, 14, 3.0f, 6.0f, shortenAngle, shortenAngle }, 4);
+        // Boost (above atmospheric).
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getGreen(), 110, 250, 3.0f, 6.0f, shortenAngle, shortenAngle }, 5);
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getRed(), 250, 300, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 6);
     }
     else if (m_pressureUnits == "mbar") {
         m_isAbsolute = true;
 
         m_manifoldVacuumGauge->m_unit = "mbar";
         m_manifoldVacuumGauge->m_gauge->m_min = 0;
-        m_manifoldVacuumGauge->m_gauge->m_max = 1100;
-        m_manifoldVacuumGauge->m_gauge->m_minorStep = 50;
-        m_manifoldVacuumGauge->m_gauge->m_majorStep = 100;
+        m_manifoldVacuumGauge->m_gauge->m_max = 3000;
+        m_manifoldVacuumGauge->m_gauge->m_minorStep = 100;
+        m_manifoldVacuumGauge->m_gauge->m_majorStep = 250;
         m_manifoldVacuumGauge->m_gauge->setBand(
             { m_app->getRed(), 1100, 900, 3.0f, 6.0f, shortenAngle, shortenAngle }, 0);
         m_manifoldVacuumGauge->m_gauge->setBand(
@@ -367,13 +468,18 @@ void RightGaugeCluster::setUnits() {
             { m_app->getBlue(), 150, 290, 3.0f, 6.0f, shortenAngle, shortenAngle }, 3);
         m_manifoldVacuumGauge->m_gauge->setBand(
             { m_app->getForegroundColor(), 0, 140, 3.0f, 6.0f, shortenAngle, shortenAngle }, 4);
+        // Boost (above atmospheric).
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getGreen(), 1100, 2500, 3.0f, 6.0f, shortenAngle, shortenAngle }, 5);
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getRed(), 2500, 3000, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 6);
     }
     else if (m_pressureUnits == "bar") {
         m_isAbsolute = true;
 
         m_manifoldVacuumGauge->m_unit = "bar";
         m_manifoldVacuumGauge->m_gauge->m_min = 0;
-        m_manifoldVacuumGauge->m_gauge->m_max = 1.1f;
+        m_manifoldVacuumGauge->m_gauge->m_max = 3.0f;
         m_manifoldVacuumGauge->m_gauge->m_minorStep = 1;
         m_manifoldVacuumGauge->m_gauge->m_majorStep = 1;
         m_manifoldVacuumGauge->m_precision = 2;
@@ -388,13 +494,18 @@ void RightGaugeCluster::setUnits() {
             { m_app->getBlue(), 0.15f, 0.29f, 3.0f, 6.0f, shortenAngle, shortenAngle }, 3);
         m_manifoldVacuumGauge->m_gauge->setBand(
             { m_app->getForegroundColor(), 0, 0.14f, 3.0f, 6.0f, shortenAngle, shortenAngle }, 4);
+        // Boost (above atmospheric).
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getGreen(), 1.1f, 2.5f, 3.0f, 6.0f, shortenAngle, shortenAngle }, 5);
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getRed(), 2.5f, 3.0f, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 6);
     }
     else if (m_pressureUnits == "psi") {
         m_isAbsolute = false;
 
         m_manifoldVacuumGauge->m_unit = "psi";
         m_manifoldVacuumGauge->m_gauge->m_min = -15;
-        m_manifoldVacuumGauge->m_gauge->m_max = 3;
+        m_manifoldVacuumGauge->m_gauge->m_max = 25;
         m_manifoldVacuumGauge->m_gauge->m_minorStep = 1;
         m_manifoldVacuumGauge->m_gauge->m_majorStep = 5;
         m_manifoldVacuumGauge->m_precision = 1;
@@ -408,13 +519,18 @@ void RightGaugeCluster::setUnits() {
             { m_app->getBlue(), -12, -7, 3.0f, 6.0f, shortenAngle, shortenAngle }, 3);
         m_manifoldVacuumGauge->m_gauge->setBand(
             { m_app->getForegroundColor(), -15, -12, 3.0f, 6.0f, shortenAngle, shortenAngle }, 4);
+        // Boost (above atmospheric).
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getGreen(), 1, 18, 3.0f, 6.0f, shortenAngle, shortenAngle }, 5);
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getRed(), 18, 25, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 6);
     }
     else {
         m_isAbsolute = false;
 
         m_manifoldVacuumGauge->m_unit = "inHg";
         m_manifoldVacuumGauge->m_gauge->m_min = -30;
-        m_manifoldVacuumGauge->m_gauge->m_max = 5;
+        m_manifoldVacuumGauge->m_gauge->m_max = 30;
         m_manifoldVacuumGauge->m_gauge->m_minorStep = 1;
         m_manifoldVacuumGauge->m_gauge->m_majorStep = 5;
         m_manifoldVacuumGauge->m_gauge->setBand(
@@ -423,6 +539,10 @@ void RightGaugeCluster::setUnits() {
             { m_app->getForegroundColor(), -1.0f, 1.0f, 3.0f, 6.0f, shortenAngle, shortenAngle }, 1);
         m_manifoldVacuumGauge->m_gauge->setBand(
             { m_app->getOrange(), -10, -5, 3.0f, 6.0f, shortenAngle, shortenAngle }, 2);
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getGreen(), 1, 20, 3.0f, 6.0f, shortenAngle, shortenAngle }, 5);
+        m_manifoldVacuumGauge->m_gauge->setBand(
+            { m_app->getRed(), 20, 30, 3.0f, 6.0f, shortenAngle, -shortenAngle }, 6);
         m_manifoldVacuumGauge->m_gauge->setBand(
             { m_app->getBlue(), -22, -10, 3.0f, 6.0f, shortenAngle, shortenAngle }, 3);
         m_manifoldVacuumGauge->m_gauge->setBand(

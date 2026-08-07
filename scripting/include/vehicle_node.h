@@ -25,6 +25,7 @@ namespace es_script {
             addInput("diff_ratio", &m_parameters.diffRatio);
             addInput("tire_radius", &m_parameters.tireRadius);
             addInput("rolling_resistance", &m_parameters.rollingResistance);
+            addInput("brake_constant", &m_parameters.brakeConstant);
 
             ObjectReferenceNode<VehicleNode>::registerInputs();
         }

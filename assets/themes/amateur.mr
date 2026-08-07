@@ -4,7 +4,7 @@ unit_names units()
 public node use_amateur_theme {
     input start_fullscreen: false;
     input speed_units: units.mph;
-    input pressure_units: units.inHg;
+    input pressure_units: units.psi;
     input torque_units: units.lb_ft;
     input power_units: units.hp;
 

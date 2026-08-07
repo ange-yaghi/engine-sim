@@ -7,7 +7,7 @@ struct ApplicationSettings {
     std::string powerUnits = "hp";
     std::string torqueUnits = "lb-ft";
     std::string speedUnits = "mph";
-    std::string pressureUnits = "inHg";
+    std::string pressureUnits = "psi";
     std::string boostUnits = "psi";
 
     int colorBackground = 0x0E1012;

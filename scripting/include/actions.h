@@ -16,6 +16,8 @@
 #include "ignition_module_node.h"
 #include "transmission_node.h"
 #include "vehicle_node.h"
+#include "turbocharger_node.h"
+#include "supercharger_node.h"
 
 namespace es_script {
 
@@ -134,6 +136,78 @@ namespace es_script {
 
     protected:
         CylinderBankNode *m_cylinderBankNode = nullptr;
+        EngineNode *m_engine = nullptr;
+    };
+
+    class AddTurbochargerNode : public Node {
+    public:
+        AddTurbochargerNode() { /* void */ }
+        virtual ~AddTurbochargerNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("engine", &m_engine, InputTarget::Type::Object);
+            addInput("turbocharger", &m_turbocharger, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_engine->addTurbocharger(m_turbocharger);
+        }
+
+    protected:
+        TurbochargerNode *m_turbocharger = nullptr;
+        EngineNode *m_engine = nullptr;
+    };
+
+    class AddTurbochargerExhaustNode : public Node {
+    public:
+        AddTurbochargerExhaustNode() { /* void */ }
+        virtual ~AddTurbochargerExhaustNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("turbocharger", &m_turbocharger, InputTarget::Type::Object);
+            addInput("exhaust_system", &m_exhaustSystem, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_turbocharger->addExhaustSystem(m_exhaustSystem);
+        }
+
+    protected:
+        TurbochargerNode *m_turbocharger = nullptr;
+        ExhaustSystemNode *m_exhaustSystem = nullptr;
+    };
+
+    class AddSuperchargerNode : public Node {
+    public:
+        AddSuperchargerNode() { /* void */ }
+        virtual ~AddSuperchargerNode() { /* void */ }
+
+    protected:
+        virtual void registerInputs() {
+            addInput("engine", &m_engine, InputTarget::Type::Object);
+            addInput("supercharger", &m_supercharger, InputTarget::Type::Object);
+
+            Node::registerInputs();
+        }
+
+        virtual void _evaluate() {
+            readAllInputs();
+
+            m_engine->addSupercharger(m_supercharger);
+        }
+
+    protected:
+        SuperchargerNode *m_supercharger = nullptr;
         EngineNode *m_engine = nullptr;
     };
 

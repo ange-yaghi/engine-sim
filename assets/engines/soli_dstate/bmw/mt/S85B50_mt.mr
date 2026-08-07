@@ -1,0 +1,531 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// BMW S85B50 -- the 5.0L NA V10 out of the E60 M5 / E63 M6. Essentially
+// two more cylinders grafted onto the S65's bore/stroke/rod family, with
+// the same short-stroke, high-revving character (8250rpm redline).
+//
+// Real S85 bank angle is 65 degrees (an unusual, non-"ideal" choice for a
+// V10 driven by packaging, not acoustics -- BMW compensated with uneven
+// crank pin splay to still get even 72-degree firing intervals). That
+// splay isn't modeled here: this file uses the real 65-degree bank angle
+// for geometry, but -- exactly like this repo's V8/V10 references
+// (angethegreat/atg-video-2/08_ferrari_f136_v8.mr, 10_lfa_v10.mr) -- sets
+// firing timing directly via the ignition wire angles, evenly spaced at
+// 72 degrees, rather than deriving it from the crank geometry. This is a
+// labeled approximation, not a reproduction of BMW's actual pin splay.
+//
+// Firing order 1-10-5-6-9-2-7-4-3-8 (commonly cited for the S85; treated
+// here as a good approximation rather than a guaranteed-exact figure).
+// Applying the same "paired cylinders on one journal must fire exactly
+// one firing-interval apart" rule used for S65B44_mt.mr's V8 gives crank
+// pin pairing (1,10) (5,6) (9,2) (7,4) (3,8) -- that's what's modeled
+// below; journal angles are a plausible even 72-degree arrangement.
+//
+// This file builds the full NA engine as public node S85B50_na (so
+// S85B50_smg.mr can reuse it) and pairs it with the factory 6-speed
+// manual (offered alongside SMG III in some markets) as `main`.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+    output wire9: ignition_wire();
+    output wire10: ignition_wire();
+}
+
+private node s85_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 44.0 * units.cc;
+    input intake_runner_volume: 128.0 * units.cc;
+    input intake_runner_cross_section_area: 1.8 * units.inch * 1.8 * units.inch;
+    input exhaust_runner_volume: 48.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.4 * units.inch * 1.4 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 60 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 108 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 165 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 222 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 258 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 279 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 291 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 295 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 296 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 42 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 80 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 125 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 168 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 203 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 227 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 240 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 245 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 246 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+private node s85_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 117.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0.0 * units.deg;
+    input base_radius: 0.75 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Double-VANOS -- independent intake and exhaust cam phasing, same on
+    // both banks.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 12 * units.deg)
+        .add_sample(5500 * units.rpm, 16 * units.deg)
+        .add_sample(8250 * units.rpm, 8 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 10 * units.deg)
+        .add_sample(8250 * units.rpm, 12 * units.deg)
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    label rot(72 * units.deg)
+    label rot360(360 * units.deg)
+
+    // Corrected to match the rod journal and ignition wiring fixes above:
+    // bank 0 (cyl 1-5) at N*rot using each cylinder's own journal (rj0,
+    // rj2, rj4, rj3, rj1 -> N=0,2,4,3,1); bank 1 (cyl 6-10) at
+    // 65deg+N*rot (the 65-degree bank split isn't a multiple of the
+    // 72-degree journal spacing, so it can't collapse to a clean N*rot
+    // alone -- see the ignition wiring block's comment).
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 4
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 5
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 3
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 4
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 5
+
+    label bank1_offset(65 * units.deg)
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 6 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 8 * rot) // 7
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 9 * rot) // 8
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 7 * rot) // 9
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 5 * rot) // 10
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 6 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 8 * rot) // 7
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 9 * rot) // 8
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 7 * rot) // 9
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 5 * rot) // 10
+}
+
+public node S85B50_na {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "BMW S85B50 [E60 M5 / E63 M6]",
+        starter_torque: 230 * units.lb_ft,
+        starter_speed: 250 * units.rpm,
+        redline: 8250 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.4,
+            max_burning_efficiency: 0.89
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.008,
+        noise: 0.65,
+        jitter: 0.15,
+        simulation_frequency: 11000
+    )
+
+    // 92.0mm x 75.2mm, 4999cc -- same bore/stroke family as the S65B44.
+    // NA, 12.0:1 compression.
+    label stroke(75.2 * units.mm)
+    label bore(92.0 * units.mm)
+    label rod_length(136.0 * units.mm)
+    label rod_mass(410 * units.g)
+    label compression_height(29.5 * units.mm)
+    label crank_mass(20 * units.kg)
+    label flywheel_mass(8 * units.kg)
+    label flywheel_radius(6.0 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // cams, pulleys, ITBs [estimated]
+        disk_moment_of_inertia(mass: 24 * units.kg, radius: 8.0 * units.cm)
+    )
+
+    // Real bank angle -- see file header re: the crank pin splay this
+    // simplifies away.
+    label v_angle(65 * units.deg)
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 13.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + (v_angle / 2.0)
+    )
+
+    // Crank pins paired (1,10) (5,6) (9,2) (7,4) (3,8) -- see file header.
+    // Corrected: rj2's old 360deg and rj3's old 504deg were the same mod
+    // 360 as rj0's 0deg and rj1's 144deg respectively -- two journals
+    // can't sit at the identical crank angle, a 5-throw crank needs 5
+    // genuinely distinct positions. Evenly spaced 72 degrees apart here
+    // (same spacing this batch's other 5-journal V10s use).
+    rod_journal rj0(angle: 0 * units.deg)    // P1: 1 & 10
+    rod_journal rj1(angle: 72 * units.deg)   // P2: 5 & 6
+    rod_journal rj2(angle: 144 * units.deg)  // P3: 2 & 9
+    rod_journal rj3(angle: 216 * units.deg)  // P4: 4 & 7
+    rod_journal rj4(angle: 288 * units.deg)  // P5: 3 & 8
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+
+    piston_parameters piston_params(
+        mass: 300 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    // Individual throttle bodies, like the real S85.
+    intake intake(
+        plenum_volume: 1.1 * units.L,
+        plenum_cross_section_area: 16.0 * units.cm2,
+        intake_flow_rate: k_carb(800.0),
+        runner_flow_rate: k_carb(240.0),
+        runner_length: 5.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.997,
+        velocity_decay: 0.4,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1300.0),
+        primary_tube_length: 24.0 * units.inch,
+        primary_flow_rate: k_carb(240.0),
+        velocity_decay: 1.0,
+        volume: 36.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.9,
+        impulse_response: ir_lib.sharp_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.0,
+        impulse_response: ir_lib.sharp_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: v_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: -v_angle / 2.0)
+
+    b0
+        .add_cylinder( // 1
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 5 * units.cm
+        )
+        .add_cylinder( // 2
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.95,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder( // 3
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.9,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder( // 4
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.97,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder( // 5
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.98,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            s85_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true
+            )
+        )
+
+    b1
+        .add_cylinder( // 6
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.93,
+            primary_length: 5 * units.cm
+        )
+        .add_cylinder( // 7
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 0.95,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder( // 8
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 0.97,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder( // 9
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire9,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder( // 10
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire10,
+            sound_attenuation: 0.92,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            s85_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 248 * units.deg,
+        gamma: 1.1,
+        lift: 11.4 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 244 * units.deg,
+        gamma: 1.1,
+        lift: 10.8 * units.mm,
+        steps: 100
+    )
+
+    s85_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 117 * units.deg,
+        exhaust_lobe_center: 117 * units.deg,
+        base_radius: 0.75 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 14 * units.deg)
+        .add_sample(1000 * units.rpm, 18 * units.deg)
+        .add_sample(2000 * units.rpm, 26 * units.deg)
+        .add_sample(3000 * units.rpm, 32 * units.deg)
+        .add_sample(4000 * units.rpm, 36 * units.deg)
+        .add_sample(5000 * units.rpm, 38 * units.deg)
+        .add_sample(6000 * units.rpm, 38 * units.deg)
+        .add_sample(7000 * units.rpm, 38 * units.deg)
+        .add_sample(8000 * units.rpm, 38 * units.deg)
+
+    // 1 10 5 6 9 2 7 4 3 8, evenly spaced at 72 degrees.
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 8350 * units.rpm,
+        limiter_duration: 0.025
+    )
+    ignition_module
+        // Corrected: with the rod journal fix above (0/72/144/216/288)
+        // and a 65-degree bank split, bank 1's true TDC is (65 +
+        // rj.angle) mod 360 -- 65 isn't a multiple of 72, so unlike
+        // 1lr_gue.mr's 72-degree bank, this batch's odd 65-degree
+        // simplification means bank 1 can't land on bank 0's clean
+        // 72-degree grid either.
+        .connect_wire(wires.wire1, 0 * units.deg)
+        .connect_wire(wires.wire5, 72 * units.deg)
+        .connect_wire(wires.wire2, 144 * units.deg)
+        .connect_wire(wires.wire4, 216 * units.deg)
+        .connect_wire(wires.wire3, 288 * units.deg)
+        .connect_wire(wires.wire10, 65 * units.deg + 5 * 72 * units.deg)
+        .connect_wire(wires.wire6,  65 * units.deg + 6 * 72 * units.deg)
+        .connect_wire(wires.wire9,  65 * units.deg + 7 * 72 * units.deg)
+        .connect_wire(wires.wire7,  65 * units.deg + 8 * 72 * units.deg)
+        .connect_wire(wires.wire8,  65 * units.deg + 9 * 72 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+private node s85b50_mt_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 4020 * units.lb,
+            drag_coefficient: 0.31,
+            cross_sectional_area: (74 * units.inch) * (56 * units.inch),
+            diff_ratio: 3.15,
+            tire_radius: 12.9 * units.inch,
+            rolling_resistance: 500 * units.N
+        );
+}
+
+// Factory 6-speed manual (Getrag 420G family, approximate ratios) -- the
+// E60 M5 offered this alongside SMG III in some markets.
+private node s85b50_mt_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 400 * units.lb_ft,
+            type: "manual"
+        )
+        .add_gear(4.23)
+        .add_gear(2.53)
+        .add_gear(1.67)
+        .add_gear(1.24)
+        .add_gear(1.00)
+        .add_gear(0.83);
+}
+
+public node main {
+    set_engine(S85B50_na())
+    set_vehicle(s85b50_mt_vehicle())
+    set_transmission(s85b50_mt_transmission())
+}

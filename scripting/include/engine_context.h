@@ -13,9 +13,12 @@ namespace es_script {
     class FunctionNode;
     class ExhaustSystemNode;
     class IntakeNode;
+    class TurbochargerNode;
+    class SuperchargerNode;
     class RodJournalNode;
     class CamshaftNode;
     class ImpulseResponseNode;
+    class BovSoundNode;
     class ValvetrainNode;
     class ConnectingRodNode;
 
@@ -39,11 +42,20 @@ namespace es_script {
         void addExhaust(ExhaustSystemNode *node, ExhaustSystem *exhaust);
         ExhaustSystem *getExhaust(ExhaustSystemNode *exhaust) const;
 
+        void addTurbocharger(TurbochargerNode *node, Turbocharger *turbocharger);
+        Turbocharger *getTurbocharger(TurbochargerNode *turbocharger) const;
+
+        void addSupercharger(SuperchargerNode *node, Supercharger *supercharger);
+        Supercharger *getSupercharger(SuperchargerNode *supercharger) const;
+
         void addFunction(FunctionNode *node, Function *function);
         Function *getFunction(FunctionNode *node) const;
 
         void addImpulseResponse(ImpulseResponseNode *node, ImpulseResponse *impulse);
         ImpulseResponse *getImpulseResponse(ImpulseResponseNode *node) const;
+
+        void addBovSound(BovSoundNode *node, BovSound *bovSound);
+        BovSound *getBovSound(BovSoundNode *node) const;
 
         void addCrankshaft(CrankshaftNode *node, Crankshaft *crankshaft);
         Crankshaft *getCrankshaft(CrankshaftNode *node) const;
@@ -63,8 +75,11 @@ namespace es_script {
         std::map<CylinderBankNode *, CylinderBank *> m_banks;
         std::map<ExhaustSystemNode *, ExhaustSystem *> m_exhaustSystems;
         std::map<IntakeNode *, Intake *> m_intakes;
+        std::map<TurbochargerNode *, Turbocharger *> m_turbochargers;
+        std::map<SuperchargerNode *, Supercharger *> m_superchargers;
         std::map<FunctionNode *, Function *> m_functions;
         std::map<ImpulseResponseNode *, ImpulseResponse *> m_impulseResponses;
+        std::map<BovSoundNode *, BovSound *> m_bovSounds;
         std::map<RodJournalNode *, int> m_rodJournals;
         std::map<CrankshaftNode *, Crankshaft *> m_crankshafts;
         std::map<ConnectingRodNode *, ConnectingRod *> m_rods;

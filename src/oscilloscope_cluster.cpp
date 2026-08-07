@@ -230,6 +230,11 @@ void OscilloscopeCluster::signal(UiElement *element, Event event) {
 }
 
 void OscilloscopeCluster::update(float dt) {
+    if (m_simulator == nullptr) {
+        UiElement::update(dt);
+        return;
+    }
+
     const double torque = (m_torqueUnits == "Nm")
         ? (units::convert(m_simulator->getFilteredDynoTorque(), units::Nm))
         : (units::convert(m_simulator->getFilteredDynoTorque(), units::ft_lb));
@@ -293,8 +298,8 @@ void OscilloscopeCluster::render() {
     Bounds focusBody = focusBounds;
     focusBody.m1 = focusBody.m1 - Point(0.0f, 24.0f + 15.0f);
 
-    drawFrame(focusTitle, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
-    drawFrame(focusBody, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
+    drawPanel(focusTitle);
+    drawPanel(focusBody);
 
     for (int i = 0; i < MaxLayeredScopes; ++i) {
         if (m_currentFocusScopes[i] != nullptr) {
@@ -372,7 +377,7 @@ void OscilloscopeCluster::renderScope(
     bool overlay)
 {
     if (!overlay) {
-        drawFrame(bounds, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
+        drawPanel(bounds);
     }
 
     if (osc == m_currentFocusScopes[0]) {

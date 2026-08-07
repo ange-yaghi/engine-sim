@@ -1,0 +1,60 @@
+import "engine_sim.mr"
+import "../mt/S85B50_mt.mr"
+
+units units()
+
+// Same S85B50 engine as S85B50_mt.mr (see that file for the engine's own
+// header), paired with SMG III instead of the manual -- the E60 M5's
+// launch/default gearbox, a 7-speed single-clutch automated manual (same
+// "automated_manual" TransmissionType as assets/engines/bmw/S54_amt.mr's
+// SMG II, just with a taller ratio spread). Deep torque cut mid-shift and
+// a comparatively slow Drive-mode shift time are true to SMG's reputation
+// for being jerky at low effort and much crisper in its sportiest S6/S7
+// setting -- still noticeably behind a true DCT since there's only the
+// one clutch to open, swap, and reclose.
+
+private node s85b50_smg_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 4050 * units.lb,
+            drag_coefficient: 0.31,
+            cross_sectional_area: (74 * units.inch) * (56 * units.inch),
+            diff_ratio: 3.15,
+            tire_radius: 12.9 * units.inch,
+            rolling_resistance: 500 * units.N
+        );
+}
+
+private node s85b50_smg_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 400 * units.lb_ft,
+            type: "automated_manual",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 4200 * units.rpm,
+            shift_up_rpm_wot: 7400 * units.rpm,
+            shift_down_rpm_closed_throttle: 2300 * units.rpm,
+            shift_down_rpm_wot: 4600 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 5700 * units.rpm,
+            sport_shift_up_rpm_wot: 7900 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 3300 * units.rpm,
+            sport_shift_down_rpm_wot: 5400 * units.rpm,
+            shift_time_drive: 0.65,
+            shift_time_sport: 0.22,
+            shift_torque_cut: 0.8
+        )
+        .add_gear(4.59)
+        .add_gear(2.83)
+        .add_gear(2.02)
+        .add_gear(1.54)
+        .add_gear(1.21)
+        .add_gear(1.00)
+        .add_gear(0.83);
+}
+
+public node main {
+    set_engine(S85B50_na())
+    set_vehicle(s85b50_smg_vehicle())
+    set_transmission(s85b50_smg_transmission())
+}

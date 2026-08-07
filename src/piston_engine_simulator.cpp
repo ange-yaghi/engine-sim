@@ -20,7 +20,7 @@ PistonEngineSimulator::PistonEngineSimulator() {
     m_crankshaftFrictionConstraints = nullptr;
     m_crankshaftLinks = nullptr;
 
-    m_exhaustFlowStagingBuffer = nullptr;
+    m_audioStagingBuffer = nullptr;
 
     m_derivativeFilter.m_dt = 1.0;
     m_fluidSimulationSteps = 8;
@@ -31,9 +31,8 @@ PistonEngineSimulator::~PistonEngineSimulator() {
     assert(m_cylinderWallConstraints == nullptr);
     assert(m_linkConstraints == nullptr);
     assert(m_crankshaftFrictionConstraints == nullptr);
-    assert(m_exhaustFlowStagingBuffer == nullptr);
+    assert(m_audioStagingBuffer == nullptr);
     assert(m_delayFilters == nullptr);
-    assert(m_antialiasingFilters == nullptr);
 }
 
 void PistonEngineSimulator::loadSimulation(Engine *engine, Vehicle *vehicle, Transmission *transmission) {
@@ -93,6 +92,11 @@ void PistonEngineSimulator::loadSimulation(Engine *engine, Vehicle *vehicle, Tra
 
             m_system->addConstraint(crankLink);
         }
+    }
+
+    const int superchargerCount = m_engine->getSuperchargerCount();
+    for (int i = 0; i < superchargerCount; ++i) {
+        m_system->addForceGenerator(m_engine->getSupercharger(i));
     }
 
     m_transmission->addToSystem(m_system, &m_vehicleMass, m_vehicle, m_engine);
@@ -228,7 +232,8 @@ void PistonEngineSimulator::placeAndInitialize() {
 
     m_engine->getIgnitionModule()->reset();
 
-    m_exhaustFlowStagingBuffer = new double[m_engine->getExhaustSystemCount()];
+    m_audioStagingBuffer =
+        new double[m_engine->getExhaustSystemCount() + m_engine->getIntakeCount()];
 }
 
 void PistonEngineSimulator::placeCylinder(int i) {
@@ -301,6 +306,8 @@ void PistonEngineSimulator::simulateStep_() {
 
     const int exhaustSystemCount = m_engine->getExhaustSystemCount();
     const int intakeCount = m_engine->getIntakeCount();
+    const int turbochargerCount = m_engine->getTurbochargerCount();
+    const int superchargerCount = m_engine->getSuperchargerCount();
     const double fluidTimestep = timestep / m_fluidSimulationSteps;
     for (int i = 0; i < m_fluidSimulationSteps; ++i) {
         for (int j = 0; j < exhaustSystemCount; ++j) {
@@ -310,6 +317,14 @@ void PistonEngineSimulator::simulateStep_() {
         for (int j = 0; j < intakeCount; ++j) {
             m_engine->getIntake(j)->process(fluidTimestep);
             m_engine->getIntake(j)->m_flowRate += m_engine->getIntake(j)->m_flow;
+        }
+
+        for (int j = 0; j < turbochargerCount; ++j) {
+            m_engine->getTurbocharger(j)->process(fluidTimestep);
+        }
+
+        for (int j = 0; j < superchargerCount; ++j) {
+            m_engine->getSupercharger(j)->process(fluidTimestep);
         }
 
         for (int j = 0; j < cylinderCount; ++j) {
@@ -350,7 +365,7 @@ void PistonEngineSimulator::destroy() {
     if (m_cylinderWallConstraints != nullptr) delete[] m_cylinderWallConstraints;
     if (m_linkConstraints != nullptr) delete[] m_linkConstraints;
     if (m_crankshaftFrictionConstraints != nullptr) delete[] m_crankshaftFrictionConstraints;
-    if (m_exhaustFlowStagingBuffer != nullptr) delete[] m_exhaustFlowStagingBuffer;
+    if (m_audioStagingBuffer != nullptr) delete[] m_audioStagingBuffer;
     if (m_system != nullptr) delete m_system;
     if (m_delayFilters != nullptr) delete[] m_delayFilters;
 
@@ -358,7 +373,7 @@ void PistonEngineSimulator::destroy() {
     m_cylinderWallConstraints = nullptr;
     m_linkConstraints = nullptr;
     m_crankshaftFrictionConstraints = nullptr;
-    m_exhaustFlowStagingBuffer = nullptr;
+    m_audioStagingBuffer = nullptr;
     m_system = nullptr;
 
     m_vehicle = nullptr;
@@ -369,14 +384,13 @@ void PistonEngineSimulator::destroy() {
 
 void PistonEngineSimulator::writeToSynthesizer() {
     const int exhaustSystemCount = m_engine->getExhaustSystemCount();
-    for (int i = 0; i < exhaustSystemCount; ++i) {
-        m_exhaustFlowStagingBuffer[i] = 0;
+    const int intakeCount = m_engine->getIntakeCount();
+    for (int i = 0; i < exhaustSystemCount + intakeCount; ++i) {
+        m_audioStagingBuffer[i] = 0;
     }
 
     const double attenuation = std::min(std::abs(filteredEngineSpeed()), 40.0) / 40.0;
     const double attenuation_3 = attenuation * attenuation * attenuation;
-
-    static double lastValveLift[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
     const double timestep = getTimestep();
     const int cylinderCount = m_engine->getCylinderCount();
@@ -397,17 +411,25 @@ void PistonEngineSimulator::writeToSynthesizer() {
                 + 0.1 * chamber->m_exhaustRunnerAndPrimary.dynamicPressure(1.0, 0.0)
                 + 0.1 * chamber->m_exhaustRunnerAndPrimary.dynamicPressure(-1.0, 0.0));
 
-        lastValveLift[i] = head->exhaustValveLift(piston->getCylinderIndex());
-
         const double delayedExhaustPulse =
             m_delayFilters[i].fast_f(exhaustFlow);
 
         ExhaustSystem *exhaustSystem = head->getExhaustSystem(piston->getCylinderIndex());
-        m_exhaustFlowStagingBuffer[exhaustSystem->getIndex()] +=
+        m_audioStagingBuffer[exhaustSystem->getIndex()] +=
             head->getSoundAttenuation(piston->getCylinderIndex())
             * (exhaustSystem->getAudioVolume() * delayedExhaustPulse / cylinderCount)
             * (1 / (exhaustLength * exhaustLength));
+
+        // Intake noise synthesis removed -- this used to mix a delayed/
+        // attenuated intake pressure pulse into the audio buffer here,
+        // the same model as the exhaust side above. The intake's actual
+        // gas-flow physics (Intake::process(), driven every substep in
+        // simulateStep_() above) is untouched and still feeds real
+        // combustion/torque -- only the audio contribution is gone. The
+        // intake channels in m_audioStagingBuffer are still zeroed each
+        // frame above and still get mixed into the synthesizer, but
+        // nothing ever writes a nonzero value into them now.
     }
 
-    synthesizer().writeInput(m_exhaustFlowStagingBuffer);
+    synthesizer().writeInput(m_audioStagingBuffer);
 }

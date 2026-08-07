@@ -206,7 +206,12 @@ void Simulator::initializeSynthesizer() {
     synthParams.audioBufferSize = 44100;
     synthParams.audioSampleRate = 44100;
     synthParams.inputBufferSize = 44100;
-    synthParams.inputChannelCount = m_engine->getExhaustSystemCount();
+    // Exhaust channels first (indices [0, exhaustSystemCount)), followed by
+    // one intake-noise channel per Intake object (indices
+    // [exhaustSystemCount, exhaustSystemCount + intakeCount)) -- see
+    // PistonEngineSimulator::writeToSynthesizer().
+    synthParams.inputChannelCount =
+        m_engine->getExhaustSystemCount() + m_engine->getIntakeCount();
     synthParams.inputSampleRate = static_cast<float>(getSimulationFrequency());
     m_synthesizer.initialize(synthParams);
 }

@@ -4,6 +4,9 @@ workspace/
 # Build directory
 build/
 
+# Packaged releases (see release.bat)
+dist/
+
 # clangd cache and code completion files
 .cache
 compile_commands.json

@@ -12,6 +12,11 @@ class Vehicle {
             double diffRatio;
             double tireRadius;
             double rollingResistance;
+
+            // Max brake force (N) at the wheels with the brake fully
+            // applied -- see setBrakeInput(). Defaults to 0 (no brakes) so
+            // existing scripts/tests that don't set it are unaffected.
+            double brakeConstant = 0;
         };
 
     public:
@@ -27,6 +32,14 @@ class Vehicle {
         inline double getCrossSectionArea() const { return m_crossSectionArea; }
         inline double getDiffRatio() const { return m_diffRatio; }
         inline double getTireRadius() const { return m_tireRadius; }
+        inline double getBrakeConstant() const { return m_brakeConstant; }
+
+        // Brake pedal position, 0 (off) to 1 (fully applied). Not clamped
+        // here -- same as Transmission::setClutchPressure(), the caller is
+        // expected to pass a value already in range.
+        inline void setBrakeInput(double input) { m_brakeInput = input; }
+        inline double getBrakeInput() const { return m_brakeInput; }
+
         double getSpeed() const;
         inline double getTravelledDistance() const { return m_travelledDistance; }
         inline void resetTravelledDistance() { m_travelledDistance = 0; }
@@ -42,6 +55,8 @@ class Vehicle {
         double m_tireRadius;
         double m_travelledDistance;
         double m_rollingResistance;
+        double m_brakeConstant;
+        double m_brakeInput;
 };
 
 #endif /* ATG_ENGINE_SIM_VEHICLE_H */

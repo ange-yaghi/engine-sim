@@ -1,0 +1,91 @@
+import "engine_sim.mr"
+import "../mt/S55B30_mt.mr"
+
+units units()
+bov_sound_library bov_lib()
+// Same S55B30 twin-turbo engine as S55B30_mt.mr (see that file for the
+// engine's own header) -- the real F80 M3 / F82 M4 offered a 7-speed
+// M-DCT alongside the 6-speed manual, so this reuses s55b30_na (via the
+// same twin-turbo wrapper pattern) wholesale and just swaps the gearbox
+// and vehicle weight. Ratios approximate the real GS7D36SG M-DCT's
+// closer-stacked spread with a taller final drive.
+
+private node s55b30_twin_turbo {
+    alias output __out: base.turbo_engine;
+
+    s55b30_na base()
+
+    turbocharger turbo_front(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(130.0),
+        turbine_inertia: 0.00004,
+        turbine_efficiency: 0.66,
+        compressor_efficiency: 0.72,
+        max_boost: 17.0 * units.psi,
+        spool_speed: 155000.0 * units.rpm,
+        bov_sound: bov_lib.bovaftermarket1
+    )
+    turbo_front.add_exhaust_system(base.turbo_exhaust0)
+
+    turbocharger turbo_rear(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(130.0),
+        turbine_inertia: 0.00004,
+        turbine_efficiency: 0.66,
+        compressor_efficiency: 0.72,
+        max_boost: 17.0 * units.psi,
+        spool_speed: 155000.0 * units.rpm,
+        bov_sound: bov_lib.bovaftermarket1
+    )
+    turbo_rear.add_exhaust_system(base.turbo_exhaust1)
+
+    base.turbo_engine
+        .add_turbocharger(turbo_front)
+        .add_turbocharger(turbo_rear)
+}
+
+private node s55b30_dct_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3660 * units.lb,
+            drag_coefficient: 0.35,
+            cross_sectional_area: (70 * units.inch) * (54 * units.inch),
+            diff_ratio: 3.15,
+            tire_radius: 12.5 * units.inch,
+            rolling_resistance: 460 * units.N
+        );
+}
+
+private node s55b30_dct_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 450 * units.lb_ft,
+            type: "dual_clutch",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 3200 * units.rpm,
+            shift_up_rpm_wot: 6800 * units.rpm,
+            shift_down_rpm_closed_throttle: 1500 * units.rpm,
+            shift_down_rpm_wot: 4000 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 5000 * units.rpm,
+            sport_shift_up_rpm_wot: 7400 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 2600 * units.rpm,
+            sport_shift_down_rpm_wot: 4800 * units.rpm,
+            shift_time_drive: 0.2,
+            shift_time_sport: 0.1,
+            shift_torque_cut: 0.15
+        )
+        .add_gear(4.20)
+        .add_gear(2.49)
+        .add_gear(1.67)
+        .add_gear(1.23)
+        .add_gear(1.00)
+        .add_gear(0.83)
+        .add_gear(0.67);
+}
+
+public node main {
+    set_engine(s55b30_twin_turbo())
+    set_vehicle(s55b30_dct_vehicle())
+    set_transmission(s55b30_dct_transmission())
+}

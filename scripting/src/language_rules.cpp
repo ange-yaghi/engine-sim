@@ -8,6 +8,7 @@
 #include "../include/cylinder_head_node.h"
 #include "../include/ignition_module_node.h"
 #include "../include/impulse_response_node.h"
+#include "../include/bov_sound_node.h"
 #include "../include/standard_valvetrain_node.h"
 #include "../include/vtec_valvetrain_node.h"
 #include "../include/vehicle_node.h"
@@ -59,6 +60,10 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__exhaust_system_channel", &es_script::ObjectChannel::ExhaustSystemChannel);
     registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__turbocharger_channel", &es_script::ObjectChannel::TurbochargerChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__supercharger_channel", &es_script::ObjectChannel::SuperchargerChannel);
+    registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__ignition_module_channel", &es_script::ObjectChannel::IgnitionModuleChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__ignition_wire_channel", &es_script::ObjectChannel::IgnitionWireChannel);
@@ -66,6 +71,8 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
         "__engine_sim__fuel_channel", &es_script::ObjectChannel::FuelChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__impulse_response_channel", &es_script::ObjectChannel::ImpulseResponseChannel);
+    registerBuiltinType<piranha::ChannelNode>(
+        "__engine_sim__bov_sound_channel", &es_script::ObjectChannel::BovSoundChannel);
     registerBuiltinType<piranha::ChannelNode>(
         "__engine_sim__valvetrain_channel", &es_script::ObjectChannel::ValvetrainChannel);
     registerBuiltinType<piranha::ChannelNode>(
@@ -147,6 +154,9 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<SetVehicleNode>("__engine_sim__set_vehicle");
     registerBuiltinType<SetTransmissionNode>("__engine_sim__set_transmission");
     registerBuiltinType<AddGearNode>("__engine_sim__add_gear");
+    registerBuiltinType<AddTurbochargerNode>("__engine_sim__add_turbocharger");
+    registerBuiltinType<AddTurbochargerExhaustNode>("__engine_sim__add_turbocharger_exhaust");
+    registerBuiltinType<AddSuperchargerNode>("__engine_sim__add_supercharger");
 
     // Objects
     registerBuiltinType<EngineNode>("__engine_sim__engine");
@@ -160,10 +170,13 @@ void es_script::LanguageRules::registerBuiltinNodeTypes() {
     registerBuiltinType<CamshaftNode>("__engine_sim__camshaft");
     registerBuiltinType<ExhaustSystemNode>("__engine_sim__exhaust_system");
     registerBuiltinType<IntakeNode>("__engine_sim__intake");
+    registerBuiltinType<TurbochargerNode>("__engine_sim__turbocharger");
+    registerBuiltinType<SuperchargerNode>("__engine_sim__supercharger");
     registerBuiltinType<IgnitionModuleNode>("__engine_sim__ignition_module");
     registerBuiltinType<IgnitionWireNode>("__engine_sim__ignition_wire");
     registerBuiltinType<FuelNode>("__engine_sim__fuel");
     registerBuiltinType<ImpulseResponseNode>("__engine_sim__impulse_response");
+    registerBuiltinType<BovSoundNode>("__engine_sim__bov_sound");
     registerBuiltinType<StandardValvetrainNode>("__engine_sim__standard_valvetrain");
     registerBuiltinType<VtecValvetrainNode>("__engine_sim__vtec_valvetrain");
     registerBuiltinType<VehicleNode>("__engine_sim__vehicle");

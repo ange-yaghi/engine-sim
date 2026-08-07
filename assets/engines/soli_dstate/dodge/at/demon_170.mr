@@ -1,0 +1,538 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Dodge Challenger SRT Demon 170 -- the most powerful factory V8 Chrysler
+// ever built: a further-hardened evolution of the 6.2L supercharged
+// "Hellcat" third-generation Hemi (Redeye-based bottom end, larger
+// 3.0L IHI supercharger up from Redeye's 2.7L, high-flow E85 fuel
+// system). Bore/stroke (103.9mm x 90.9mm, ~6166cc) are real Hellcat-family
+// Gen III Hemi dimensions -- same 103.9mm bore as the 392, shorter stroke
+// (90.9mm vs 94.6mm) to land at 6.2L instead of 6.4L. Factory rated
+// 1,025hp @ 6500rpm / 945 lb-ft @ 4500rpm on E85 (900hp on 91 octane pump
+// gas -- this file models the E85 tune, the headline spec). Compression
+// (approximated at 8.0:1, lower than the Redeye's 9.5:1) and 21psi peak
+// boost reflect just how much more boost this specific variant runs.
+//
+// Crank/cam/ignition geometry (rod journals, bank angle, wire-angle and
+// cam-rotation templates) is carried over unchanged from
+// scat_pack_392.mr, which itself carries over coyote_gen4_mt.mr's
+// validated cross-plane V8 template -- see that file's header comment for
+// the full derivation and why an independent from-scratch derivation for
+// this engine family produced a non-firing engine the first time around.
+// Firing order here is the same 1-3-7-5-6-2-4-8 as scat_pack_392.mr (same
+// bank0=odd/bank1=even assignment); only bore/stroke/cam/flow/boost differ
+// between the two files.
+//
+// Supercharger: modeled as a large clutchless (always-driven, real
+// Hellcat/Demon blowers have no clutch -- see supercharger's clutched
+// parameter, left at its false default) Roots unit -- see
+// supercharger.h's header comment for why Roots specifically (flow set by
+// shaft speed/displacement, strong low-RPM torque, real backflow-mixing
+// inefficiency modeled via a low compressor_efficiency) is the right
+// model for this family of blower, not a twin-screw or centrifugal one.
+// This is also this asset pack's clearest demonstration that a
+// supercharger pulls real, substantial torque off the crank: at 21psi a
+// 3.0L Roots blower genuinely consumes on the order of a couple hundred
+// crank horsepower to drive, which is exactly why an engine this large
+// needs to make so much gross power to still net 1,025hp -- see
+// Supercharger::apply()/process() in include/supercharger.h and
+// src/supercharger.cpp for how that load is actually computed and applied
+// every physics step, not just modeled as a free pressure multiplier.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+}
+
+private node demon170_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    // 110.1cc chamber -- sized for the ~8.0:1 CR against this engine's
+    // ~770.7cc swept cylinder (6166cc / 8): 770.7 / (8.0 - 1) = 110.1cc.
+    input chamber_volume: 110.1 * units.cc;
+    input intake_runner_volume: 122.0 * units.cc;
+    input intake_runner_cross_section_area: 1.85 * units.inch * 1.85 * units.inch;
+    input exhaust_runner_volume: 54.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.5 * units.inch * 1.5 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Approximated, not from a flow bench -- opened up over
+    // scat_pack_392.mr's 392 head numbers (bigger runners/ports, this is
+    // the boosted Hellcat/Demon head casting, not the NA 392's).
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 110 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 208 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 316 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 416 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 490 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 538 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 568 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 584 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 590 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 84 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 158 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 244 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 328 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 396 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 440 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 466 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 478 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 482 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+// Same bank0=odd(1,3,5,7)/bank1=even(2,4,6,8) template as
+// scat_pack_392.mr -- see that file's header comment for the derivation.
+private node demon170_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 116.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.85 * units.inch;
+
+    output intake_cam_0: _intake_cam_0; // bank0: cylinders 1,3,5,7
+    output exhaust_cam_0: _exhaust_cam_0;
+    output intake_cam_1: _intake_cam_1; // bank1: cylinders 2,4,6,8
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    function vct(1000 * units.rpm)
+    vct
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 12 * units.deg)
+        .add_sample(4500 * units.rpm, 16 * units.deg)
+        .add_sample(6500 * units.rpm, 6 * units.deg)
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile, advance_curve: vct)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile, advance_curve: vct)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile, advance_curve: vct)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile, advance_curve: vct)
+
+    label rot(90 * units.deg)
+    label rot360(360 * units.deg)
+
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 5
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 7
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 3
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 5
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 7
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot) // 4
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot) // 8
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot) // 4
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot) // 8
+}
+
+public node demon170_sc {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Dodge Challenger SRT Demon 170 [6.2L Supercharged Hemi V8, E85]",
+        starter_torque: 280 * units.lb_ft,
+        starter_speed: 400 * units.rpm,
+        redline: 6500 * units.rpm,
+        fuel: fuel(
+            // E85 -- higher latent cooling/knock resistance than pump gas,
+            // supports the much higher boost this tune runs.
+            max_turbulence_effect: 4.0,
+            max_burning_efficiency: 0.92
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.007,
+        noise: 0.55,
+        jitter: 0.16,
+        simulation_frequency: 12000
+    )
+
+    // Real Hellcat/Demon-family dimensions: 103.9mm x 90.9mm, ~6166cc.
+    label stroke(90.9 * units.mm)
+    label bore(103.9 * units.mm)
+    label rod_length(155.5 * units.mm) // real Gen III Hemi rod length (shared across the family)
+    label rod_mass(600 * units.g) // approximated, not from spec
+    label compression_height(31.5 * units.mm) // approximated, not from spec
+    label crank_mass(23 * units.kg)
+    label flywheel_mass(11 * units.kg) // heavier auto flexplate+converter vs the manual Scat Pack
+    label flywheel_radius(6.5 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // cam, chain, balancer, supercharger drive pulley, etc [estimated]
+        disk_moment_of_inertia(mass: 20 * units.kg, radius: 7.5 * units.cm)
+    )
+
+    label v_angle(90 * units.deg)
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 11.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + (v_angle / 2.0)
+    )
+
+    rod_journal rj0(angle: 0.0 * units.deg)
+    rod_journal rj1(angle: 90.0 * units.deg)
+    rod_journal rj2(angle: 270.0 * units.deg)
+    rod_journal rj3(angle: 180.0 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 540 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    // Supercharger feeds this intake directly -- Roots-type, always
+    // belt-driven (clutched left at its false default; real Hellcat/Demon
+    // blowers have no clutch, unlike a twincharger's blower stage). 21psi
+    // max_boost and a large 3.0L displacement are the real Demon 170
+    // spec; drive_ratio is approximated (not a published pulley ratio) to
+    // land in the right boost range for this engine's rev range.
+    intake intake(
+        plenum_volume: 8.0 * units.L,
+        plenum_cross_section_area: 46.0 * units.cm2,
+        intake_flow_rate: k_carb(4600.0),
+        runner_flow_rate: k_carb(650.0),
+        runner_length: 7.5 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.9985,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    supercharger blower(
+        parameters: roots_supercharger_parameters(
+            drive_ratio: 3.4,
+            displacement: 3.0 * units.L,
+            max_boost: 21.0 * units.psi,
+            compressor_discharge_volume: 4.0 * units.L
+        ),
+        intake: intake,
+        mechanical_efficiency: 0.92,
+        volumetric_efficiency: 0.86,
+        leakage_coefficient: 0.08,
+        compressor_efficiency: 0.62
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(3400.0),
+        primary_tube_length: 20.0 * units.inch,
+        primary_flow_rate: k_carb(580.0),
+        velocity_decay: 1.0,
+        volume: 34.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.85,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: v_angle / 2.0)   // odd bank
+    cylinder_bank b1(bank_params, angle: -v_angle / 2.0)  // even bank
+
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.95,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 0.97,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            demon170_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true
+            )
+        )
+
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.95,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 0.97,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            demon170_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+    engine.add_supercharger(blower)
+
+    // Approximated -- a much more aggressive cam than the NA 392's,
+    // shaped for a boosted application (shorter duration than a big NA
+    // race cam would use, since cylinder pressure is coming from boost
+    // rather than high-RPM breathing).
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 214 * units.deg,
+        gamma: 1.1,
+        lift: 13.6 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 210 * units.deg,
+        gamma: 1.1,
+        lift: 13.2 * units.mm,
+        steps: 100
+    )
+
+    demon170_camshaft camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 116.0 * units.deg,
+        exhaust_lobe_center: 116.0 * units.deg,
+        base_radius: 0.85 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 13 * units.deg)
+        .add_sample(2000 * units.rpm, 17 * units.deg)
+        .add_sample(3000 * units.rpm, 20 * units.deg)
+        .add_sample(4500 * units.rpm, 22 * units.deg)
+        .add_sample(5500 * units.rpm, 22 * units.deg)
+        .add_sample(6500 * units.rpm, 20 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 6600 * units.rpm,
+        limiter_duration: 0.04,
+        limiter_cut_fraction: 0.5,
+        limiter_max_retard: 16 * units.deg
+    )
+    // Same wire-angle template as scat_pack_392.mr -- firing order
+    // 1-3-7-5-6-2-4-8.
+    ignition_module
+        .connect_wire(wires.wire1, 0 * units.deg)
+        .connect_wire(wires.wire3, 90 * units.deg)
+        .connect_wire(wires.wire5, 270 * units.deg)
+        .connect_wire(wires.wire7, 180 * units.deg)
+        .connect_wire(wires.wire6, 360 * units.deg)
+        .connect_wire(wires.wire2, 450 * units.deg)
+        .connect_wire(wires.wire4, 540 * units.deg)
+        .connect_wire(wires.wire8, 630 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// 2023 Challenger SRT Demon 170 -- real curb weight (heavier than a
+// Hellcat/Redeye due to reinforcements), drag-radial tires, 8-speed
+// automatic-only driveline.
+private node demon170_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 4400 * units.lb,
+            drag_coefficient: 0.39,
+            cross_sectional_area: (75.7 * units.inch) * (58.1 * units.inch),
+            diff_ratio: 3.09,
+            tire_radius: 13.5 * units.inch, // 315/40R18 drag radials
+            rolling_resistance: 480 * units.N
+        );
+}
+
+// ZF8HP90 8-speed automatic -- the only gearbox Demon 170 is offered
+// with. Real production ratios (approximate).
+private node demon170_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 1100 * units.lb_ft,
+            type: "automatic",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 1800 * units.rpm,
+            shift_up_rpm_wot: 6400 * units.rpm,
+            shift_down_rpm_closed_throttle: 900 * units.rpm,
+            shift_down_rpm_wot: 3800 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 3200 * units.rpm,
+            sport_shift_up_rpm_wot: 6550 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 1800 * units.rpm,
+            sport_shift_down_rpm_wot: 4200 * units.rpm,
+            shift_time_drive: 0.35,
+            shift_time_sport: 0.18,
+            shift_torque_cut: 0.25,
+            converter_stall_torque: 650 * units.lb_ft,
+            has_lockup_clutch: true
+        )
+        .add_gear(4.71)
+        .add_gear(3.14)
+        .add_gear(2.11)
+        .add_gear(1.67)
+        .add_gear(1.29)
+        .add_gear(1.00)
+        .add_gear(0.84)
+        .add_gear(0.67);
+}
+
+public node main {
+    set_engine(demon170_sc())
+    set_vehicle(demon170_vehicle())
+    set_transmission(demon170_transmission())
+}

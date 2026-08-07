@@ -28,7 +28,7 @@ void ThrottleDisplay::update(float dt) {
 void ThrottleDisplay::render() {
     UiElement::render();
 
-    drawFrame(m_bounds, 1.0, m_app->getForegroundColor(), m_app->getBackgroundColor());
+    drawPanel(m_bounds);
 
     const Bounds bounds = m_bounds.inset(10.0f);
     const Bounds title = bounds.verticalSplit(1.0f, 0.9f);

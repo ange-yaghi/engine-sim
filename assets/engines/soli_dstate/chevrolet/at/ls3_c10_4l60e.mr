@@ -1,0 +1,581 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// GM LS3 -- the 6.2L (376ci) Gen IV small-block out of the C6 Corvette/
+// Camaro SS. Bore/stroke (4.065in x 3.622in), 10.7:1 compression, and the
+// stock cam spec (204/211 deg duration @ .050", 117.5 deg LSA) are real
+// factory numbers. Single cam-in-block driving both banks through
+// pushrods (2 valves/cyl) rather than the DOHC layout most of this repo's
+// other V8s use -- see ls3_head/ls3_camshaft below.
+//
+// Paired here with a 4L60E -- NOT the LS3's real factory box (Corvettes
+// got a 6-speed manual or the 6L80E paddle-shift auto). This is the
+// classic LS-swap-into-an-old-truck combo instead: a budget/heavy-duty
+// 4-speed slushbox behind a modern smallblock, extremely common in the
+// C10/square-body swap community precisely because the 4L60E is cheap,
+// plentiful, and unapologetically old-school. See ls3_4l60e_transmission
+// below for what actually makes it feel slushy rather than just "an
+// automatic" -- has_lockup_clutch: false is doing most of the work.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+}
+
+// Matches angethegreat/atg-video-2/07_gm_ls.mr's curve (steeper than the
+// engine-sim default's flat 1.5x -- ramps to 1.75x then 2.0x as turbulence
+// climbs), the reference LS file's actual recipe for its combustion
+// character, not just its audio-side tuning.
+private node ls3_turbulence_to_flame_speed_ratio {
+    alias output __out:
+        function(5.0)
+            .add_sample(0.0, 3.0)
+            .add_sample(5.0, 1.5 * 5.0)
+            .add_sample(10.0, 1.75 * 10.0)
+            .add_sample(15.0, 2.0 * 15.0)
+            .add_sample(20.0, 2.0 * 20.0)
+            .add_sample(25.0, 2.0 * 25.0)
+            .add_sample(30.0, 2.0 * 30.0)
+            .add_sample(35.0, 2.0 * 35.0)
+            .add_sample(40.0, 2.0 * 40.0)
+            .add_sample(45.0, 2.0 * 45.0);
+}
+
+private node ls3_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume;
+    input intake_runner_volume: 210 * units.cc;
+    input intake_runner_cross_section_area: 2.3 * units.inch * 2.3 * units.inch;
+    input exhaust_runner_volume: 75 * units.cc;
+    input exhaust_runner_cross_section_area: 1.85 * units.inch * 1.85 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // LS3's L92-style rectangle-port heads flow noticeably better than an
+    // older cathedral-port LS head -- approximated bench numbers, not a
+    // real flow sheet.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 62 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 122 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 183 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 240 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 279 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 302 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 315 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 320 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 321 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 48 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 90 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 137 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 183 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 216 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 236 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 248 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 253 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 254 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+// Single cam-in-block: one physical camshaft, four intake + four exhaust
+// lobes per bank ground onto it, driving both banks' valves through
+// pushrods/rockers rather than each bank having its own overhead cam.
+// Firing order 1-8-7-2-6-5-4-3 -- the standard GM Gen III/IV LS order,
+// unchanged from the classic small-block Chevy.
+private node ls3_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 117.5 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.75 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params (
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot(90 * units.deg)
+    label rot360(360 * units.deg)
+
+    // Bank 0 (right, cyl 1-3-5-7): pins at 0/270/90/180 deg
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot) // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot) // 5
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 7
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot) // 3
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot) // 5
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 7
+
+    // Bank 1 (left, cyl 2-4-6-8): same four pins, opposite bank
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot) // 4
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 8
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot) // 4
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 8
+}
+
+public node ls3_na {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "GM LS3 [6.2L, C10 Swap]",
+        starter_torque: 220 * units.lb_ft,
+        starter_speed: 250 * units.rpm,
+        redline: 6600 * units.rpm,
+        fuel: fuel(
+            max_burning_efficiency: 1.0,
+            turbulence_to_flame_speed_ratio: ls3_turbulence_to_flame_speed_ratio()
+        ),
+        throttle_gamma: 1.6,
+        // Matched directly to angethegreat/atg-video-2/07_gm_ls.mr (the
+        // original reference LS file) rather than this pack's other
+        // engines -- extensive A/B measurement against Viper/Coyote
+        // couldn't find a tuning combination that reproduced a real
+        // rowdy-V8 low end, so this goes back to the source instead of
+        // guessing further. simulation_frequency is deliberately NOT
+        // copied (kept at this file's own 12000) -- the rev limiter's
+        // soft-cut calibration below was verified against that value via
+        // DrivetrainLaunchTest, and there's no reason to believe these
+        // three need to move together.
+        hf_gain: 0.01,
+        noise: 1.0,
+        jitter: 0.6,
+        simulation_frequency: 12000
+    )
+
+    label bore(4.065 * units.inch)
+    label stroke(3.622 * units.inch)
+    label rod_length(6.098 * units.inch)
+    label rod_mass(560 * units.g)
+    label compression_height(1.038 * units.inch)
+    label compression_ratio(10.7)
+    label chamber_volume(
+        (circle_area(bore / 2) * stroke) / (compression_ratio - 1)
+    )
+
+    label crank_mass(27 * units.kg)
+    label flywheel_mass(11 * units.kg)
+    label flywheel_radius(7.5 * units.inch)
+
+    label crank_moment(
+        1.5 * disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // Moment from cam, pulleys, etc [estimated]
+        disk_moment_of_inertia(mass: 3 * units.kg, radius: 5.0 * units.cm)
+    )
+
+    label v_angle(90 * units.deg)
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 12.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg - (v_angle / 2.0)
+    )
+
+    // Shared crank pins at 0/270/90/180 -- standard cross-plane V8, same
+    // pattern every GM small-block (LS included) has used since 1955.
+    rod_journal rj0(angle: 0 * units.deg)
+    rod_journal rj1(angle: 270 * units.deg)
+    rod_journal rj2(angle: 90 * units.deg)
+    rod_journal rj3(angle: 180 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: (440 + 130) * units.g, // piston + pin
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    // Single 90mm throttle body feeding a fairly large truck-swap
+    // intake -- not the factory Corvette manifold's exact runner geometry.
+    intake intake(
+        plenum_volume: 6.5 * units.L,
+        plenum_cross_section_area: 65.0 * units.cm2,
+        intake_flow_rate: k_carb(1050.0),
+        runner_flow_rate: k_carb(420.0),
+        runner_length: 7.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.9945,
+        velocity_decay: 0.5,
+        // Intake noise synthesis disabled -- audio_volume 0 is this
+        // engine's own documented "silent" default (see Intake's
+        // getAudioVolume() in piston_engine_simulator.cpp); every other
+        // engine in this pack turns it on at 3.0, but for this file it
+        // was only ever competing with, not adding to, the exhaust
+        // rumble that's supposed to carry the sound. impulse_response
+        // still needs a real, loadable file even at volume 0 (it gets
+        // opened regardless), so it stays set.
+        audio_volume: 0.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1000.0),
+        primary_tube_length: 29.0 * units.inch, // long-tube swap headers
+        primary_flow_rate: k_carb(500.0),
+        velocity_decay: 1.0
+    )
+
+    // Matched to angethegreat/atg-video-2/07_gm_ls.mr: default_0 (not
+    // this pack's mild_exhaust_0 default) for the exhaust IR -- the same
+    // sample viper_v10_gen5.mr uses, and Viper is the one engine in this
+    // pack confirmed to already sound right. Also matching the
+    // reference's explicit per-bank exhaust `length` -- one bank's real
+    // path to the tailpipe is physically longer than the other's, an
+    // asymmetry no other file in this pack models (they all let `length`
+    // fall back to es_params' shared volume/collector-area default).
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 4.0,
+        length: 100 * units.inch,
+        impulse_response: ir_lib.default_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 4.0,
+        length: 172 * units.inch,
+        impulse_response: ir_lib.default_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    // Per-cylinder primary_length, matched to angethegreat/atg-video-2/
+    // 07_gm_ls.mr's exact spacing scheme rather than this pack's simpler
+    // evenly-decrementing convention -- the reference staggers each
+    // cylinder by its physical front-to-back position (spacing) plus a
+    // small per-cylinder offset, and does NOT mirror bank 1 off bank 0
+    // (each bank gets its own distinct offsets), which is closer to how
+    // a real header's runners actually differ than a clean mirrored
+    // pattern is.
+    label spacing(2 * units.inch)
+
+    cylinder_bank b0(bank_params, angle: -v_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: v_angle / 2.0)
+    b0
+        .add_cylinder( // cyl 1
+            piston: piston(piston_params, blowby: k_28inH2O(0.0015)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 3 * spacing + 2 * units.cm
+        )
+        .add_cylinder( // cyl 3
+            piston: piston(piston_params, blowby: k_28inH2O(0.0015)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.95,
+            primary_length: 2 * spacing + 1 * units.cm
+        )
+        .add_cylinder( // cyl 5
+            piston: piston(piston_params, blowby: k_28inH2O(0.0015)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 1.0,
+            primary_length: 1 * spacing + 3 * units.cm
+        )
+        .add_cylinder( // cyl 7
+            piston: piston(piston_params, blowby: k_28inH2O(0.0015)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 0.85,
+            primary_length: 0 * spacing + 5 * units.cm
+        )
+        .set_cylinder_head(
+            ls3_head(
+                chamber_volume: chamber_volume,
+                flip_display: false,
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0)
+        )
+    b1
+        .add_cylinder( // cyl 2
+            piston: piston(piston_params, blowby: k_28inH2O(0.0015)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.9,
+            primary_length: 3 * spacing + 1 * units.cm
+        )
+        .add_cylinder( // cyl 4
+            piston: piston(piston_params, blowby: k_28inH2O(0.0015)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.95,
+            primary_length: 2 * spacing + 5 * units.cm
+        )
+        .add_cylinder( // cyl 6
+            piston: piston(piston_params, blowby: k_28inH2O(0.0015)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 1.0,
+            primary_length: 1 * spacing + 7 * units.cm
+        )
+        .add_cylinder( // cyl 8
+            piston: piston(piston_params, blowby: k_28inH2O(0.0015)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 0.85,
+            primary_length: 0 * spacing + 0 * units.cm
+        )
+        .set_cylinder_head(
+            ls3_head(
+                chamber_volume: chamber_volume,
+                flip_display: true,
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1)
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    // Stock LS3 cam: 204/211 deg duration @ .050", .551"/.522" lift,
+    // 117.5 deg LSA -- real factory spec.
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 204 * units.deg,
+        gamma: 1.05,
+        lift: 551 * units.thou,
+        steps: 256
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 211 * units.deg,
+        gamma: 1.05,
+        lift: 522 * units.thou,
+        steps: 256
+    )
+
+    ls3_camshaft camshaft(
+        lobe_profile: "N/A",
+
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 117.5 * units.deg,
+        exhaust_lobe_center: 117.5 * units.deg,
+        base_radius: 0.75 * units.inch
+    )
+
+    // NOT matched to the angethegreat reference here -- its flat 40deg
+    // from 4000-8000rpm overpowers this file's rev-limiter calibration
+    // (verified via DrivetrainLaunchTest to hold ~6950-7050rpm against
+    // the tamer curve below); with the reference's curve the limiter's
+    // retard ramp can't keep up and rpm ran to ~8800 in testing before
+    // this got reverted. Kept as its own knock-limited-style taper.
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 12 * units.deg)
+        .add_sample(1000 * units.rpm, 16 * units.deg)
+        .add_sample(2000 * units.rpm, 24 * units.deg)
+        .add_sample(3000 * units.rpm, 30 * units.deg)
+        .add_sample(4000 * units.rpm, 34 * units.deg)
+        .add_sample(5000 * units.rpm, 34 * units.deg)
+        .add_sample(6000 * units.rpm, 32 * units.deg)
+        .add_sample(7000 * units.rpm, 30 * units.deg)
+
+    // limiter_max_retard, not limiter_cut_fraction, is what makes this a
+    // truck-ECU-soft limiter rather than an exotic-bark one. ANY spark
+    // cut, even a finely-rolled partial one, is still audibly a rapid
+    // string of dropped cylinders -- it just sounds like a hard cut with
+    // a shorter duration, not a real soft limiter. A real GM ECU's
+    // ordinary rev limiter pulls timing back hard instead: every cylinder
+    // still fires every cycle, just later and weaker, so the engine goes
+    // dull and runs out of steam rather than stuttering. cut_fraction is
+    // left at 0 -- even a light secondary cut was still clearly audible
+    // as percussive, so this leans entirely on retard, which needs the
+    // ignition module's overrun band to actually be tight (see
+    // kSoftLimiterOverrunBand in ignition_module.cpp) to hold RPM close
+    // to rev_limit on its own; holds ~6950-7050rpm against the real
+    // LS3's ~6800rpm limiter, verified via DrivetrainLaunchTest's
+    // sustained-WOT-in-neutral check.
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 6800 * units.rpm,
+        limiter_duration: 0.05,
+        limiter_cut_fraction: 0.0,
+        limiter_max_retard: 70 * units.deg)
+    ignition_module
+        .connect_wire(wires.wire1, (0.0 / 8.0) * cycle)
+        .connect_wire(wires.wire8, (1.0 / 8.0) * cycle)
+        .connect_wire(wires.wire7, (2.0 / 8.0) * cycle)
+        .connect_wire(wires.wire2, (3.0 / 8.0) * cycle)
+        .connect_wire(wires.wire6, (4.0 / 8.0) * cycle)
+        .connect_wire(wires.wire5, (5.0 / 8.0) * cycle)
+        .connect_wire(wires.wire4, (6.0 / 8.0) * cycle)
+        .connect_wire(wires.wire3, (7.0 / 8.0) * cycle)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// 1972-style C10 LS-swap: heavy, boxy, tall-sidewall truck tires -- not
+// remotely aerodynamic, and riding on much taller rubber than anything
+// else in this repo's garage.
+label truck_mass(4300 * units.lb)
+private node c10_vehicle {
+    alias output __out:
+        vehicle(
+            mass: truck_mass,
+            drag_coefficient: 0.55,
+            cross_sectional_area: (79 * units.inch) * (74 * units.inch),
+            diff_ratio: 3.73,
+            tire_radius: 15.5 * units.inch,
+            rolling_resistance: 0.02 * truck_mass * 9.81
+        );
+}
+
+// GM 4L60E -- real production ratio ladder. This is the whole point of
+// the file: has_lockup_clutch: false means the converter NEVER bridges
+// solid, even cruising at steady throttle, so it's always carrying a
+// little slip -- the defining "slushy" trait objects.mr's transmission
+// node documents for this flag.
+//
+// Two separate delays make up the rest of the "slushy" feel, and they're
+// NOT the same thing: shift_prepare_time_drive is the gathering pause
+// before the ratio even swaps (a real hydraulic valve body doesn't react
+// instantly to its own shift decision -- a worn/lazy 4L60E can feel like
+// a quarter to half a second here). shift_time_drive is how long the
+// shift itself then takes to fully resolve once the ratio has swapped --
+// the dip down, the flare back up as the converter momentarily unloads,
+// and the re-catch. 1.3s of that (with a heavy 0.6 shift_torque_cut) is
+// long and lazy on purpose, versus the crisp ~0.3s coyote_gen4_10at.mr or
+// bmw/at/B58B30M1.mr use for their (much newer, lockup-equipped)
+// torque-converter boxes.
+// has_sport_mode/allow_manual_shift both false: just D, the computer
+// decides everything, always -- no manual mode on a box this old.
+private node ls3_4l60e_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 550 * units.lb_ft,
+            type: "automatic",
+            has_sport_mode: false,
+            allow_manual_shift: false,
+            shift_up_rpm_closed_throttle: 2000 * units.rpm,
+            shift_up_rpm_wot: 5800 * units.rpm,
+            shift_down_rpm_closed_throttle: 1000 * units.rpm,
+            shift_down_rpm_wot: 3200 * units.rpm,
+            shift_time_drive: 1.3,
+            shift_torque_cut: 0.6,
+            shift_prepare_time_drive: 0.35,
+            converter_stall_torque: 380 * units.lb_ft,
+            converter_stall_speed: 1800 * units.rpm,
+            has_lockup_clutch: false
+        )
+        .add_gear(3.06)
+        .add_gear(1.63)
+        .add_gear(1.00)
+        .add_gear(0.70);
+}
+
+public node main {
+    set_engine(ls3_na())
+    set_vehicle(c10_vehicle())
+    set_transmission(ls3_4l60e_transmission())
+}

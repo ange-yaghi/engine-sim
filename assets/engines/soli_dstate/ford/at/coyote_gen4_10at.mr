@@ -1,0 +1,73 @@
+import "engine_sim.mr"
+import "../mt/coyote_gen4_mt.mr"
+
+units units()
+
+// Same Coyote Gen 4 5.0L as coyote_gen4_mt.mr (see that file for the
+// engine's own header/firing order/cross-plane crank notes), reusing its
+// coyote_gen4_na node, paired here with the 10R80 10-speed automatic
+// instead of the Tremec TR-3160 manual -- the real 5.0L Mustang GT has
+// offered both since 2018. The 10R80 was co-developed with GM (shared
+// with the GM 10L80/10L90 family) and is also used in the F-150, so it's
+// tuned here for a wide ratio spread (deep first gear for launch, tall
+// overdrive top gears for cruise) rather than the tighter, close-ratio
+// feel a dedicated sports-car gearbox would have.
+
+private node mustang_gt_10at_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3780 * units.lb, // automatic is slightly heavier than the manual test mule
+            drag_coefficient: 0.36,
+            cross_sectional_area: (74 * units.inch) * (55 * units.inch),
+            diff_ratio: 3.55,
+            tire_radius: 12.8 * units.inch,
+            rolling_resistance: 420 * units.N
+        );
+}
+
+// Ford 10R80: real production ratio ladder (approximate), 1st ~4.696
+// down to a very tall ~0.636 10th. has_lockup_clutch models the
+// torque-converter locking rigidly once slip settles at cruise, same as
+// bmw/S55_zf8hp.mr; shift_time_drive/sport and shift_torque_cut are tuned
+// firmer/quicker than an old-school truck automatic (see chevrolet's 454
+// truck box) since this is the performance-tuned Mustang GT calibration,
+// not the F-150's tow/haul-first mapping.
+private node coyote_gen4_10at_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 490 * units.lb_ft,
+            type: "automatic",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 2200 * units.rpm,
+            shift_up_rpm_wot: 7300 * units.rpm,
+            shift_down_rpm_closed_throttle: 1200 * units.rpm,
+            shift_down_rpm_wot: 4000 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 4200 * units.rpm,
+            sport_shift_up_rpm_wot: 7450 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 2400 * units.rpm,
+            sport_shift_down_rpm_wot: 5000 * units.rpm,
+            shift_time_drive: 0.3,
+            shift_time_sport: 0.15,
+            shift_torque_cut: 0.25,
+            converter_stall_torque: 420 * units.lb_ft,
+            converter_stall_speed: 2600 * units.rpm,
+            has_lockup_clutch: true
+        )
+        .add_gear(4.696) // 1
+        .add_gear(2.985) // 2
+        .add_gear(2.146) // 3
+        .add_gear(1.769) // 4
+        .add_gear(1.520) // 5
+        .add_gear(1.275) // 6
+        .add_gear(1.000) // 7
+        .add_gear(0.854) // 8
+        .add_gear(0.689) // 9
+        .add_gear(0.636); // 10
+}
+
+public node main {
+    set_engine(coyote_gen4_na())
+    set_vehicle(mustang_gt_10at_vehicle())
+    set_transmission(coyote_gen4_10at_transmission())
+}

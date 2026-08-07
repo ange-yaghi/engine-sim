@@ -1,0 +1,449 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+bov_sound_library bov_lib()
+label cycle(2 * 360 * units.deg)
+
+// Audi 2.5 TFSI (EA855 evo) -- the turbo inline-5 out of the 8V-facelift
+// RS3 Sportback, 400hp/354lb-ft. Firing order 1-2-4-5-3 with a 72-degree
+// crank (one throw per cylinder) gives even 144-degree firing intervals --
+// same family formula as an inline-6's 120-degree crank, just five throws
+// instead of six.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+}
+
+private node i5tfsi_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0.0 * units.deg;
+    input base_radius: 0.7 * units.inch;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Dual VVT-i style continuous cam phasing -- both intake and exhaust,
+    // real EA855evo has independent hydraulic phasers on each.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 14 * units.deg)
+        .add_sample(4500 * units.rpm, 18 * units.deg)
+        .add_sample(7000 * units.rpm, 10 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 10 * units.deg)
+        .add_sample(7000 * units.rpm, 12 * units.deg)
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    label rot(2 * (360 / 5.0) * units.deg)
+    label rot360(360 * units.deg)
+
+    // Firing order 1-2-4-5-3. Physical cylinder order 1,2,3,4,5 below,
+    // offset by each cylinder's position (0-indexed) in the firing order:
+    // cyl1->0, cyl2->1, cyl3->4, cyl4->2, cyl5->3.
+    _exhaust_cam
+        .add_lobe((rot360 - exhaust_lobe_center) + 0 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 1 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 4 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 2 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 3 * rot)
+
+    _intake_cam
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot)
+}
+
+private node i5tfsi_ignition {
+    input wires;
+    input timing_curve;
+    input rev_limit: 7100 * units.rpm;
+    alias output __out:
+        ignition_module(
+            timing_curve: timing_curve,
+            rev_limit: rev_limit,
+            limiter_duration: 0.035
+        )
+            .connect_wire(wires.wire1, (0.0 / 5.0) * cycle)
+            .connect_wire(wires.wire2, (1.0 / 5.0) * cycle)
+            .connect_wire(wires.wire4, (2.0 / 5.0) * cycle)
+            .connect_wire(wires.wire5, (3.0 / 5.0) * cycle)
+            .connect_wire(wires.wire3, (4.0 / 5.0) * cycle);
+}
+
+private node i5tfsi_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 47.0 * units.cc;
+    input intake_runner_volume: 94.0 * units.cc;
+    input intake_runner_cross_section_area: 1.4 * units.inch * 1.4 * units.inch;
+    input exhaust_runner_volume: 41.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.25 * units.inch * 1.25 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 62 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 114 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 172 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 226 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 266 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 288 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 300 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 305 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 307 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 48 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 89 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 136 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 179 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 211 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 232 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 244 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 250 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 251 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+public node i5tfsi_na {
+    output turbo_engine: engine;
+    output turbo_intake: intake;
+    output turbo_exhaust0: exhaust0;
+
+    wires wires()
+
+    engine engine(
+        name: "Audi 2.5 TFSI [RS3 Sportback, Turbo I5]",
+        starter_torque: 90 * units.lb_ft,
+        starter_speed: 400 * units.rpm,
+        redline: 7000 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.0,
+            max_burning_efficiency: 0.83
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.0044,
+        noise: 0.4,
+        jitter: 0.16,
+        simulation_frequency: 18000
+    )
+
+    // 82.5mm x 92.8mm, 2480cc, ~9.3:1 compression -- real EA855 evo
+    // dimensions.
+    label stroke(92.8 * units.mm)
+    label bore(82.5 * units.mm)
+    label rod_length(144.5 * units.mm)
+    label rod_mass(510 * units.g)
+    label compression_height(29.0 * units.mm)
+    label crank_mass(18 * units.kg)
+    label flywheel_mass(7 * units.kg)
+    label flywheel_radius(6.0 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment(
+        disk_moment_of_inertia(mass: 10 * units.kg, radius: 7.0 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 4.5 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg
+    )
+
+    // 1 2 4 5 3 -- 72-degree crank, one throw per cylinder.
+    rod_journal rj0(angle: 0 * units.deg)
+    rod_journal rj1(angle: 144 * units.deg)
+    rod_journal rj2(angle: 576 * units.deg)
+    rod_journal rj3(angle: 288 * units.deg)
+    rod_journal rj4(angle: 432 * units.deg)
+
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+
+    piston_parameters piston_params(
+        mass: 340 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 2.3 * units.L,
+        plenum_cross_section_area: 15.0 * units.cm2,
+        intake_flow_rate: k_carb(950.0),
+        runner_flow_rate: k_carb(340.0),
+        runner_length: 7.5 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.998,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    // Real EA855 evo casts the exhaust manifold into the head (integrated
+    // exhaust manifold) feeding a single turbo -- one shared runner, not a
+    // split pair.
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1050.0),
+        primary_tube_length: 17.0 * units.inch,
+        primary_flow_rate: k_carb(240.0),
+        velocity_decay: 1.0,
+        volume: 24.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.9,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 0)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.95
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.97
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.98
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 206 * units.deg,
+        gamma: 1.08,
+        lift: 9.4 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 200 * units.deg,
+        gamma: 1.08,
+        lift: 8.9 * units.mm,
+        steps: 100
+    )
+
+    i5tfsi_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        base_radius: 0.7 * units.inch
+    )
+
+    b0.set_cylinder_head(
+        i5tfsi_head(
+            intake_camshaft: camshaft.intake_cam,
+            exhaust_camshaft: camshaft.exhaust_cam
+        )
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 9 * units.deg)
+        .add_sample(1000 * units.rpm, 13 * units.deg)
+        .add_sample(2000 * units.rpm, 17 * units.deg)
+        .add_sample(3000 * units.rpm, 20 * units.deg)
+        .add_sample(4000 * units.rpm, 20 * units.deg)
+        .add_sample(5000 * units.rpm, 18 * units.deg)
+        .add_sample(6000 * units.rpm, 16 * units.deg)
+        .add_sample(7000 * units.rpm, 14 * units.deg)
+
+    engine.add_ignition_module(
+        i5tfsi_ignition(
+            wires: wires,
+            timing_curve: timing_curve,
+            rev_limit: 7100 * units.rpm
+        )
+    )
+}
+
+// Single large twin-scroll IHI turbo -- period-correct sizing for the
+// 400hp/354lb-ft RS3 tune.
+private node i5tfsi_turbo {
+    alias output __out: base.turbo_engine;
+
+    i5tfsi_na base()
+
+    turbocharger turbo(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(240.0),
+        turbine_inertia: 0.00005,
+        turbine_efficiency: 0.70,
+        compressor_efficiency: 0.76,
+        max_boost: 21.0 * units.psi,
+        spool_speed: 145000.0 * units.rpm,
+        bov_sound: bov_lib.bovaftermarket5
+    )
+    turbo.add_exhaust_system(base.turbo_exhaust0)
+
+    base.turbo_engine.add_turbocharger(turbo)
+}
+
+// 8V-facelift RS3 Sportback, quattro AWD -- treated here as a single
+// driveline (no front/rear torque split modeled).
+private node i5tfsi_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3571 * units.lb,
+            drag_coefficient: 0.33,
+            cross_sectional_area: (70 * units.inch) * (55 * units.inch),
+            diff_ratio: 3.35,
+            tire_radius: 12.5 * units.inch,
+            rolling_resistance: 440 * units.N
+        );
+}
+
+// 7-speed S tronic DL382 dual-clutch, the only gearbox the RS3 was offered
+// with. Approximate published ratios.
+private node i5tfsi_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 420 * units.lb_ft,
+            type: "dual_clutch",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 3000 * units.rpm,
+            shift_up_rpm_wot: 6800 * units.rpm,
+            shift_down_rpm_closed_throttle: 1400 * units.rpm,
+            shift_down_rpm_wot: 4200 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 4800 * units.rpm,
+            sport_shift_up_rpm_wot: 7050 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 2600 * units.rpm,
+            sport_shift_down_rpm_wot: 4600 * units.rpm,
+            shift_time_drive: 0.2,
+            shift_time_sport: 0.12,
+            shift_torque_cut: 0.15
+        )
+        .add_gear(3.462)
+        .add_gear(2.048)
+        .add_gear(1.481)
+        .add_gear(1.184)
+        .add_gear(0.968)
+        .add_gear(0.775)
+        .add_gear(0.634);
+}
+
+public node main {
+    set_engine(i5tfsi_turbo())
+    set_vehicle(i5tfsi_vehicle())
+    set_transmission(i5tfsi_transmission())
+}

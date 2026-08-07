@@ -1,0 +1,430 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Honda K24A -- 2.4L DOHC inline-4, naturally aspirated. K20A's torquier,
+// longer-stroke sibling. Based on the K24A2 variant (Acura TSX / Euro
+// Accord Type-S/CL7): higher compression and a sportier cam than the
+// low-compression K24A1/A4 CR-V/Accord variants, but still a lower,
+// broader-torque-focused redline than the K20A Type R.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+}
+
+private node k24a_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+
+    input vtec_lobe_profile;
+    input vtec_intake_lobe_profile: vtec_lobe_profile;
+    input vtec_exhaust_lobe_profile: vtec_lobe_profile;
+
+    input lobe_separation: 114 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input vtec_lobe_separation: lobe_separation;
+    input vtec_intake_lobe_center: vtec_lobe_separation;
+    input vtec_exhaust_lobe_center: vtec_lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 17.0 * units.mm;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+    output vtec_intake_cam: _vtec_intake_cam;
+    output vtec_exhaust_cam: _vtec_exhaust_cam;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // VTC -- the "i" in i-VTEC: continuous intake cam phasing, layered on
+    // top of VTEC's discrete low/high lobe switch (real K-series VTC is
+    // intake-only, so the exhaust cams don't get a curve).
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 14 * units.deg)
+        .add_sample(4000 * units.rpm, 18 * units.deg)
+        .add_sample(6900 * units.rpm, 10 * units.deg)
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _vtec_intake_cam(params, lobe_profile: vtec_intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _vtec_exhaust_cam(params, lobe_profile: vtec_exhaust_lobe_profile)
+
+    label rot360(360 * units.deg)
+
+    // Firing order 1-3-4-2
+    _exhaust_cam
+        .add_lobe(rot360 + exhaust_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 + exhaust_lobe_center - (2.0 / 4) * cycle)
+    _intake_cam
+        .add_lobe(rot360 - intake_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 - intake_lobe_center - (2.0 / 4) * cycle)
+    _vtec_exhaust_cam
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 + vtec_exhaust_lobe_center - (2.0 / 4) * cycle)
+    _vtec_intake_cam
+        .add_lobe(rot360 - vtec_intake_lobe_center - (0.0 / 4) * cycle)
+        .add_lobe(rot360 - vtec_intake_lobe_center - (3.0 / 4) * cycle)
+        .add_lobe(rot360 - vtec_intake_lobe_center - (1.0 / 4) * cycle)
+        .add_lobe(rot360 - vtec_intake_lobe_center - (2.0 / 4) * cycle)
+}
+
+private node k24a_head {
+    input camshaft_set;
+    // CR calc: swept vol/cyl @ 87x99mm bore/stroke =~ 588.6cc.
+    // (588.6 + 58.9) / 58.9 =~ 11.0:1, matching the K24A2's stock 11.0:1
+    // (the CR-V/Accord K24A1/A4 run closer to 9.6-9.7:1 -- lower-compression
+    // variants not modeled here).
+    input chamber_volume: 58.9 * units.cc;
+    input intake_runner_volume: 108.0 * units.cc;
+    input intake_runner_cross_section_area: 1.5 * units.inch * 1.5 * units.inch;
+    input exhaust_runner_volume: 46.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.3 * units.inch * 1.3 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Same K-series head family as the K20A but with slightly larger
+    // ports for the bigger bore; cam is milder than the Type R's since
+    // this variant chases midrange torque, not an 8000+ RPM top end.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 50 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 92 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 142 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 186 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 216 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 234 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 244 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 248 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 249 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 40 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 74 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 112 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 145 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 170 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 186 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 195 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 198 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 199 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        // K24A2 i-VTEC crossover is stock around 5800 RPM, close to its
+        // 6900 RPM redline -- it spends most of its range on the low cam.
+        valvetrain: vtec_valvetrain(
+            intake_camshaft: camshaft_set.intake_cam,
+            exhaust_camshaft: camshaft_set.exhaust_cam,
+            vtec_intake_camshaft: camshaft_set.vtec_intake_cam,
+            vtec_exhaust_camshaft: camshaft_set.vtec_exhaust_cam,
+            min_rpm: 5800 * units.rpm
+        ),
+        flip_display: flip_display
+    )
+}
+
+public node k24a_na {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Honda K24A2 [TSX/Accord Type-S, NA]",
+        starter_torque: 58 * units.lb_ft,
+        starter_speed: -420 * units.rpm,
+        // Real K24A2 redline/fuel cut is ~7000 RPM (TSX cluster reads
+        // redline paint from 6800).
+        redline: 6900 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 2.5,
+            max_burning_efficiency: 0.87
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.0018,
+        noise: 0.17,
+        jitter: 0.14,
+        simulation_frequency: 22000
+    )
+
+    // 87.0mm x 99.0mm, 2354cc -- real K24A2 dimensions. Rod
+    // length/compression height are typical published figures for this
+    // family; treat as close approximations rather than exact factory
+    // print specs.
+    label stroke(99.0 * units.mm)
+    label bore(87.0 * units.mm)
+    label rod_length(137.0 * units.mm)
+    label rod_mass(440 * units.g)
+    label compression_height(24.9 * units.mm)
+    label crank_mass(13 * units.kg)
+    label flywheel_mass(5.4 * units.kg)
+    label flywheel_radius(6.2 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment(
+        disk_moment_of_inertia(mass: 8 * units.kg, radius: 6.2 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 2.6 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg
+    )
+
+    rod_journal rj0(angle: 0.0 * units.deg)
+    rod_journal rj1(angle: 180.0 * units.deg)
+    rod_journal rj2(angle: 180.0 * units.deg)
+    rod_journal rj3(angle: 0.0 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 320 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 1.3 * units.L,
+        plenum_cross_section_area: 12.0 * units.cm2,
+        intake_flow_rate: k_carb(600.0),
+        runner_flow_rate: k_carb(225.0),
+        runner_length: 9.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.997,
+        velocity_decay: 0.5
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(700.0),
+        primary_tube_length: 18.0 * units.inch,
+        primary_flow_rate: k_carb(170.0),
+        velocity_decay: 1.0,
+        volume: 26.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.7,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 0.9,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 0.0 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 1.1
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.8
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.9
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    // Primary (low) rocker -- mild, low-lift lobe used below the VTEC
+    // crossover; the K24A2 spends most everyday driving down here.
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 190 * units.deg,
+        gamma: 1.05,
+        lift: 6.8 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 186 * units.deg,
+        gamma: 1.05,
+        lift: 6.4 * units.mm,
+        steps: 100
+    )
+
+    // Mid/VTEC rocker -- milder than the K20A Type R lobe, biased toward
+    // midrange torque over top-end breathing.
+    harmonic_cam_lobe vtec_intake_lobe(
+        duration_at_50_thou: 214 * units.deg,
+        gamma: 1.05,
+        lift: 9.7 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe vtec_exhaust_lobe(
+        duration_at_50_thou: 208 * units.deg,
+        gamma: 1.05,
+        lift: 9.3 * units.mm,
+        steps: 100
+    )
+
+    k24a_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        vtec_lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        vtec_intake_lobe_profile: vtec_intake_lobe,
+        vtec_exhaust_lobe_profile: vtec_exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        vtec_intake_lobe_center: 114 * units.deg,
+        vtec_exhaust_lobe_center: 114 * units.deg,
+        base_radius: 17.0 * units.mm
+    )
+
+    b0.set_cylinder_head(
+        k24a_head(camshaft_set: camshaft)
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 12 * units.deg)
+        .add_sample(1000 * units.rpm, 15 * units.deg)
+        .add_sample(2000 * units.rpm, 19 * units.deg)
+        .add_sample(3000 * units.rpm, 21 * units.deg)
+        .add_sample(4000 * units.rpm, 22 * units.deg)
+        .add_sample(5000 * units.rpm, 22 * units.deg)
+        .add_sample(6000 * units.rpm, 21 * units.deg)
+        .add_sample(7000 * units.rpm, 19 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 7000 * units.rpm,
+        limiter_duration: 0.04
+    )
+    ignition_module
+        .connect_wire(wires.wire1, (0.0 / 4.0) * cycle)
+        .connect_wire(wires.wire3, (3.0 / 4.0) * cycle)
+        .connect_wire(wires.wire4, (2.0 / 4.0) * cycle)
+        .connect_wire(wires.wire2, (1.0 / 4.0) * cycle)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// Acura TSX/Euro Accord Type-S-ish mid-size FWD sport sedan -- heavier and
+// draggier than the K20A's hatchback.
+private node k24a_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3200 * units.lb,
+            drag_coefficient: 0.29,
+            cross_sectional_area: (70 * units.inch) * (56 * units.inch),
+            diff_ratio: 4.389,
+            tire_radius: 12.3 * units.inch,
+            rolling_resistance: 330 * units.N
+        );
+}
+
+// Approximate real Acura TSX (CL9) 6-speed manual gearset.
+private node k24a_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 230 * units.lb_ft,
+            type: "manual"
+        )
+        .add_gear(3.267)
+        .add_gear(1.889)
+        .add_gear(1.286)
+        .add_gear(0.969)
+        .add_gear(0.784)
+        .add_gear(0.639);
+}
+
+public node main {
+    set_engine(k24a_na())
+    set_vehicle(k24a_vehicle())
+    set_transmission(k24a_transmission())
+}

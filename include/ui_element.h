@@ -93,6 +93,15 @@ class UiElement {
                 const ysVector &frameColor,
                 const ysVector &fillColor,
                 bool fill = true);
+
+        // Flat "card" panel -- a subtly tinted fill with a low-contrast
+        // border, used in place of drawFrame's full-brightness outline for
+        // the modern/flat visual style. Colors are derived from the theme's
+        // background/foreground so it adapts to every theme with no new
+        // theme fields.
+        void drawPanel(
+                const Bounds &bounds,
+                float thickness = 1.0f);
         void drawBox(
                 const Bounds &bounds,
                 const ysVector &fillColor);

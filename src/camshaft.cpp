@@ -11,6 +11,7 @@ Camshaft::Camshaft() {
     m_crankshaft = nullptr;
     m_lobeAngles = nullptr;
     m_lobeProfile = nullptr;
+    m_advanceCurve = nullptr;
     m_lobes = 0;
     m_advance = 0;
     m_baseRadius = 0;
@@ -27,6 +28,7 @@ void Camshaft::initialize(const Parameters &params) {
     m_lobes = params.lobes;
     m_crankshaft = params.crankshaft;
     m_lobeProfile = params.lobeProfile;
+    m_advanceCurve = params.advanceCurve;
     m_advance = params.advance;
     m_baseRadius = params.baseRadius;
 }
@@ -51,8 +53,17 @@ double Camshaft::sampleLobe(double theta) const {
 }
 
 double Camshaft::getAngle() const {
+    // VVT: same "sample a curve by current crankshaft speed magnitude"
+    // pattern as IgnitionModule::getTimingAdvance() (see
+    // ignition_module.cpp) -- fabs() because rotation direction is an
+    // arbitrary per-engine artifact, not something an rpm-keyed curve
+    // should care about.
+    const double dynamicAdvance = (m_advanceCurve != nullptr)
+        ? m_advanceCurve->sampleTriangle(std::fabs(m_crankshaft->m_body.v_theta))
+        : 0.0;
+
     const double angle =
-        std::fmod((m_crankshaft->getAngle() + m_advance) * 0.5, 2 * constants::pi);
+        std::fmod((m_crankshaft->getAngle() + m_advance + dynamicAdvance) * 0.5, 2 * constants::pi);
     return (angle < 0)
         ?  angle + 2 * constants::pi
         :  angle;

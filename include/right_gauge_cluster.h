@@ -34,6 +34,8 @@ class RightGaugeCluster : public UiElement {
         double getRedline() const;
         double getSpeed() const;
         double getManifoldPressure() const;
+        double getTurboRpm() const;
+        double getSuperchargerRpm() const;
 
     protected:
         Engine *m_engine;
@@ -46,6 +48,8 @@ class RightGaugeCluster : public UiElement {
         LabeledGauge *m_manifoldVacuumGauge;
         LabeledGauge *m_intakeCfmGauge;
         LabeledGauge *m_volumetricEffGauge;
+        LabeledGauge *m_turboRpmGauge;
+        LabeledGauge *m_superchargerRpmGauge;
         FuelCluster *m_fuelCluster;
         ThrottleDisplay *m_throttleDisplay;
         AfrCluster *m_afrCluster;

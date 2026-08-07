@@ -73,6 +73,36 @@ ExhaustSystem *es_script::EngineContext::getExhaust(ExhaustSystemNode *exhaust) 
     else return nullptr;
 }
 
+void es_script::EngineContext::addTurbocharger(
+    TurbochargerNode *node,
+    Turbocharger *turbocharger)
+{
+    m_turbochargers[node] = turbocharger;
+}
+
+Turbocharger *es_script::EngineContext::getTurbocharger(TurbochargerNode *turbocharger) const {
+    auto it = m_turbochargers.find(turbocharger);
+    if (it != m_turbochargers.end()) {
+        return it->second;
+    }
+    else return nullptr;
+}
+
+void es_script::EngineContext::addSupercharger(
+    SuperchargerNode *node,
+    Supercharger *supercharger)
+{
+    m_superchargers[node] = supercharger;
+}
+
+Supercharger *es_script::EngineContext::getSupercharger(SuperchargerNode *supercharger) const {
+    auto it = m_superchargers.find(supercharger);
+    if (it != m_superchargers.end()) {
+        return it->second;
+    }
+    else return nullptr;
+}
+
 void es_script::EngineContext::addFunction(FunctionNode *node, Function *function) {
     m_functions[node] = function;
 }
@@ -97,6 +127,23 @@ ImpulseResponse *es_script::EngineContext::getImpulseResponse(
 {
     auto it = m_impulseResponses.find(node);
     if (it != m_impulseResponses.end()) {
+        return it->second;
+    }
+    else return nullptr;
+}
+
+void es_script::EngineContext::addBovSound(
+    BovSoundNode *node,
+    BovSound *bovSound)
+{
+    m_bovSounds[node] = bovSound;
+}
+
+BovSound *es_script::EngineContext::getBovSound(
+    BovSoundNode *node) const
+{
+    auto it = m_bovSounds.find(node);
+    if (it != m_bovSounds.end()) {
         return it->second;
     }
     else return nullptr;

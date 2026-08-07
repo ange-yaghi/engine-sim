@@ -1,0 +1,511 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Ferrari F129B -- the 3.5L naturally-aspirated flat-plane-crank V8 out of
+// the 1994-1999 F355. NOT turbocharged; "F1" below refers only to the
+// paddle-shift automated-manual gearbox Ferrari introduced on the F355 in
+// 1997 (badged "F355 F1"), not to Formula 1 engine regulations. The real
+// head is a 5-valve-per-cylinder (3 intake / 2 exhaust) design -- this sim
+// doesn't model individual valve count, so that's represented indirectly
+// through generous port flow numbers and the high (for a 1990s NA road
+// engine) redline the extra valve area made possible, rather than as an
+// explicit geometry input.
+//
+// Bore/stroke (85.0mm x 77.0mm, 3496cc) and the ~11.0:1 compression ratio
+// are real F129B specs. Rod length, piston/rod/crank masses, port flow
+// figures, and cam timing are reasoned approximations in the style of this
+// repo's other reference engines (see angethegreat/atg-video-2/
+// 08_ferrari_f136_v8.mr, which this file's crank/bank layout is modeled
+// on) -- exact factory values for those weren't available to verify here.
+// Gear ratios for the real F355 F1 six-speed are likewise approximate.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+}
+
+private node f129_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 43.7 * units.cc; // sized for ~11.0:1 CR against a 437cc swept cylinder
+    input intake_runner_volume: 118.0 * units.cc;
+    input intake_runner_cross_section_area: 1.9 * units.inch * 1.9 * units.inch;
+    input exhaust_runner_volume: 42.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.5 * units.inch * 1.5 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // 5-valve head: more total curtain area than a 4-valve head of similar
+    // size, reflected here as flow that keeps climbing further into the
+    // lift curve before tapering off.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 62 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 112 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 168 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 222 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 262 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 288 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 302 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 308 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 310 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 44 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 84 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 130 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 172 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 204 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 226 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 238 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 243 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 244 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+private node f129_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.85 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Continuously variable intake and exhaust cam timing, same on both
+    // banks.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 12 * units.deg)
+        .add_sample(5000 * units.rpm, 16 * units.deg)
+        .add_sample(8500 * units.rpm, 8 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 10 * units.deg)
+        .add_sample(8500 * units.rpm, 12 * units.deg)
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    label rot(90 * units.deg)
+    label rot360(360 * units.deg)
+
+    // Flat-plane firing order 1 5 3 7 4 8 2 6 -- left bank (0) carries
+    // cylinders 1-4, right bank (1) carries 5-8, same convention as
+    // 08_ferrari_f136_v8.mr.
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 4
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 3
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 4
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 5
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 7
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot) // 8
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 5
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 7
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot) // 8
+}
+
+public node f129 {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Ferrari F129B [F355, F1 automated-manual test mule]",
+        starter_torque: 140 * units.lb_ft,
+        starter_speed: 300 * units.rpm,
+        redline: 8500 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.6,
+            max_burning_efficiency: 0.92
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.008,
+        noise: 0.6,
+        jitter: 0.13,
+        simulation_frequency: 16000
+    )
+
+    // 85.0mm x 77.0mm, 3496cc -- real F129B dimensions.
+    label stroke(77.0 * units.mm)
+    label bore(85.0 * units.mm)
+    label rod_length(127.0 * units.mm) // approximate -- rod ratio ~1.65, not a verified factory figure
+    label rod_mass(430 * units.g)
+    label compression_height(24.0 * units.mm) // approximate
+    label crank_mass(20 * units.kg)
+    label flywheel_mass(7 * units.kg) // single-plate F1 clutch/flywheel, lighter than a street manual's
+    label flywheel_radius(5.0 * units.inch)
+
+    label crank_moment(
+        1.5 * disk_moment_of_inertia(mass: crank_mass, radius: stroke)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // Moment from cams, pulleys, etc [estimated]
+        disk_moment_of_inertia(mass: 1 * units.kg, radius: 1.0 * units.cm)
+    )
+
+    label v_angle(90 * units.deg)
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 12.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + (v_angle / 2.0)
+    )
+
+    // Flat-plane crank: journals 180 degrees apart, shared between the two
+    // banks at matching crank angles, same as 08_ferrari_f136_v8.mr.
+    // 1 5 3 7 4 8 2 6
+    rod_journal rj0(angle: 0 * units.deg)
+    rod_journal rj1(angle: 180 * units.deg)
+    rod_journal rj2(angle: 180 * units.deg)
+    rod_journal rj3(angle: 0 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 320 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    // F355 ran 8 individual throttle bodies -- small shared plenum, short
+    // runners.
+    intake intake(
+        plenum_volume: 0.6 * units.L,
+        plenum_cross_section_area: 14.0 * units.cm2,
+        intake_flow_rate: k_carb(750.0),
+        runner_flow_rate: k_carb(160.0),
+        runner_length: 5.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.997,
+        velocity_decay: 0.45,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(950.0),
+        primary_tube_length: 24.0 * units.inch,
+        primary_flow_rate: k_carb(200.0),
+        velocity_decay: 0.6,
+        volume: 20.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.9,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: v_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: -v_angle / 2.0)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.8,
+            primary_length: 1 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 1.1,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 1.0,
+            primary_length: 5 * units.cm
+        )
+        .set_cylinder_head(
+            f129_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true,
+                flow_attenuation: 1.0)
+        )
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 1.0,
+            primary_length: 1 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.8,
+            primary_length: 5 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 0.9,
+            primary_length: 7 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.0)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 0.7,
+            primary_length: 0 * units.cm
+        )
+        .set_cylinder_head(
+            f129_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1,
+                flow_attenuation: 1.0)
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 232 * units.deg,
+        gamma: 1.0,
+        lift: 11.2 * units.mm,
+        steps: 150
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 228 * units.deg,
+        gamma: 1.0,
+        lift: 10.8 * units.mm,
+        steps: 150
+    )
+
+    f129_camshaft camshaft(
+        lobe_profile: "N/A",
+
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        base_radius: 0.85 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 12 * units.deg)
+        .add_sample(1000 * units.rpm, 12 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 28 * units.deg)
+        .add_sample(4000 * units.rpm, 34 * units.deg)
+        .add_sample(5000 * units.rpm, 36 * units.deg)
+        .add_sample(6000 * units.rpm, 36 * units.deg)
+        .add_sample(7000 * units.rpm, 36 * units.deg)
+        .add_sample(8000 * units.rpm, 34 * units.deg)
+
+    // Bosch Motronic's progressive cut ramps up the fraction of cylinders
+    // suppressed rather than killing all of them at once -- cut_fraction
+    // starts partial and the ignition module's own overrun-band ramp
+    // hardens it toward a full cut only if rpm keeps climbing past the
+    // limit.
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 8700 * units.rpm,
+        limiter_duration: 0.03,
+        limiter_cut_fraction: 0.4)
+    ignition_module
+            .connect_wire(wires.wire1,  0 * 90 * units.deg)
+            .connect_wire(wires.wire5,  1 * 90 * units.deg)
+            .connect_wire(wires.wire3,  2 * 90 * units.deg)
+            .connect_wire(wires.wire7,  3 * 90 * units.deg)
+            .connect_wire(wires.wire4,  4 * 90 * units.deg)
+            .connect_wire(wires.wire8,  5 * 90 * units.deg)
+            .connect_wire(wires.wire2,  6 * 90 * units.deg)
+            .connect_wire(wires.wire6,  7 * 90 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// RWD, mid-engine F355 -- compact and notably lighter than the BMWs/
+// American V8s elsewhere in this batch. Mid-engine weight distribution
+// itself isn't a separate input to this sim's vehicle node.
+private node f355_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 1350 * units.kg,
+            drag_coefficient: 0.32,
+            cross_sectional_area: (68 * units.inch) * (48 * units.inch),
+            diff_ratio: 4.10,
+            tire_radius: 12.0 * units.inch,
+            rolling_resistance: 220 * units.N
+        );
+}
+
+// F355 F1 test mule: Ferrari's first electrohydraulic single-clutch
+// automated manual (1997 "F355 F1"), a robotized version of the same
+// 6-speed used with the manual pedal. It's a paddle-only sequential box --
+// there's no separate "D" driving mode, so in practice it lives in its own
+// ladder position; has_sport_mode/allow_manual_shift are set the same way
+// S54_amt.mr sets them for BMW's SMG (also single-clutch) so the Sport map
+// and direct Up/Down tap-shifting are both available. shift_time_drive/
+// sport are slower than S54_amt.mr's SMG figures and much slower than
+// S55_dct.mr's DCT -- period reviews of the early F1 gearbox describe it as
+// noticeably harsher and clunkier than BMW's system, let alone a modern
+// dual-clutch box, and shift_torque_cut is correspondingly deep.
+private node f355_f1_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 320 * units.lb_ft,
+            type: "automated_manual",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 4500 * units.rpm,
+            shift_up_rpm_wot: 8200 * units.rpm,
+            shift_down_rpm_closed_throttle: 2500 * units.rpm,
+            shift_down_rpm_wot: 5000 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 6000 * units.rpm,
+            sport_shift_up_rpm_wot: 8400 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 3500 * units.rpm,
+            sport_shift_down_rpm_wot: 5800 * units.rpm,
+            shift_time_drive: 0.75,
+            shift_time_sport: 0.45,
+            shift_torque_cut: 0.85
+        )
+        // Approximate F355 6-speed ratios -- not verified factory figures.
+        .add_gear(3.583)
+        .add_gear(2.353)
+        .add_gear(1.714)
+        .add_gear(1.310)
+        .add_gear(1.033)
+        .add_gear(0.824);
+}
+
+public node main {
+    set_engine(f129())
+    set_vehicle(f355_vehicle())
+    set_transmission(f355_f1_transmission())
+}

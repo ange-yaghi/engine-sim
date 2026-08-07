@@ -36,6 +36,11 @@ namespace es_script {
         Output execute();
         void destroy();
 
+        // Empty unless execute() returned a false-y result (i.e. Output's
+        // engine/vehicle/transmission may be null despite compile()
+        // succeeding) -- e.g. a node's _evaluate() called throwError().
+        std::string getRuntimeError() const { return m_program.getRuntimeError(); }
+
     private:
         void printError(const piranha::CompilationError *err, std::ofstream &file) const;
 

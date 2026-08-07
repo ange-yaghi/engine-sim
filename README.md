@@ -18,7 +18,9 @@ Check out [our Frequently Asked Questions](https://github.com/ange-yaghi/engine-
 
 ## How do I use it?
 
-The UI is extremely minimalistic and there are only a few controls used to interact with the engine:
+The main screen shows the engine plus its core readouts (RPM, speed, manifold pressure, AFR, fuel, etc). The `DYNO` toolbar button opens a dedicated dyno-sheet-style view (torque/power vs RPM, with peak markers), and the `SETTINGS` button opens a keybind remapping menu -- click `REBIND` next to any action, then press the new key. Custom bindings are saved to `keybinds.json` next to the executable and persist across restarts; `RESET TO DEFAULTS` restores the table below. The full original dashboard (performance/audio-mix/oscilloscope gauges) is still available -- press `Tab` to cycle from the main screen to the "Telemetry" screen and a borderless cinematic view.
+
+Default keybinds (all remappable via the in-app Settings menu):
 
 | Key/Input | Action |
 | :---: | :---: |
@@ -30,6 +32,7 @@ The UI is extremely minimalistic and there are only a few controls used to inter
 | F | Enter fullscreen mode |
 | I | Display dyno stats in the information panel |
 | Shift | Clutch (hold spacebar at the same time to slowly engage/disengage) |
+| L | Brake |
 | Up Arrow | Up Gear | 
 | Down Arrow | Down Gear | 
 | Z + Scroll | Volume |

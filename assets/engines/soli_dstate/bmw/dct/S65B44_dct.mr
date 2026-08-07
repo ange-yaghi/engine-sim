@@ -1,0 +1,59 @@
+import "engine_sim.mr"
+import "../mt/S65B44_mt.mr"
+
+units units()
+
+// Same S65B44 engine as S65B44_mt.mr (see that file for the engine's own
+// header) -- the E9x M3 offered a 7-speed M-DCT alongside the 6-speed
+// manual starting with the 2011 model year, so this reuses S65B44_na
+// wholesale and just swaps the gearbox and vehicle weight (M-DCT cars ran
+// a little heavier than the manual). Ratios below are an approximation of
+// the real GS7D36SG 7-speed M-DCT's spread -- closer-stacked than the
+// 6-speed manual, with a much taller final drive to compensate for the
+// extra ratio.
+
+private node s65b44_dct_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3760 * units.lb,
+            drag_coefficient: 0.35,
+            cross_sectional_area: (70 * units.inch) * (54 * units.inch),
+            diff_ratio: 3.15,
+            tire_radius: 12.6 * units.inch,
+            rolling_resistance: 460 * units.N
+        );
+}
+
+private node s65b44_dct_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 320 * units.lb_ft,
+            type: "dual_clutch",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 3400 * units.rpm,
+            shift_up_rpm_wot: 7600 * units.rpm,
+            shift_down_rpm_closed_throttle: 1600 * units.rpm,
+            shift_down_rpm_wot: 4200 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 5200 * units.rpm,
+            sport_shift_up_rpm_wot: 8100 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 2800 * units.rpm,
+            sport_shift_down_rpm_wot: 5000 * units.rpm,
+            shift_time_drive: 0.2,
+            shift_time_sport: 0.1,
+            shift_torque_cut: 0.15
+        )
+        .add_gear(4.94)
+        .add_gear(3.06)
+        .add_gear(2.14)
+        .add_gear(1.62)
+        .add_gear(1.29)
+        .add_gear(1.00)
+        .add_gear(0.82);
+}
+
+public node main {
+    set_engine(S65B44_na())
+    set_vehicle(s65b44_dct_vehicle())
+    set_transmission(s65b44_dct_transmission())
+}

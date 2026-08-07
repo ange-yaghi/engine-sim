@@ -65,7 +65,12 @@ class PistonEngineSimulator : public Simulator {
         Transmission *m_transmission;
         Vehicle *m_vehicle;
 
-        double *m_exhaustFlowStagingBuffer;
+        // Combined synthesizer input staging buffer -- exhaust channels at
+        // indices [0, exhaustSystemCount), intake-noise channels at
+        // [exhaustSystemCount, exhaustSystemCount + intakeCount). Written
+        // in one shot per frame since Synthesizer::writeInput() advances
+        // every channel's ring buffer together.
+        double *m_audioStagingBuffer;
 
         int m_fluidSimulationSteps;
 };

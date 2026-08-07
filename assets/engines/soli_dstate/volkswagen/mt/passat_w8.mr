@@ -1,0 +1,577 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Volkswagen 4.0L W8 (Passat W8 / Phaeton W8, 2001-2004). Bore/stroke
+// 84.0mm x 90.2mm give 499.9cc/cyl, 3999cc total (matches the real 4.0L).
+// Compression 10.8:1 is the commonly cited factory figure. Real-world
+// output ~275hp (202kW) @ 6000rpm, ~273lb-ft (370Nm) @ 2750rpm.
+// Redline/fuel-cut approximated at 6500/6800rpm.
+//
+// Architecture -- the W8 is built as two narrow-angle VR4 "halves" (each
+// half a 4-cylinder version of the VR6, 2 banks of 2 cylinders at a narrow
+// 15deg angle sharing one head) joined together at a wider angle so the
+// whole engine is 4 banks of 2 cylinders (8 total), all under one shared
+// crankcase/crankshaft. This file approximates that wider "W" angle
+// (between the two VR4 halves' own centerlines) as 72deg -- the general
+// two-narrow-halves architecture is well documented, but this specific
+// angle breakdown is this file's best-effort reconstruction, not a
+// confirmed factory figure (same confidence caveat as VR6.mr's approximated
+// rod length/compression height, just applied to the bank layout itself
+// here since this geometry is unusually obscure).
+//
+// Same reasoning as vr6.mr applies to the crank: none of the 4 banks share
+// a rod_journal with any other bank. Every cylinder gets its own
+// independent journal. (Separately, this simulation's kinematics are
+// purely angular/2D -- it has no notion of a cylinder's position along the
+// crankshaft's length at all, so "independent journal" here just means
+// "its own angle number," not a claim about how many physical crank pins
+// the real forged part has -- a detail this file isn't confident enough
+// about to model literally either way.)
+//
+// Firing order -- derived from crank geometry (this repo's established
+// TDC = P - tdc + bankAngle + 90deg method -- verified against this
+// sim's actual crankshaft.cpp/connecting_rod.cpp/ignition_module.cpp
+// source, and cross-checked against 2ur_gse.mr's already-working V8
+// derivation), not copied from a real-world citation, per this repo's
+// project notes on that failure mode. Reference bank bankA1 (-43.5deg,
+// cylinders 1&3) sets tdc = 90 + (-43.5) = 46.5deg. Cylinder-to-bank
+// convention: cylinders 1-2-3-4 alternate banks A1/A2 (the "left" VR4
+// half), 5-6-7-8 alternate banks B1/B2 (the "right" VR4 half) -- same
+// alternating-bank numbering vr6.mr uses. Chosen firing order (smooth,
+// alternates VR4 half every step and alternates bank within each half):
+// 1-5-2-6-3-7-4-8, evenly spaced 90deg apart (720/8). Solving
+// rj.angle = P - tdc + bankAngle + 90 per cylinder:
+//   cyl1 (bankA1 -43.5, P=0):   0 - 46.5 - 43.5 + 90 = 0
+//   cyl2 (bankA2 -28.5, P=180): 180 - 46.5 - 28.5 + 90 = 195
+//   cyl3 (bankA1 -43.5, P=360): 360 - 46.5 - 43.5 + 90 = 360
+//   cyl4 (bankA2 -28.5, P=540): 540 - 46.5 - 28.5 + 90 = 555
+//   cyl5 (bankB1 +28.5, P=90):  90 - 46.5 + 28.5 + 90 = 162
+//   cyl6 (bankB2 +43.5, P=270): 270 - 46.5 + 43.5 + 90 = 357
+//   cyl7 (bankB1 +28.5, P=450): 450 - 46.5 + 28.5 + 90 = 522
+//   cyl8 (bankB2 +43.5, P=630): 630 - 46.5 + 43.5 + 90 = 717
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+}
+
+private node w8_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume;
+    input intake_runner_volume: 80.0 * units.cc;
+    input intake_runner_cross_section_area: 1.1 * units.inch * 1.1 * units.inch;
+    input exhaust_runner_volume: 32.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.0 * units.inch * 1.0 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Approximated flow bench numbers (not a real flow sheet) -- a milder,
+    // more torque-oriented touring tune than vr6.mr's sportier head, scaled
+    // to land this engine's dyno peak in the real ~275hp/273lb-ft ballpark.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 34 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 62 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 93 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 122 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 144 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 155 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 161 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 164 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 165 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 25 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 47 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 71 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 93 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 110 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 121 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 126 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 129 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 130 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+private node w8_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 116.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0.0 * units.deg;
+    input base_radius: 0.7 * units.inch;
+
+    // One intake/exhaust cam pair per bank -- 4 banks, no sharing (each
+    // bank has its own 2 cylinders and its own pair of cams).
+    output intake_cam_a1: _intake_cam_a1;
+    output exhaust_cam_a1: _exhaust_cam_a1;
+    output intake_cam_a2: _intake_cam_a2;
+    output exhaust_cam_a2: _exhaust_cam_a2;
+    output intake_cam_b1: _intake_cam_b1;
+    output exhaust_cam_b1: _exhaust_cam_b1;
+    output intake_cam_b2: _intake_cam_b2;
+    output exhaust_cam_b2: _exhaust_cam_b2;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Real W8 has continuous intake-cam VVT (no exhaust VVT), same as
+    // vr6.mr, shared across all 4 banks.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 8 * units.deg)
+        .add_sample(4500 * units.rpm, 12 * units.deg)
+        .add_sample(6500 * units.rpm, 6 * units.deg)
+
+    camshaft _intake_cam_a1(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_a1(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _intake_cam_a2(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_a2(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _intake_cam_b1(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_b1(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _intake_cam_b2(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_b2(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot(90.0 * units.deg) // firing interval, 720 / 8
+    label rot360(360 * units.deg)
+
+    // Cam lobe placement mirrors the ignition wiring below exactly: each
+    // cylinder's rot-multiplier is its position (0-7) in the derived firing
+    // order 1-5-2-6-3-7-4-8 (see file header). Lobes are added in each
+    // bank's own physical front-to-back cylinder order, not firing order.
+    //
+    // bankA1 (cyl 1, 3): positions 0, 4
+    _exhaust_cam_a1
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 3
+    _intake_cam_a1
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 3
+
+    // bankA2 (cyl 2, 4): positions 2, 6
+    _exhaust_cam_a2
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot) // 4
+    _intake_cam_a2
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot) // 4
+
+    // bankB1 (cyl 5, 7): positions 1, 5
+    _exhaust_cam_b1
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 5
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot) // 7
+    _intake_cam_b1
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 5
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot) // 7
+
+    // bankB2 (cyl 6, 8): positions 3, 7
+    _exhaust_cam_b2
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot) // 8
+    _intake_cam_b2
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot) // 8
+}
+
+public node passat_w8 {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Volkswagen 4.0L W8 [Passat W8/Phaeton W8]",
+        starter_torque: 160 * units.lb_ft,
+        starter_speed: 280 * units.rpm,
+        redline: 6500 * units.rpm,
+        throttle_gamma: 2.0,
+        // Smoother, more refined/muted texture than vr6.mr -- the W8 was
+        // marketed as a smooth luxury-touring engine, not a raspy sport
+        // one.
+        hf_gain: 0.004,
+        noise: 0.36,
+        jitter: 0.14,
+        simulation_frequency: 12000
+    )
+
+    // 84.0mm x 90.2mm -> 499.9cc/cyl, 3999cc total (~4.0L). 10.8:1
+    // compression is the commonly cited factory figure.
+    label stroke(90.2 * units.mm)
+    label bore(84.0 * units.mm)
+    label rod_length(150.0 * units.mm) // approximated, not from spec
+    label rod_mass(470 * units.g) // approximated, not from spec
+    label compression_height(27.0 * units.mm) // approximated, not from spec
+    label compression_ratio(10.8)
+    label chamber_volume(
+        (circle_area(bore / 2) * stroke) / (compression_ratio - 1)
+    )
+
+    label crank_mass(17 * units.kg) // approximated -- 8-throw crank
+    label flywheel_mass(9 * units.kg) // dual-mass flywheel, manual
+    label flywheel_radius(5.5 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // cams, chains, VVT actuator, etc [estimated]
+        disk_moment_of_inertia(mass: 14 * units.kg, radius: 7.0 * units.cm)
+    )
+
+    label narrow_angle(15 * units.deg) // VR4-half internal angle (matches VR6)
+    label w_angle(72 * units.deg) // approximated angle between the two VR4 halves
+
+    label bank_a1_angle(-(w_angle / 2.0) - (narrow_angle / 2.0)) // -43.5deg
+    label bank_a2_angle(-(w_angle / 2.0) + (narrow_angle / 2.0)) // -28.5deg
+    label bank_b1_angle((w_angle / 2.0) - (narrow_angle / 2.0))  // +28.5deg
+    label bank_b2_angle((w_angle / 2.0) + (narrow_angle / 2.0))  // +43.5deg
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 8.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + bank_a1_angle
+    )
+
+    // Eight independent rod journals -- no sharing across (or within) any
+    // bank. See file header for the geometry/derivation.
+    rod_journal rj0(angle: 0 * units.deg)   // cyl 1
+    rod_journal rj1(angle: 195 * units.deg) // cyl 2
+    rod_journal rj2(angle: 360 * units.deg) // cyl 3
+    rod_journal rj3(angle: 555 * units.deg) // cyl 4
+    rod_journal rj4(angle: 162 * units.deg) // cyl 5
+    rod_journal rj5(angle: 357 * units.deg) // cyl 6
+    rod_journal rj6(angle: 522 * units.deg) // cyl 7
+    rod_journal rj7(angle: 717 * units.deg) // cyl 8
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+        .add_rod_journal(rj5)
+        .add_rod_journal(rj6)
+        .add_rod_journal(rj7)
+
+    piston_parameters piston_params(
+        mass: 370 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    // Single shared plenum feeding all 4 banks -- real W8 has one central
+    // intake manifold, same topology as vr6.mr/this repo's other V-engines.
+    intake intake(
+        plenum_volume: 4.5 * units.L,
+        plenum_cross_section_area: 24.0 * units.cm2,
+        intake_flow_rate: k_carb(750.0),
+        runner_flow_rate: k_carb(160.0),
+        runner_length: 5.5 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.995,
+        velocity_decay: 0.5,
+        audio_volume: 2.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(700.0),
+        primary_tube_length: 20.0 * units.inch,
+        primary_flow_rate: k_carb(160.0),
+        velocity_decay: 1.0,
+        volume: 24.0 * units.L
+    )
+
+    // Two exhaust systems -- one per VR4 half (a contiguous front/rear
+    // split, cylinders 1-4 and 5-8), same convention this repo's twin-bank
+    // sixes/eights use.
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 1.0,
+        impulse_response: ir_lib.mild_exhaust_0_reverb
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 1.0,
+        impulse_response: ir_lib.mild_exhaust_0_reverb
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank bankA1(bank_params, angle: bank_a1_angle)
+    cylinder_bank bankA2(bank_params, angle: bank_a2_angle)
+    cylinder_bank bankB1(bank_params, angle: bank_b1_angle)
+    cylinder_bank bankB2(bank_params, angle: bank_b2_angle)
+
+    bankA1
+        .add_cylinder( // cyl 1 (front)
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder( // cyl 3 (rear)
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 1.0,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            w8_head(
+                chamber_volume: chamber_volume,
+                flip_display: false,
+                intake_camshaft: camshaft.intake_cam_a1,
+                exhaust_camshaft: camshaft.exhaust_cam_a1
+            )
+        )
+    bankA2
+        .add_cylinder( // cyl 2 (front)
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.9,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder( // cyl 4 (rear)
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 1.0,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            w8_head(
+                chamber_volume: chamber_volume,
+                flip_display: true,
+                intake_camshaft: camshaft.intake_cam_a2,
+                exhaust_camshaft: camshaft.exhaust_cam_a2
+            )
+        )
+    bankB1
+        .add_cylinder( // cyl 5 (front)
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.9,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder( // cyl 7 (rear)
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj6,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 1.0,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            w8_head(
+                chamber_volume: chamber_volume,
+                flip_display: false,
+                intake_camshaft: camshaft.intake_cam_b1,
+                exhaust_camshaft: camshaft.exhaust_cam_b1
+            )
+        )
+    bankB2
+        .add_cylinder( // cyl 6 (front)
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj5,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.9,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder( // cyl 8 (rear)
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj7,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 1.0,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            w8_head(
+                chamber_volume: chamber_volume,
+                flip_display: true,
+                intake_camshaft: camshaft.intake_cam_b2,
+                exhaust_camshaft: camshaft.exhaust_cam_b2
+            )
+        )
+
+    engine
+        .add_cylinder_bank(bankA1)
+        .add_cylinder_bank(bankA2)
+        .add_cylinder_bank(bankB1)
+        .add_cylinder_bank(bankB2)
+
+    engine.add_crankshaft(c0)
+
+    // Approximated cam spec (not from a published cam card) -- modest
+    // duration/lift, a torque-oriented touring tune.
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 208 * units.deg,
+        gamma: 1.05,
+        lift: 9.0 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 212 * units.deg,
+        gamma: 1.05,
+        lift: 8.5 * units.mm,
+        steps: 100
+    )
+
+    w8_camshaft camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 116 * units.deg,
+        exhaust_lobe_center: 116 * units.deg,
+        base_radius: 0.7 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 15 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 25 * units.deg)
+        .add_sample(4000 * units.rpm, 28 * units.deg)
+        .add_sample(5000 * units.rpm, 29 * units.deg)
+        .add_sample(6000 * units.rpm, 29 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 6800 * units.rpm,
+        limiter_duration: 0.08
+    )
+    // Firing order 1-5-2-6-3-7-4-8, derived in the file header.
+    ignition_module
+        .connect_wire(wires.wire1, (0.0 / 8.0) * cycle)
+        .connect_wire(wires.wire5, (1.0 / 8.0) * cycle)
+        .connect_wire(wires.wire2, (2.0 / 8.0) * cycle)
+        .connect_wire(wires.wire6, (3.0 / 8.0) * cycle)
+        .connect_wire(wires.wire3, (4.0 / 8.0) * cycle)
+        .connect_wire(wires.wire7, (5.0 / 8.0) * cycle)
+        .connect_wire(wires.wire4, (6.0 / 8.0) * cycle)
+        .connect_wire(wires.wire8, (7.0 / 8.0) * cycle)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// Passat W8 4motion (AWD standard on the W8) -- treated here as a single
+// driveline (no front/rear torque split modeled), same approach as
+// vr6.mr/soli_dstate/audi/rs3_2_5_tfsi.mr.
+private node w8_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3950 * units.lb,
+            drag_coefficient: 0.28,
+            cross_sectional_area: (71 * units.inch) * (57 * units.inch),
+            diff_ratio: 3.5, // approximate -- combined final drive, AWD simplification
+            tire_radius: 12.3 * units.inch,
+            rolling_resistance: 480 * units.N
+        );
+}
+
+// 0B1 6-speed manual, the W8's other gearbox option (alongside the 5-speed
+// Tiptronic automatic, not modeled in this file). Approximated published
+// ratios.
+private node w8_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 320 * units.lb_ft
+        )
+        .add_gear(3.500) // 1
+        .add_gear(2.130) // 2
+        .add_gear(1.480) // 3
+        .add_gear(1.140) // 4
+        .add_gear(0.920) // 5
+        .add_gear(0.750); // 6
+}
+
+public node main {
+    set_engine(passat_w8())
+    set_vehicle(w8_vehicle())
+    set_transmission(w8_transmission())
+}

@@ -24,10 +24,13 @@ public node cylinder_head_channel => __engine_sim__cylinder_head_channel { /* vo
 public node camshaft_channel => __engine_sim__camshaft_channel { /* void */ }
 public node intake_channel => __engine_sim__intake_channel { /* void */ }
 public node exhaust_system_channel => __engine_sim__exhaust_system_channel { /* void */ }
+public node turbocharger_channel => __engine_sim__turbocharger_channel { /* void */ }
+public node supercharger_channel => __engine_sim__supercharger_channel { /* void */ }
 public node ignition_module_channel => __engine_sim__ignition_module_channel { /* void */ }
 public node ignition_wire_channel => __engine_sim__ignition_wire_channel { /* void */ }
 public node fuel_channel => __engine_sim__fuel_channel { /* void */ }
 public node impulse_response_channel => __engine_sim__impulse_response_channel { /* void */ }
+public node bov_sound_channel => __engine_sim__bov_sound_channel { /* void */ }
 public node valvetrain_channel => __engine_sim__valvetrain_channel { /* void */ }
 public node vehicle_channel => __engine_sim__vehicle_channel { /* void */ }
 public node transmission_channel => __engine_sim__transmission_channel { /* void */ }
@@ -91,6 +94,11 @@ private node _engine => __engine_sim__engine {
     input jitter [float];
     input noise [float];
 
+    input anti_lag_enabled [bool];
+    input anti_lag_max_retard [float];
+    input anti_lag_dump_rate [float];
+    input anti_lag_pop_rate [float];
+
     alias output __out [engine_channel];
 }
 
@@ -115,6 +123,24 @@ public node engine {
     input jitter: 0.5;
     input noise: 1.0;
 
+    // Off-throttle exhaust pop/burble -- see Engine::updateAntiLag() in the
+    // C++ source for the full mechanism (retard + a raw charge dumped into
+    // each header that randomly pops off on its own, same signal path a
+    // real combustion event uses). Disabled by default (the in-app
+    // ANTI-LAG button still works regardless); anti_lag_enabled: true
+    // turns it on for this engine from the start. The three rate knobs
+    // only matter once it's on, and only change this engine's own pop
+    // character -- a factory M-car crackle wants a higher
+    // anti_lag_pop_rate (more frequent, sharper pops) than a
+    // comfort-tuned six that should stay nearly silent on lift-off.
+    // Defaults match the values this system always used before these
+    // existed, so anti_lag_enabled: true alone reproduces the original
+    // one-size-fits-all tune.
+    input anti_lag_enabled: false;
+    input anti_lag_max_retard: 55 * units.deg;
+    input anti_lag_dump_rate: 6.0;
+    input anti_lag_pop_rate: 6.0;
+
     alias output __out [_engine]:
         _engine(
             name: name,
@@ -132,7 +158,12 @@ public node engine {
             simulation_frequency: simulation_frequency,
             hf_gain: hf_gain,
             jitter: jitter,
-            noise: noise
+            noise: noise,
+
+            anti_lag_enabled: anti_lag_enabled,
+            anti_lag_max_retard: anti_lag_max_retard,
+            anti_lag_dump_rate: anti_lag_dump_rate,
+            anti_lag_pop_rate: anti_lag_pop_rate
         );
 }
 
@@ -456,12 +487,16 @@ public node cylinder_head {
 // Camshaft
 public node camshaft_parameters {
     input advance: 0.0;
+    // VVT: optional advance-vs-rpm curve, added on top of the static
+    // advance above. Empty by default (samples to 0 everywhere -- no VVT).
+    input advance_curve: function();
     input base_radius: 0.0;
     input lobe_profile: function();
 }
 
 private node _camshaft => __engine_sim__camshaft {
     input advance [float];
+    input advance_curve [function];
     input base_radius [float];
     input lobe_profile [function];
     alias output __out [camshaft_channel];
@@ -470,14 +505,36 @@ private node _camshaft => __engine_sim__camshaft {
 public node camshaft {
     input parameters: camshaft_parameters();
     input advance: parameters.advance;
+    input advance_curve: parameters.advance_curve;
     input base_radius: parameters.base_radius;
     input lobe_profile: parameters.lobe_profile;
     alias output __out [_camshaft]:
         _camshaft(
             advance: advance,
+            advance_curve: advance_curve,
             base_radius: base_radius,
             lobe_profile: lobe_profile
         );
+}
+
+// Exhaust System
+public node impulse_response => __engine_sim__impulse_response {
+    input filename [string];
+    input volume [float]: 1.0;
+    alias output __out [impulse_response_channel];
+}
+
+// A blow-off/wastegate flutter sample, played back (looped while the
+// turbo's compressor is surging) instead of the app's synthesized flutter
+// chuff. filename resolves relative to the .mr file it's declared in (see
+// bov_sound_library in sound-library/bov_sounds.mr for the bundled set),
+// exactly like impulse_response above -- so an absolute path, or a
+// relative path next to your own engine file, both work for a sound of
+// your own that isn't in the bundled library.
+public node bov_sound => __engine_sim__bov_sound {
+    input filename [string];
+    input volume [float]: 1.0;
+    alias output __out [bov_sound_channel];
 }
 
 // Intake
@@ -492,6 +549,19 @@ public node intake_parameters {
     input runner_length: 4.0 * units.inch;
     input runner_flow_rate: k_carb(200.0);
     input velocity_decay: 0.25;
+    // Intake-noise audio channel, mixed into the same synthesizer output
+    // as every exhaust_system channel. Silent (0.0) by default so every
+    // existing engine file is unaffected; set audio_volume above 0 (and
+    // optionally pick a sharper impulse_response, e.g. ir_lib.sharp_0 or
+    // ir_lib.minimal_muffling_01) to hear induction/velocity-stack noise
+    // -- the source of a real engine's intake "trumpet" character --
+    // mixed in alongside the exhaust note. impulse_response still needs a
+    // real, loadable file even when audio_volume is 0, since it's opened
+    // unconditionally at load time; the bundled mild_exhaust.wav is just
+    // a safe, always-present placeholder in that case.
+    input audio_volume: 0.0;
+    input impulse_response:
+        impulse_response(filename: "../sound-library/new/mild_exhaust.wav", volume: 0.01);
 }
 
 private node _intake => __engine_sim__intake {
@@ -505,6 +575,8 @@ private node _intake => __engine_sim__intake {
     input throttle_gamma [float];
     input runner_length [float];
     input velocity_decay [float];
+    input audio_volume [float];
+    input impulse_response [impulse_response];
     alias output __out [intake_channel];
 }
 
@@ -520,6 +592,8 @@ public node intake {
     input throttle_gamma: parameters.throttle_gamma;
     input runner_length: parameters.runner_length;
     input velocity_decay: parameters.velocity_decay;
+    input audio_volume: parameters.audio_volume;
+    input impulse_response: parameters.impulse_response;
     alias output __out [_intake]:
         _intake(
             plenum_volume: plenum_volume,
@@ -531,15 +605,10 @@ public node intake {
             idle_throttle_plate_position: idle_throttle_plate_position,
             throttle_gamma: throttle_gamma,
             runner_length: runner_length,
-            velocity_decay: velocity_decay
+            velocity_decay: velocity_decay,
+            audio_volume: audio_volume,
+            impulse_response: impulse_response
         );
-}
-
-// Exhaust System
-public node impulse_response => __engine_sim__impulse_response {
-    input filename [string];
-    input volume [float]: 1.0;
-    alias output __out [impulse_response_channel];
 }
 
 public node exhaust_system_parameters {
@@ -588,11 +657,290 @@ public node exhaust_system {
         );
 }
 
+// Supercharger
+//
+// Belt/gear-driven forced induction, rigidly coupled to the crankshaft
+// (see Supercharger's C++ header for why that's a different model than
+// Turbocharger's exhaust-driven, crank-decoupled one) -- it always pulls
+// real torque off the engine, on top of whatever it adds back through
+// boost. type selects the compression model: "roots" and "twin_screw"
+// are positive-displacement (flow set by shaft speed and displacement,
+// nearly independent of boost -- strong low-RPM torque), "centrifugal"
+// is a dynamic compressor whose boost ramps in with RPM^2 like a turbo's
+// compressor stage, just without the spool lag since the shaft is
+// belt-locked to the crank instead of free-spinning.
+//
+// clutched/clutch_engage_rpm/clutch_disengage_rpm are for a twincharger's
+// supercharger stage only (see turbocharger's upstream_supercharger,
+// below) -- leave clutched at its false default for a standalone blower,
+// which should always be permanently belt-driven.
+public node supercharger_parameters {
+    input type: "roots"; // "roots", "twin_screw", "centrifugal"
+    input drive_ratio: 2.5;
+    input mechanical_efficiency: 0.90;
+    input displacement: 2.3 * units.L;
+    input volumetric_efficiency: 0.85;
+    input leakage_coefficient: 0.10;
+    input max_impeller_speed: 50000.0 * units.rpm;
+    input compressor_flow_rate: k_carb(600.0);
+    input compressor_efficiency: 0.60;
+    input max_boost: 10.0 * units.psi;
+    input compressor_discharge_volume: 2.0 * units.L;
+    input clutched: false;
+    input clutch_engage_rpm: 3500.0 * units.rpm;
+    input clutch_disengage_rpm: 4500.0 * units.rpm;
+}
+
+// Convenience presets -- same underlying parameters, defaulted to
+// realistic values for each supercharger family so an engine file only
+// has to override drive_ratio/max_boost/displacement to get a plausible
+// result. See supercharger_parameters for what every field means.
+public node roots_supercharger_parameters {
+    input drive_ratio: 2.5;
+    input displacement: 2.3 * units.L;
+    input max_boost: 10.0 * units.psi;
+    input compressor_discharge_volume: 2.5 * units.L;
+    alias output __out:
+        supercharger_parameters(
+            type: "roots",
+            drive_ratio: drive_ratio,
+            mechanical_efficiency: 0.92,
+            displacement: displacement,
+            volumetric_efficiency: 0.80,
+            leakage_coefficient: 0.16,
+            compressor_efficiency: 0.58,
+            max_boost: max_boost,
+            compressor_discharge_volume: compressor_discharge_volume
+        );
+}
+
+public node twin_screw_supercharger_parameters {
+    input drive_ratio: 2.5;
+    input displacement: 2.3 * units.L;
+    input max_boost: 12.0 * units.psi;
+    input compressor_discharge_volume: 2.0 * units.L;
+    alias output __out:
+        supercharger_parameters(
+            type: "twin_screw",
+            drive_ratio: drive_ratio,
+            mechanical_efficiency: 0.92,
+            displacement: displacement,
+            volumetric_efficiency: 0.90,
+            leakage_coefficient: 0.06,
+            compressor_efficiency: 0.80,
+            max_boost: max_boost,
+            compressor_discharge_volume: compressor_discharge_volume
+        );
+}
+
+public node centrifugal_supercharger_parameters {
+    input drive_ratio: 3.5;
+    input max_boost: 14.0 * units.psi;
+    input max_impeller_speed: 60000.0 * units.rpm;
+    input compressor_discharge_volume: 1.5 * units.L;
+    alias output __out:
+        supercharger_parameters(
+            type: "centrifugal",
+            drive_ratio: drive_ratio,
+            mechanical_efficiency: 0.95,
+            max_impeller_speed: max_impeller_speed,
+            compressor_flow_rate: k_carb(700.0),
+            compressor_efficiency: 0.74,
+            max_boost: max_boost,
+            compressor_discharge_volume: compressor_discharge_volume
+        );
+}
+
+// Twincharger preset: a small, clutched Roots blower tuned to cover low
+// RPM only (leakage/volumetric-efficiency numbers matched to the tiny
+// displacement of a real bolt-on unit like the EA111's Eaton TVS charger,
+// not a big standalone blower) and disengage once the turbo stage (see
+// turbocharger's upstream_supercharger) is making its own boost.
+public node twincharger_supercharger_parameters {
+    input drive_ratio: 2.7;
+    input displacement: 0.65 * units.L;
+    input max_boost: 8.0 * units.psi;
+    input compressor_discharge_volume: 0.5 * units.L;
+    input clutch_engage_rpm: 3000.0 * units.rpm;
+    input clutch_disengage_rpm: 3500.0 * units.rpm;
+    alias output __out:
+        supercharger_parameters(
+            type: "roots",
+            drive_ratio: drive_ratio,
+            mechanical_efficiency: 0.88,
+            displacement: displacement,
+            volumetric_efficiency: 0.78,
+            leakage_coefficient: 0.14,
+            compressor_efficiency: 0.58,
+            max_boost: max_boost,
+            compressor_discharge_volume: compressor_discharge_volume,
+            clutched: true,
+            clutch_engage_rpm: clutch_engage_rpm,
+            clutch_disengage_rpm: clutch_disengage_rpm
+        );
+}
+
+private node _supercharger => __engine_sim__supercharger {
+    input intake [intake];
+    input type [string];
+    input drive_ratio [float];
+    input mechanical_efficiency [float];
+    input displacement [float];
+    input volumetric_efficiency [float];
+    input leakage_coefficient [float];
+    input max_impeller_speed [float];
+    input compressor_flow_rate [float];
+    input compressor_efficiency [float];
+    input max_boost [float];
+    input compressor_discharge_volume [float];
+    input clutched [bool];
+    input clutch_engage_rpm [float];
+    input clutch_disengage_rpm [float];
+    alias output __out [supercharger_channel];
+}
+
+public node supercharger {
+    input parameters: supercharger_parameters();
+    // Optional -- leave unset for a twincharger's blower stage, which
+    // feeds a turbocharger's upstream_supercharger input instead of a
+    // plenum directly (see below). The default here is a throwaway,
+    // never-attached intake() instance; it's never referenced by any
+    // cylinder so it's simply inert, same pattern camshaft's
+    // advance_curve default uses for "no VVT".
+    input intake: intake();
+    input type: parameters.type;
+    input drive_ratio: parameters.drive_ratio;
+    input mechanical_efficiency: parameters.mechanical_efficiency;
+    input displacement: parameters.displacement;
+    input volumetric_efficiency: parameters.volumetric_efficiency;
+    input leakage_coefficient: parameters.leakage_coefficient;
+    input max_impeller_speed: parameters.max_impeller_speed;
+    input compressor_flow_rate: parameters.compressor_flow_rate;
+    input compressor_efficiency: parameters.compressor_efficiency;
+    input max_boost: parameters.max_boost;
+    input compressor_discharge_volume: parameters.compressor_discharge_volume;
+    input clutched: parameters.clutched;
+    input clutch_engage_rpm: parameters.clutch_engage_rpm;
+    input clutch_disengage_rpm: parameters.clutch_disengage_rpm;
+    alias output __out [_supercharger]:
+        _supercharger(
+            intake: intake,
+            type: type,
+            drive_ratio: drive_ratio,
+            mechanical_efficiency: mechanical_efficiency,
+            displacement: displacement,
+            volumetric_efficiency: volumetric_efficiency,
+            leakage_coefficient: leakage_coefficient,
+            max_impeller_speed: max_impeller_speed,
+            compressor_flow_rate: compressor_flow_rate,
+            compressor_efficiency: compressor_efficiency,
+            max_boost: max_boost,
+            compressor_discharge_volume: compressor_discharge_volume,
+            clutched: clutched,
+            clutch_engage_rpm: clutch_engage_rpm,
+            clutch_disengage_rpm: clutch_disengage_rpm
+        );
+}
+
+// Turbocharger
+public node turbocharger_parameters {
+    input turbine_flow_rate: 0.0;
+    input turbine_inertia: 0.00005;
+    input turbine_efficiency: 0.68;
+    input compressor_efficiency: 0.70;
+    input max_boost: 10.0 * units.psi;
+    input spool_speed: 120000.0 * units.rpm;
+    input spin_down_time: 0.8;
+    input turbine_inducer_diameter: 50.0 * units.mm;
+    input turbine_exducer_diameter: 40.0 * units.mm;
+}
+
+private node _turbocharger => __engine_sim__turbocharger {
+    input intake [intake];
+    input upstream_supercharger [supercharger];
+    input turbine_flow_rate [float];
+    input turbine_inertia [float];
+    input turbine_efficiency [float];
+    input compressor_efficiency [float];
+    input max_boost [float];
+    input spool_speed [float];
+    input spin_down_time [float];
+    input turbine_inducer_diameter [float];
+    input turbine_exducer_diameter [float];
+    input bov_sound [bov_sound];
+    alias output __out [turbocharger_channel];
+}
+
+// upstream_supercharger: for a twincharger only -- wires this turbo's
+// compressor inlet to a (typically clutched, see
+// twincharger_supercharger_parameters) supercharger's discharge instead
+// of flat atmosphere, so the two stages' boost multiplies. Leave
+// unset/default for a plain turbocharger. The supercharger passed here
+// should NOT also be passed to an intake's add_supercharger -- it feeds
+// this turbo's inlet, not the plenum directly.
+public node turbocharger {
+    input parameters: turbocharger_parameters();
+    input intake;
+    input upstream_supercharger: supercharger();
+    input turbine_flow_rate: parameters.turbine_flow_rate;
+    input turbine_inertia: parameters.turbine_inertia;
+    input turbine_efficiency: parameters.turbine_efficiency;
+    input compressor_efficiency: parameters.compressor_efficiency;
+    input max_boost: parameters.max_boost;
+    input spool_speed: parameters.spool_speed;
+    input spin_down_time: parameters.spin_down_time;
+    input turbine_inducer_diameter: parameters.turbine_inducer_diameter;
+    input turbine_exducer_diameter: parameters.turbine_exducer_diameter;
+    input bov_sound;
+    alias output __out [_turbocharger]:
+        _turbocharger(
+            intake: intake,
+            upstream_supercharger: upstream_supercharger,
+            turbine_flow_rate: turbine_flow_rate,
+            turbine_inertia: turbine_inertia,
+            turbine_efficiency: turbine_efficiency,
+            compressor_efficiency: compressor_efficiency,
+            max_boost: max_boost,
+            spool_speed: spool_speed,
+            spin_down_time: spin_down_time,
+            turbine_inducer_diameter: turbine_inducer_diameter,
+            turbine_exducer_diameter: turbine_exducer_diameter,
+            bov_sound: bov_sound
+        );
+}
+
 // Ignition Module
 public node ignition_module => __engine_sim__ignition_module {
     input timing_curve [function];
     input rev_limit [float]: 7000.0 * units.rpm;
     input limiter_duration [float]: 0.5 * units.sec;
+
+    // Fraction of ignition events cut while the limiter is active: 1.0
+    // (default) kills every cylinder every time -- a real hard-cut ECU
+    // calibration (exotics, race cars), and the sharp, popping "brap"
+    // bounce-off-the-limiter bark that comes with it (unburned fuel
+    // dumping into a hot exhaust on every single cut). limiter_duration
+    // alone does NOT make that soft -- it only changes how fast the bark
+    // stutters, since at fraction 1.0 it's still a total kill every
+    // cycle. For a mundane, ordinary-car/truck limiter that just gently
+    // stops accelerating instead of bouncing off a wall, lower this
+    // toward something like 0.2-0.4 -- only a rotating fraction of
+    // cylinders drop each cycle, so the engine keeps making most of its
+    // torque continuously rather than slamming to zero and back.
+    input limiter_cut_fraction [float]: 1.0;
+
+    // Max spark retard applied once rpm is a full overrun band past
+    // rev_limit, ramping in smoothly from 0 right at the limit. Unlike
+    // limiter_cut_fraction at ANY setting, this never skips a combustion
+    // event -- every cylinder still fires every cycle, just later and
+    // weaker, which is what actually produces the mellow "engine just
+    // runs out of steam" sound a real soft-limiter/ECU-retard
+    // calibration has. Even a finely-rolled partial spark cut is still
+    // audibly a rapid string of dropped cylinders -- a genuinely
+    // non-percussive soft limiter needs retard, not any flavor of cut.
+    // Default 0 (no retard-based limiting).
+    input limiter_max_retard [float]: 0 * units.deg;
+
     alias output __out [ignition_module_channel];
 }
 
@@ -607,11 +955,113 @@ public node vehicle => __engine_sim__vehicle {
     input diff_ratio [float]: 3.42;
     input tire_radius [float]: 10 * units.inch;
     input rolling_resistance [float]: 2000;
+    input brake_constant [float]: 8000;
 
     alias output __out [vehicle_channel];
 }
 
 public node transmission => __engine_sim__transmission {
     input max_clutch_torque [float]: 1000 * units.lb_ft;
+    input straight_cut [bool]: false;
+
+    // "manual", "automatic", "dual_clutch", "automated_manual", "cvt"
+    input type [string]: "manual";
+
+    // Only meaningful when type != "manual". The shift lever walks a
+    // Neutral -> Drive -> Sport -> Manual ladder; these cap how far it can
+    // go. has_sport_mode: whether there's a driver-selectable Sport mode
+    // at all (plenty of cars just have D). allow_manual_shift: whether it
+    // can go on into a driver-controlled Manual mode (paddles/manumatic).
+    // Both false is an old-school "dumb" automatic: just Drive, computer
+    // decides everything, always.
+    input has_sport_mode [bool]: false;
+    input allow_manual_shift [bool]: false;
+
+    // TCU shift schedule -- ignored for "manual", and for "cvt"'s Drive
+    // mode (see cvt_target_rpm), but still used for "cvt"'s Sport mode,
+    // which auto-shifts among the discrete gears same as the others. Real
+    // transmissions (hydraulic/vacuum valve body or electronic, doesn't
+    // matter) decide shifts off throttle position, not raw RPM: closed
+    // throttle shifts early for economy, wide open throttle (wot) holds
+    // the gear for power, and everything between blends continuously.
+    // Sport is the same shape, just held longer across the board.
+    input shift_up_rpm_closed_throttle [float]: 3200 * units.rpm;
+    input shift_up_rpm_wot [float]: 6200 * units.rpm;
+    input shift_down_rpm_closed_throttle [float]: 1200 * units.rpm;
+    input shift_down_rpm_wot [float]: 3400 * units.rpm;
+    input sport_shift_up_rpm_closed_throttle [float]: 4500 * units.rpm;
+    input sport_shift_up_rpm_wot [float]: 6800 * units.rpm;
+    input sport_shift_down_rpm_closed_throttle [float]: 2200 * units.rpm;
+    input sport_shift_down_rpm_wot [float]: 4500 * units.rpm;
+
+    // How long the torque coupling takes to fully re-catch after a shift,
+    // separately for Drive/Sport (Sport is typically snappier), and how
+    // deep the torque momentarily dips mid-shift (not split by mode). This
+    // is what actually gives a transmission its shift character -- a DCT
+    // hands off in ~0.1s with barely a dip, a single-clutch automated
+    // manual is slower with a near-total cut, and an old hydraulic
+    // torque-converter automatic is slower and slushier still, even
+    // though a modern torque-converter automatic (e.g. a ZF 8HP) can
+    // shift nearly as crisply as a DCT despite being the same
+    // type = "automatic".
+    input shift_time_drive [float]: 0.5;
+    input shift_time_sport [float]: 0.35;
+    input shift_torque_cut [float]: 0.5;
+
+    // How long a computer-decided (auto-shift) or paddle-selected shift
+    // sits "requested" before the ratio itself actually swaps -- the real
+    // mechanical lag between a valve body (hydraulic) or TCU solenoid
+    // (electronic) deciding to shift and the clutch pack/band actually
+    // finishing its apply stroke. Distinct from shift_time_drive/sport's
+    // post-swap dip and re-catch, which only starts once this has already
+    // elapsed. 0 (default) means the ratio swaps the instant the decision
+    // is made, same as every file that predates this parameter. An
+    // old-school hydraulic slushbox has a noticeably longer, mushier
+    // "gathering" pause here (a real one can feel like a quarter to half
+    // a second) than a modern electronically-controlled box.
+    input shift_prepare_time_drive [float]: 0.0;
+    input shift_prepare_time_sport [float]: 0.0;
+
+    // "cvt" only: the RPM the variator tries to hold in its normal
+    // (Drive-mode, continuous-ratio) mode, and how fast it can sweep its
+    // ratio, in ratio-units per second.
+    input cvt_target_rpm [float]: 3000 * units.rpm;
+    input cvt_ratio_rate [float]: 1.5;
+
+    // "automatic" only: the fluid coupling. converter_stall_torque is the
+    // torque the impeller absorbs at converter_stall_speed with the turbine
+    // held still -- the classic converter rating -- and absorption scales
+    // with the square of engine speed from there, falling away again as the
+    // turbine catches up. Keep it below max_clutch_torque, the rigid lockup
+    // capacity. converter_stall_speed is the classic "stall speed" spec:
+    // the RPM the engine can rev to against a stalled output shaft. It's
+    // independent of the shift schedule above on purpose -- an engine tuned
+    // to short-shift low doesn't necessarily have a low-stall-speed
+    // converter to match. has_lockup_clutch: true rigidly locks up once
+    // slip settles down at steady cruise (basically every torque-converter
+    // car since the 1980s); false is an old-school converter that never
+    // locks up and always slips a little, even at cruise.
+    input converter_stall_torque [float]: 300 * units.lb_ft;
+    input converter_stall_speed [float]: 2500 * units.rpm;
+    input has_lockup_clutch [bool]: false;
+
+    // "automatic" only: the stator. converter_stall_torque_ratio is how
+    // much the turbine's torque is multiplied over the impeller's with the
+    // turbine stalled (~2:1 on a passenger car, higher on loose truck or
+    // racing units); converter_coupling_point is the speed ratio
+    // (turbine/impeller) at which the stator freewheels, multiplication
+    // stops, and it becomes a plain fluid coupling.
+    input converter_stall_torque_ratio [float]: 2.0;
+    input converter_coupling_point [float]: 0.87;
+
+    // "dual_clutch" / "automated_manual" / "cvt" only: these have no fluid
+    // coupling, so a slipping clutch pack (or belt) is the launch device
+    // instead. This is the fraction of max_clutch_torque it's allowed to
+    // carry at wide open throttle while the car is still stopped -- low
+    // enough that the engine flares and feeds the car in rather than being
+    // bolted rigidly to a stationary mass. Capacity returns to full as the
+    // input shaft syncs up with the engine.
+    input launch_clutch_creep_capacity [float]: 0.35;
+
     alias output __out [transmission_channel];
 }

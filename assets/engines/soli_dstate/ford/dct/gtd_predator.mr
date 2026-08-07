@@ -1,0 +1,536 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Ford Mustang GTD -- the supercharged 5.2L "Predator"-family V8, a dry-
+// sump evolution of the GT500's Predator sharing its cross-plane crank
+// architecture (and, by extension, coyote_gen4_mt.mr's crank/cam/wire
+// template verbatim -- no relabeling needed here, since Ford's Predator/
+// Coyote family all use the same 1-2-4-3-7-5-6-8 firing order and
+// contiguous per-bank cylinder numbering, unlike the alternating-bank
+// Chrysler Hemi numbering scat_pack_392.mr/demon_170.mr had to work
+// around). Bore/stroke (93.0mm x 93.0mm -- square, per real spec),
+// displacement (5164cc), compression (9.5:1), redline (7650rpm), and
+// peak output (815hp @ 7400rpm, 664 lb-ft @ 5000rpm) are the real
+// user-supplied GTD figures, not this repo's usual GT500/Predator
+// approximation.
+//
+// Supercharger: Eaton TVS R2650 (Roots-type, 2.65L, twin 4-lobe rotors
+// with a 160-degree helix twist -- modeled here as this asset pack's
+// "roots" type; see supercharger.h's header comment for why Roots is the
+// right model for a Eaton TVS-style unit even though the helix twist
+// gives it a bit more internal pre-compression than a plain 2-lobe Roots
+// -- reflected here via a slightly better compressor_efficiency than
+// scat_pack_392.mr's/demon_170.mr's plain-Roots blowers, not a switch to
+// the twin_screw type). ~14psi peak boost and an approximated drive_ratio
+// (Ford hasn't published the exact pulley ratio) land in the specified
+// 13.5-14.5psi range across the rev band.
+//
+// Drivetrain: real GTD oddity carried through as-is even though it
+// doesn't change anything mechanically in this DSL -- the Tremec TR-9080
+// 8-speed DCT is rear-mounted as a transaxle (torque tube to the back of
+// the car for 50/50 weight distribution) rather than bolted to the back
+// of the engine. Gear ratios and the 3.55 final drive are the real
+// user-supplied production figures.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+}
+
+private node predator_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    // 74.3cc chamber -- sized for the real 9.5:1 CR against this engine's
+    // ~645.5cc swept cylinder (5164cc / 8): 645.5 / (9.5 - 1) = 76.0cc
+    // (rounded from the bore/stroke-derived swept volume).
+    input chamber_volume: 76.0 * units.cc;
+    input intake_runner_volume: 130.0 * units.cc;
+    input intake_runner_cross_section_area: 1.85 * units.inch * 1.85 * units.inch;
+    input exhaust_runner_volume: 53.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.5 * units.inch * 1.5 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Approximated, not from a flow bench -- opened up over
+    // coyote_gen4_mt.mr's NA head numbers for the boosted Predator
+    // casting/bigger ports this application needs.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 76 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 142 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 216 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 286 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 336 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 368 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 388 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 398 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 401 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 56 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 106 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 164 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 220 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 266 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 296 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 314 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 322 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 325 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+// Identical crank/cam/wire template to coyote_gen4_mt.mr (same Ford
+// contiguous-per-bank numbering, same validated cross-plane geometry) --
+// see that file's header comment for the derivation.
+private node predator_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 112.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.8 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 10 * units.deg)
+        .add_sample(5000 * units.rpm, 14 * units.deg)
+        .add_sample(7650 * units.rpm, 6 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(3000 * units.rpm, 8 * units.deg)
+        .add_sample(7650 * units.rpm, 10 * units.deg)
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    label rot(90 * units.deg)
+    label rot360(360 * units.deg)
+
+    // bank0 (cylinders 1,2,3,4) rot multipliers 0,1,3,2; bank1 (cylinders
+    // 5,6,7,8) rot multipliers 5,6,4,7 -- unchanged from coyote_gen4_mt.mr.
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 4
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 3
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 4
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot) // 5
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 7
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot) // 8
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot) // 5
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 7
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot) // 8
+}
+
+public node gtd_predator_sc {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Ford Mustang GTD [5.2L Supercharged Predator V8]",
+        starter_torque: 230 * units.lb_ft,
+        starter_speed: 400 * units.rpm,
+        redline: 7650 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.8,
+            max_burning_efficiency: 0.90
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.007,
+        noise: 0.5,
+        jitter: 0.15,
+        simulation_frequency: 13000
+    )
+
+    // Real GTD dimensions: 93.0mm x 93.0mm (square), ~5164cc.
+    label stroke(93.0 * units.mm)
+    label bore(93.0 * units.mm)
+    label rod_length(151.0 * units.mm) // approximated, not from spec
+    label rod_mass(540 * units.g) // approximated, not from spec
+    label compression_height(31.0 * units.mm) // approximated, not from spec
+    label crank_mass(19 * units.kg) // dry-sump, lighter oiling system than a wet-sump Predator
+    label flywheel_mass(7 * units.kg) // DCT clutch pack, lighter than a torque-converter flexplate
+    label flywheel_radius(6.0 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // cams, chains, balancer, supercharger drive, etc [estimated]
+        disk_moment_of_inertia(mass: 21 * units.kg, radius: 7.5 * units.cm)
+    )
+
+    label v_angle(90 * units.deg)
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 9.5 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + (v_angle / 2.0)
+    )
+
+    // Identical rod journal angles/order to coyote_gen4_mt.mr.
+    rod_journal rj0(angle: 0 * units.deg)
+    rod_journal rj1(angle: 90 * units.deg)
+    rod_journal rj2(angle: 270 * units.deg)
+    rod_journal rj3(angle: 180 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 470 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    // Eaton TVS R2650 -- Roots-type (twisted-lobe, modeled as this asset
+    // pack's "roots" type with a slightly better compressor_efficiency
+    // than a plain 2-lobe Roots to reflect the helix twist's partial
+    // internal pre-compression -- see header comment). ~14psi peak boost,
+    // 2.65L displacement are the real spec; drive_ratio is approximated.
+    intake intake(
+        plenum_volume: 7.5 * units.L,
+        plenum_cross_section_area: 42.0 * units.cm2,
+        intake_flow_rate: k_carb(2800.0),
+        runner_flow_rate: k_carb(380.0),
+        runner_length: 7.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.9988,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    supercharger blower(
+        parameters: roots_supercharger_parameters(
+            drive_ratio: 2.8,
+            displacement: 2.65 * units.L,
+            max_boost: 14.0 * units.psi,
+            compressor_discharge_volume: 3.0 * units.L
+        ),
+        intake: intake,
+        mechanical_efficiency: 0.92,
+        volumetric_efficiency: 0.86,
+        leakage_coefficient: 0.09,
+        compressor_efficiency: 0.66
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(2100.0),
+        primary_tube_length: 20.0 * units.inch,
+        primary_flow_rate: k_carb(340.0),
+        velocity_decay: 1.0,
+        volume: 34.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.85,
+        impulse_response: ir_lib.default_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.0,
+        impulse_response: ir_lib.default_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: v_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: -v_angle / 2.0)
+
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.95,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.97,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            predator_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true
+            )
+        )
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.95,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 0.97,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            predator_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+    engine.add_supercharger(blower)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 222 * units.deg,
+        gamma: 1.1,
+        lift: 12.6 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 218 * units.deg,
+        gamma: 1.1,
+        lift: 12.2 * units.mm,
+        steps: 100
+    )
+
+    predator_camshaft camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 112.0 * units.deg,
+        exhaust_lobe_center: 112.0 * units.deg,
+        base_radius: 0.8 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 11 * units.deg)
+        .add_sample(1000 * units.rpm, 15 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 24 * units.deg)
+        .add_sample(5000 * units.rpm, 26 * units.deg)
+        .add_sample(6500 * units.rpm, 26 * units.deg)
+        .add_sample(7650 * units.rpm, 24 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 7750 * units.rpm,
+        limiter_duration: 0.03,
+        limiter_cut_fraction: 0.4,
+        limiter_max_retard: 18 * units.deg
+    )
+    // Identical wire-angle template to coyote_gen4_mt.mr -- firing order
+    // 1-2-4-3-7-5-6-8.
+    ignition_module
+        .connect_wire(wires.wire1, 0 * 90 * units.deg)
+        .connect_wire(wires.wire2, 1 * 90 * units.deg)
+        .connect_wire(wires.wire4, 2 * 90 * units.deg)
+        .connect_wire(wires.wire3, 3 * 90 * units.deg)
+        .connect_wire(wires.wire7, 4 * 90 * units.deg)
+        .connect_wire(wires.wire5, 5 * 90 * units.deg)
+        .connect_wire(wires.wire6, 6 * 90 * units.deg)
+        .connect_wire(wires.wire8, 7 * 90 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// Real user-supplied GTD vehicle specs: ~4340lb curb weight, 325/30R20
+// front & 345/30R20 rear Cup 2 R tires (rear radius used for driven-wheel
+// dynamics), active-aero drag coefficient (using the low-drag-mode 0.35
+// figure, not the ~0.48 max-downforce figure -- this sim doesn't model an
+// active DRS state), widened S650-platform frontal area.
+private node gtd_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 4340 * units.lb,
+            drag_coefficient: 0.35,
+            cross_sectional_area: 2.25 * units.m * units.m,
+            diff_ratio: 3.55,
+            tire_radius: 14.2 * units.inch, // 345/30R20 rear
+            rolling_resistance: 470 * units.N
+        );
+}
+
+// Tremec TR-9080 8-speed DCT, rear-mounted transaxle -- real production
+// per-gear ratios (final drive of 3.55 applied separately via diff_ratio
+// above, matching how every other transmission in this asset pack
+// separates gear ratio from final drive).
+private node gtd_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 750 * units.lb_ft,
+            type: "dual_clutch",
+            has_sport_mode: true,
+            allow_manual_shift: true,
+            shift_up_rpm_closed_throttle: 2200 * units.rpm,
+            shift_up_rpm_wot: 7500 * units.rpm,
+            shift_down_rpm_closed_throttle: 1200 * units.rpm,
+            shift_down_rpm_wot: 4200 * units.rpm,
+            sport_shift_up_rpm_closed_throttle: 4000 * units.rpm,
+            sport_shift_up_rpm_wot: 7700 * units.rpm,
+            sport_shift_down_rpm_closed_throttle: 2400 * units.rpm,
+            sport_shift_down_rpm_wot: 5000 * units.rpm,
+            shift_time_drive: 0.15,
+            shift_time_sport: 0.08,
+            shift_torque_cut: 0.12
+        )
+        .add_gear(2.91)
+        .add_gear(1.76)
+        .add_gear(1.22)
+        .add_gear(0.88)
+        .add_gear(0.65)
+        .add_gear(0.51)
+        .add_gear(0.40)
+        .add_gear(0.33);
+}
+
+public node main {
+    set_engine(gtd_predator_sc())
+    set_vehicle(gtd_vehicle())
+    set_transmission(gtd_transmission())
+}

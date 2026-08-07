@@ -78,6 +78,16 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         void resetLastTimestepIntakeFlow() { m_lastTimestepTotalIntakeFlow = 0; }
         double getLastTimestepIntakeFlow() const { return m_lastTimestepTotalIntakeFlow; }
 
+        // Registers flow injected from outside the normal cylinder->header
+        // path (anti-lag's header dump) against the same accounting real
+        // exhaust flow uses, so it shows up in
+        // PistonEngineSimulator::getTotalExhaustFlow() like any other
+        // exhaust event instead of being invisible to it.
+        void addExternalExhaustFlow(double flow) {
+            m_exhaustFlow += flow;
+            m_lastTimestepTotalExhaustFlow += flow;
+        }
+
         Function *m_meanPistonSpeedToTurbulence;
         GasSystem m_system;
         GasSystem m_intakeRunnerAndManifold;

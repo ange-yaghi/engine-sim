@@ -1,0 +1,518 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Ford Coyote Gen 4 -- the 5.0L naturally-aspirated DOHC V8 out of the
+// 2018+ Mustang GT (Gen 3 introduced direct+port injection and this
+// engine's ~12.0:1 compression; "Gen 4" here follows the same basic
+// architecture into the current S650 Mustang GT). Bore/stroke (93.0mm x
+// 92.7mm, ~5038cc) are real factory specs. Redline is approximated at
+// 7500rpm, in line with the Gen 3/Gen 4 Coyote's factory limiter.
+//
+// Firing order 1-2-4-3-7-5-6-8, derived from this file's actual crank/
+// cam/ignition-wire geometry below (see the "Corrected" comments on the
+// camshaft and ignition_module) rather than cited from a spec sheet -- an
+// earlier version of this comment claimed 1-3-7-2-6-5-4-8, which doesn't
+// match what connect_wire actually implements and was never independently
+// confirmed against the real engine either, so it's not repeated here.
+// What *is* verified is that this journal/TDC geometry fires each
+// cylinder at its own true TDC with even 90-degree spacing --
+// engine-sim-check passes cleanly (idle, redline pull, and dyno curve all
+// sane) on this file. Cylinder numbering follows Ford convention: bank 0
+// (right) = cylinders 1-4 front-to-back, bank 1 (left) = cylinders 5-8
+// front-to-back, cylinder N and N+4 sharing a rod journal.
+//
+// Crank: this is a cross-plane crank, NOT the flat-plane layout used by
+// this repo's other reference V8 (angethegreat/atg-video-2/
+// 08_ferrari_f136_v8.mr, a flat-plane Ferrari F136). A flat-plane V8's 4
+// rod journals sit in a single plane (angles 0/180/180/0, as in that
+// reference file) -- a cross-plane crank instead staggers its 4 journals
+// 90 degrees apart around the full circle (0/90/270/180 below), forming a
+// "cross" shape when viewed end-on. Firing interval (720/8 = 90 degrees)
+// is identical either way; what the cross-plane layout changes is which
+// cylinders share exhaust pulses on each bank, which is why cross-plane
+// V8s (essentially all traditional American V8s, this one included) get
+// their uneven, burbly exhaust note and usually want a crossover
+// (H- or X-) pipe, unlike a flat-plane V8's evenly-spaced bank pulses.
+//
+// This file builds the shared engine node (coyote_gen4_na) plus a 6-speed
+// Tremec TR-3160 manual as its own public node main, following this
+// repo's bmw/S55_dct.mr base-engine-plus-variant-transmission pattern;
+// coyote_gen4_10at.mr imports this file and reuses coyote_gen4_na with a
+// 10-speed automatic instead.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+}
+
+private node coyote_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 57.2 * units.cc; // sized for ~12.0:1 CR against a ~630cc swept cylinder
+    input intake_runner_volume: 128.0 * units.cc;
+    input intake_runner_cross_section_area: 1.8 * units.inch * 1.8 * units.inch;
+    input exhaust_runner_volume: 52.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.5 * units.inch * 1.5 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 60 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 108 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 164 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 216 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 252 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 272 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 284 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 288 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 289 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 40 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 76 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 118 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 160 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 194 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 216 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 228 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 233 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 234 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+private node coyote_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 113.5 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.8 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Ti-VCT -- twin independent cam phasing (intake and exhaust), same on
+    // both banks.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 12 * units.deg)
+        .add_sample(4500 * units.rpm, 16 * units.deg)
+        .add_sample(7500 * units.rpm, 8 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 10 * units.deg)
+        .add_sample(7500 * units.rpm, 12 * units.deg)
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    label rot(90 * units.deg) // firing interval, 720 / 8
+    label rot360(360 * units.deg)
+
+    // Corrected to match the ignition wiring fix below: cylinder TDC is
+    // (bankBase + rj.angle) mod 360 (bankBase 0 for bank 0, 90 for bank
+    // 1), not the idealized even-90-degree firing order previously
+    // assumed here. Bank 0 (cylinders 1-4) rot multipliers 0,1,3,2; bank
+    // 1 (cylinders 5-8) rot multipliers 5,6,4,7.
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 4
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 3
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 4
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 5 * rot) // 5
+        .add_lobe(rot360 - exhaust_lobe_center + 6 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 7
+        .add_lobe(rot360 - exhaust_lobe_center + 7 * rot) // 8
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot) // 5
+        .add_lobe(rot360 + intake_lobe_center + 6 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 7
+        .add_lobe(rot360 + intake_lobe_center + 7 * rot) // 8
+}
+
+public node coyote_gen4_na {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "Ford Coyote Gen4 5.0L [Mustang GT, V8]",
+        starter_torque: 170 * units.lb_ft,
+        starter_speed: 400 * units.rpm,
+        redline: 7500 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.6,
+            max_burning_efficiency: 0.9
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.006,
+        noise: 0.55,
+        jitter: 0.16,
+        simulation_frequency: 12000
+    )
+
+    // Real Coyote Gen 3/4 dimensions: 93.0mm x 92.7mm, ~5038cc.
+    label stroke(92.7 * units.mm)
+    label bore(93.0 * units.mm)
+    label rod_length(150.7 * units.mm)
+    label rod_mass(560 * units.g)
+    label compression_height(32.0 * units.mm)
+    label crank_mass(20 * units.kg)
+    label flywheel_mass(8 * units.kg)
+    label flywheel_radius(6.5 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // cams, chains, balancer, etc [estimated]
+        disk_moment_of_inertia(mass: 22 * units.kg, radius: 7.5 * units.cm)
+    )
+
+    label v_angle(90 * units.deg) // real Coyote bank angle
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 9.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + (v_angle / 2.0)
+    )
+
+    // Cross-plane crank: 4 rod journals spaced 90 degrees apart around
+    // the full circle (0/90/270/180), NOT the flat-plane 0/180/180/0
+    // pattern used by this repo's Ferrari F136 reference. Journal N
+    // (0-indexed) is shared by cylinder N+1 (bank 0) and cylinder N+5
+    // (bank 1) -- the front-to-back companion pair on that throw.
+    rod_journal rj0(angle: 0 * units.deg)   // cyl 1 & 5
+    rod_journal rj1(angle: 90 * units.deg)  // cyl 2 & 6
+    rod_journal rj2(angle: 270 * units.deg) // cyl 3 & 7
+    rod_journal rj3(angle: 180 * units.deg) // cyl 4 & 8
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+
+    piston_parameters piston_params(
+        mass: 480 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 6.0 * units.L, // real Coyote has a fairly large plenum shared across 8 cylinders
+        plenum_cross_section_area: 32.0 * units.cm2,
+        intake_flow_rate: k_carb(1250.0),
+        runner_flow_rate: k_carb(230.0),
+        runner_length: 9.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        // 0.9985 (0.15% open) was too tight for this engine's large 6L
+        // plenum/1250 intake_flow_rate scale -- idle survived a gentle
+        // starter-cranking catch but stalled coming down off redline (the
+        // harsher transient the dyno pull's pre-sweep settle puts it
+        // through). 0.998 keeps idle at a realistic ~800rpm while giving
+        // enough flow to actually sustain combustion at closed throttle.
+        idle_throttle_plate_position: 0.998,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1400.0),
+        primary_tube_length: 24.0 * units.inch,
+        primary_flow_rate: k_carb(260.0),
+        velocity_decay: 1.0,
+        volume: 36.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.85,
+        impulse_response: ir_lib.default_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.0,
+        impulse_response: ir_lib.default_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: v_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: -v_angle / 2.0)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.95,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.97,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            coyote_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true
+            )
+        )
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.95,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 0.9,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 0.97,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            coyote_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 218 * units.deg,
+        gamma: 1.1,
+        lift: 11.8 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 214 * units.deg,
+        gamma: 1.1,
+        lift: 11.6 * units.mm,
+        steps: 100
+    )
+
+    coyote_camshaft camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 113.5 * units.deg,
+        exhaust_lobe_center: 113.5 * units.deg,
+        base_radius: 0.8 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 12 * units.deg)
+        .add_sample(1000 * units.rpm, 16 * units.deg)
+        .add_sample(2000 * units.rpm, 24 * units.deg)
+        .add_sample(3000 * units.rpm, 28 * units.deg)
+        .add_sample(4000 * units.rpm, 30 * units.deg)
+        .add_sample(5000 * units.rpm, 30 * units.deg)
+        .add_sample(6000 * units.rpm, 30 * units.deg)
+        .add_sample(7000 * units.rpm, 30 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 7600 * units.rpm,
+        // Coyote Gen 4 eases off with spark retard as rpm approaches the
+        // limit before the ECU's fuel cut fully engages -- same
+        // soft-retard-then-hard-cut shape as the B58 (bmw/at/B58B30M1.mr),
+        // not an instant all-cylinder bark. cut_fraction starts partial
+        // and hardens toward 1.0 via the ignition module's overrun-band
+        // ramp if rpm keeps climbing.
+        limiter_duration: 0.035,
+        limiter_cut_fraction: 0.4,
+        limiter_max_retard: 18 * units.deg
+    )
+    // Corrected: given rj0/rj1/rj2/rj3 at 0/90/270/180 degrees and the
+    // 90-degree bank split (tdc = 135deg, bank0 = +45deg, bank1 = -45deg),
+    // a cylinder's true TDC is (bankBase + rj.angle) mod 360, where
+    // bankBase is 0 for bank 0 and 90 for bank 1. The previous even-90
+    // -degree-firing-order assignment put cylinders 2/3 and 6/7 at each
+    // other's TDC angles instead of their own -- swapped here so each
+    // cylinder's wire angle matches its own rod journal's actual TDC.
+    ignition_module
+        .connect_wire(wires.wire1, 0 * 90 * units.deg)
+        .connect_wire(wires.wire2, 1 * 90 * units.deg)
+        .connect_wire(wires.wire4, 2 * 90 * units.deg)
+        .connect_wire(wires.wire3, 3 * 90 * units.deg)
+        .connect_wire(wires.wire7, 4 * 90 * units.deg)
+        .connect_wire(wires.wire5, 5 * 90 * units.deg)
+        .connect_wire(wires.wire6, 6 * 90 * units.deg)
+        .connect_wire(wires.wire8, 7 * 90 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+private node mustang_gt_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3705 * units.lb, // real 2018+ Mustang GT manual curb weight, approximate
+            drag_coefficient: 0.36,
+            cross_sectional_area: (74 * units.inch) * (55 * units.inch),
+            diff_ratio: 3.55,
+            tire_radius: 12.8 * units.inch,
+            rolling_resistance: 420 * units.N
+        );
+}
+
+// Tremec TR-3160 6-speed manual, real production ratios (approximate).
+private node coyote_gen4_manual_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 490 * units.lb_ft,
+            type: "manual"
+        )
+        .add_gear(3.66)
+        .add_gear(2.43)
+        .add_gear(1.69)
+        .add_gear(1.32)
+        .add_gear(1.00)
+        .add_gear(0.65);
+}
+
+public node main {
+    set_engine(coyote_gen4_na())
+    set_vehicle(mustang_gt_vehicle())
+    set_transmission(coyote_gen4_manual_transmission())
+}

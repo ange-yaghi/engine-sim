@@ -1,0 +1,418 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+bov_sound_library bov_lib()
+label cycle(2 * 360 * units.deg)
+
+// Toyota G16E-GTS -- the 1.6L turbocharged inline-3 out of the GR Yaris
+// (2020+) and GR Corolla (2023+). Real production three-cylinders run a
+// 120-degree crank (one throw per cylinder), which gives perfectly even
+// 240-degree firing intervals regardless of which of the two possible
+// firing sequences (1-2-3 or 1-3-2) the crank/cam are actually built for --
+// modeled here at the "high spec" 300hp/273lb-ft tune (Circuit Pack/Morizo
+// Edition), rather than the base ~268hp GR Yaris tune.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+}
+
+private node g16_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 14.0 * units.mm;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Dual VVT-i -- independent intake/exhaust cam phasing.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(1500 * units.rpm, 14 * units.deg)
+        .add_sample(3500 * units.rpm, 18 * units.deg)
+        .add_sample(7000 * units.rpm, 8 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 8 * units.deg)
+        .add_sample(7000 * units.rpm, 12 * units.deg)
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    label rot360(360 * units.deg)
+    label rot(2 * (360 / 3.0) * units.deg)
+
+    // Firing order 1-3-2 -- standard for essentially every production
+    // inline-3 (Toyota's own smaller KR-series triples included), unlike
+    // the sequential 1-2-3 order this repo's ecoboost_1_0.mr (Ford) uses
+    // for its inline-3 -- both give the same even 240deg spacing, the
+    // difference is purely which throw/cam-lobe position is wired to which
+    // physical cylinder. Cylinder 1 fires at 0deg (index 0), cylinder 3
+    // fires second at 240deg (index 1), cylinder 2 fires third at 480deg
+    // (index 2). Lobes are added in physical cylinder order (1, 2, 3) with
+    // each multiplier equal to that cylinder's index in the firing order,
+    // matching the rod_journal angles below (rj0=0, rj1=480, rj2=240).
+    _exhaust_cam
+        .add_lobe((rot360 - exhaust_lobe_center) + 0 * rot)  // cyl 1
+        .add_lobe((rot360 - exhaust_lobe_center) + 2 * rot)  // cyl 2
+        .add_lobe((rot360 - exhaust_lobe_center) + 1 * rot)  // cyl 3
+    _intake_cam
+        .add_lobe((rot360 + intake_lobe_center) + 0 * rot)   // cyl 1
+        .add_lobe((rot360 + intake_lobe_center) + 2 * rot)   // cyl 2
+        .add_lobe((rot360 + intake_lobe_center) + 1 * rot)   // cyl 3
+}
+
+private node g16_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    // Solved from Vd/(CR-1) per cylinder for ~10.5:1 static compression;
+    // the real DOHC pentroof chamber's exact cast volume isn't published,
+    // so this is a modeling approximation, not a factory figure.
+    input chamber_volume: 56.0 * units.cc;
+    input intake_runner_volume: 85.0 * units.cc;
+    input intake_runner_cross_section_area: 1.35 * units.inch * 1.35 * units.inch;
+    input exhaust_runner_volume: 34.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.05 * units.inch * 1.05 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Approximated flow bench numbers -- no published flow-bench data for
+    // this head, scaled from a similar-bore (86-87.5mm) 4-valve DOHC head
+    // already in this repo (2JZ-GE/GTE) with a modest bump reflecting the
+    // G16E-GTS's more modern, higher-specific-output port design.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 50 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 92 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 140 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 184 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 216 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 236 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 246 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 250 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 252 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 36 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 68 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 104 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 138 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 165 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 183 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 194 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 198 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 199 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+public node g16_na {
+    output turbo_engine: engine;
+    output turbo_intake: intake;
+    output turbo_exhaust0: exhaust0;
+
+    wires wires()
+
+    engine engine(
+        name: "Toyota G16E-GTS [GR Yaris/Corolla, Turbo I3]",
+        starter_torque: 45 * units.lb_ft,
+        starter_speed: 400 * units.rpm,
+        redline: 7000 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.1,
+            max_burning_efficiency: 0.83
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.004,
+        noise: 0.32,
+        jitter: 0.18,
+        simulation_frequency: 18000
+    )
+
+    // 87.5mm x 89.0mm, computes to ~1605.7cc -- the commonly cited factory
+    // figure is 1618cc; the ~0.8% gap is normal bore/stroke-to-0.1mm
+    // publishing rounding, not a modeling error. Stroke is slightly LONGER
+    // than bore (undersquare), unusual for a high-revving performance
+    // engine but correct for the G16E-GTS. ~10.5:1 compression.
+    label stroke(89.0 * units.mm)
+    label bore(87.5 * units.mm)
+    label rod_length(145.0 * units.mm) // approximated, not from published spec
+    label rod_mass(310 * units.g) // approximated
+    label compression_height(28.0 * units.mm) // approximated
+    label crank_mass(8.0 * units.kg) // approximated
+    label flywheel_mass(6.5 * units.kg) // approximated -- light performance flywheel
+    label flywheel_radius(5.2 * units.inch) // approximated
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment(
+        disk_moment_of_inertia(mass: 4 * units.kg, radius: 5.0 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 3.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg
+    )
+
+    // 120-degree crank, one throw per cylinder. Firing order 1-3-2 (see
+    // camshaft_builder comment above): cyl1 fires at 0deg, cyl3 at 240deg,
+    // cyl2 at 480deg.
+    rod_journal rj0(angle: 0.0 * units.deg)   // cylinder 1
+    rod_journal rj1(angle: 480.0 * units.deg) // cylinder 2
+    rod_journal rj2(angle: 240.0 * units.deg) // cylinder 3
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+
+    piston_parameters piston_params(
+        mass: 290 * units.g, // approximated
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 1.0 * units.L,
+        plenum_cross_section_area: 10.0 * units.cm2,
+        intake_flow_rate: k_carb(760.0),
+        runner_flow_rate: k_carb(290.0),
+        runner_length: 7.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.9985,
+        velocity_decay: 0.5
+    )
+
+    // Single-scroll log-style cast manifold feeding one turbo -- real
+    // G16E-GTS integrates the exhaust manifold into the head, so a single
+    // shared runner (not a split bank) matches the real part.
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(950.0),
+        primary_tube_length: 16.0 * units.inch,
+        primary_flow_rate: k_carb(240.0),
+        velocity_decay: 1.0,
+        volume: 16.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.9,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 0.0 * units.deg)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 1.0
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.9
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    // Aggressive, high-lift performance cams -- approximated, no published
+    // profile data.
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 218 * units.deg,
+        gamma: 1.08,
+        lift: 9.7 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 212 * units.deg,
+        gamma: 1.08,
+        lift: 9.2 * units.mm,
+        steps: 100
+    )
+
+    g16_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        base_radius: 14.0 * units.mm
+    )
+
+    b0.set_cylinder_head(
+        g16_head(
+            intake_camshaft: camshaft.intake_cam,
+            exhaust_camshaft: camshaft.exhaust_cam
+        )
+    )
+
+    // Conservative mid-range timing pulled back near redline -- typical
+    // knock-limited turbo/DI calibration under boost. Approximated, no
+    // published ECU timing map.
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 16 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 22 * units.deg)
+        .add_sample(4000 * units.rpm, 22 * units.deg)
+        .add_sample(5000 * units.rpm, 20 * units.deg)
+        .add_sample(6000 * units.rpm, 17 * units.deg)
+        .add_sample(7000 * units.rpm, 14 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 7100 * units.rpm,
+        limiter_duration: 0.03
+    )
+    ignition_module
+        .connect_wire(wires.wire1, (0.0 / 3.0) * cycle)
+        .connect_wire(wires.wire3, (1.0 / 3.0) * cycle)
+        .connect_wire(wires.wire2, (2.0 / 3.0) * cycle)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// Single IHI turbo (real part), sized modestly relative to the bigger
+// V6/V8 engines elsewhere in this asset set, but tuned to spool quickly
+// (low turbine inertia) for the G16E-GTS's punchy, quick-boosting
+// character -- targeting the "high spec" ~300hp/273lb-ft tune.
+private node g16_turbo {
+    alias output __out: base.turbo_engine;
+
+    g16_na base()
+
+    turbocharger turbo(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(210.0),
+        turbine_inertia: 0.00003,
+        turbine_efficiency: 0.68,
+        compressor_efficiency: 0.74,
+        max_boost: 28.0 * units.psi,
+        spool_speed: 190000.0 * units.rpm,
+        bov_sound: bov_lib.bovstock3
+    )
+    turbo.add_exhaust_system(base.turbo_exhaust0)
+
+    base.turbo_engine.add_turbocharger(turbo)
+}
+
+// GR Yaris/GR Corolla-class AWD hot hatch. Mass/drag/final drive
+// approximated toward the middle of the GR Yaris/GR Corolla range.
+private node g16_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3150 * units.lb,
+            drag_coefficient: 0.35,
+            cross_sectional_area: (67 * units.inch) * (56 * units.inch),
+            diff_ratio: 4.874,
+            tire_radius: 11.5 * units.inch,
+            rolling_resistance: 380 * units.N
+        );
+}
+
+// 6-speed close-ratio manual (iMT). Ratios approximated/commonly cited for
+// the GR Yaris/Corolla gearbox, not independently verified against a
+// factory service manual.
+private node g16_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 330 * units.lb_ft,
+            type: "manual"
+        )
+        .add_gear(5.087)
+        .add_gear(2.990)
+        .add_gear(1.983)
+        .add_gear(1.474)
+        .add_gear(1.194)
+        .add_gear(1.000);
+}
+
+public node main {
+    set_engine(g16_turbo())
+    set_vehicle(g16_vehicle())
+    set_transmission(g16_transmission())
+}

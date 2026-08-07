@@ -18,14 +18,15 @@ void UiButton::update(float dt) {
 }
 
 void UiButton::render() {
-    ysVector color = m_app->getBackgroundColor();
+    ysVector color = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.02f);
     if (isMouseHeld()) {
-        color = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.02f);
+        color = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.1f);
     }
     else if (isMouseOver()) {
-        color = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.01f);
+        color = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.05f);
     }
 
-    drawFrame(m_bounds, 1.0, m_app->getForegroundColor(), color);
-    drawCenteredText(m_text, m_bounds, m_fontSize);
+    const ysVector border = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.16f);
+    drawFrame(m_bounds, 1.0f, border, color);
+    drawCenteredText(m_text, m_bounds, m_fontSize, Bounds::center);
 }

@@ -27,7 +27,10 @@ namespace es_script {
             parameters.crankshaft = crankshaft;
             parameters.lobes = (int)m_lobes.size();
             parameters.lobeProfile = m_lobeProfile->generate(context);
-            
+            parameters.advanceCurve = (m_advanceCurve != nullptr)
+                ? m_advanceCurve->generate(context)
+                : nullptr;
+
             camshaft->initialize(parameters);
 
             for (int i = 0; i < parameters.lobes; ++i) {
@@ -42,6 +45,7 @@ namespace es_script {
     protected:
         virtual void registerInputs() {
             addInput("advance", &m_parameters.advance);
+            addInput("advance_curve", &m_advanceCurve);
             addInput("base_radius", &m_parameters.baseRadius);
             addInput("lobe_profile", &m_lobeProfile);
 
@@ -59,6 +63,7 @@ namespace es_script {
 
         Camshaft::Parameters m_parameters;
         FunctionNode *m_lobeProfile = nullptr;
+        FunctionNode *m_advanceCurve = nullptr;
         std::vector<double> m_lobes;
     };
 

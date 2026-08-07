@@ -12,11 +12,14 @@
 #include "../../include/simulator.h"
 #include "../../include/fuel.h"
 #include "../../include/impulse_response.h"
+#include "../../include/bov_sound.h"
 #include "../../include/standard_valvetrain.h"
 #include "../../include/vtec_valvetrain.h"
 #include "../../include/application_settings.h"
 #include "../../include/throttle.h"
 #include "../../include/direct_throttle_linkage.h"
 #include "../../include/governor.h"
+#include "../../include/turbocharger.h"
+#include "../../include/supercharger.h"
 
 #endif /* ATG_ENGINE_SIM_ENGINE_SIM_H */

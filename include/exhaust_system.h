@@ -42,6 +42,11 @@ class ExhaustSystem : public Part {
 
         inline GasSystem *getSystem() { return &m_system; }
 
+        // When true, a Turbocharger owns this exhaust system's flow to
+        // atmosphere (via its turbine), so process() becomes a no-op.
+        inline void setTurbocharged(bool turbocharged) { m_turbocharged = turbocharged; }
+        inline bool isTurbocharged() const { return m_turbocharged; }
+
     protected:
         GasSystem m_atmosphere;
         GasSystem m_system;
@@ -56,6 +61,8 @@ class ExhaustSystem : public Part {
         double m_audioVolume;
         double m_velocityDecay;
         int m_index;
+
+        bool m_turbocharged = false;
 
         double m_flow;
 };

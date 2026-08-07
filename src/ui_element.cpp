@@ -1,6 +1,7 @@
 #include "../include/ui_element.h"
 
 #include "../include/engine_sim_application.h"
+#include "../include/ui_utilities.h"
 
 #include <assert.h>
 
@@ -237,6 +238,17 @@ void UiElement::drawFrame(
 
     m_app->getShaders()->SetBaseColor(frameColor);
     m_app->drawGenerated(frame, 0x11, m_app->getShaders()->GetUiFlags());
+}
+
+void UiElement::drawPanel(const Bounds &bounds, float thickness) {
+    // Colors here are blended in linear space but displayed through a gamma
+    // curve, so these fractions look much brighter once converted than the
+    // number suggests -- e.g. 0.05 renders as roughly 30% perceptual gray
+    // against a near-black background, not a subtle 5% tint. Keep these
+    // small; see UiButton::render() for the same calibration.
+    const ysVector fill = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.02f);
+    const ysVector border = mix(m_app->getBackgroundColor(), m_app->getForegroundColor(), 0.16f);
+    drawFrame(bounds, thickness, border, fill);
 }
 
 void UiElement::drawBox(const Bounds &bounds, const ysVector &fillColor) {

@@ -1,0 +1,469 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+bov_sound_library bov_lib()
+label cycle(2 * 360 * units.deg)
+
+// Nissan RB25DET -- the single-turbo 2.5L inline-6 out of the R33/R34
+// Skyline GTS-T and C35 Laurel. Same RB family architecture and firing
+// order as this batch's RB26DETT (rb26dett.mr), stroked longer and bored
+// slightly down, and running one larger single turbo off a conventional
+// unsplit exhaust manifold rather than the RB26's factory twin-turbo
+// split -- see atg-video-2/k20a_turbo.mr for the reference single-turbo
+// pattern this follows (both exhaust banks feed one shared turbo here).
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+}
+
+private node rb_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0.0 * units.deg;
+    input base_radius: 0.75 * units.inch;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // N-VCT -- intake-only cam phasing on the "Neo" RB25DET (Series 2 R33
+    // onward, all R34 GTS-T).
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 14 * units.deg)
+        .add_sample(4500 * units.rpm, 18 * units.deg)
+        .add_sample(7500 * units.rpm, 10 * units.deg)
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot(2 * (360 / 6.0) * units.deg)
+    label rot360(360 * units.deg)
+
+    // Firing order 1-5-3-6-2-4
+    _exhaust_cam
+        .add_lobe((rot360 - exhaust_lobe_center) + 0 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 4 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 2 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 5 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 1 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 3 * rot)
+
+    _intake_cam
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot)
+}
+
+private node rb_ignition {
+    input wires;
+    input timing_curve;
+    input rev_limit: 7500 * units.rpm;
+    alias output __out:
+        ignition_module(
+            timing_curve: timing_curve,
+            rev_limit: rev_limit,
+            // Sharp and punchy, same RB-family bark as RB26DETT
+            // (rb26dett.mr) but not quite as savage -- a single-turbo
+            // GTS-T rather than the twin-turbo GT-R flagship.
+            limiter_duration: 0.05
+        )
+            .connect_wire(wires.wire1, (0.0 / 6.0) * cycle)
+            .connect_wire(wires.wire5, (1.0 / 6.0) * cycle)
+            .connect_wire(wires.wire3, (2.0 / 6.0) * cycle)
+            .connect_wire(wires.wire6, (3.0 / 6.0) * cycle)
+            .connect_wire(wires.wire2, (4.0 / 6.0) * cycle)
+            .connect_wire(wires.wire4, (5.0 / 6.0) * cycle);
+}
+
+private node rb_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 41.0 * units.cc;
+    input intake_runner_volume: 88.0 * units.cc;
+    input intake_runner_cross_section_area: 1.3 * units.inch * 1.3 * units.inch;
+    input exhaust_runner_volume: 38.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.15 * units.inch * 1.15 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 42 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 76 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 116 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 152 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 178 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 193 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 201 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 204 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 205 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 31 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 59 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 89 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 118 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 141 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 156 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 165 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 168 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 169 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+public node rb25det_na {
+    output turbo_engine: engine;
+    output turbo_intake: intake;
+    output turbo_exhaust0: exhaust0;
+    output turbo_exhaust1: exhaust1;
+
+    wires wires()
+
+    engine engine(
+        name: "Nissan RB25DET [Skyline GTS-T, Single Turbo]",
+        starter_torque: 150 * units.lb_ft,
+        starter_speed: 450 * units.rpm,
+        redline: 7500 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 2.9,
+            max_burning_efficiency: 0.85
+        ),
+        throttle_gamma: 2.0,
+        // Same RB-family raw/mechanical DNA as RB26DETT (rb26dett.mr),
+        // dialed back a step for the single-turbo GTS-T rather than the
+        // twin-turbo GT-R.
+        hf_gain: 0.0054,
+        noise: 0.47,
+        jitter: 0.20,
+        simulation_frequency: 15000
+    )
+
+    // 86.0mm x 71.7mm, 2498cc, 8.5:1 compression -- real RB25DET dimensions
+    // (same 86mm bore as the RB26, shorter stroke than the RB26's 73.7mm
+    // to bring displacement down to 2.5L).
+    label stroke(71.7 * units.mm)
+    label bore(86.0 * units.mm)
+    label rod_length(121.5 * units.mm)
+    label rod_mass(495 * units.g)
+    label compression_height(28.5 * units.mm)
+    label crank_mass(15 * units.kg)
+    label flywheel_mass(7 * units.kg)
+    label flywheel_radius(6.0 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment(
+        disk_moment_of_inertia(mass: 17 * units.kg, radius: 7.5 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 6.2 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: constants.pi / 2
+    )
+
+    // 1 5 3 6 2 4
+    rod_journal rj0(angle: 0 * units.deg)
+    rod_journal rj1(angle: 480 * units.deg)
+    rod_journal rj2(angle: 240 * units.deg)
+    rod_journal rj3(angle: 600 * units.deg)
+    rod_journal rj4(angle: 120 * units.deg)
+    rod_journal rj5(angle: 360 * units.deg)
+
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+        .add_rod_journal(rj5)
+
+    piston_parameters piston_params(
+        mass: 295 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 1.1 * units.L,
+        plenum_cross_section_area: 12.5 * units.cm2,
+        intake_flow_rate: k_carb(580.0),
+        runner_flow_rate: k_carb(205.0),
+        runner_length: 7.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        // 0.9985 (0.15% open) settled just under the check tool's
+        // running-floor threshold coming off the starter -- 0.998 gives
+        // enough flow to hold a clean, realistic idle.
+        idle_throttle_plate_position: 0.998,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(880.0),
+        // Shorter than the BMW/Toyota sixes but not as short as
+        // RB26DETT's -- related family rasp, single-turbo character.
+        primary_tube_length: 17.0 * units.inch,
+        primary_flow_rate: k_carb(185.0),
+        velocity_decay: 1.0,
+        volume: 25.0 * units.L
+    )
+
+    // Conventional single unsplit-manifold layout -- both halves of the
+    // bank still get their own exhaust_system object for the usual
+    // stereo/L-R sound variety (same idiom as k20a_turbo.mr's alternating
+    // split), but both feed the same single turbo below.
+    exhaust_system exhaust0(
+        es_params,
+        // minimal_muffling for a raw single-turbo RB voice, distinct from
+        // RB26DETT's sharp_0 twin-turbo bark and from the BMW/Toyota
+        // sixes' mild_exhaust/default IRs.
+        audio_volume: 8 * 0.85,
+        impulse_response: ir_lib.minimal_muffling_02
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.05,
+        impulse_response: ir_lib.minimal_muffling_02
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 0)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.95
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.97
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.98
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj5,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.93
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 224 * units.deg,
+        gamma: 1.1,
+        lift: 8.8 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 220 * units.deg,
+        gamma: 1.1,
+        lift: 8.6 * units.mm,
+        steps: 100
+    )
+
+    rb_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        base_radius: 0.75 * units.inch
+    )
+
+    b0.set_cylinder_head(
+        rb_head(
+            intake_camshaft: camshaft.intake_cam,
+            exhaust_camshaft: camshaft.exhaust_cam
+        )
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 14 * units.deg)
+        .add_sample(2000 * units.rpm, 18 * units.deg)
+        .add_sample(3000 * units.rpm, 22 * units.deg)
+        .add_sample(4000 * units.rpm, 24 * units.deg)
+        .add_sample(5000 * units.rpm, 24 * units.deg)
+        .add_sample(6000 * units.rpm, 22 * units.deg)
+        .add_sample(7000 * units.rpm, 20 * units.deg)
+
+    engine.add_ignition_module(
+        rb_ignition(
+            wires: wires,
+            timing_curve: timing_curve,
+            rev_limit: 7600 * units.rpm
+        )
+    )
+}
+
+private node rb25det_single_turbo {
+    alias output __out: base.turbo_engine;
+
+    rb25det_na base()
+
+    // Single larger turbo (period-correct ceramic-wheel single, bigger
+    // than either half of the RB26's factory twin since it alone handles
+    // all six cylinders) fed by both exhaust systems and feeding the
+    // shared intake -- the ordinary single-turbo pattern from
+    // atg-video-2/k20a_turbo.mr, generalized to six cylinders.
+    turbocharger turbo(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(200.0),
+        turbine_inertia: 0.00006,
+        turbine_efficiency: 0.67,
+        compressor_efficiency: 0.72,
+        max_boost: 14.0 * units.psi,
+        spool_speed: 140000.0 * units.rpm,
+        bov_sound: bov_lib.bovaftermarket3
+    )
+    turbo
+        .add_exhaust_system(base.turbo_exhaust0)
+        .add_exhaust_system(base.turbo_exhaust1)
+
+    base.turbo_engine.add_turbocharger(turbo)
+}
+
+// RWD Skyline GTS-T/Laurel curb weight -- lighter than the AWD RB26DETT
+// GT-R profile in this batch (no transfer case/front driveshaft), and a
+// taller (numerically lower) diff ratio typical of the RWD-only cars.
+private node rb25det_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3150 * units.lb,
+            drag_coefficient: 0.33,
+            cross_sectional_area: (69 * units.inch) * (53 * units.inch),
+            diff_ratio: 3.545,
+            tire_radius: 12.0 * units.inch,
+            rolling_resistance: 400 * units.N
+        );
+}
+
+// 5-speed manual (R33/R34 GTS-T). Real stock ratios.
+private node rb25det_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 330 * units.lb_ft
+        )
+        .add_gear(3.827)
+        .add_gear(2.360)
+        .add_gear(1.685)
+        .add_gear(1.312)
+        .add_gear(1.000);
+}
+
+public node main {
+    set_engine(rb25det_single_turbo())
+    set_vehicle(rb25det_vehicle())
+    set_transmission(rb25det_transmission())
+}

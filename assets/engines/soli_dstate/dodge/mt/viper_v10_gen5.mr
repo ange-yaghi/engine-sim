@@ -1,0 +1,536 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+label cycle(2 * 360 * units.deg)
+
+// Dodge/SRT Viper V10 (Gen 5, 2013-2017) -- the 8.4L naturally-aspirated
+// 90-degree pushrod V10, a bored/stroked descendant of the Chrysler
+// LA/Magnum V8 family (unlike this batch's other two engines, both
+// modern DOHC 4-valve designs). Bore/stroke (104.0mm x 100.6mm, ~8546cc)
+// and 10.2:1 compression are real Gen 5 specs; redline is a real spec
+// too, ~6200rpm -- much lower than the DOHC engines elsewhere in this
+// batch, because a single cam-in-block driving 2 valves/cylinder through
+// pushrods and rockers has far more reciprocating valvetrain mass to
+// control at high RPM than an overhead-cam design. This is a torque
+// monster, not a screamer: peak torque arrives low and stays flat, and
+// the whole engine is tuned around that rather than outright RPM.
+//
+// This sim's camshaft_builder/generic_cylinder_head nodes assume a
+// DOHC-style separate intake/exhaust camshaft pair; there's no dedicated
+// pushrod/single-cam-in-block valvetrain mechanism to switch to, so this
+// file keeps that same node structure (one intake_cam + one exhaust_cam
+// per bank) but tunes the lobe duration/lift/lobe-separation numbers down
+// toward a torque-biased pushrod profile (shorter duration, wider lobe
+// separation, lower lift than the DOHC engines in this batch) rather than
+// a high-RPM DOHC-style profile. That's a reasonable stand-in for "real"
+// pushrod valvetrain behavior at the level of detail this sim models.
+//
+// Firing order 1-10-9-4-3-6-5-8-7-2 is a commonly cited order for this
+// engine family. Cylinder numbering follows Chrysler/Dodge V10 convention
+// (same scheme used elsewhere in this batch): bank 0 (right) = cylinders
+// 1-5 front-to-back, bank 1 (left) = cylinders 6-10 front-to-back,
+// cylinder N and N+5 sharing a rod journal.
+//
+// Transmission: Tremec TR6060 6-speed manual -- the Viper never offered
+// an automatic in any generation, so unlike this batch's Coyote pair,
+// there's only one file/one public node main here.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+    output wire7: ignition_wire();
+    output wire8: ignition_wire();
+    output wire9: ignition_wire();
+    output wire10: ignition_wire();
+}
+
+private node viper_v10_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 92.9 * units.cc; // sized for ~10.2:1 CR against a ~855cc swept cylinder
+    input intake_runner_volume: 175.0 * units.cc;
+    input intake_runner_cross_section_area: 2.1 * units.inch * 2.1 * units.inch;
+    input exhaust_runner_volume: 70.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.7 * units.inch * 1.7 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // Big-bore 2-valve pushrod head: lower peak flow per valve than the
+    // DOHC 4-valve heads elsewhere in this batch, but a much bigger bore
+    // to breathe through, so absolute numbers land in a similar range.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 50 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 92 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 138 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 178 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 208 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 228 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 240 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 245 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 246 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 34 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 64 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 100 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 134 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 162 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 182 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 194 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 199 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 200 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+private node viper_v10_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    // Wider lobe separation than the DOHC engines in this batch -- a
+    // torque-biased pushrod profile trades peak-RPM breathing for a
+    // broader, smoother low/mid-range torque curve.
+    input lobe_separation: 114 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.72 * units.inch; // single cam-in-block, smaller base circle than an OHC cam
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // VVT -- but this is a cam-in-block pushrod V10 with one physical
+    // camshaft driving both intake and exhaust lobes (and both banks) off
+    // a single phaser, unlike the DOHC engines in this batch that phase
+    // intake/exhaust independently -- so one shared curve applies to all
+    // four cams here, not separate intake/exhaust ones.
+    function vvt(1000 * units.rpm)
+    vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(1500 * units.rpm, 8 * units.deg)
+        .add_sample(4000 * units.rpm, 12 * units.deg)
+        .add_sample(6200 * units.rpm, 6 * units.deg)
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile, advance_curve: vvt)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile, advance_curve: vvt)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile, advance_curve: vvt)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile, advance_curve: vvt)
+
+    // Firing interval for a 10-cylinder engine is always 720/10 = 72
+    // degrees, independent of the 90-degree bank angle below.
+    label rot(72 * units.deg)
+    label rot360(360 * units.deg)
+
+    // Corrected to match the ignition wiring fix below: bank 0 (cyl 1-5)
+    // at N*rot; bank 1 (cyl 6-10) at 18deg+N*rot (not a multiple of rot
+    // alone -- see that block's comment for why).
+    label bank1_offset(18 * units.deg)
+
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 - exhaust_lobe_center + 1 * rot) // 2
+        .add_lobe(rot360 - exhaust_lobe_center + 2 * rot) // 3
+        .add_lobe(rot360 - exhaust_lobe_center + 3 * rot) // 4
+        .add_lobe(rot360 - exhaust_lobe_center + 4 * rot) // 5
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot) // 1
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot) // 2
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot) // 3
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot) // 4
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot) // 5
+
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 1 * rot) // 6
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 2 * rot) // 7
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 3 * rot) // 8
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 4 * rot) // 9
+        .add_lobe(rot360 - exhaust_lobe_center + bank1_offset + 0 * rot) // 10
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 1 * rot) // 6
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 2 * rot) // 7
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 3 * rot) // 8
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 4 * rot) // 9
+        .add_lobe(rot360 + intake_lobe_center + bank1_offset + 0 * rot) // 10
+}
+
+public node viper_v10 {
+    alias output __out: engine;
+
+    wires wires()
+
+    engine engine(
+        name: "SRT Viper V10 8.4L [Gen 5, pushrod V10]",
+        starter_torque: 260 * units.lb_ft,
+        starter_speed: 300 * units.rpm,
+        redline: 6200 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 2.6,
+            max_burning_efficiency: 0.86
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.004,
+        noise: 0.4,
+        jitter: 0.22,
+        simulation_frequency: 9000
+    )
+
+    // Real Gen 5 Viper V10 dimensions: 104.0mm x 100.6mm, ~8546cc.
+    label stroke(100.6 * units.mm)
+    label bore(104.0 * units.mm)
+    label rod_length(169.0 * units.mm)
+    label rod_mass(680 * units.g)
+    label compression_height(33.0 * units.mm)
+    label crank_mass(34 * units.kg)
+    label flywheel_mass(11 * units.kg)
+    label flywheel_radius(7.0 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // single cam-in-block, timing gears/chain, balance shaft, etc [estimated]
+        disk_moment_of_inertia(mass: 6 * units.kg, radius: 6.0 * units.cm)
+    )
+
+    label v_angle(90 * units.deg) // real Viper V10 bank angle
+    label rj_spacing(72 * units.deg) // 360 / 5 rod journals -- crank throw spacing, independent of v_angle
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 12.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: 90 * units.deg + (v_angle / 2.0)
+    )
+
+    // 5 rod journals, one per front-to-back cylinder position, each
+    // shared by cylinder N (bank 0) and cylinder N+5 (bank 1).
+    rod_journal rj0(angle: 0 * rj_spacing) // cyl 1 & 6
+    rod_journal rj1(angle: 1 * rj_spacing) // cyl 2 & 7
+    rod_journal rj2(angle: 2 * rj_spacing) // cyl 3 & 8
+    rod_journal rj3(angle: 3 * rj_spacing) // cyl 4 & 9
+    rod_journal rj4(angle: 4 * rj_spacing) // cyl 5 & 10
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+
+    piston_parameters piston_params(
+        mass: 620 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 8.0 * units.L, // big low-boost-friendly plenum for a low-revving torque engine
+        plenum_cross_section_area: 40.0 * units.cm2,
+        intake_flow_rate: k_carb(1500.0),
+        runner_flow_rate: k_carb(260.0),
+        runner_length: 8.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        // 0.998 wasn't quite enough flow at closed throttle for this
+        // engine's big 8L plenum/1500 intake_flow_rate scale to sustain
+        // combustion once the starter let go. 0.995 keeps it running.
+        idle_throttle_plate_position: 0.995,
+        velocity_decay: 0.55,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1900.0),
+        primary_tube_length: 32.0 * units.inch,
+        primary_flow_rate: k_carb(300.0),
+        velocity_decay: 1.0,
+        volume: 40.0 * units.L
+    )
+
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.9,
+        impulse_response: ir_lib.default_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.0,
+        impulse_response: ir_lib.default_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: v_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: -v_angle / 2.0)
+    b0
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9,
+            primary_length: 5 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.003)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.95,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.9,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.003)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.97,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.85,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            viper_v10_head(
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0,
+                flip_display: true
+            )
+        )
+    b1
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.85,
+            primary_length: 5 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.003)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire7,
+            sound_attenuation: 0.9,
+            primary_length: 4 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire8,
+            sound_attenuation: 0.95,
+            primary_length: 3 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.003)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire9,
+            sound_attenuation: 0.97,
+            primary_length: 2 * units.cm
+        )
+        .add_cylinder(
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire10,
+            sound_attenuation: 0.9,
+            primary_length: 1 * units.cm
+        )
+        .set_cylinder_head(
+            viper_v10_head(
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    // Torque-biased pushrod lobes: shorter duration and lower lift than
+    // the DOHC engines in this batch, tuned to build cylinder pressure
+    // early rather than chase high-RPM airflow.
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 208 * units.deg,
+        gamma: 1.15,
+        lift: 13.2 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 214 * units.deg,
+        gamma: 1.15,
+        lift: 13.5 * units.mm,
+        steps: 100
+    )
+
+    viper_v10_camshaft camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        base_radius: 0.72 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 14 * units.deg)
+        .add_sample(1000 * units.rpm, 18 * units.deg)
+        .add_sample(2000 * units.rpm, 24 * units.deg)
+        .add_sample(3000 * units.rpm, 28 * units.deg)
+        .add_sample(4000 * units.rpm, 30 * units.deg)
+        .add_sample(5000 * units.rpm, 30 * units.deg)
+        .add_sample(6000 * units.rpm, 30 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 6400 * units.rpm,
+        limiter_duration: 0.04
+    )
+    ignition_module
+        // Corrected: 5 journals at 72-degree spacing + a 90-degree bank
+        // split means bank 1's true TDC is (90 + rj.angle) mod 360, which
+        // is 18 degrees off any multiple of 72 -- the two banks can't both
+        // sit on one evenly-spaced 72-degree firing grid for this
+        // geometry. Bank 0 (cyl 1-5) at N*72; bank 1 (cyl 6-10) at
+        // 18+N*72.
+        .connect_wire(wires.wire1,  0 * 72 * units.deg)
+        .connect_wire(wires.wire2,  1 * 72 * units.deg)
+        .connect_wire(wires.wire3,  2 * 72 * units.deg)
+        .connect_wire(wires.wire4,  3 * 72 * units.deg)
+        .connect_wire(wires.wire5,  4 * 72 * units.deg)
+        .connect_wire(wires.wire10, 18 * units.deg + 0 * 72 * units.deg)
+        .connect_wire(wires.wire6,  18 * units.deg + 1 * 72 * units.deg)
+        .connect_wire(wires.wire7,  18 * units.deg + 2 * 72 * units.deg)
+        .connect_wire(wires.wire8,  18 * units.deg + 3 * 72 * units.deg)
+        .connect_wire(wires.wire9,  18 * units.deg + 4 * 72 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+private node viper_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3374 * units.lb, // real Gen 5 Viper curb weight, approximate -- heavier/less nimble than this batch's exotics
+            drag_coefficient: 0.37,
+            cross_sectional_area: (76 * units.inch) * (49 * units.inch),
+            diff_ratio: 3.55,
+            tire_radius: 13.4 * units.inch, // huge rear tires (355-section stock)
+            rolling_resistance: 480 * units.N
+        );
+}
+
+// Tremec TR6060 6-speed manual, real production ratios (approximate).
+// The Viper was manual-only across every generation -- no automatic was
+// ever offered, so this is the only transmission/main for this engine.
+private node viper_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 650 * units.lb_ft,
+            type: "manual"
+        )
+        .add_gear(2.66)
+        .add_gear(1.78)
+        .add_gear(1.30)
+        .add_gear(1.00)
+        .add_gear(0.74)
+        .add_gear(0.50);
+}
+
+public node main {
+    set_engine(viper_v10())
+    set_vehicle(viper_vehicle())
+    set_transmission(viper_transmission())
+}

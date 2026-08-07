@@ -1,0 +1,513 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+bov_sound_library bov_lib()
+label cycle(2 * 360 * units.deg)
+
+// BMW S55B30 -- the twin-turbo 3.0L inline-6 out of the F80 M3 / F82 M4.
+// 84.0mm x 89.0mm, 2979cc, 10.2:1 compression -- same real dimensions as
+// the older, top-level assets/engines/bmw/S55_dct.mr test mule (that file
+// predates this repo's support for multiple turbocharger nodes sharing
+// one intake, so it collapsed the real car's two turbos onto one as a
+// simplification; don't copy or edit it). This file models the real
+// twin-turbo topology instead: two small mono-scroll turbos, one per
+// cylinder group (1-2-3 feeding turbo_front off exhaust0, 4-5-6 feeding
+// turbo_rear off exhaust1), both compressors merging into a single shared
+// intake plenum upstream of one throttle body -- exactly like the real
+// car's parallel-turbo layout.
+//
+// Builds the full twin-turbo engine as public node s55b30_na (so
+// S55B30_dct.mr can reuse it) and pairs it with the factory 6-speed
+// manual as `main`.
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+}
+
+private node s55b30_ignition {
+    input wires;
+    input timing_curve;
+    input rev_limit: 7600 * units.rpm;
+    alias output __out:
+        ignition_module(
+            timing_curve: timing_curve,
+            rev_limit: rev_limit,
+            // Sharp, precise electronic cut -- a modern M-car ECU snap,
+            // not the mushy limiter feel of the comfort-tuned B58
+            // (B58B30M1.mr).
+            limiter_duration: 0.035
+        )
+            .connect_wire(wires.wire1, (0.0 / 6.0) * cycle)
+            .connect_wire(wires.wire5, (1.0 / 6.0) * cycle)
+            .connect_wire(wires.wire3, (2.0 / 6.0) * cycle)
+            .connect_wire(wires.wire6, (3.0 / 6.0) * cycle)
+            .connect_wire(wires.wire2, (4.0 / 6.0) * cycle)
+            .connect_wire(wires.wire4, (5.0 / 6.0) * cycle);
+}
+
+private node s55b30_camshaft_builder {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 112.0 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0.0 * units.deg;
+    input base_radius: 0.75 * units.inch;
+
+    output intake_cam: _intake_cam;
+    output exhaust_cam: _exhaust_cam;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    // Double-VANOS -- independent intake and exhaust cam phasing.
+    function intake_vvt(1000 * units.rpm)
+    intake_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2000 * units.rpm, 12 * units.deg)
+        .add_sample(4500 * units.rpm, 16 * units.deg)
+        .add_sample(7600 * units.rpm, 8 * units.deg)
+
+    function exhaust_vvt(1000 * units.rpm)
+    exhaust_vvt
+        .add_sample(0000 * units.rpm, 0 * units.deg)
+        .add_sample(2500 * units.rpm, 10 * units.deg)
+        .add_sample(7600 * units.rpm, 12 * units.deg)
+
+    camshaft _intake_cam(params, lobe_profile: intake_lobe_profile, advance_curve: intake_vvt)
+    camshaft _exhaust_cam(params, lobe_profile: exhaust_lobe_profile, advance_curve: exhaust_vvt)
+
+    label rot(2 * (360 / 6.0) * units.deg)
+    label rot360(360 * units.deg)
+
+    // 1 5 3 6 2 4
+    _exhaust_cam
+        .add_lobe((rot360 - exhaust_lobe_center) + 0 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 4 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 2 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 5 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 1 * rot)
+        .add_lobe((rot360 - exhaust_lobe_center) + 3 * rot)
+
+    _intake_cam
+        .add_lobe(rot360 + intake_lobe_center + 0 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 4 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 2 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 5 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 1 * rot)
+        .add_lobe(rot360 + intake_lobe_center + 3 * rot)
+}
+
+private node s55b30_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume: 44.0 * units.cc;
+    input intake_runner_volume: 112.0 * units.cc;
+    input intake_runner_cross_section_area: 1.5 * units.inch * 1.5 * units.inch;
+    input exhaust_runner_volume: 46.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.3 * units.inch * 1.3 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 54 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 96 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 148 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 198 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 232 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 251 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 261 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 264 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 265 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 38 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 72 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 112 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 150 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 180 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 200 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 212 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 217 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 218 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+public node s55b30_na {
+    output turbo_engine: engine;
+    output turbo_intake: intake;
+    output turbo_exhaust0: exhaust0;
+    output turbo_exhaust1: exhaust1;
+
+    wires wires()
+
+    engine engine(
+        name: "BMW S55B30 [F80 M3 / F82 M4]",
+        starter_torque: 190 * units.lb_ft,
+        starter_speed: 450 * units.rpm,
+        redline: 7600 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.2,
+            max_burning_efficiency: 0.85
+        ),
+        throttle_gamma: 2.0,
+        // Aggressive M-car snarl -- more edge/mechanical presence than
+        // the comfort-tuned B58 (B58B30M1.mr), though not as raw as the
+        // JDM RB-family sixes.
+        hf_gain: 0.0058,
+        noise: 0.50,
+        jitter: 0.21,
+        simulation_frequency: 15000,
+
+        // Factory M-car crackle/pop on lift-off (Sport+ throttle-blip
+        // character) -- this reuses the sim's anti-lag mechanism (a raw
+        // charge dumped into each header that randomly ignites, see
+        // Engine::updateAntiLag()) purely for its audio side, not for
+        // anti-lag's actual purpose of keeping the turbo spooled:
+        // anti_lag_max_retard is zeroed out, so there's no timing-retard/
+        // turbo effect at all, just the pops. B58 (B58B30M1.mr) leaves
+        // this off entirely -- a comfort-tuned six shouldn't be popping
+        // on lift-off the way an M-car does.
+        //
+        // anti_lag_dump_rate is deliberately well under the shared
+        // default (6.0) -- see the stall-risk comment on
+        // Engine::updateAntiLag() in engine.cpp. 0.1 is verified safe
+        // through a full redline-to-idle coast (engine-sim-check's dyno
+        // test does exactly that); anything much above ~0.2 measurably
+        // starts adding enough exhaust-side drag to stall the engine
+        // before it reaches idle.
+        anti_lag_enabled: true,
+        anti_lag_max_retard: 0 * units.deg,
+        anti_lag_dump_rate: 0.1,
+        anti_lag_pop_rate: 7.0
+    )
+
+    // 84.0mm x 89.0mm, 2979cc -- real S55 dimensions (matches
+    // assets/engines/bmw/S55_dct.mr's figures).
+    label stroke(89.0 * units.mm)
+    label bore(84.0 * units.mm)
+    label rod_length(135.0 * units.mm)
+    label rod_mass(420 * units.g)
+    label compression_height(31.0 * units.mm)
+    label crank_mass(13 * units.kg)
+    label flywheel_mass(6.5 * units.kg)
+    label flywheel_radius(6.0 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment(
+        disk_moment_of_inertia(mass: 18 * units.kg, radius: 7.5 * units.cm)
+    )
+
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 6.5 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: constants.pi / 2
+    )
+
+    // 1 5 3 6 2 4
+    rod_journal rj0(angle: 0 * units.deg)
+    rod_journal rj1(angle: 480 * units.deg)
+    rod_journal rj2(angle: 240 * units.deg)
+    rod_journal rj3(angle: 600 * units.deg)
+    rod_journal rj4(angle: 120 * units.deg)
+    rod_journal rj5(angle: 360 * units.deg)
+
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+        .add_rod_journal(rj5)
+
+    piston_parameters piston_params(
+        mass: 260 * units.g,
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    // Single shared plenum/throttle body downstream of both turbos.
+    intake intake(
+        plenum_volume: 1.2 * units.L,
+        plenum_cross_section_area: 13.0 * units.cm2,
+        intake_flow_rate: k_carb(600.0),
+        runner_flow_rate: k_carb(210.0),
+        runner_length: 7.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        // 0.9985 (0.15% open) settled just under the check tool's
+        // running-floor threshold coming off the starter -- 0.998 gives
+        // enough flow to hold a clean, realistic ~700rpm idle.
+        idle_throttle_plate_position: 0.998,
+        velocity_decay: 0.5,
+        audio_volume: 3.0,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1100.0),
+        // Sharper/shorter than the comfort-tuned B58's (B58B30M1.mr) --
+        // an M-car's firmer, more eager exhaust note.
+        primary_tube_length: 19.0 * units.inch,
+        primary_flow_rate: k_carb(230.0),
+        velocity_decay: 1.0,
+        volume: 34.0 * units.L
+    )
+
+    // exhaust0 collects cylinders 1-2-3 (front turbo), exhaust1 collects
+    // 4-5-6 (rear turbo) -- a genuine contiguous split, not an alternating
+    // odd/even one, so each turbo only ever sees its own three cylinders'
+    // pulses.
+    exhaust_system exhaust0(
+        es_params,
+        // Reverb variant gives the M-car's more resonant, chambered
+        // factory exhaust a bit of spatial depth the plain mild_exhaust_0
+        // (B58B30M1.mr) doesn't have.
+        audio_volume: 8 * 0.85,
+        impulse_response: ir_lib.mild_exhaust_0_reverb
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 1.05,
+        impulse_response: ir_lib.mild_exhaust_0_reverb
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: 0)
+    b0
+        .add_cylinder( // 1 -- front turbo group
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder( // 2 -- front turbo group
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.95
+        )
+        .add_cylinder( // 3 -- front turbo group
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder( // 4 -- rear turbo group
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.97
+        )
+        .add_cylinder( // 5 -- rear turbo group
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.98
+        )
+        .add_cylinder( // 6 -- rear turbo group
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj5,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.93
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 226 * units.deg,
+        gamma: 1.1,
+        lift: 9.9 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 222 * units.deg,
+        gamma: 1.1,
+        lift: 9.7 * units.mm,
+        steps: 100
+    )
+
+    s55b30_camshaft_builder camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 112 * units.deg,
+        exhaust_lobe_center: 112 * units.deg,
+        base_radius: 0.75 * units.inch
+    )
+
+    b0.set_cylinder_head(
+        s55b30_head(
+            intake_camshaft: camshaft.intake_cam,
+            exhaust_camshaft: camshaft.exhaust_cam
+        )
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 14 * units.deg)
+        .add_sample(2000 * units.rpm, 20 * units.deg)
+        .add_sample(3000 * units.rpm, 24 * units.deg)
+        .add_sample(4000 * units.rpm, 26 * units.deg)
+        .add_sample(5000 * units.rpm, 26 * units.deg)
+        .add_sample(6000 * units.rpm, 26 * units.deg)
+        .add_sample(7000 * units.rpm, 26 * units.deg)
+
+    engine.add_ignition_module(
+        s55b30_ignition(
+            wires: wires,
+            timing_curve: timing_curve,
+            rev_limit: 7700 * units.rpm
+        )
+    )
+}
+
+// Twin mono-scroll turbos, one per cylinder group, both feeding the same
+// shared intake plenum -- the real S55 layout. This relies on this repo's
+// support for multiple turbocharger nodes sharing one intake node.
+private node s55b30_twin_turbo {
+    alias output __out: base.turbo_engine;
+
+    s55b30_na base()
+
+    turbocharger turbo_front(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(130.0),
+        turbine_inertia: 0.00004,
+        turbine_efficiency: 0.66,
+        compressor_efficiency: 0.72,
+        max_boost: 17.0 * units.psi,
+        spool_speed: 155000.0 * units.rpm,
+        bov_sound: bov_lib.bovaftermarket1
+    )
+    turbo_front.add_exhaust_system(base.turbo_exhaust0)
+
+    turbocharger turbo_rear(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(130.0),
+        turbine_inertia: 0.00004,
+        turbine_efficiency: 0.66,
+        compressor_efficiency: 0.72,
+        max_boost: 17.0 * units.psi,
+        spool_speed: 155000.0 * units.rpm,
+        bov_sound: bov_lib.bovaftermarket1
+    )
+    turbo_rear.add_exhaust_system(base.turbo_exhaust1)
+
+    base.turbo_engine
+        .add_turbocharger(turbo_front)
+        .add_turbocharger(turbo_rear)
+}
+
+private node s55b30_mt_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3595 * units.lb,
+            drag_coefficient: 0.35,
+            cross_sectional_area: (70 * units.inch) * (54 * units.inch),
+            diff_ratio: 3.46,
+            tire_radius: 12.5 * units.inch,
+            rolling_resistance: 450 * units.N
+        );
+}
+
+// Factory 6-speed manual (Getrag GS6-53BZ, approximate ratios).
+private node s55b30_mt_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 450 * units.lb_ft,
+            type: "manual"
+        )
+        .add_gear(4.23)
+        .add_gear(2.53)
+        .add_gear(1.67)
+        .add_gear(1.24)
+        .add_gear(1.00)
+        .add_gear(0.83);
+}
+
+public node main {
+    set_engine(s55b30_twin_turbo())
+    set_vehicle(s55b30_mt_vehicle())
+    set_transmission(s55b30_mt_transmission())
+}

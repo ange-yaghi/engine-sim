@@ -1,0 +1,521 @@
+import "engine_sim.mr"
+
+units units()
+constants constants()
+impulse_response_library ir_lib()
+bov_sound_library bov_lib()
+label cycle(2 * 360 * units.deg)
+
+// Nissan VG30DETT -- the 2,960cc twin-turbo, 60-degree, DOHC 24-valve V6 out
+// of the Z32 300ZX Twin Turbo (1990-1996). "D" = DOHC (vs. the SOHC
+// VG30E/VG30ET); "TT" = twin turbo, one turbo per bank rather than a
+// sequential pair. Bore/stroke (87.0mm x 83.0mm) and the ~8.5:1 compression
+// ratio (low, typical for a turbo engine of this era) are real factory
+// specs -- 87.0mm x 83.0mm computes to 2959.7cc, matching the real ~2960cc
+// displacement. Redline and the ~300hp/~283lb-ft target are period JDM/US
+// spec figures. Rod length, piston/rod/crank masses, port flow figures, and
+// boost curve shape are reasoned approximations in the style of this
+// repo's other reference engines.
+//
+// FIRING ORDER / CRANK GEOMETRY -- derived, not copied from a citation:
+// The VG30 is a 60-degree-bank V6 with a SPLIT-PIN single-plane crank (3
+// physical throw pairs, each pair's two pins splayed apart by the 60-degree
+// bank angle) -- this is the standard fix real 60-degree V6 engines (this
+// family, GM's 60-degree V6, etc.) use to get even 120-degree firing
+// spacing, because a 60-degree bank does NOT naturally divide 720/6=120
+// like a 90-degree or 120-degree V6 would with plain shared pins (see the
+// note in soli_dstate/ferrari/dct/f163_296gtb.mr for the 120-degree/shared-
+// pin contrast case). Modeled here exactly like the proven 60-degree-bank
+// reference engine at assets/engines/angethegreat/atg-video-2/04_60_degree_v6.mr:
+// 3 throw pairs at 0/120/240 deg, each pair's two journals split by the
+// 60-degree bank angle (0&60, 120&180, 240&300), giving 6 journals evenly
+// spaced 60 degrees apart. Bank 0 (cyl 1-3-5) sits on journals 0/240/120;
+// Bank 1 (cyl 2-4-6) sits on journals 60/300/180. Connecting the ignition
+// wires in cylinder order 1-2-3-4-5-6 at 0/120/240/360/480/600 deg lands on
+// a perfectly even 120-degree firing interval every time -- verified below
+// against the camshaft lobe placement, which mirrors the same order.
+// (Commonly-cited service-manual firing order for this engine family is
+// 1-2-3-4-5-6, which is exactly what this geometry produces -- confirms the
+// citation rather than just trusting it blind.)
+
+private node wires {
+    output wire1: ignition_wire();
+    output wire2: ignition_wire();
+    output wire3: ignition_wire();
+    output wire4: ignition_wire();
+    output wire5: ignition_wire();
+    output wire6: ignition_wire();
+}
+
+private node vg30_head {
+    input intake_camshaft;
+    input exhaust_camshaft;
+    input chamber_volume;
+    input intake_runner_volume: 95.0 * units.cc;
+    input intake_runner_cross_section_area: 1.4 * units.inch * 1.4 * units.inch;
+    input exhaust_runner_volume: 42.0 * units.cc;
+    input exhaust_runner_cross_section_area: 1.3 * units.inch * 1.3 * units.inch;
+
+    input flow_attenuation: 1.0;
+    input lift_scale: 1.0;
+    input flip_display: false;
+    alias output __out: head;
+
+    // approximated -- no factory flow bench numbers published, figures
+    // reasoned from a mid-size 24-valve DOHC head of this era/displacement.
+    function intake_flow(50 * units.thou)
+    intake_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 62 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 112 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 170 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 224 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 261 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 282 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 294 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 298 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 299 * flow_attenuation)
+
+    function exhaust_flow(50 * units.thou)
+    exhaust_flow
+        .add_flow_sample(0 * lift_scale, 0 * flow_attenuation)
+        .add_flow_sample(50 * lift_scale, 47 * flow_attenuation)
+        .add_flow_sample(100 * lift_scale, 89 * flow_attenuation)
+        .add_flow_sample(150 * lift_scale, 136 * flow_attenuation)
+        .add_flow_sample(200 * lift_scale, 181 * flow_attenuation)
+        .add_flow_sample(250 * lift_scale, 216 * flow_attenuation)
+        .add_flow_sample(300 * lift_scale, 240 * flow_attenuation)
+        .add_flow_sample(350 * lift_scale, 253 * flow_attenuation)
+        .add_flow_sample(400 * lift_scale, 260 * flow_attenuation)
+        .add_flow_sample(450 * lift_scale, 261 * flow_attenuation)
+
+    generic_cylinder_head head(
+        chamber_volume: chamber_volume,
+        intake_runner_volume: intake_runner_volume,
+        intake_runner_cross_section_area: intake_runner_cross_section_area,
+        exhaust_runner_volume: exhaust_runner_volume,
+        exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+
+        intake_port_flow: intake_flow,
+        exhaust_port_flow: exhaust_flow,
+        valvetrain: standard_valvetrain(
+            intake_camshaft: intake_camshaft,
+            exhaust_camshaft: exhaust_camshaft
+        ),
+        flip_display: flip_display
+    )
+}
+
+// Split-pin 60-degree V6 camshaft geometry -- see the header comment for
+// the full derivation. Bank 0 fires cyl 1/3/5 at journals 0/240/120 deg;
+// Bank 1 fires cyl 2/4/6 at journals 60/300/180 deg (unrolled to
+// 600/360/120 below to keep cam-lobe placement in strict firing-order
+// sequence across the 720-degree cycle, same technique used in
+// assets/engines/angethegreat/atg-video-2/04_60_degree_v6.mr).
+private node vg30_camshaft {
+    input lobe_profile;
+    input intake_lobe_profile: lobe_profile;
+    input exhaust_lobe_profile: lobe_profile;
+    input lobe_separation: 114 * units.deg;
+    input intake_lobe_center: lobe_separation;
+    input exhaust_lobe_center: lobe_separation;
+    input advance: 0 * units.deg;
+    input base_radius: 0.75 * units.inch;
+
+    output intake_cam_0: _intake_cam_0;
+    output exhaust_cam_0: _exhaust_cam_0;
+
+    output intake_cam_1: _intake_cam_1;
+    output exhaust_cam_1: _exhaust_cam_1;
+
+    camshaft_parameters params(
+        advance: advance,
+        base_radius: base_radius
+    )
+
+    camshaft _intake_cam_0(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_0(params, lobe_profile: exhaust_lobe_profile)
+    camshaft _intake_cam_1(params, lobe_profile: intake_lobe_profile)
+    camshaft _exhaust_cam_1(params, lobe_profile: exhaust_lobe_profile)
+
+    label rot360(360 * units.deg)
+
+    // Bank 0: cyl 1 (journal @ 0), cyl 3 (journal @ 240), cyl 5 (journal @ 120)
+    _exhaust_cam_0
+        .add_lobe(rot360 - exhaust_lobe_center + 0 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 240 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 480 * units.deg)
+    _intake_cam_0
+        .add_lobe(rot360 + intake_lobe_center + 0 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 240 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 480 * units.deg)
+
+    // Bank 1: cyl 2 (journal @ 60), cyl 4 (journal @ 300), cyl 6 (journal @ 180)
+    _exhaust_cam_1
+        .add_lobe(rot360 - exhaust_lobe_center + 120 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 360 * units.deg)
+        .add_lobe(rot360 - exhaust_lobe_center + 600 * units.deg)
+    _intake_cam_1
+        .add_lobe(rot360 + intake_lobe_center + 120 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 360 * units.deg)
+        .add_lobe(rot360 + intake_lobe_center + 600 * units.deg)
+}
+
+public node vg30dett_na {
+    output turbo_engine: engine;
+    output turbo_intake: intake;
+    output turbo_exhaust0: exhaust0;
+    output turbo_exhaust1: exhaust1;
+
+    wires wires()
+
+    engine engine(
+        name: "Nissan VG30DETT [Z32 300ZX Twin Turbo]",
+        starter_torque: 145 * units.lb_ft,
+        starter_speed: 400 * units.rpm,
+        redline: 7000 * units.rpm,
+        fuel: fuel(
+            max_turbulence_effect: 3.0,
+            max_burning_efficiency: 0.85
+        ),
+        throttle_gamma: 2.0,
+        hf_gain: 0.0046,
+        noise: 0.4,
+        jitter: 0.16,
+        simulation_frequency: 16000
+    )
+
+    // 87.0mm x 83.0mm, 2960cc -- real VG30DETT dimensions (87.0mm bore,
+    // 83.0mm stroke computes to 2959.7cc, matching the real ~2960cc
+    // displacement). 8.5:1 compression is the real low-for-NA, typical-
+    // for-turbo ratio used on this engine.
+    label stroke(83.0 * units.mm)
+    label bore(87.0 * units.mm)
+    label rod_length(145.0 * units.mm) // approximated, not from spec
+    label rod_mass(560 * units.g) // approximated, not from spec
+    label compression_height(30.0 * units.mm) // approximated, not from spec
+    label compression_ratio(8.5)
+    label chamber_volume(
+        (circle_area(bore / 2) * stroke) / (compression_ratio - 1)
+    )
+
+    label crank_mass(18 * units.kg)
+    label flywheel_mass(9 * units.kg)
+    label flywheel_radius(5.5 * units.inch)
+
+    label crank_moment(
+        disk_moment_of_inertia(mass: crank_mass, radius: stroke / 2)
+    )
+    label flywheel_moment(
+        disk_moment_of_inertia(mass: flywheel_mass, radius: flywheel_radius)
+    )
+    label other_moment( // Moment from cams, pulleys, etc [estimated]
+        disk_moment_of_inertia(mass: 19 * units.kg, radius: 7.5 * units.cm)
+    )
+
+    label bank_angle(60 * units.deg)
+
+    // tdc matches the proven 04_60_degree_v6.mr combination exactly: 90deg
+    // (inline-cylinder TDC reference) plus half the bank angle, paired with
+    // bank 0 sitting at +bank_angle/2 below -- this specific
+    // sign/tdc pairing is what actually lines the ignition wire angles up
+    // with true piston TDC (verified against crankshaft.cpp's
+    // getCycleAngle() = theta - tdc and cylinder_bank.cpp's bore-axis
+    // projection, cos/sin(angle + pi/2)).
+    crankshaft c0(
+        throw: stroke / 2,
+        flywheel_mass: flywheel_mass,
+        mass: crank_mass,
+        friction_torque: 7.0 * units.lb_ft,
+        moment_of_inertia:
+            crank_moment + flywheel_moment + other_moment,
+        position_x: 0.0,
+        position_y: 0.0,
+        tdc: (90 * units.deg) + (bank_angle / 2.0)
+    )
+
+    // Split-pin 60-degree-V6 crank: 3 throw pairs at 0/120/240 deg, each
+    // pair's two pins splayed apart by the 60-degree bank angle. See the
+    // header comment for the full derivation and cross-check against
+    // assets/engines/angethegreat/atg-video-2/04_60_degree_v6.mr.
+    rod_journal rj0(angle: 0.0 * units.deg)
+    rod_journal rj1(angle: 60.0 * units.deg)
+    rod_journal rj2(angle: 240.0 * units.deg)
+    rod_journal rj3(angle: 300.0 * units.deg)
+    rod_journal rj4(angle: 120.0 * units.deg)
+    rod_journal rj5(angle: 180.0 * units.deg)
+    c0
+        .add_rod_journal(rj0)
+        .add_rod_journal(rj1)
+        .add_rod_journal(rj2)
+        .add_rod_journal(rj3)
+        .add_rod_journal(rj4)
+        .add_rod_journal(rj5)
+
+    piston_parameters piston_params(
+        mass: 385 * units.g, // approximated, not from spec
+        compression_height: compression_height,
+        wrist_pin_position: 0.0,
+        displacement: 0.0
+    )
+
+    connecting_rod_parameters cr_params(
+        mass: rod_mass,
+        moment_of_inertia: rod_moment_of_inertia(
+            mass: rod_mass,
+            length: rod_length
+        ),
+        center_of_mass: 0.0,
+        length: rod_length
+    )
+
+    intake intake(
+        plenum_volume: 2.2 * units.L,
+        plenum_cross_section_area: 22.0 * units.cm2,
+        intake_flow_rate: k_carb(700.0),
+        runner_flow_rate: k_carb(270.0),
+        runner_length: 7.0 * units.inch,
+        idle_flow_rate: k_carb(0.0),
+        idle_throttle_plate_position: 0.9975,
+        velocity_decay: 0.5
+    )
+
+    exhaust_system_parameters es_params(
+        outlet_flow_rate: k_carb(1050.0),
+        primary_tube_length: 18.0 * units.inch,
+        primary_flow_rate: k_carb(235.0),
+        velocity_decay: 1.0,
+        volume: 25.0 * units.L
+    )
+
+    // Factory-real twin-turbo split: cyl 1-3-5 (bank 0, right bank) into
+    // its own manifold feeding the right turbo, cyl 2-4-6 (bank 1, left
+    // bank) into its own manifold feeding the left turbo -- one turbo per
+    // bank, both compressors merging into the shared intake plenum, same
+    // topology as the real VG30DETT.
+    exhaust_system exhaust0(
+        es_params,
+        audio_volume: 8 * 0.85,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+    exhaust_system exhaust1(
+        es_params,
+        audio_volume: 8 * 0.95,
+        impulse_response: ir_lib.mild_exhaust_0
+    )
+
+    cylinder_bank_parameters bank_params(
+        bore: bore,
+        deck_height: stroke / 2 + rod_length + compression_height
+    )
+
+    cylinder_bank b0(bank_params, angle: bank_angle / 2.0)
+    cylinder_bank b1(bank_params, angle: -bank_angle / 2.0)
+    b0
+        .add_cylinder( // cyl 1
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj0,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire1,
+            sound_attenuation: 0.9
+        )
+        .add_cylinder( // cyl 3
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj2,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire3,
+            sound_attenuation: 0.95
+        )
+        .add_cylinder( // cyl 5
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj4,
+            intake: intake,
+            exhaust_system: exhaust0,
+            ignition_wire: wires.wire5,
+            sound_attenuation: 0.97
+        )
+        .set_cylinder_head(
+            vg30_head(
+                chamber_volume: chamber_volume,
+                flip_display: true,
+                intake_camshaft: camshaft.intake_cam_0,
+                exhaust_camshaft: camshaft.exhaust_cam_0
+            )
+        )
+    b1
+        .add_cylinder( // cyl 2
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj1,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire2,
+            sound_attenuation: 0.95
+        )
+        .add_cylinder( // cyl 4
+            piston: piston(piston_params, blowby: k_28inH2O(0.001)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj3,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire4,
+            sound_attenuation: 0.98
+        )
+        .add_cylinder( // cyl 6
+            piston: piston(piston_params, blowby: k_28inH2O(0.002)),
+            connecting_rod: connecting_rod(cr_params),
+            rod_journal: rj5,
+            intake: intake,
+            exhaust_system: exhaust1,
+            ignition_wire: wires.wire6,
+            sound_attenuation: 0.93
+        )
+        .set_cylinder_head(
+            vg30_head(
+                chamber_volume: chamber_volume,
+                intake_camshaft: camshaft.intake_cam_1,
+                exhaust_camshaft: camshaft.exhaust_cam_1,
+                flip_display: false
+            )
+        )
+
+    engine
+        .add_cylinder_bank(b0)
+        .add_cylinder_bank(b1)
+
+    engine.add_crankshaft(c0)
+
+    harmonic_cam_lobe intake_lobe(
+        duration_at_50_thou: 224 * units.deg,
+        gamma: 1.05,
+        lift: 8.8 * units.mm,
+        steps: 100
+    )
+
+    harmonic_cam_lobe exhaust_lobe(
+        duration_at_50_thou: 220 * units.deg,
+        gamma: 1.05,
+        lift: 8.6 * units.mm,
+        steps: 100
+    )
+
+    vg30_camshaft camshaft(
+        lobe_profile: "N/A",
+        intake_lobe_profile: intake_lobe,
+        exhaust_lobe_profile: exhaust_lobe,
+        intake_lobe_center: 114 * units.deg,
+        exhaust_lobe_center: 114 * units.deg,
+        base_radius: 0.75 * units.inch
+    )
+
+    function timing_curve(1000 * units.rpm)
+    timing_curve
+        .add_sample(0000 * units.rpm, 10 * units.deg)
+        .add_sample(1000 * units.rpm, 14 * units.deg)
+        .add_sample(2000 * units.rpm, 18 * units.deg)
+        .add_sample(3000 * units.rpm, 22 * units.deg)
+        .add_sample(4000 * units.rpm, 24 * units.deg)
+        .add_sample(5000 * units.rpm, 23 * units.deg)
+        .add_sample(6000 * units.rpm, 21 * units.deg)
+        .add_sample(7000 * units.rpm, 19 * units.deg)
+
+    ignition_module ignition_module(
+        timing_curve: timing_curve,
+        rev_limit: 7100 * units.rpm,
+        limiter_duration: 0.025
+    )
+    // Firing order 1-2-3-4-5-6, evenly spaced every 120 deg -- see header
+    // comment for the crank-geometry derivation.
+    ignition_module
+        .connect_wire(wires.wire1, 0 * units.deg)
+        .connect_wire(wires.wire2, 120 * units.deg)
+        .connect_wire(wires.wire3, 240 * units.deg)
+        .connect_wire(wires.wire4, 360 * units.deg)
+        .connect_wire(wires.wire5, 480 * units.deg)
+        .connect_wire(wires.wire6, 600 * units.deg)
+
+    engine.add_ignition_module(ignition_module)
+}
+
+// Twin Garrett-derived turbos (period-correct low-boost stock sizing --
+// real stock boost was modest, around 7-10psi) -- each fed by only its own
+// bank's exhaust system, both compressors merging into the shared intake
+// plenum, matching the real factory parallel twin-turbo layout.
+private node vg30dett_twin_turbo {
+    alias output __out: base.turbo_engine;
+
+    vg30dett_na base()
+
+    // approximated -- real stock boost was a modest ~7-10psi, but that
+    // stock-conservative figure undershot real-world power in this sim's
+    // airflow model, so boost/turbine flow are nudged up here (still a
+    // low-boost twin-turbo tune, not an aftermarket one) to land the dyno
+    // pull in the right ballpark of the real ~300hp/283lb-ft.
+    turbocharger turbo_right(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(170.0),
+        turbine_inertia: 0.00004,
+        turbine_efficiency: 0.69,
+        compressor_efficiency: 0.73,
+        max_boost: 13.0 * units.psi,
+        spool_speed: 160000.0 * units.rpm,
+        bov_sound: bov_lib.bovaftermarket4
+    )
+    turbo_right.add_exhaust_system(base.turbo_exhaust0)
+
+    turbocharger turbo_left(
+        intake: base.turbo_intake,
+        turbine_flow_rate: k_carb(170.0),
+        turbine_inertia: 0.00004,
+        turbine_efficiency: 0.69,
+        compressor_efficiency: 0.73,
+        max_boost: 13.0 * units.psi,
+        spool_speed: 160000.0 * units.rpm,
+        bov_sound: bov_lib.bovaftermarket4
+    )
+    turbo_left.add_exhaust_system(base.turbo_exhaust1)
+
+    base.turbo_engine
+        .add_turbocharger(turbo_right)
+        .add_turbocharger(turbo_left)
+}
+
+// Z32 300ZX Twin Turbo (2-seater) curb weight ~3400lb, very low drag
+// (Cd ~0.31 with the factory rear wing) -- real published specs.
+private node vg30dett_vehicle {
+    alias output __out:
+        vehicle(
+            mass: 3400 * units.lb,
+            drag_coefficient: 0.31,
+            cross_sectional_area: (69 * units.inch) * (51 * units.inch),
+            diff_ratio: 3.545,
+            tire_radius: 12.3 * units.inch,
+            rolling_resistance: 430 * units.N
+        );
+}
+
+// FS5R30A 5-speed manual (Z32 300ZX Twin Turbo's signature gearbox). Real
+// factory gear ratios and final drive.
+private node vg30dett_transmission {
+    alias output __out:
+        transmission(
+            max_clutch_torque: 420 * units.lb_ft,
+            type: "manual"
+        )
+        .add_gear(3.214)
+        .add_gear(1.925)
+        .add_gear(1.302)
+        .add_gear(1.000)
+        .add_gear(0.752);
+}
+
+public node main {
+    set_engine(vg30dett_twin_turbo())
+    set_vehicle(vg30dett_vehicle())
+    set_transmission(vg30dett_transmission())
+}

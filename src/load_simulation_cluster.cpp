@@ -2,6 +2,7 @@
 
 #include "../include/engine_sim_application.h"
 #include "../include/ui_utilities.h"
+#include "../include/input_action.h"
 
 #include <sstream>
 #include <iomanip>
@@ -115,6 +116,8 @@ void LoadSimulationCluster::destroy() {
 void LoadSimulationCluster::update(float dt) {
     UiElement::update(dt);
 
+    if (m_simulator == nullptr) return;
+
     const float systemStatuses[] = {
         isIgnitionOn() ? 1.0f : 0.01f,
         m_simulator->m_starterMotor.m_enabled ? 1.0f : 0.01f,
@@ -130,7 +133,7 @@ void LoadSimulationCluster::update(float dt) {
         m_systemStatusLights[i] = (1 - alpha) * m_systemStatusLights[i] + alpha * next;
     }
 
-    if (m_app->getEngine()->ProcessKeyDown(ysKey::Code::I)) {
+    if (m_app->getKeyBindings()->pressed(InputAction::DynoStatsLog, m_app->getEngine())) {
         std::stringstream ss;
         ss << std::setprecision(0) << std::fixed;
         if (m_powerUnits == "hp") {
@@ -155,6 +158,12 @@ void LoadSimulationCluster::update(float dt) {
 }
 
 void LoadSimulationCluster::render() {
+    if (m_simulator == nullptr) {
+        drawPanel(m_bounds);
+        UiElement::render();
+        return;
+    }
+
     Grid grid;
     grid.h_cells = 3;
     grid.v_cells = 2;
@@ -203,18 +212,14 @@ void LoadSimulationCluster::drawCurrentGear(const Bounds &bounds) {
     const Bounds title = insetBounds.verticalSplit(0.9f, 1.0f);
     const Bounds body = insetBounds.verticalSplit(0.0f, 0.9f);
 
-    drawFrame(bounds, 1.0f, m_app->getForegroundColor(), m_app->getBackgroundColor());
+    drawPanel(bounds);
     drawCenteredText("Gear", title.inset(10.0f), 24.0f);
 
-    const int gear = (getTransmission() != nullptr)
-        ? getTransmission()->getGear()
-        : -1;
-    std::stringstream ss;
-    
-    if (gear != -1) ss << (gear + 1);
-    else ss << "N";
+    const std::string gearLabel = (getTransmission() != nullptr)
+        ? getTransmission()->getGearLabel()
+        : "N";
 
-    drawCenteredText(ss.str(), body, 64.0f, Bounds::center);
+    drawCenteredText(gearLabel, body, 64.0f, Bounds::center);
 }
 
 void LoadSimulationCluster::drawClutchPressureGauge(const Bounds &bounds) {
@@ -228,7 +233,7 @@ void LoadSimulationCluster::drawSystemStatus(const Bounds &bounds) {
     const Bounds left = bounds.horizontalSplit(0.0f, 0.6f);
     const Bounds right = bounds.horizontalSplit(0.6f, 1.0f);
 
-    drawFrame(bounds, 1.0f, m_app->getForegroundColor(), m_app->getBackgroundColor());
+    drawPanel(bounds);
 
     Grid grid;
     grid.v_cells = 4;

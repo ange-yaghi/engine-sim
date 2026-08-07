@@ -9,6 +9,8 @@
 #include "engine_context.h"
 #include "fuel_node.h"
 #include "throttle_nodes.h"
+#include "turbocharger_node.h"
+#include "supercharger_node.h"
 
 #include "engine_sim.h"
 
@@ -47,6 +49,8 @@ namespace es_script {
             parameters.cylinderCount = cylinderCount;
             parameters.exhaustSystemCount = (int)exhaustSystems.size();
             parameters.intakeCount = (int)intakes.size();
+            parameters.turbochargerCount = (int)m_turbochargers.size();
+            parameters.superchargerCount = (int)m_superchargers.size();
             parameters.throttle = m_throttle->generate();
             engine->initialize(parameters);
 
@@ -63,6 +67,22 @@ namespace es_script {
                 for (IntakeNode *intake : intakes) {
                     context.addIntake(
                         intake, engine->getIntake(i++));
+                }
+            }
+
+            {
+                int i = 0;
+                for (TurbochargerNode *turbo : m_turbochargers) {
+                    context.addTurbocharger(
+                        turbo, engine->getTurbocharger(i++));
+                }
+            }
+
+            {
+                int i = 0;
+                for (SuperchargerNode *supercharger : m_superchargers) {
+                    context.addSupercharger(
+                        supercharger, engine->getSupercharger(i++));
                 }
             }
 
@@ -105,6 +125,20 @@ namespace es_script {
                 m_cylinderBanks[i]->connectRodAssemblies(&context);
             }
 
+            // Must run after the cylinder banks above, since that's what
+            // actually generates the real Intake/ExhaustSystem objects a
+            // turbocharger attaches to.
+            for (TurbochargerNode *turbo : m_turbochargers) {
+                turbo->generate(&context);
+            }
+
+            // Same reasoning as the turbocharger loop above -- needs the
+            // real Intake objects the cylinder banks just generated, and
+            // needs the crankshaft objects generated a few lines up.
+            for (SuperchargerNode *supercharger : m_superchargers) {
+                supercharger->generate(&context);
+            }
+
             m_ignitionModule->generate(engine, &context);
             
             Function *meanPistonSpeedToTurbulence = new Function;
@@ -139,6 +173,14 @@ namespace es_script {
             m_cylinderBanks.push_back(bank);
         }
 
+        void addTurbocharger(TurbochargerNode *turbo) {
+            m_turbochargers.push_back(turbo);
+        }
+
+        void addSupercharger(SuperchargerNode *supercharger) {
+            m_superchargers.push_back(supercharger);
+        }
+
         int getIgnitionModuleCount() const {
             return m_ignitionModule == nullptr
                 ? 0
@@ -164,6 +206,10 @@ namespace es_script {
             addInput("hf_gain", &m_parameters.initialHighFrequencyGain);
             addInput("jitter", &m_parameters.initialJitter);
             addInput("noise", &m_parameters.initialNoise);
+            addInput("anti_lag_enabled", &m_parameters.antiLagEnabledByDefault);
+            addInput("anti_lag_max_retard", &m_parameters.antiLagMaxRetard);
+            addInput("anti_lag_dump_rate", &m_parameters.antiLagDumpRateK);
+            addInput("anti_lag_pop_rate", &m_parameters.antiLagPopRate);
 
             ObjectReferenceNode<EngineNode>::registerInputs();
         }
@@ -182,6 +228,8 @@ namespace es_script {
         Engine::Parameters m_parameters;
         std::vector<CrankshaftNode *> m_crankshafts;
         std::vector<CylinderBankNode *> m_cylinderBanks;
+        std::vector<TurbochargerNode *> m_turbochargers;
+        std::vector<SuperchargerNode *> m_superchargers;
     };
 
 } /* namespace es_script */

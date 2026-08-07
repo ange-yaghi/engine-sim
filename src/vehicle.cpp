@@ -11,6 +11,8 @@ Vehicle::Vehicle() {
     m_tireRadius = 0;
     m_travelledDistance = 0;
     m_rollingResistance = 0;
+    m_brakeConstant = 0;
+    m_brakeInput = 0;
 }
 
 Vehicle::~Vehicle() {
@@ -24,6 +26,7 @@ void Vehicle::initialize(const Parameters &params) {
     m_diffRatio = params.diffRatio;
     m_tireRadius = params.tireRadius;
     m_rollingResistance = params.rollingResistance;
+    m_brakeConstant = params.brakeConstant;
 }
 
 void Vehicle::update(double dt) {
